@@ -20,6 +20,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -39,142 +41,21 @@ type VerificationServer struct {
 const openAPISpecJSON = `{
   "openapi": "3.0.3",
   "info": {
-    "title": "Saurient Carbon Passport Platform - Nexus API Gateway",
-    "description": "Event-driven, graph-native microservice API Gateway automatically exposing REST and GraphQL endpoints for every graph node in the Tanzu Nexus datamodel tree (Enterprise -> Facility -> Device/Batch -> ProductType -> CalculationRulebook -> CarbonPassport).",
-    "version": "1.0.0",
-    "contact": {
-      "name": "Saurient Cloud-Native Architecture Team",
-      "url": "https://github.com/vmware-tanzu/graph-framework-for-microservices"
-    }
+    "title": "Saurient Carbon Passport Platform - Core API Gateway",
+    "description": "Enterprise microservice API Gateway for the 3-CRD Saurient Carbon Passport architecture (CalculationRulebook -> Product -> CarbonPassport).",
+    "version": "1.0.0"
   },
   "servers": [
     {
       "url": "http://localhost:8080",
-      "description": "Local Kind Kubernetes Cluster Gateway"
+      "description": "Local Kind Cluster Gateway"
     }
   ],
   "paths": {
-    "/healthz": {
-      "get": {
-        "summary": "Health Probe",
-        "description": "Returns operational health status of the API Gateway",
-        "responses": {
-          "200": {
-            "description": "Service is healthy",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": { "type": "string", "example": "ok" }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/graphql": {
-      "get": {
-        "summary": "GraphQL Playground & Schema Explorer",
-        "description": "Interactive GraphQL interface for graph traversal across all nodes in the datamodel tree",
-        "responses": {
-          "200": { "description": "GraphQL Playground HTML interface" }
-        }
-      },
-      "post": {
-        "summary": "GraphQL Data Model Query Endpoint",
-        "description": "Executes GraphQL queries against graph nodes in the Tanzu Nexus datamodel tree (Enterprise, Facility, Device, ProductType, CarbonPassport, etc.)",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "query": { "type": "string", "example": "{ carbonPassports { passport_id facility_id commodity_type total_footprint_kg } }" }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "GraphQL query result payload" }
-        }
-      }
-    },
-    "/api/v1/nexus/nodes/{node_type}": {
-      "get": {
-        "summary": "Automated Dynamic Graph Node Endpoint",
-        "description": "Auto-exposes REST collection data and graph metadata for any node type in the datamodel tree (e.g. enterprise, facility, device, production-batch, product-type, calculation-rulebook, carbon-passport, emission-snapshot, verification-record, compliance-artifact)",
-        "parameters": [
-          {
-            "name": "node_type",
-            "in": "path",
-            "required": true,
-            "description": "Tanzu Nexus graph node type name",
-            "schema": { "type": "string", "example": "facility" }
-          }
-        ],
-        "responses": {
-          "200": { "description": "Graph node list and hierarchy metadata" }
-        }
-      }
-    },
-    "/api/v1/nexus/enterprises": {
-      "get": {
-        "summary": "Auto-exposed Enterprise Graph Nodes",
-        "description": "REST endpoint for Enterprise root graph nodes",
-        "responses": { "200": { "description": "Enterprise nodes list" } }
-      }
-    },
-    "/api/v1/nexus/facilities": {
-      "get": {
-        "summary": "Auto-exposed Facility Graph Nodes",
-        "description": "REST endpoint for Facility graph nodes",
-        "responses": { "200": { "description": "Facility nodes list" } }
-      }
-    },
-    "/api/v1/nexus/devices": {
-      "get": {
-        "summary": "Auto-exposed Device Graph Nodes",
-        "description": "REST endpoint for Device telemetry nodes (e.g., Sattric+ Smart Meters)",
-        "responses": { "200": { "description": "Device nodes list" } }
-      }
-    },
-    "/api/v1/nexus/production-batches": {
-      "get": {
-        "summary": "Auto-exposed Production Batch Graph Nodes",
-        "description": "REST endpoint for Production Batch nodes",
-        "responses": { "200": { "description": "Production batch nodes list" } }
-      }
-    },
-    "/api/v1/nexus/product-types": {
-      "get": {
-        "summary": "Auto-exposed Product Type Graph Nodes",
-        "description": "REST endpoint for Product Type nodes (e.g., Cement, Steel)",
-        "responses": { "200": { "description": "Product type nodes list" } }
-      }
-    },
-    "/api/v1/nexus/calculation-rulebooks": {
-      "get": {
-        "summary": "Auto-exposed Calculation Rulebook Graph Nodes",
-        "description": "REST endpoint for CEL Calculation Rulebook nodes",
-        "responses": { "200": { "description": "Calculation rulebook nodes list" } }
-      }
-    },
-    "/api/v1/nexus/carbon-passports": {
-      "get": {
-        "summary": "Auto-exposed Carbon Passport Graph Nodes",
-        "description": "REST endpoint for Carbon Passport graph nodes",
-        "responses": { "200": { "description": "Carbon passport nodes list" } }
-      }
-    },
     "/api/v1/products": {
       "post": {
-        "summary": "Create Product CR",
-        "description": "Parses batch and activity JSON input, creates a Product custom resource in the Kubernetes cluster, and returns the created Product details. The ProductReconciler will asynchronously evaluate CEL formulas and create the child CarbonPassport CR.",
+        "summary": "Create Product",
+        "description": "Registers a new product batch with activity data telemetry, creating a Product Custom Resource in Kubernetes. The ProductReconciler will asynchronously evaluate formulas from the CalculationRulebook and issue a child CarbonPassport CR.",
         "requestBody": {
           "required": true,
           "content": {
@@ -188,11 +69,11 @@ const openAPISpecJSON = `{
                   "batch_id": { "type": "string", "example": "cement-batch-002" },
                   "product_name": { "type": "string", "example": "Structural Cement CEM I" },
                   "commodity_type": { "type": "string", "example": "Cement" },
-                  "activity_data_raw": { "type": "string", "example": "{\"fuel_liters\":500,\"electricity_kwh\":2000}" },
+                  "activity_data_raw": { "type": "string", "example": "{\"fuel_liters\":500,\"fuel_ef\":2.68,\"limestone_tons\":10,\"calcination_ef\":440,\"electricity_kwh\":2000,\"grid_ef\":0.85,\"renewable_ppa_kwh\":500,\"ppa_offset_ef\":0.85,\"raw_material_kg\":5000,\"material_ef\":0.12,\"freight_ton_km\":1000,\"transport_ef\":0.15}" },
                   "rulebook_ref": {
                     "type": "object",
                     "properties": {
-                      "name": { "type": "string", "example": "cbam-cement-v1" },
+                      "name": { "type": "string", "example": "cement-rulebook-2026" },
                       "namespace": { "type": "string", "example": "default" }
                     }
                   }
@@ -203,82 +84,91 @@ const openAPISpecJSON = `{
         },
         "responses": {
           "201": {
-            "description": "Product CR created successfully in Kubernetes cluster",
+            "description": "Product CR registered successfully in Kubernetes cluster",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ProductCreateResponse" }
               }
             }
           },
-          "400": { "description": "Invalid payload or missing mandatory fields (tenant_id, commodity_type)" },
-          "500": { "description": "Kubernetes CR creation failure" }
+          "400": { "description": "Invalid payload or missing mandatory fields" }
         }
       }
     },
-    "/api/v1/passports": {
+    "/api/v1/products/{name}": {
+      "get": {
+        "summary": "Get Product Status",
+        "description": "Retrieves the status of a registered Product Custom Resource including reconciliation phase, total calculated footprint, data hash, and child CarbonPassport reference.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "Name of the Product CR",
+            "schema": { "type": "string", "example": "product-batch-2026-09-b" }
+          },
+          {
+            "name": "namespace",
+            "in": "query",
+            "required": false,
+            "description": "Kubernetes namespace (defaults to 'default')",
+            "schema": { "type": "string", "example": "default" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Product CR details and reconciliation status" },
+          "404": { "description": "Product CR not found" }
+        }
+      }
+    },
+    "/api/v1/rules": {
       "post": {
-        "summary": "Create Product Carbon Passport",
-        "description": "Submits a new product with Scope 1, Scope 2, Scope 3 emission activity data. The API Gateway persists the passport to PostgreSQL with tenant Row-Level Security, computes SHA-256 proofs, caches in Redis, and triggers controller reconciliation.",
+        "summary": "Create Calculation Rulebook",
+        "description": "Creates a new CalculationRulebook Custom Resource in Kubernetes defining Scope 1-3 CEL formulas, functional unit, and batch quantity for a commodity type.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["tenant_id", "facility_id", "batch_number", "commodity_type"],
+                "required": ["commodity_type", "scope_1_formula"],
                 "properties": {
-                  "tenant_id": { "type": "string", "format": "uuid", "example": "123e4567-e89b-12d3-a456-426614174000" },
-                  "facility_id": { "type": "string", "example": "fac-rotterdam-01" },
-                  "batch_number": { "type": "string", "example": "cement-batch-002" },
+                  "name": { "type": "string", "example": "cement-rulebook-2026" },
+                  "namespace": { "type": "string", "example": "default" },
                   "commodity_type": { "type": "string", "example": "Cement" },
-                  "rulebook_version": { "type": "string", "example": "2026.1" },
-                  "scope_1_kg_co2e": { "type": "number", "example": 5740.0 },
-                  "scope_2_kg_co2e": { "type": "number", "example": 1275.0 },
-                  "scope_3_kg_co2e": { "type": "number", "example": 750.0 },
-                  "activity_data_raw": { "type": "string", "example": "{\"fuel_liters\":500,\"electricity_kwh\":2000}" }
+                  "version": { "type": "string", "example": "2026.1" },
+                  "scope_1_formula": { "type": "string", "example": "(fuel_liters * fuel_ef) + (limestone_tons * calcination_ef)" },
+                  "scope_2_formula": { "type": "string", "example": "(electricity_kwh * grid_ef) - (renewable_ppa_kwh * ppa_offset_ef)" },
+                  "scope_3_formula": { "type": "string", "example": "(raw_material_kg * material_ef) + (freight_ton_km * transport_ef)" },
+                  "functional_unit": { "type": "string", "example": "kg CO2e per metric ton" },
+                  "batch_quantity": { "type": "number", "example": 100.0 }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Product Carbon Passport created successfully",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CarbonPassport" }
-              }
-            }
-          },
-          "400": { "description": "Invalid payload or missing mandatory fields" },
-          "500": { "description": "Database persistence or calculation failure" }
+          "201": { "description": "CalculationRulebook CR created successfully" }
         }
       }
     },
     "/api/v1/passports/{passport_id}": {
       "get": {
-        "summary": "Verify Digital Carbon Passport",
-        "description": "Retrieves verified product Carbon Passport with Scope 1, Scope 2, Scope 3 footprint breakdowns, intensity per functional unit, and CBAM SHA-256 cryptographic proof hash. Enforces strict multi-tenant Row-Level Security (RLS).",
+        "summary": "Get Digital Carbon Passport",
+        "description": "Retrieves verified product Carbon Passport details with Scope 1-3 footprint breakdowns, intensity per unit, and SHA-256 cryptographic hash proofs from high-speed Redis edge cache or RLS PostgreSQL storage.",
         "parameters": [
           {
             "name": "passport_id",
             "in": "path",
             "required": true,
             "description": "UUID of the Carbon Passport",
-            "schema": { "type": "string", "format": "uuid", "example": "4806cae0-30f4-49e9-aaad-7a83b7cbf34b" }
+            "schema": { "type": "string", "format": "uuid", "example": "6a1152b4-1c15-41cb-a72f-7daba39bf4ed" }
           },
           {
             "name": "X-Tenant-ID",
             "in": "header",
             "required": false,
             "description": "Multi-tenant context isolation UUID",
-            "schema": { "type": "string", "format": "uuid", "example": "123e4567-e89b-12d3-a456-426614174000" }
-          },
-          {
-            "name": "tenant_id",
-            "in": "query",
-            "required": false,
-            "description": "Alternative tenant isolation parameter",
             "schema": { "type": "string", "format": "uuid", "example": "123e4567-e89b-12d3-a456-426614174000" }
           }
         ],
@@ -291,73 +181,7 @@ const openAPISpecJSON = `{
               }
             }
           },
-          "400": { "description": "Missing or invalid passport_id parameter" },
-          "401": { "description": "Unauthorized: Missing X-Tenant-ID context" },
-          "404": { "description": "Passport not found or tenant unauthorized" },
-          "503": { "description": "Database and Edge Cache unavailable" }
-        }
-      },
-      "put": {
-        "summary": "Update Product Carbon Passport",
-        "description": "Updates Scope 1, Scope 2, Scope 3 parameters for an existing Carbon Passport, recalculates cryptographic hash proofs, logs an append-only audit trail record in PostgreSQL, and updates edge Redis cache.",
-        "parameters": [
-          {
-            "name": "passport_id",
-            "in": "path",
-            "required": true,
-            "description": "UUID of the Carbon Passport to update",
-            "schema": { "type": "string", "format": "uuid", "example": "4806cae0-30f4-49e9-aaad-7a83b7cbf34b" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["tenant_id"],
-                "properties": {
-                  "tenant_id": { "type": "string", "format": "uuid", "example": "123e4567-e89b-12d3-a456-426614174000" },
-                  "facility_id": { "type": "string", "example": "fac-rotterdam-01" },
-                  "batch_number": { "type": "string", "example": "cement-batch-001" },
-                  "commodity_type": { "type": "string", "example": "Cement" },
-                  "scope_1_kg_co2e": { "type": "number", "example": 5800.0 },
-                  "scope_2_kg_co2e": { "type": "number", "example": 1200.0 },
-                  "scope_3_kg_co2e": { "type": "number", "example": 700.0 },
-                  "activity_data_raw": { "type": "string", "example": "{\"fuel_liters\":510,\"electricity_kwh\":1950}" }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Passport updated successfully and audit record logged",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/CarbonPassport" }
-              }
-            }
-          },
-          "400": { "description": "Invalid input parameter" },
-          "404": { "description": "Passport not found" },
-          "500": { "description": "Database update failure" }
-        }
-      }
-    },
-    "/api/v1/nexus/graph": {
-      "get": {
-        "summary": "Tanzu Nexus Graph Datamodel Spec",
-        "description": "Reflects the hierarchical Nexus Graph datamodel tree (Enterprise -> Facility -> Device/Batch -> ProductType -> CalculationRulebook -> CarbonPassport)",
-        "responses": {
-          "200": {
-            "description": "Nexus graph node hierarchy",
-            "content": {
-              "application/json": {
-                "schema": { "type": "object" }
-              }
-            }
-          }
+          "404": { "description": "Passport not found or tenant unauthorized" }
         }
       }
     }
@@ -367,7 +191,7 @@ const openAPISpecJSON = `{
       "ProductCreateResponse": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "example": "product-batch-001" },
+          "name": { "type": "string", "example": "product-batch-2026-09-b" },
           "namespace": { "type": "string", "example": "default" },
           "tenant_id": { "type": "string", "format": "uuid" },
           "facility_id": { "type": "string" },
@@ -384,7 +208,7 @@ const openAPISpecJSON = `{
           "passport_id": { "type": "string", "format": "uuid" },
           "tenant_id": { "type": "string", "format": "uuid" },
           "facility_id": { "type": "string", "example": "fac-rotterdam-01" },
-          "batch_number": { "type": "string", "example": "batch-2026-09-A" },
+          "batch_number": { "type": "string", "example": "batch-2026-09-B" },
           "commodity_type": { "type": "string", "example": "Cement" },
           "verification_status": { "type": "string", "example": "Calculated" },
           "scope_1_kg_co2e": { "type": "number", "example": 5740.0 },
@@ -392,8 +216,7 @@ const openAPISpecJSON = `{
           "scope_3_kg_co2e": { "type": "number", "example": 750.0 },
           "total_footprint_kg": { "type": "number", "example": 7765.0 },
           "intensity_per_unit": { "type": "number", "example": 77.65 },
-          "data_hash": { "type": "string", "example": "9c1b07962f969092b9835faa1897e07408e613a9e02997aa1dfc719a75589ca8" },
-          "issued_at": { "type": "string", "format": "date-time" }
+          "data_hash": { "type": "string", "example": "9c1b07962f969092b9835faa1897e07408e613a9e02997aa1dfc719a75589ca8" }
         }
       }
     }
@@ -582,8 +405,11 @@ func main() {
 	http.HandleFunc("/api/v1/nexus/verification-records", server.handleNexusNodeCollection("verification-record"))
 	http.HandleFunc("/api/v1/nexus/compliance-artifacts", server.handleNexusNodeCollection("compliance-artifact"))
 
-	// 6. Product CR creation endpoint (POST /api/v1/products)
+	// 6. Core 3-CRD REST Endpoints
 	http.HandleFunc("/api/v1/products", server.handleProducts)
+	http.HandleFunc("/api/v1/products/", server.handleProducts)
+	http.HandleFunc("/api/v1/rules", server.handleRules)
+	http.HandleFunc("/api/v1/rules/", server.handleRules)
 
 	// 7. Digital Carbon Passport REST CRUD & Verification API
 	http.HandleFunc("/api/v1/passports", server.handlePassports)
@@ -823,11 +649,11 @@ type ProductCreateResponse struct {
 	CreatedAt     string `json:"created_at"`
 }
 
-// handleProducts routes POST /api/v1/products to handleCreateProduct.
+// handleProducts routes POST and GET /api/v1/products.
 func (s *VerificationServer) handleProducts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", getEnv("ALLOWED_ORIGIN", "*"))
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Tenant-ID")
 
 	if r.Method == http.MethodOptions {
@@ -835,12 +661,17 @@ func (s *VerificationServer) handleProducts(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if r.Method != http.MethodPost {
-		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	if r.Method == http.MethodPost {
+		s.handleCreateProduct(w, r)
 		return
 	}
 
-	s.handleCreateProduct(w, r)
+	if r.Method == http.MethodGet {
+		s.handleGetProduct(w, r)
+		return
+	}
+
+	http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
 }
 
 // handleCreateProduct parses batch & activity JSON, creates a Product CR in Kubernetes,
@@ -951,6 +782,173 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// handleGetProduct fetches a Product CR from Kubernetes and returns its reconciliation status.
+func (s *VerificationServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/products/")
+	path = strings.TrimPrefix(path, "/api/v1/products")
+	name := strings.TrimSpace(path)
+	if name == "" {
+		name = r.URL.Query().Get("name")
+	}
+	if name == "" {
+		http.Error(w, `{"error":"product name is required in path or query"}`, http.StatusBadRequest)
+		return
+	}
+
+	namespace := r.URL.Query().Get("namespace")
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	if s.k8sClient == nil {
+		http.Error(w, `{"error":"kubernetes client unavailable"}`, http.StatusServiceUnavailable)
+		return
+	}
+
+	var productCR saurientv1alpha1.Product
+	err := s.k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &productCR)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			http.Error(w, `{"error":"product not found"}`, http.StatusNotFound)
+			return
+		}
+		http.Error(w, fmt.Sprintf(`{"error":"failed to get product: %v"}`, err), http.StatusInternalServerError)
+		return
+	}
+
+	resp := map[string]interface{}{
+		"name":               productCR.Name,
+		"namespace":          productCR.Namespace,
+		"tenant_id":          productCR.Spec.TenantID,
+		"facility_id":        productCR.Spec.FacilityID,
+		"batch_id":           productCR.Spec.BatchID,
+		"product_name":       productCR.Spec.ProductName,
+		"commodity_type":     productCR.Spec.CommodityType,
+		"rulebook_ref":       productCR.Spec.RulebookRef,
+		"phase":              productCR.Status.Phase,
+		"passport_id":        productCR.Status.PassportID,
+		"total_footprint_kg": productCR.Status.TotalFootprintKg,
+		"data_hash":          productCR.Status.DataHash,
+		"passport_ref":       productCR.Status.PassportRef,
+		"last_updated":       productCR.Status.LastUpdated,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// RuleRequest is the JSON payload for POST /api/v1/rules.
+type RuleRequest struct {
+	Name           string  `json:"name"`
+	Namespace      string  `json:"namespace"`
+	CommodityType  string  `json:"commodity_type"`
+	Version        string  `json:"version"`
+	Scope1Formula  string  `json:"scope_1_formula"`
+	Scope2Formula  string  `json:"scope_2_formula"`
+	Scope3Formula  string  `json:"scope_3_formula"`
+	FunctionalUnit string  `json:"functional_unit"`
+	BatchQuantity  float64 `json:"batch_quantity"`
+}
+
+// handleRules routes POST /api/v1/rules to handleCreateRule.
+func (s *VerificationServer) handleRules(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", getEnv("ALLOWED_ORIGIN", "*"))
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Tenant-ID")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	s.handleCreateRule(w, r)
+}
+
+// handleCreateRule parses rule JSON and creates a CalculationRulebook CR in Kubernetes.
+func (s *VerificationServer) handleCreateRule(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	rawBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, `{"error":"failed to read request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	var req RuleRequest
+	if err := json.Unmarshal(rawBytes, &req); err != nil {
+		http.Error(w, `{"error":"invalid JSON request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if req.CommodityType == "" {
+		http.Error(w, `{"error":"commodity_type is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	name := req.Name
+	if name == "" {
+		name = fmt.Sprintf("%s-rulebook-%s", strings.ToLower(req.CommodityType), time.Now().Format("20060102"))
+	} else {
+		name = strings.ToLower(name)
+	}
+
+	namespace := req.Namespace
+	if namespace == "" {
+		namespace = "default"
+	}
+	if req.Version == "" {
+		req.Version = "2026.1"
+	}
+
+	ruleCR := &saurientv1alpha1.CalculationRulebook{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "saurient.io/v1alpha1",
+			Kind:       "CalculationRulebook",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: saurientv1alpha1.CalculationRulebookSpec{
+			CommodityType:  req.CommodityType,
+			Version:        req.Version,
+			Scope1Formula:  req.Scope1Formula,
+			Scope2Formula:  req.Scope2Formula,
+			Scope3Formula:  req.Scope3Formula,
+			FunctionalUnit: req.FunctionalUnit,
+			BatchQuantity:  req.BatchQuantity,
+		},
+	}
+
+	if s.k8sClient != nil {
+		if createErr := s.k8sClient.Create(ctx, ruleCR); createErr != nil {
+			log.Printf("Failed to create CalculationRulebook CR %s: %v", name, createErr)
+			writeJSONError(w, fmt.Sprintf("failed to create CalculationRulebook CR: %v", createErr), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("CalculationRulebook CR created: %s/%s", namespace, name)
+	} else {
+		log.Printf("k8s client unavailable — CalculationRulebook CR %s/%s not persisted to cluster", namespace, name)
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"name":           name,
+		"namespace":      namespace,
+		"commodity_type": req.CommodityType,
+		"version":        req.Version,
+		"status":         "Created",
+		"created_at":     time.Now().UTC().Format(time.RFC3339),
+	})
 }
 
 // createProductCRFromPassport creates a Product CR in Kubernetes when a passport is submitted.

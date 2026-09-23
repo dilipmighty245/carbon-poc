@@ -20,11 +20,15 @@ func NewCELEngine() *CELEngine {
 
 // Evaluate compiles and executes the CEL rulebook formulas against activity data.
 func (e *CELEngine) Evaluate(ctx context.Context, rulebook CalculationRulebook, activityData map[string]interface{}) (*CalculationResult, error) {
+	// Recursively flatten nested activity data maps so leaf variables are accessible at top-level
+	flatVars := make(map[string]interface{})
+	flattenActivityData(activityData, flatVars)
+
 	// Normalize activity data numbers to float64 for consistent CEL evaluation
 	normalizedVars := make(map[string]interface{})
 	var envOpts []cel.EnvOption
 
-	for k, v := range activityData {
+	for k, v := range flatVars {
 		switch num := v.(type) {
 		case int:
 			val := float64(num)
@@ -163,4 +167,20 @@ func (e *CELEngine) computeCBAMHash(version string, vars map[string]interface{},
 
 	hash := sha256.Sum256(jsonBytes)
 	return hex.EncodeToString(hash[:]), nil
+}
+
+func flattenActivityData(input map[string]interface{}, flat map[string]interface{}) {
+	for k, v := range input {
+		flat[k] = v
+		switch val := v.(type) {
+		case map[string]interface{}:
+			flattenActivityData(val, flat)
+		case []interface{}:
+			for _, item := range val {
+				if itemMap, ok := item.(map[string]interface{}); ok {
+					flattenActivityData(itemMap, flat)
+				}
+			}
+		}
+	}
 }

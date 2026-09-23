@@ -1,0 +1,32 @@
+# Binaries and compiled output
+/bin/
+*.exe
+*.exe;
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go dependencies / vendoring
+/vendor/
+
+# IDE & Editor configuration
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.cursor/.DS_Store
+
+# Test / Coverage artifacts
+coverage.txt
+coverage.out
+profile.out
+
+# Local environment variables and secrets
+.env
+.env.local
+*.pem
+*.key

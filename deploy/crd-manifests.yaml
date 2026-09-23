@@ -167,6 +167,8 @@ spec:
               properties:
                 phase:
                   type: string
+                passportID:
+                  type: string
                 passportRef:
                   type: object
                   properties:

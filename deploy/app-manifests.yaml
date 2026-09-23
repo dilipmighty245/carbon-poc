@@ -4,6 +4,12 @@ metadata:
   name: saurient-controller-sa
   namespace: saurient-system
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: saurient-api-sa
+  namespace: saurient-system
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -23,6 +29,9 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: saurient-controller-sa
+    namespace: saurient-system
+  - kind: ServiceAccount
+    name: saurient-api-sa
     namespace: saurient-system
 roleRef:
   kind: ClusterRole
@@ -77,6 +86,7 @@ spec:
       labels:
         app: saurient-api
     spec:
+      serviceAccountName: saurient-api-sa
       containers:
         - name: api
           image: saurient-api:dev
@@ -125,6 +135,20 @@ spec:
   scope3Formula: "(raw_material_kg * material_ef) + (freight_ton_km * transport_ef)"
   functionalUnit: "kg CO2e per metric ton"
   batchQuantity: 100.0
+---
+apiVersion: saurient.io/v1alpha1
+kind: CalculationRulebook
+metadata:
+  name: cocoa-rulebook-2026
+  namespace: saurient-system
+spec:
+  commodityType: "Cocoa"
+  version: "2026.1"
+  scope1Formula: "fuel_consumed_liters * 2.68"
+  scope2Formula: "electricity_consumed_kwh * 0.45"
+  scope3Formula: "(quantity * 0.175) + (packaging_qty * 1.875) + (distance_km * 0.12)"
+  functionalUnit: "kg CO2e per kg"
+  batchQuantity: 1000.0
 ---
 apiVersion: saurient.io/v1alpha1
 kind: Product

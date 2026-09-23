@@ -206,8 +206,18 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		_ = r.RedisRepo.CachePassport(ctx, cacheKey, cachePayload, 24*time.Hour)
 	}
 
+	// Update child CarbonPassport status subresource
+	passportCR.Status.PassportID = passportModel.PassportID
+	passportCR.Status.Phase = "Calculated"
+	passportCR.Status.CryptographicHash = result.DataHash
+	passportCR.Status.LastUpdated = metav1.Now()
+	if err := r.Status().Update(ctx, &passportCR); err != nil {
+		logger.Error(err, "Failed to update CarbonPassport status", "name", passportCR.Name)
+	}
+
 	// Step h: Update Product.Status.
 	product.Status.Phase = "Calculated"
+	product.Status.PassportID = passportModel.PassportID
 	product.Status.PassportRef = saurientv1alpha1.LocalObjectReference{
 		Name:      passportCR.Name,
 		Namespace: passportCR.Namespace,

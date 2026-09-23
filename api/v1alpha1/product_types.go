@@ -26,6 +26,7 @@ type ProductSpec struct {
 type ProductStatus struct {
 	// Phase is one of Pending, Calculated, Failed.
 	Phase            string               `json:"phase,omitempty"`
+	PassportID       string               `json:"passportID,omitempty"`
 	PassportRef      LocalObjectReference `json:"passportRef,omitempty"`
 	TotalFootprintKg float64              `json:"totalFootprintKg,omitempty"`
 	DataHash         string               `json:"dataHash,omitempty"`

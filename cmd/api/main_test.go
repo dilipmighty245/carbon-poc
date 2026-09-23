@@ -141,14 +141,44 @@ func TestHandleCreateProduct_TenantIDFromHeader(t *testing.T) {
 	}
 }
 
-// TestHandleProducts_MethodNotAllowed expects 405 for GET on /api/v1/products.
+// TestHandleProducts_MethodNotAllowed expects 405 for unsupported method DELETE.
 func TestHandleProducts_MethodNotAllowed(t *testing.T) {
 	srv := newTestServer(t)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/products", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/products", nil)
 	rr := httptest.NewRecorder()
 	srv.handleProducts(rr, req)
 	if rr.Code != http.StatusMethodNotAllowed {
 		t.Errorf("expected 405, got %d", rr.Code)
+	}
+}
+
+// TestHandleGetProduct_MissingName expects 400 when product name is empty.
+func TestHandleGetProduct_MissingName(t *testing.T) {
+	srv := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/products/", nil)
+	rr := httptest.NewRecorder()
+	srv.handleGetProduct(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rr.Code)
+	}
+}
+
+// TestHandleCreateRule_ValidInput expects 201 for valid rulebook creation.
+func TestHandleCreateRule_ValidInput(t *testing.T) {
+	srv := newTestServer(t)
+	payload := map[string]interface{}{
+		"name":           "cement-rulebook-2026",
+		"commodity_type": "Cement",
+		"version":        "2026.1",
+		"scope_1_formula": "(fuel_liters * fuel_ef)",
+	}
+	b, _ := json.Marshal(payload)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/rules", bytes.NewBuffer(b))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.handleCreateRule(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Errorf("expected 201, got %d: %s", rr.Code, rr.Body.String())
 	}
 }
 
