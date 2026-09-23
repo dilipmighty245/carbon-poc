@@ -1,0 +1,192 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: carbonpassports.saurient.io
+spec:
+  group: saurient.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - tenantID
+                - facilityID
+                - batchID
+                - commodityType
+                - productRef
+                - dataHash
+              properties:
+                tenantID:
+                  type: string
+                facilityID:
+                  type: string
+                batchID:
+                  type: string
+                commodityType:
+                  type: string
+                productRef:
+                  type: string
+                dataHash:
+                  type: string
+                scope1KgCO2e:
+                  type: number
+                scope2KgCO2e:
+                  type: number
+                scope3KgCO2e:
+                  type: number
+                totalFootprintKg:
+                  type: number
+                calculationDetails:
+                  type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                passportID:
+                  type: string
+                cryptographicHash:
+                  type: string
+                issuedAt:
+                  type: string
+                  format: date-time
+                lastUpdated:
+                  type: string
+                  format: date-time
+      subresources:
+        status: {}
+  scope: Namespaced
+  names:
+    plural: carbonpassports
+    singular: carbonpassport
+    kind: CarbonPassport
+    shortNames:
+      - cp
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: calculationrulebooks.saurient.io
+spec:
+  group: saurient.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - commodityType
+                - version
+                - scope1Formula
+                - scope2Formula
+                - scope3Formula
+                - functionalUnit
+              properties:
+                commodityType:
+                  type: string
+                version:
+                  type: string
+                scope1Formula:
+                  type: string
+                scope2Formula:
+                  type: string
+                scope3Formula:
+                  type: string
+                functionalUnit:
+                  type: string
+                batchQuantity:
+                  type: number
+  scope: Namespaced
+  names:
+    plural: calculationrulebooks
+    singular: calculationrulebook
+    kind: CalculationRulebook
+    shortNames:
+      - crb
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: products.saurient.io
+spec:
+  group: saurient.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - tenantID
+                - facilityID
+                - batchID
+                - productName
+                - commodityType
+                - activityDataRaw
+                - rulebookRef
+              properties:
+                tenantID:
+                  type: string
+                facilityID:
+                  type: string
+                batchID:
+                  type: string
+                productName:
+                  type: string
+                commodityType:
+                  type: string
+                activityDataRaw:
+                  type: string
+                rulebookRef:
+                  type: object
+                  required:
+                    - name
+                    - namespace
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                passportRef:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                totalFootprintKg:
+                  type: number
+                dataHash:
+                  type: string
+                lastUpdated:
+                  type: string
+                  format: date-time
+      subresources:
+        status: {}
+  scope: Namespaced
+  names:
+    plural: products
+    singular: product
+    kind: Product
+    shortNames:
+      - prod
