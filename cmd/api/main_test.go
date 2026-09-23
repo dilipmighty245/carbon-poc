@@ -182,6 +182,87 @@ func TestHandleCreateRule_ValidInput(t *testing.T) {
 	}
 }
 
+// TestHandleCreateProduct_DetailedInput tests creating a product using rich batch_data, activity_data, and telemetry_context.
+func TestHandleCreateProduct_DetailedInput(t *testing.T) {
+	srv := newTestServer(t)
+	body := `{
+	  "tenant_id": "org_saurient_demo",
+	  "batch_data": {
+	    "product_name": "Cocoa Butter",
+	    "commodity": "Cocoa",
+	    "batch_id": "CB-2024-001",
+	    "production_date": "2024-03-12T00:00:00Z",
+	    "facility_name": "Tema Processing Plant",
+	    "facility_location": "Tema, Ghana",
+	    "batch_size_quantity": 1000,
+	    "unit_of_measure": "kg",
+	    "export_market": "European Union (EU)"
+	  },
+	  "activity_data": {
+	    "scope_1_direct": {
+	      "fuel_type": "Diesel",
+	      "fuel_consumed_liters": 32.7,
+	      "data_source": "Sattric_Fuel_Meter_01"
+	    },
+	    "scope_2_indirect": {
+	      "electricity_consumed_kwh": 125.4,
+	      "data_source": "Sattric_Energy_Meter_Main"
+	    },
+	    "scope_3_upstream": {
+	      "bill_of_materials": [
+	        {
+	          "material_name": "Raw Cocoa Beans",
+	          "supplier_name": "Asunafo Farmers Cooperative",
+	          "quantity": 1200,
+	          "unit": "kg"
+	        },
+	        {
+	          "material_name": "Water",
+	          "quantity": 500,
+	          "unit": "L"
+	        }
+	      ],
+	      "packaging": {
+	        "packaging_type": "Jute Bags",
+	        "quantity": 16,
+	        "capacity_per_unit": "60 kg"
+	      },
+	      "logistics": {
+	        "transport_mode": "Truck",
+	        "route_origin": "Asunafo",
+	        "route_destination": "Tema"
+	      }
+	    }
+	  },
+	  "telemetry_context": {
+	    "average_temperature_c": 28.3,
+	    "average_humidity_percent": 64
+	  }
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/products", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.handleCreateProduct(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", rr.Code, rr.Body.String())
+	}
+
+	var resp map[string]interface{}
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp["batch_id"] != "CB-2024-001" {
+		t.Errorf("expected batch_id CB-2024-001, got %v", resp["batch_id"])
+	}
+	if resp["commodity_type"] != "Cocoa" {
+		t.Errorf("expected commodity_type Cocoa, got %v", resp["commodity_type"])
+	}
+	if resp["product_name"] != "Cocoa Butter" {
+		t.Errorf("expected product_name Cocoa Butter, got %v", resp["product_name"])
+	}
+}
+
 // TestHandleGetPassport_MissingTenantID expects 401 when no tenant context is present.
 func TestHandleGetPassport_MissingTenantID(t *testing.T) {
 	srv := newTestServer(t)

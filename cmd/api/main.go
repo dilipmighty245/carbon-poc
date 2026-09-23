@@ -625,15 +625,31 @@ func (s *VerificationServer) serveNexusNodeData(w http.ResponseWriter, nodeType 
 	_ = json.NewEncoder(w).Encode(data)
 }
 
+// BatchData represents detailed batch metadata for products.
+type BatchData struct {
+	ProductName       string  `json:"product_name,omitempty"`
+	Commodity         string  `json:"commodity,omitempty"`
+	BatchID           string  `json:"batch_id,omitempty"`
+	ProductionDate    string  `json:"production_date,omitempty"`
+	FacilityName      string  `json:"facility_name,omitempty"`
+	FacilityLocation  string  `json:"facility_location,omitempty"`
+	BatchSizeQuantity float64 `json:"batch_size_quantity,omitempty"`
+	UnitOfMeasure     string  `json:"unit_of_measure,omitempty"`
+	ExportMarket      string  `json:"export_market,omitempty"`
+}
+
 // ProductRequest is the JSON payload for POST /api/v1/products.
 type ProductRequest struct {
-	TenantID        string            `json:"tenant_id"`
-	FacilityID      string            `json:"facility_id"`
-	BatchID         string            `json:"batch_id"`
-	ProductName     string            `json:"product_name"`
-	CommodityType   string            `json:"commodity_type"`
-	ActivityDataRaw string            `json:"activity_data_raw"`
-	RulebookRef     map[string]string `json:"rulebook_ref,omitempty"`
+	TenantID         string                 `json:"tenant_id,omitempty"`
+	FacilityID       string                 `json:"facility_id,omitempty"`
+	BatchID          string                 `json:"batch_id,omitempty"`
+	ProductName      string                 `json:"product_name,omitempty"`
+	CommodityType    string                 `json:"commodity_type,omitempty"`
+	ActivityDataRaw  string                 `json:"activity_data_raw,omitempty"`
+	RulebookRef      map[string]string      `json:"rulebook_ref,omitempty"`
+	BatchData        *BatchData             `json:"batch_data,omitempty"`
+	ActivityData     map[string]interface{} `json:"activity_data,omitempty"`
+	TelemetryContext map[string]interface{} `json:"telemetry_context,omitempty"`
 }
 
 // ProductCreateResponse is the JSON response for a successfully created Product CR.
@@ -700,6 +716,22 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Extract details from batch_data if supplied
+	if req.BatchData != nil {
+		if req.ProductName == "" {
+			req.ProductName = req.BatchData.ProductName
+		}
+		if req.CommodityType == "" {
+			req.CommodityType = req.BatchData.Commodity
+		}
+		if req.BatchID == "" {
+			req.BatchID = req.BatchData.BatchID
+		}
+		if req.FacilityID == "" {
+			req.FacilityID = req.BatchData.FacilityName
+		}
+	}
+
 	if req.CommodityType == "" {
 		http.Error(w, `{"error":"commodity_type is required"}`, http.StatusBadRequest)
 		return
@@ -708,6 +740,83 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 	// Generate batch_id if not provided
 	if req.BatchID == "" {
 		req.BatchID = "batch-" + uuid.New().String()[:8]
+	}
+
+	// Build combined activity map for CEL engine and rich output rendering
+	activityMap := make(map[string]interface{})
+	if req.ActivityDataRaw != "" && req.ActivityDataRaw != "{}" {
+		_ = json.Unmarshal([]byte(req.ActivityDataRaw), &activityMap)
+	}
+	if req.ActivityData != nil {
+		for k, v := range req.ActivityData {
+			activityMap[k] = v
+		}
+		activityMap["activity_data"] = req.ActivityData
+	}
+	if req.BatchData != nil {
+		bBytes, _ := json.Marshal(req.BatchData)
+		var bMap map[string]interface{}
+		_ = json.Unmarshal(bBytes, &bMap)
+		activityMap["batch_data"] = bMap
+	}
+	if req.TelemetryContext != nil {
+		activityMap["telemetry_context"] = req.TelemetryContext
+	}
+
+	// Helper alias mappings for standard CEL formula variables
+	if s3, ok := activityMap["scope_3_upstream"].(map[string]interface{}); ok {
+		if _, hasMat := activityMap["raw_material_kg"]; !hasMat {
+			if bom, ok := s3["bill_of_materials"].([]interface{}); ok {
+				var totalKg float64
+				for _, item := range bom {
+					if itemMap, ok := item.(map[string]interface{}); ok {
+						if qty, ok := itemMap["quantity"].(float64); ok {
+							totalKg += qty
+						}
+					}
+				}
+				if totalKg > 0 {
+					activityMap["raw_material_kg"] = totalKg
+				}
+			}
+		}
+		if _, hasPkg := activityMap["packaging_qty"]; !hasPkg {
+			if pkg, ok := s3["packaging"].(map[string]interface{}); ok {
+				if qty, ok := pkg["quantity"].(float64); ok && qty > 0 {
+					activityMap["packaging_qty"] = qty
+				}
+			}
+		}
+		if _, hasTrans := activityMap["transport_km"]; !hasTrans {
+			if log, ok := s3["logistics"].(map[string]interface{}); ok {
+				if dist, ok := log["distance_km"].(float64); ok && dist > 0 {
+					activityMap["transport_km"] = dist
+				} else {
+					activityMap["transport_km"] = 1000.0
+				}
+			}
+		}
+	}
+	if s1, ok := activityMap["scope_1_direct"].(map[string]interface{}); ok {
+		if liters, ok := s1["fuel_consumed_liters"].(float64); ok && liters > 0 {
+			if _, hasFuel := activityMap["fuel_consumed_liters"]; !hasFuel {
+				activityMap["fuel_consumed_liters"] = liters
+			}
+		}
+	}
+	if s2, ok := activityMap["scope_2_indirect"].(map[string]interface{}); ok {
+		if kwh, ok := s2["electricity_consumed_kwh"].(float64); ok && kwh > 0 {
+			if _, hasElec := activityMap["electricity_consumed_kwh"]; !hasElec {
+				activityMap["electricity_consumed_kwh"] = kwh
+			}
+		}
+	}
+
+	if len(activityMap) > 0 {
+		rawBytes, _ := json.Marshal(activityMap)
+		req.ActivityDataRaw = string(rawBytes)
+	} else if req.ActivityDataRaw == "" {
+		req.ActivityDataRaw = "{}"
 	}
 
 	// Compute resource name: lowercase, kubernetes-safe
@@ -1623,7 +1732,7 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 		}
 	}
 
-	richResp := buildRichPassportResponse(passportModel)
+	richResp := repository.BuildRichPassportResponse(passportModel)
 
 	if s.redisRepo != nil {
 		cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportModel.PassportID)
@@ -1725,7 +1834,7 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 		}
 	}
 
-	richResp := buildRichPassportResponse(passportModel)
+	richResp := repository.BuildRichPassportResponse(passportModel)
 
 	if s.redisRepo != nil {
 		cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportID)
@@ -1779,7 +1888,7 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	richResp := buildRichPassportResponse(passport)
+	richResp := repository.BuildRichPassportResponse(passport)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(richResp)

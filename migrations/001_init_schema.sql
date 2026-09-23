@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Create carbon_passports table
 CREATE TABLE IF NOT EXISTS carbon_passports (
     passport_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL,
+    tenant_id VARCHAR(255) NOT NULL,
     facility_id VARCHAR(255) NOT NULL,
     batch_number VARCHAR(255) NOT NULL,
     commodity_type VARCHAR(255) NOT NULL,
@@ -45,13 +45,13 @@ ALTER TABLE passport_audit_trail FORCE ROW LEVEL SECURITY;
 -- Tenant isolation RLS policies
 DROP POLICY IF EXISTS tenant_isolation_policy ON carbon_passports;
 CREATE POLICY tenant_isolation_policy ON carbon_passports
-    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid);
+    USING (tenant_id = NULLIF(current_setting('app.current_tenant', true), ''));
 
 DROP POLICY IF EXISTS tenant_isolation_audit_policy ON passport_audit_trail;
 CREATE POLICY tenant_isolation_audit_policy ON passport_audit_trail
     USING (passport_id IN (
         SELECT passport_id FROM carbon_passports
-        WHERE tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid
+        WHERE tenant_id = NULLIF(current_setting('app.current_tenant', true), '')
     ));
 
 -- Indexes for query performance

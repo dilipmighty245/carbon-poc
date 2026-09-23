@@ -82,7 +82,34 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	passportName := fmt.Sprintf("%s-passport", product.Name)
 	var passportCR saurientv1alpha1.CarbonPassport
 
-	calcDetailsJSON, _ := json.Marshal(result.VariableSnapshot)
+	// Combine activityData and CEL variable snapshot for full transparency
+	calcDetailsMap := make(map[string]interface{})
+	for k, v := range activityData {
+		calcDetailsMap[k] = v
+	}
+	for k, v := range result.VariableSnapshot {
+		if _, exists := calcDetailsMap[k]; !exists {
+			calcDetailsMap[k] = v
+		}
+	}
+	calcDetailsJSON, _ := json.Marshal(calcDetailsMap)
+
+	// Build rich passport response payload to embed in the CarbonPassport CR spec
+	tempModel := &repository.CarbonPassportModel{
+		TenantID:           product.Spec.TenantID,
+		FacilityID:         product.Spec.FacilityID,
+		BatchNumber:        product.Spec.BatchID,
+		CommodityType:      product.Spec.CommodityType,
+		VerificationStatus: "Calculated",
+		Scope1KgCO2e:       result.Scope1Kg,
+		Scope2KgCO2e:       result.Scope2Kg,
+		Scope3KgCO2e:       result.Scope3Kg,
+		TotalFootprintKg:   result.TotalFootprintKg,
+		CalculationDetails: calcDetailsJSON,
+		DataHash:           result.DataHash,
+	}
+	richPassportObj := repository.BuildRichPassportResponse(tempModel)
+	richPassportJSON, _ := json.Marshal(richPassportObj)
 
 	existing := r.Get(ctx, types.NamespacedName{Name: passportName, Namespace: product.Namespace}, &passportCR)
 	if existing != nil && client.IgnoreNotFound(existing) == nil {
@@ -104,6 +131,7 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				TotalFootprintKg:   result.TotalFootprintKg,
 				DataHash:           result.DataHash,
 				CalculationDetails: string(calcDetailsJSON),
+				PassportDataRaw:    string(richPassportJSON),
 			},
 		}
 
@@ -124,6 +152,7 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		passportCR.Spec.TotalFootprintKg = result.TotalFootprintKg
 		passportCR.Spec.DataHash = result.DataHash
 		passportCR.Spec.CalculationDetails = string(calcDetailsJSON)
+		passportCR.Spec.PassportDataRaw = string(richPassportJSON)
 		if err := r.Update(ctx, &passportCR); err != nil {
 			logger.Error(err, "Failed to update child CarbonPassport CR", "name", passportName)
 			return ctrl.Result{}, fmt.Errorf("update CarbonPassport: %w", err)
@@ -188,22 +217,9 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Step g: Cache in Redis using tenant_id:passport_id key.
 	if r.RedisRepo != nil {
-		cachePayload := map[string]interface{}{
-			"passport_id":         passportModel.PassportID,
-			"tenant_id":           product.Spec.TenantID,
-			"facility_id":         product.Spec.FacilityID,
-			"batch_number":        product.Spec.BatchID,
-			"commodity_type":      product.Spec.CommodityType,
-			"scope_1_kg_co2e":     result.Scope1Kg,
-			"scope_2_kg_co2e":     result.Scope2Kg,
-			"scope_3_kg_co2e":     result.Scope3Kg,
-			"total_footprint_kg":  result.TotalFootprintKg,
-			"intensity_per_unit":  result.IntensityPerUnit,
-			"data_hash":           result.DataHash,
-			"verification_status": "Calculated",
-		}
+		richResp := repository.BuildRichPassportResponse(passportModel)
 		cacheKey := fmt.Sprintf("%s:%s", product.Spec.TenantID, passportModel.PassportID)
-		_ = r.RedisRepo.CachePassport(ctx, cacheKey, cachePayload, 24*time.Hour)
+		_ = r.RedisRepo.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
 	}
 
 	// Update child CarbonPassport status subresource

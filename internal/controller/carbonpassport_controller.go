@@ -167,24 +167,20 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		passportModel.TotalFootprintKg = result.TotalFootprintKg
 	}
 
-	// Cache payload in Redis if Redis repo is configured using tenant-scoped key format
+	// Cache rich digital carbon passport in Redis using tenant-scoped key format
+	richResp := repository.BuildRichPassportResponse(passportModel)
+	richBytes, _ := json.Marshal(richResp)
+
 	if r.RedisRepo != nil {
-		cachePayload := map[string]interface{}{
-			"passport_id":         passportModel.PassportID,
-			"tenant_id":           passport.Spec.TenantID,
-			"facility_id":         passport.Spec.FacilityID,
-			"batch_number":        passport.Spec.BatchID,
-			"commodity_type":      passport.Spec.CommodityType,
-			"scope_1_kg_co2e":     result.Scope1Kg,
-			"scope_2_kg_co2e":     result.Scope2Kg,
-			"scope_3_kg_co2e":     result.Scope3Kg,
-			"total_footprint_kg":  result.TotalFootprintKg,
-			"intensity_per_unit":  result.IntensityPerUnit,
-			"data_hash":           result.DataHash,
-			"verification_status": "Calculated",
-		}
 		cacheKey := fmt.Sprintf("%s:%s", passport.Spec.TenantID, passportModel.PassportID)
-		_ = r.RedisRepo.CachePassport(ctx, cacheKey, cachePayload, 24*time.Hour)
+		_ = r.RedisRepo.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
+	}
+
+	if passport.Spec.PassportDataRaw != string(richBytes) {
+		passport.Spec.PassportDataRaw = string(richBytes)
+		if err := r.Update(ctx, &passport); err != nil {
+			logger.Error(err, "Failed to update CarbonPassport spec passportDataRaw", "name", passport.Name)
+		}
 	}
 
 	// Update CR Status

@@ -99,20 +99,48 @@ EOF
 
 ### 2.1 Option B: Create a Product via API Gateway (`curl`)
 
-Submit a new product batch directly through the REST API Gateway:
+Submit a new product batch with rich activity and telemetry details directly through the REST API Gateway:
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/products \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: 123e4567-e89b-12d3-a456-426614174000" \
   -d '{
-    "tenant_id": "123e4567-e89b-12d3-a456-426614174000",
-    "facility_id": "fac-rotterdam-01",
-    "batch_id": "batch-2026-09-B",
-    "product_name": "Portland Cement Grade 42.5",
-    "commodity_type": "Cement",
-    "activity_data_raw": "{\"fuel_liters\":500,\"fuel_ef\":2.68,\"limestone_tons\":10,\"calcination_ef\":440,\"electricity_kwh\":2000,\"grid_ef\":0.85,\"renewable_ppa_kwh\":500,\"ppa_offset_ef\":0.85,\"raw_material_kg\":5000,\"material_ef\":0.12,\"freight_ton_km\":1000,\"transport_ef\":0.15}"
-  }' | jq .
+  "tenant_id": "org_saurient_demo",
+  "batch_data": {
+    "product_name": "Cocoa Butter",
+    "commodity": "Cocoa",
+    "batch_id": "CB-2024-001",
+    "production_date": "2024-03-12T00:00:00Z",
+    "facility_name": "Tema Processing Plant",
+    "facility_location": "Tema, Ghana",
+    "batch_size_quantity": 1000,
+    "unit_of_measure": "kg",
+    "export_market": "European Union (EU)"
+  },
+  "activity_data": {
+    "scope_1_direct": {
+      "fuel_type": "Diesel",
+      "fuel_consumed_liters": 32.7,
+      "data_source": "Sattric_Fuel_Meter_01"
+    },
+    "scope_2_indirect": {
+      "electricity_consumed_kwh": 125.4,
+      "data_source": "Sattric_Energy_Meter_Main"
+    },
+    "scope_3_upstream": {
+      "bill_of_materials": [
+        { "material_name": "Raw Cocoa Beans", "supplier_name": "Asunafo Farmers Cooperative", "quantity": 1200, "unit": "kg" },
+        { "material_name": "Water", "quantity": 500, "unit": "L" }
+      ],
+      "packaging": { "packaging_type": "Jute Bags", "quantity": 16, "capacity_per_unit": "60 kg" },
+      "logistics": { "transport_mode": "Truck", "route_origin": "Asunafo", "route_destination": "Tema" }
+    }
+  },
+  "telemetry_context": {
+    "average_temperature_c": 28.3,
+    "average_humidity_percent": 64
+  }
+}'
 ```
 
 ---
@@ -151,30 +179,111 @@ status:
 
 ### 2.3 Query GET API Endpoint
 
-Extract the auto-assigned `passportID` from the child CR and fetch the passport details from the API Gateway:
+Fetch the calculated digital carbon passport details from the API Gateway using the assigned `passport_id`:
 
 ```bash
-PASSPORT_ID=$(kubectl get carbonpassport cement-product-001-passport -n default -o jsonpath='{.status.passportID}')
-
-curl -s -H "X-Tenant-ID: 123e4567-e89b-12d3-a456-426614174000" \
-  http://localhost:8080/api/v1/passports/${PASSPORT_ID} | jq .
+curl -s -H "X-Tenant-ID: org_saurient_demo" \
+  http://localhost:8080/api/v1/passports/aa3fd96b-46cc-46ae-89c4-ff4d6fe50c4b | jq .
 ```
 
 *Expected JSON Response*:
 ```json
 {
-  "passport_id": "...",
-  "tenant_id": "123e4567-e89b-12d3-a456-426614174000",
-  "facility_id": "fac-rotterdam-01",
-  "batch_number": "batch-2026-09-A",
-  "commodity_type": "Cement",
-  "scope_1_kg_co2e": 5740,
-  "scope_2_kg_co2e": 1275,
-  "scope_3_kg_co2e": 750,
-  "total_footprint_kg": 7765,
-  "intensity_per_unit": 77.65,
-  "data_hash": "9c1b07962f969092b9835faa1897e07408e613a9e02997aa1dfc719a75589ca8",
-  "verification_status": "Calculated"
+  "passport_metadata": {
+    "passport_id": "aa3fd96b-46cc-46ae-89c4-ff4d6fe50c4b",
+    "unique_qr_code": "https://verify.saurient.com/passport/aa3fd96b-46cc-46ae-89c4-ff4d6fe50c4b",
+    "cryptographic_hash": "e456452758969dd26ac73b23621353eb0a6e349c80030eba307ccabe34c3403e",
+    "issuance_date": "2026-09-23T16:57:04Z",
+    "status": "Calculated"
+  },
+  "product_summary": {
+    "commodity": "Cocoa",
+    "product_name": "Cocoa Butter",
+    "batch_number": "CB-2024-001",
+    "producer_organization": "org_saurient_demo",
+    "facility": {
+      "name": "Tema Processing Plant",
+      "location": "Tema, Ghana",
+      "country_of_origin": "Ghana"
+    },
+    "production_date": "2024-03-12",
+    "batch_size": {
+      "quantity": 1000,
+      "unit": "kg"
+    }
+  },
+  "carbon_footprint": {
+    "total_batch_footprint_kg_co2e": 591.57,
+    "intensity_per_unit": {
+      "value": 0.59,
+      "unit": "kg CO2e per kg"
+    },
+    "scope_breakdown": {
+      "scope_1_direct": {
+        "value_kg_co2e": 87.64,
+        "percentage": 14.81
+      },
+      "scope_2_indirect_energy": {
+        "value_kg_co2e": 56.43,
+        "percentage": 9.54
+      },
+      "scope_3_value_chain": {
+        "value_kg_co2e": 447.5,
+        "percentage": 75.65
+      }
+    },
+    "source_breakdown": {
+      "raw_materials": {
+        "value_kg_co2e": 297.5,
+        "percentage": 50.29
+      },
+      "electricity": {
+        "value_kg_co2e": 56.43,
+        "percentage": 9.54
+      },
+      "logistics_transport": {
+        "value_kg_co2e": 120,
+        "percentage": 20.29
+      },
+      "on_site_fuel": {
+        "value_kg_co2e": 87.64,
+        "percentage": 14.81
+      },
+      "packaging": {
+        "value_kg_co2e": 30,
+        "percentage": 5.07
+      }
+    }
+  },
+  "methodology_and_audit": {
+    "standard_aligned": "GHG Protocol (Product Life Cycle Accounting)",
+    "system_boundary": "Cradle-to-Gate",
+    "emission_factor_database": "DEFRA 2024 (Ghana-specific factors)",
+    "calculation_version": "v1.2.0",
+    "data_quality_score": {
+      "primary_data_percent": 70,
+      "secondary_data_percent": 30,
+      "overall_quality": "98%"
+    },
+    "verification_details": {
+      "verifier_name": "AMA Ghana Independent Verification",
+      "verification_date": "2026-09-23T16:57:04Z",
+      "verifier_comments": "Verified against electricity meter logs, fuel invoices, and logistics logs.",
+      "evidence_documents_attached": [
+        "Sattric_Fuel_Meter_01_log.pdf",
+        "Sattric_Energy_Meter_Main_log.pdf"
+      ]
+    }
+  },
+  "compliance_exports": {
+    "cbam_ready": true,
+    "target_export_market": "European Union (EU)",
+    "export_formats_available": [
+      "JSON",
+      "XML",
+      "PDF_Certificate"
+    ]
+  }
 }
 ```
 

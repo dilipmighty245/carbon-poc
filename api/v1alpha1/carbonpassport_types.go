@@ -18,6 +18,7 @@ type CarbonPassportSpec struct {
 	Scope3KgCO2e       float64 `json:"scope3KgCO2e"`
 	TotalFootprintKg   float64 `json:"totalFootprintKg"`
 	CalculationDetails string  `json:"calculationDetails"` // JSON snapshot
+	PassportDataRaw    string  `json:"passportDataRaw,omitempty"` // Full rich passport JSON
 }
 
 // CarbonPassportStatus describes the observed state of a CarbonPassport.
