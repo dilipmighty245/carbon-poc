@@ -150,7 +150,7 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	actionType := "Calculated"
 	if product.Status.PassportRef.Name != "" {
 		actionType = "Updated"
-		passportModel.PassportID = product.Status.DataHash // reuse if tracked externally
+		passportModel.PassportID = passportCR.Status.PassportID // actual passport UUID from child CR status
 	}
 
 	auditModel := &repository.PassportAuditTrailModel{

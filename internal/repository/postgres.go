@@ -91,8 +91,8 @@ func (r *PostgresRepository) SavePassportAndAudit(ctx context.Context, p *Carbon
 			INSERT INTO carbon_passports (
 				tenant_id, facility_id, batch_number, commodity_type,
 				verification_status, scope_1_kg_co2e, scope_2_kg_co2e, scope_3_kg_co2e,
-				calculation_details, issued_at, data_hash
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				total_footprint_kg, calculation_details, issued_at, data_hash
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 			RETURNING passport_id, total_footprint_kg;
 		`
 
@@ -112,6 +112,7 @@ func (r *PostgresRepository) SavePassportAndAudit(ctx context.Context, p *Carbon
 			p.Scope1KgCO2e,
 			p.Scope2KgCO2e,
 			p.Scope3KgCO2e,
+			p.TotalFootprintKg,
 			calcDetailsJSON,
 			time.Now().UTC(),
 			p.DataHash,
