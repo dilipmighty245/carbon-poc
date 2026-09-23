@@ -91,8 +91,8 @@ func (r *PostgresRepository) SavePassportAndAudit(ctx context.Context, p *Carbon
 			INSERT INTO carbon_passports (
 				tenant_id, facility_id, batch_number, commodity_type,
 				verification_status, scope_1_kg_co2e, scope_2_kg_co2e, scope_3_kg_co2e,
-				total_footprint_kg, calculation_details, issued_at, data_hash
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+				calculation_details, issued_at, data_hash
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 			RETURNING passport_id, total_footprint_kg;
 		`
 
@@ -112,7 +112,6 @@ func (r *PostgresRepository) SavePassportAndAudit(ctx context.Context, p *Carbon
 			p.Scope1KgCO2e,
 			p.Scope2KgCO2e,
 			p.Scope3KgCO2e,
-			p.TotalFootprintKg,
 			calcDetailsJSON,
 			time.Now().UTC(),
 			p.DataHash,
@@ -160,8 +159,8 @@ func (r *PostgresRepository) UpdatePassportAndAudit(ctx context.Context, p *Carb
 			UPDATE carbon_passports
 			SET facility_id = $1, batch_number = $2, commodity_type = $3,
 			    verification_status = $4, scope_1_kg_co2e = $5, scope_2_kg_co2e = $6, scope_3_kg_co2e = $7,
-			    total_footprint_kg = $8, calculation_details = $9, data_hash = $10
-			WHERE passport_id = $11 AND tenant_id = current_setting('app.current_tenant', true)::uuid
+			    calculation_details = $8, data_hash = $9
+			WHERE passport_id = $10 AND tenant_id = current_setting('app.current_tenant', true)::uuid
 			RETURNING total_footprint_kg;
 		`
 
@@ -180,7 +179,6 @@ func (r *PostgresRepository) UpdatePassportAndAudit(ctx context.Context, p *Carb
 			p.Scope1KgCO2e,
 			p.Scope2KgCO2e,
 			p.Scope3KgCO2e,
-			p.TotalFootprintKg,
 			calcDetailsJSON,
 			p.DataHash,
 			p.PassportID,
