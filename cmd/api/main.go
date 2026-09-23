@@ -12,6 +12,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -790,7 +791,7 @@ func (s *VerificationServer) serveNexusNodeData(w http.ResponseWriter, nodeType 
 
 	data, exists := nodeSchemas[normalizedType]
 	if !exists {
-		http.Error(w, fmt.Sprintf(`{"error":"unknown node type '%s'"}`, nodeType), http.StatusNotFound)
+		writeJSONError(w, "unknown node type '"+nodeType+"'", http.StatusNotFound)
 		return
 	}
 
@@ -879,7 +880,7 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 	}
 
 	// Compute resource name: lowercase, kubernetes-safe
-	resourceName := "product-" + strings.ToLower(strings.ReplaceAll(req.BatchID, "_", "-"))
+	resourceName := sanitiseK8sName(req.BatchID)
 
 	namespace := "default"
 	rulebookName := "default-rulebook"
@@ -927,7 +928,7 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 	if s.k8sClient != nil {
 		if createErr := s.k8sClient.Create(ctx, productCR); createErr != nil {
 			log.Printf("Failed to create Product CR %s: %v", resourceName, createErr)
-			http.Error(w, fmt.Sprintf(`{"error":"failed to create Product CR: %v"}`, createErr), http.StatusInternalServerError)
+			writeJSONError(w, fmt.Sprintf("failed to create Product CR: %v", createErr), http.StatusInternalServerError)
 			return
 		}
 		log.Printf("Product CR created: %s/%s", namespace, resourceName)
@@ -964,7 +965,7 @@ func (s *VerificationServer) createProductCRFromPassport(ctx context.Context, re
 		batchID = "batch-" + uuid.New().String()[:8]
 	}
 
-	resourceName := "product-" + strings.ToLower(strings.ReplaceAll(batchID, "_", "-"))
+	resourceName := sanitiseK8sName(batchID)
 	namespace := "default"
 
 	activityRaw := req.ActivityDataRaw
@@ -1200,7 +1201,7 @@ func buildRichPassportResponse(p *repository.CarbonPassportModel) RichDigitalCar
 
 	passportID := p.PassportID
 	if passportID == "" {
-		passportID = "pas_" + strings.ReplaceAll(uuid.New().String()[:8], "-", "")
+		passportID = "pas_" + uuid.New().String()
 	}
 
 	issuanceDate := p.IssuedAt.Format(time.RFC3339)
@@ -1583,7 +1584,7 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 	totalKg := req.Scope1KgCO2e + req.Scope2KgCO2e + req.Scope3KgCO2e
 
 	// Generate dynamic passport ID if not provided
-	passportID := "pas_" + strings.ReplaceAll(uuid.New().String()[:8], "-", "")
+	passportID := "pas_" + uuid.New().String()
 
 	dataStr := fmt.Sprintf("%s|%s|%s|%s|%.2f|%.2f|%.2f", req.TenantID, req.FacilityID, req.BatchNumber, req.CommodityType, req.Scope1KgCO2e, req.Scope2KgCO2e, req.Scope3KgCO2e)
 	hashBytes := sha256.Sum256([]byte(dataStr))
@@ -1760,7 +1761,7 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
 	passport, err := s.pgRepo.GetPassportByID(tenantCtx, passportID)
 	if err != nil || passport == nil {
-		http.Error(w, fmt.Sprintf(`{"error":"passport '%s' not found for tenant '%s'"}`, passportID, tenantID), http.StatusNotFound)
+		writeJSONError(w, fmt.Sprintf("passport '%s' not found for tenant '%s'", passportID, tenantID), http.StatusNotFound)
 		return
 	}
 
@@ -1775,4 +1776,31 @@ func getEnv(key, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+// sanitiseK8sName lowercases s, strips chars outside [a-z0-9-], collapses
+// consecutive hyphens, trims leading/trailing hyphens, and truncates to 55
+// chars before prepending the "product-" prefix (total ≤ 63 chars, the k8s limit).
+var (
+	reK8sInvalid  = regexp.MustCompile(`[^a-z0-9-]`)
+	reK8sCollapse = regexp.MustCompile(`-{2,}`)
+)
+
+func sanitiseK8sName(s string) string {
+	s = strings.ToLower(s)
+	s = reK8sInvalid.ReplaceAllString(s, "-")
+	s = reK8sCollapse.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	if len(s) > 55 {
+		s = s[:55]
+	}
+	return "product-" + s
+}
+
+// writeJSONError serialises msg via json.Marshal so that control characters,
+// quotes, and other special bytes in user-supplied or k8s-returned strings
+// cannot break the JSON envelope.
+func writeJSONError(w http.ResponseWriter, msg string, code int) {
+	b, _ := json.Marshal(map[string]string{"error": msg})
+	http.Error(w, string(b), code)
 }

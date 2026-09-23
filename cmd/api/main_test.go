@@ -29,6 +29,27 @@ func newTestServer(t *testing.T) *VerificationServer {
 	return &VerificationServer{k8sClient: fakeClient}
 }
 
+// TestSanitiseK8sName verifies the helper produces valid k8s resource names.
+func TestSanitiseK8sName(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{"batch-001", "product-batch-001"},
+		{"Batch_ABC 99", "product-batch-abc-99"},
+		{"UPPER__CASE", "product-upper-case"},
+		{"has--double--hyphens", "product-has-double-hyphens"},
+		// truncation: 56-char input → capped at 55 chars (last char dropped)
+		{"aaaaabbbbbcccccdddddeeeeefffff00000111112222233333444445", "product-aaaaabbbbbcccccdddddeeeeefffff0000011111222223333344444"},
+	}
+	for _, tc := range cases {
+		got := sanitiseK8sName(tc.input)
+		if got != tc.want {
+			t.Errorf("sanitiseK8sName(%q) = %q; want %q", tc.input, got, tc.want)
+		}
+	}
+}
+
 // TestHandleCreateProduct_InvalidJSON expects 400 for malformed JSON.
 func TestHandleCreateProduct_InvalidJSON(t *testing.T) {
 	srv := newTestServer(t)
