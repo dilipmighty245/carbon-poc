@@ -147,10 +147,15 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		DataHash:           result.DataHash,
 	}
 
+	// Determine action type and resolve the persisted passport UUID from the child CR status.
+	// On the update path, passportCR.Status.PassportID must be a non-empty UUID that was
+	// written back during the initial SavePassportAndAudit call; if it is missing (e.g. the
+	// status sub-resource has not propagated yet) fall back to a new Save to avoid calling
+	// UpdatePassportAndAudit with an empty primary key.
 	actionType := "Calculated"
-	if product.Status.PassportRef.Name != "" {
+	if product.Status.PassportRef.Name != "" && passportCR.Status.PassportID != "" {
 		actionType = "Updated"
-		passportModel.PassportID = passportCR.Status.PassportID // actual passport UUID from child CR status
+		passportModel.PassportID = passportCR.Status.PassportID
 	}
 
 	auditModel := &repository.PassportAuditTrailModel{

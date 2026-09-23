@@ -1619,7 +1619,10 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 
 	if s.pgRepo != nil {
 		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
-		_ = s.pgRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
+		if err := s.pgRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
+			http.Error(w, `{"error":"failed to persist passport to database"}`, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	richResp := buildRichPassportResponse(passportModel)
@@ -1678,9 +1681,19 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 
 	totalKg := req.Scope1KgCO2e + req.Scope2KgCO2e + req.Scope3KgCO2e
 
-	dataStr := fmt.Sprintf("%s|%s|%s|%s|%.2f|%.2f|%.2f|%s", passportID, req.TenantID, req.FacilityID, req.BatchNumber, req.Scope1KgCO2e, req.Scope2KgCO2e, req.Scope3KgCO2e, time.Now().String())
+	// Deterministic hash: same input fields always produce the same digest (no timestamp).
+	dataStr := fmt.Sprintf("%s|%s|%s|%s|%.2f|%.2f|%.2f", passportID, req.TenantID, req.FacilityID, req.BatchNumber, req.Scope1KgCO2e, req.Scope2KgCO2e, req.Scope3KgCO2e)
 	hashBytes := sha256.Sum256([]byte(dataStr))
 	dataHashStr := hex.EncodeToString(hashBytes[:])
+
+	// Fetch the previous DataHash from Postgres for the audit trail.
+	previousHash := ""
+	if s.pgRepo != nil {
+		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
+		if prev, err := s.pgRepo.GetPassportByID(tenantCtx, passportID); err == nil && prev != nil {
+			previousHash = prev.DataHash
+		}
+	}
 
 	passportModel := &repository.CarbonPassportModel{
 		PassportID:         passportID,
@@ -1701,14 +1714,17 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 	auditModel := &repository.PassportAuditTrailModel{
 		PassportID:    passportID,
 		ActionType:    "Updated",
-		PreviousHash:  "",
+		PreviousHash:  previousHash,
 		CurrentHash:   dataHashStr,
 		ChangePayload: rawBytes,
 	}
 
 	if s.pgRepo != nil {
 		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
-		_ = s.pgRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel)
+		if err := s.pgRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
+			http.Error(w, `{"error":"failed to update passport in database"}`, http.StatusInternalServerError)
+			return
+		}
 	}
 
 	richResp := buildRichPassportResponse(passportModel)

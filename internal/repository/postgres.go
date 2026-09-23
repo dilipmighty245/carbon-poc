@@ -160,8 +160,8 @@ func (r *PostgresRepository) UpdatePassportAndAudit(ctx context.Context, p *Carb
 			UPDATE carbon_passports
 			SET facility_id = $1, batch_number = $2, commodity_type = $3,
 			    verification_status = $4, scope_1_kg_co2e = $5, scope_2_kg_co2e = $6, scope_3_kg_co2e = $7,
-			    calculation_details = $8, data_hash = $9
-			WHERE passport_id = $10 AND tenant_id = current_setting('app.current_tenant', true)::uuid
+			    total_footprint_kg = $8, calculation_details = $9, data_hash = $10
+			WHERE passport_id = $11 AND tenant_id = current_setting('app.current_tenant', true)::uuid
 			RETURNING total_footprint_kg;
 		`
 
@@ -180,6 +180,7 @@ func (r *PostgresRepository) UpdatePassportAndAudit(ctx context.Context, p *Carb
 			p.Scope1KgCO2e,
 			p.Scope2KgCO2e,
 			p.Scope3KgCO2e,
+			p.TotalFootprintKg,
 			calcDetailsJSON,
 			p.DataHash,
 			p.PassportID,
