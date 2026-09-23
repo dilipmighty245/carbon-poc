@@ -1790,9 +1790,12 @@ func sanitiseK8sName(s string) string {
 	s = strings.ToLower(s)
 	s = reK8sInvalid.ReplaceAllString(s, "-")
 	s = reK8sCollapse.ReplaceAllString(s, "-")
-	s = strings.Trim(s, "-")
 	if len(s) > 55 {
 		s = s[:55]
+	}
+	s = strings.Trim(s, "-")
+	if s == "" {
+		return "product-default"
 	}
 	return "product-" + s
 }

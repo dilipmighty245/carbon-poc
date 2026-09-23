@@ -41,6 +41,10 @@ func TestSanitiseK8sName(t *testing.T) {
 		{"has--double--hyphens", "product-has-double-hyphens"},
 		// truncation: 56-char input → capped at 55 chars (last char dropped)
 		{"aaaaabbbbbcccccdddddeeeeefffff00000111112222233333444445", "product-aaaaabbbbbcccccdddddeeeeefffff0000011111222223333344444"},
+		// trailing hyphen after truncation: Trim must run AFTER truncate
+		{"aaaaabbbbbcccccdddddeeeeefffff0000011111222223333344444-x", "product-aaaaabbbbbcccccdddddeeeeefffff0000011111222223333344444"},
+		// all-invalid chars collapse to a single hyphen → Trim → empty → fallback
+		{"---", "product-default"},
 	}
 	for _, tc := range cases {
 		got := sanitiseK8sName(tc.input)
