@@ -18,7 +18,8 @@
 *.swo
 *~
 .DS_Store
-.cursor/.DS_Store
+.cursor/
+High-level Design Template.md
 
 # Test / Coverage artifacts
 coverage.txt
