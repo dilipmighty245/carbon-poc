@@ -23,11 +23,44 @@ An event-driven, graph-native enterprise microservice platform built with the **
 
 ## 🚀 Prerequisites
 
-Ensure the following CLI tools are installed on your host:
-- **Go** ($\ge 1.22$)
-- **Docker** & **Kind**
-- **kubectl**
-- **curl** & **jq**
+Before setting up the platform locally, ensure your host environment meets the following requirements:
+
+### 1. Required CLI Tools & Runtimes
+
+| Tool | Minimum Version | Installation / Description |
+| :--- | :--- | :--- |
+| **Go** | `v1.22+` | Required for building binaries and running unit/integration tests ([Download Go](https://go.dev/dl/)) |
+| **Docker Engine / Desktop** | `v24.0+` | Daemon must be running with at least **4 GB RAM** allocated ([Download Docker](https://www.docker.com/)) |
+| **Kind** (Kubernetes in Docker) | `v0.20.0+` | Creates local Kubernetes dev cluster (`saurient-dev`) ([Install Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)) |
+| **kubectl** | `v1.28+` | Kubernetes command-line tool ([Install kubectl](https://kubernetes.io/docs/tasks/tools/)) |
+| **GNU Make** | Standard | Executes automated build, setup, and teardown workflows (`make dev-setup`) |
+| **curl** & **jq** | Any recent | Required for running REST/GraphQL API verification scripts and formatting JSON output |
+
+---
+
+### 2. Network & Host Port Requirements
+
+The local `saurient-dev` Kind cluster maps host ports for external access. Ensure these host ports are **free and not bound** by other local applications:
+
+- **`8080`**: Saurient API Gateway (REST endpoints, Swagger UI, GraphQL Playground)
+- **`5432`**: PostgreSQL Database (Direct database access)
+
+> **Note**: If you have a local PostgreSQL daemon or web server running on ports `5432` or `8080`, stop them prior to executing `make dev-setup`:
+> ```bash
+> # Stop local Postgres service if active (macOS / Linux)
+> brew services stop postgresql  # macOS Homebrew
+> sudo systemctl stop postgresql # Linux systemd
+> ```
+
+---
+
+### 3. Verify Prerequisites
+
+To quickly verify that all required CLI tools are present in your `PATH`, run:
+
+```bash
+make check-prereqs
+```
 
 ---
 

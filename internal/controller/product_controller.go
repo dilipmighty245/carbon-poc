@@ -94,8 +94,9 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	calcDetailsJSON, _ := json.Marshal(calcDetailsMap)
 
-	// Build rich passport response payload to embed in the CarbonPassport CR spec
-	tempModel := &repository.CarbonPassportModel{
+	// Step f: Prepare passportModel & resolve PassportID early so that PassportID is consistent across
+	// Postgres, Redis, CR status, and spec.passportDataRaw.
+	passportModel := &repository.CarbonPassportModel{
 		TenantID:           product.Spec.TenantID,
 		FacilityID:         product.Spec.FacilityID,
 		BatchNumber:        product.Spec.BatchID,
@@ -108,10 +109,47 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		CalculationDetails: calcDetailsJSON,
 		DataHash:           result.DataHash,
 	}
-	richPassportObj := repository.BuildRichPassportResponse(tempModel)
-	richPassportJSON, _ := json.Marshal(richPassportObj)
 
 	existing := r.Get(ctx, types.NamespacedName{Name: passportName, Namespace: product.Namespace}, &passportCR)
+
+	actionType := "Calculated"
+	if product.Status.PassportRef.Name != "" && passportCR.Status.PassportID != "" {
+		actionType = "Updated"
+		passportModel.PassportID = passportCR.Status.PassportID
+	}
+
+	auditModel := &repository.PassportAuditTrailModel{
+		ActionType:    actionType,
+		PreviousHash:  product.Status.DataHash,
+		CurrentHash:   result.DataHash,
+		ChangePayload: calcDetailsJSON,
+	}
+
+	if r.PostgresRepo != nil {
+		if passportModel.PassportID == "" {
+			passportModel.PassportID = uuid.New().String()
+			auditModel.PassportID = passportModel.PassportID
+			if err := r.PostgresRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
+				logger.Error(err, "Failed to save passport to Postgres", "name", product.Name)
+				return ctrl.Result{}, fmt.Errorf("postgres persistence error: %w", err)
+			}
+		} else {
+			auditModel.PassportID = passportModel.PassportID
+			if err := r.PostgresRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
+				logger.Error(err, "Failed to update passport in Postgres", "name", product.Name)
+				return ctrl.Result{}, fmt.Errorf("postgres update error: %w", err)
+			}
+		}
+	} else {
+		if passportModel.PassportID == "" {
+			passportModel.PassportID = uuid.New().String()
+		}
+	}
+
+	// Build rich passport payload using the resolved PassportID
+	richPassportObj := repository.BuildRichPassportResponse(passportModel)
+	richPassportJSON, _ := json.Marshal(richPassportObj)
+
 	if existing != nil && client.IgnoreNotFound(existing) == nil {
 		// CarbonPassport does not exist yet — create it.
 		passportCR = saurientv1alpha1.CarbonPassport{
@@ -161,65 +199,10 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("get CarbonPassport: %w", existing)
 	}
 
-	// Step f: Persist to Postgres.
-	passportModel := &repository.CarbonPassportModel{
-		TenantID:           product.Spec.TenantID,
-		FacilityID:         product.Spec.FacilityID,
-		BatchNumber:        product.Spec.BatchID,
-		CommodityType:      product.Spec.CommodityType,
-		VerificationStatus: "Calculated",
-		Scope1KgCO2e:       result.Scope1Kg,
-		Scope2KgCO2e:       result.Scope2Kg,
-		Scope3KgCO2e:       result.Scope3Kg,
-		TotalFootprintKg:   result.TotalFootprintKg,
-		CalculationDetails: calcDetailsJSON,
-		DataHash:           result.DataHash,
-	}
-
-	// Determine action type and resolve the persisted passport UUID from the child CR status.
-	// On the update path, passportCR.Status.PassportID must be a non-empty UUID that was
-	// written back during the initial SavePassportAndAudit call; if it is missing (e.g. the
-	// status sub-resource has not propagated yet) fall back to a new Save to avoid calling
-	// UpdatePassportAndAudit with an empty primary key.
-	actionType := "Calculated"
-	if product.Status.PassportRef.Name != "" && passportCR.Status.PassportID != "" {
-		actionType = "Updated"
-		passportModel.PassportID = passportCR.Status.PassportID
-	}
-
-	auditModel := &repository.PassportAuditTrailModel{
-		ActionType:    actionType,
-		PreviousHash:  product.Status.DataHash,
-		CurrentHash:   result.DataHash,
-		ChangePayload: calcDetailsJSON,
-	}
-
-	if r.PostgresRepo != nil {
-		if passportModel.PassportID == "" {
-			passportModel.PassportID = uuid.New().String()
-			auditModel.PassportID = passportModel.PassportID
-			if err := r.PostgresRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
-				logger.Error(err, "Failed to save passport to Postgres", "name", product.Name)
-				return ctrl.Result{}, fmt.Errorf("postgres persistence error: %w", err)
-			}
-		} else {
-			auditModel.PassportID = passportModel.PassportID
-			if err := r.PostgresRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
-				logger.Error(err, "Failed to update passport in Postgres", "name", product.Name)
-				return ctrl.Result{}, fmt.Errorf("postgres update error: %w", err)
-			}
-		}
-	} else {
-		if passportModel.PassportID == "" {
-			passportModel.PassportID = uuid.New().String()
-		}
-	}
-
 	// Step g: Cache in Redis using tenant_id:passport_id key.
 	if r.RedisRepo != nil {
-		richResp := repository.BuildRichPassportResponse(passportModel)
 		cacheKey := fmt.Sprintf("%s:%s", product.Spec.TenantID, passportModel.PassportID)
-		_ = r.RedisRepo.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
+		_ = r.RedisRepo.CachePassport(ctx, cacheKey, richPassportObj, 24*time.Hour)
 	}
 
 	// Update child CarbonPassport status subresource
