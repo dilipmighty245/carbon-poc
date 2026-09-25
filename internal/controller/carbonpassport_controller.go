@@ -61,10 +61,23 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if err := r.List(ctx, &rulebookList, client.InNamespace(passport.Namespace)); err == nil {
 		for _, item := range rulebookList.Items {
 			if item.Spec.CommodityType == passport.Spec.CommodityType {
+				rulebook.AccountingMode = engine.AccountingMode(item.Spec.AccountingMode)
+				for _, rDef := range item.Spec.Rules {
+					rulebook.Rules = append(rulebook.Rules, engine.RuleDefinition{
+						ID:          rDef.ID,
+						Name:        rDef.Name,
+						Scope:       engine.RuleScope(rDef.Scope),
+						Mode:        engine.AccountingMode(rDef.Mode),
+						OutputType:  engine.RuleOutputType(rDef.OutputType),
+						Formula:     rDef.Formula,
+						Description: rDef.Description,
+					})
+				}
 				rulebook.Scope1Formula = item.Spec.Scope1Formula
 				rulebook.Scope2Formula = item.Spec.Scope2Formula
 				rulebook.Scope3Formula = item.Spec.Scope3Formula
 				rulebook.FunctionalUnit = item.Spec.FunctionalUnit
+				rulebook.Version = item.Spec.Version
 				if item.Spec.BatchQuantity > 0 {
 					rulebook.BatchQuantity = item.Spec.BatchQuantity
 				}
