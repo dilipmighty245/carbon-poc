@@ -951,15 +951,17 @@ func (s *VerificationServer) handleGetProduct(w http.ResponseWriter, r *http.Req
 
 // RuleRequest is the JSON payload for POST /api/v1/rules.
 type RuleRequest struct {
-	Name           string  `json:"name"`
-	Namespace      string  `json:"namespace"`
-	CommodityType  string  `json:"commodity_type"`
-	Version        string  `json:"version"`
-	Scope1Formula  string  `json:"scope_1_formula"`
-	Scope2Formula  string  `json:"scope_2_formula"`
-	Scope3Formula  string  `json:"scope_3_formula"`
-	FunctionalUnit string  `json:"functional_unit"`
-	BatchQuantity  float64 `json:"batch_quantity"`
+	Name           string                          `json:"name"`
+	Namespace      string                          `json:"namespace"`
+	CommodityType  string                          `json:"commodity_type"`
+	Version        string                          `json:"version"`
+	AccountingMode saurientv1alpha1.AccountingMode `json:"accounting_mode,omitempty"`
+	Rules          []saurientv1alpha1.RuleDefinition `json:"rules,omitempty"`
+	Scope1Formula  string                          `json:"scope_1_formula,omitempty"`
+	Scope2Formula  string                          `json:"scope_2_formula,omitempty"`
+	Scope3Formula  string                          `json:"scope_3_formula,omitempty"`
+	FunctionalUnit string                          `json:"functional_unit"`
+	BatchQuantity  float64                         `json:"batch_quantity,omitempty"`
 }
 
 // handleRules routes POST /api/v1/rules to handleCreateRule.
@@ -1030,6 +1032,8 @@ func (s *VerificationServer) handleCreateRule(w http.ResponseWriter, r *http.Req
 		Spec: saurientv1alpha1.CalculationRulebookSpec{
 			CommodityType:  req.CommodityType,
 			Version:        req.Version,
+			AccountingMode: req.AccountingMode,
+			Rules:          req.Rules,
 			Scope1Formula:  req.Scope1Formula,
 			Scope2Formula:  req.Scope2Formula,
 			Scope3Formula:  req.Scope3Formula,

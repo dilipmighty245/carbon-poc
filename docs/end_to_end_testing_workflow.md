@@ -1,6 +1,6 @@
-# End-to-End Testing Workflow Guide: DAG Rule Chaining, Accounting Modes, & Passport Retrieval
+# End-to-End Testing Workflow Guide: DAG Rule Chaining, Accounting Modes, & API Gateway Integration
 
-This document provides a step-by-step guide to testing the **Saurient Carbon Passport Platform** end-to-end on a local Kubernetes (Kind) cluster. It covers cluster creation, microservice deployment, custom rulebook definitions with DAG rule chaining and accounting modes, product telemetry ingestion, operator reconciliation, and API Gateway passport retrieval.
+This document provides a step-by-step guide to testing the **Saurient Carbon Passport Platform** end-to-end on a local Kubernetes (Kind) cluster. It covers cluster creation, microservice deployment, custom rulebook definitions with DAG rule chaining, product telemetry ingestion, operator reconciliation, and API Gateway HTTP REST & GraphQL interaction.
 
 ---
 
@@ -11,7 +11,14 @@ This document provides a step-by-step guide to testing the **Saurient Carbon Pas
 3. [Step 2: Define Calculation Rulebook with DAG Rules & Accounting Modes](#step-2-define-calculation-rulebook-with-dag-rules--accounting-modes)
 4. [Step 3: Register Product Batch with Activity Telemetry](#step-3-register-product-batch-with-activity-telemetry)
 5. [Step 4: Inspect Operator Reconciliation & CarbonPassport CR](#step-4-inspect-operator-reconciliation--carbonpassport-cr)
-6. [Step 5: Fetch Rich Digital Carbon Passport via API Gateway](#step-5-fetch-rich-digital-carbon-passport-via-api-gateway)
+6. [Step 5: API Gateway (API GW) HTTP REST & GraphQL Interaction](#step-5-api-gateway-api-gw-http-rest--graphql-interaction)
+   - [5.1 API Gateway Overview & Tenant Authentication](#51-api-gateway-overview--tenant-authentication)
+   - [5.2 Register Calculation Rulebook (`POST /api/v1/rules`)](#52-register-calculation-rulebook-post-apiv1rules)
+   - [5.3 Register Product Batch (`POST /api/v1/products`)](#53-register-product-batch-post-apiv1products)
+   - [5.4 Create Carbon Passport (`POST /api/v1/passports`)](#54-create-carbon-passport-post-apiv1passports)
+   - [5.5 Fetch Digital Carbon Passport (`GET /api/v1/passports/{id}`)](#55-fetch-digital-carbon-passport-get-apiv1passportsid)
+   - [5.6 GraphQL Query Interface (`POST /graphql`)](#56-graphql-query-interface-post-graphql)
+   - [5.7 Tanzu Nexus Graph Overview (`GET /api/v1/nexus/graph`)](#57-tanzu-nexus-graph-overview-get-apiv1nexusgraph)
 7. [Teardown & Cleanup](#teardown--cleanup)
 
 ---
@@ -214,10 +221,327 @@ kubectl get carbonpassport rice-product-001-passport -o yaml
 
 ---
 
-## Step 5: Fetch Rich Digital Carbon Passport via API Gateway
+## Step 5: API Gateway (API GW) HTTP REST & GraphQL Interaction
 
-Extract the generated `passportID` from `.status.passportID` and query the API Gateway REST endpoint (`GET /api/v1/passports/{passport_id}`):
+### 5.1 API Gateway Overview & Tenant Authentication
+The **API Gateway (`saurient-api`)** serves as the central entry point for REST, GraphQL, and Open API/Swagger interfaces on port `8080`.
 
+- **Base URL**: `http://localhost:8080`
+- **Mandatory Tenant Header**: All requests require `X-Tenant-ID: <tenant_id>` (e.g., `X-Tenant-ID: org_saurient_demo`). Missing headers result in `401 Unauthorized` or `400 Bad Request`.
+- **Prerequisite Dependency Flow**: In carbon accounting, **Calculation Rulebooks must always be registered before Product batches**. A `Product` batch references a `CalculationRulebook` by name; if the rulebook does not exist in the platform, the Kubernetes controller cannot evaluate activity data formulas during reconciliation.
+
+---
+
+### 5.2 Register Calculation Rulebook (`POST /api/v1/rules`)
+
+Deploys a custom calculation rulebook via HTTP API. This rulebook uses the **DAG Rule Chaining** engine (`rules` array with scopes, output types, formulas, and accounting modes).
+
+#### HTTP Request
+- **Method**: `POST`
+- **Endpoint**: `http://localhost:8080/api/v1/rules`
+- **Headers**:
+  - `Content-Type: application/json`
+  - `X-Tenant-ID: org_saurient_demo`
+
+#### HTTP Request Body:
+```json
+{
+  "name": "steel-rulebook-2026",
+  "namespace": "default",
+  "commodity_type": "Steel",
+  "version": "2026.1",
+  "accounting_mode": "pcf",
+  "functional_unit": "kg CO2e per ton",
+  "batch_quantity": 1000.0,
+  "rules": [
+    {
+      "id": "R01",
+      "name": "Coal Combustion",
+      "scope": "scope1",
+      "mode": "pcf",
+      "formula": "coal_tons * 2.42"
+    },
+    {
+      "id": "R02",
+      "name": "Natural Gas Direct",
+      "scope": "scope1",
+      "mode": "pcf",
+      "formula": "natural_gas_mmbtu * 0.053"
+    },
+    {
+      "id": "R03",
+      "name": "Grid Power",
+      "scope": "scope2",
+      "mode": "pcf",
+      "formula": "grid_kwh * 0.385"
+    },
+    {
+      "id": "R04",
+      "name": "Scrap Metal Upstream",
+      "scope": "scope3",
+      "mode": "pcf",
+      "formula": "scrap_metal_tons * 0.08"
+    },
+    {
+      "id": "R05",
+      "name": "Freight Logistics",
+      "scope": "scope3",
+      "mode": "pcf",
+      "formula": "transport_km * 0.12"
+    },
+    {
+      "id": "R06",
+      "name": "Total Footprint",
+      "scope": "intermediate",
+      "mode": "pcf",
+      "outputType": "total_footprint",
+      "formula": "R01 + R02 + R03 + R04 + R05"
+    }
+  ]
+}
+```
+
+#### Curl Command:
+```bash
+curl -i -X POST http://localhost:8080/api/v1/rules \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: org_saurient_demo" \
+  -d '{
+    "name": "steel-rulebook-2026",
+    "namespace": "default",
+    "commodity_type": "Steel",
+    "version": "2026.1",
+    "accounting_mode": "pcf",
+    "functional_unit": "kg CO2e per ton",
+    "batch_quantity": 1000.0,
+    "rules": [
+      {
+        "id": "R01",
+        "name": "Coal Combustion",
+        "scope": "scope1",
+        "mode": "pcf",
+        "formula": "coal_tons * 2.42"
+      },
+      {
+        "id": "R02",
+        "name": "Natural Gas Direct",
+        "scope": "scope1",
+        "mode": "pcf",
+        "formula": "natural_gas_mmbtu * 0.053"
+      },
+      {
+        "id": "R03",
+        "name": "Grid Power",
+        "scope": "scope2",
+        "mode": "pcf",
+        "formula": "grid_kwh * 0.385"
+      },
+      {
+        "id": "R04",
+        "name": "Scrap Metal Upstream",
+        "scope": "scope3",
+        "mode": "pcf",
+        "formula": "scrap_metal_tons * 0.08"
+      },
+      {
+        "id": "R05",
+        "name": "Freight Logistics",
+        "scope": "scope3",
+        "mode": "pcf",
+        "formula": "transport_km * 0.12"
+      },
+      {
+        "id": "R06",
+        "name": "Total Footprint",
+        "scope": "intermediate",
+        "mode": "pcf",
+        "outputType": "total_footprint",
+        "formula": "R01 + R02 + R03 + R04 + R05"
+      }
+    ]
+  }'
+```
+
+---
+
+### 5.3 Register Product Batch (`POST /api/v1/products`)
+
+Registers a new product batch with activity telemetry. The payload references the pre-existing `steel-rulebook-2026` registered in Step 5.2 (or `rice-rulebook-2026` from Step 2). This provisions a Kubernetes `Product` CR and triggers operator reconciliation.
+
+#### HTTP Request
+- **Method**: `POST`
+- **Endpoint**: `http://localhost:8080/api/v1/products`
+- **Headers**:
+  - `Content-Type: application/json`
+  - `X-Tenant-ID: org_saurient_demo`
+
+#### HTTP Request Body:
+```json
+{
+  "tenant_id": "org_saurient_demo",
+  "facility_id": "fac_rotterdam_01",
+  "batch_id": "steel-batch-2026-001",
+  "product_name": "Structural Steel Beams",
+  "commodity_type": "Steel",
+  "rulebook_ref": {
+    "name": "steel-rulebook-2026",
+    "namespace": "default"
+  },
+  "batch_data": {
+    "product_name": "Structural Steel Beams",
+    "commodity": "Steel",
+    "batch_id": "steel-batch-2026-001",
+    "facility_name": "fac_rotterdam_01",
+    "facility_location": "Rotterdam Industrial Zone",
+    "batch_size_quantity": 1000.0,
+    "unit_of_measure": "tons",
+    "export_market": "European Union"
+  },
+  "activity_data": {
+    "coal_tons": 500.0,
+    "natural_gas_mmbtu": 1200.0,
+    "grid_kwh": 15000.0,
+    "scrap_metal_tons": 800.0,
+    "transport_km": 450.0
+  }
+}
+```
+
+#### Curl Command:
+```bash
+curl -i -X POST http://localhost:8080/api/v1/products \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: org_saurient_demo" \
+  -d '{
+    "tenant_id": "org_saurient_demo",
+    "facility_id": "fac_rotterdam_01",
+    "batch_id": "steel-batch-2026-001",
+    "product_name": "Structural Steel Beams",
+    "commodity_type": "Steel",
+    "rulebook_ref": {
+      "name": "steel-rulebook-2026",
+      "namespace": "default"
+    },
+    "activity_data": {
+      "coal_tons": 500.0,
+      "natural_gas_mmbtu": 1200.0,
+      "grid_kwh": 15000.0,
+      "scrap_metal_tons": 800.0,
+      "transport_km": 450.0
+    }
+  }'
+```
+
+#### Expected HTTP Response (`201 Created`):
+```json
+{
+  "name": "product-steel-batch-2026-001",
+  "namespace": "default",
+  "tenant_id": "org_saurient_demo",
+  "facility_id": "fac_rotterdam_01",
+  "batch_id": "steel-batch-2026-001",
+  "product_name": "Structural Steel Beams",
+  "commodity_type": "Steel",
+  "status": "Created",
+  "created_at": "2026-09-25T07:12:00Z"
+}
+```
+
+---
+
+### 5.4 Create Carbon Passport (`POST /api/v1/passports`)
+
+Registers a raw activity dataset directly to create a Carbon Passport record in PostgreSQL and Redis.
+
+#### HTTP Request
+- **Method**: `POST`
+- **Endpoint**: `http://localhost:8080/api/v1/passports`
+- **Headers**:
+  - `Content-Type: application/json`
+  - `X-Tenant-ID: org_saurient_demo`
+
+#### HTTP Request Body:
+```json
+{
+  "tenant_id": "org_saurient_demo",
+  "facility_id": "fac_rotterdam_01",
+  "batch_number": "cement-batch-001",
+  "commodity_type": "Cement",
+  "batch_data": {
+    "product_name": "Structural Cement CEM I",
+    "commodity": "Cement",
+    "batch_id": "cement-batch-001",
+    "facility_name": "Rotterdam Cement Facility",
+    "facility_location": "Rotterdam, Netherlands",
+    "batch_size_quantity": 100.0,
+    "unit_of_measure": "tons",
+    "export_market": "European Union"
+  },
+  "activity_data": {
+    "scope_1_direct": {
+      "fuel_consumed_liters": 2500.0
+    },
+    "scope_2_indirect": {
+      "electricity_consumed_kwh": 5000.0
+    },
+    "scope_3_upstream": {
+      "packaging": {
+        "quantity": 100.0
+      }
+    }
+  }
+}
+```
+
+#### Curl Command:
+```bash
+curl -i -X POST http://localhost:8080/api/v1/passports \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: org_saurient_demo" \
+  -d '{
+    "tenant_id": "org_saurient_demo",
+    "facility_id": "fac_rotterdam_01",
+    "batch_number": "cement-batch-001",
+    "commodity_type": "Cement",
+    "batch_data": {
+      "product_name": "Structural Cement CEM I",
+      "commodity": "Cement",
+      "batch_id": "cement-batch-001",
+      "facility_name": "Rotterdam Cement Facility",
+      "facility_location": "Rotterdam, Netherlands",
+      "batch_size_quantity": 100.0,
+      "unit_of_measure": "tons",
+      "export_market": "European Union"
+    },
+    "activity_data": {
+      "scope_1_direct": {
+        "fuel_consumed_liters": 2500.0
+      },
+      "scope_2_indirect": {
+        "electricity_consumed_kwh": 5000.0
+      },
+      "scope_3_upstream": {
+        "packaging": {
+          "quantity": 100.0
+        }
+      }
+    }
+  }'
+```
+
+---
+
+### 5.5 Fetch Digital Carbon Passport (`GET /api/v1/passports/{id}`)
+
+Query the API Gateway REST endpoint (`GET /api/v1/passports/{passport_id}`) to retrieve the rich passport payload.
+
+#### HTTP Request
+- **Method**: `GET`
+- **Endpoint**: `http://localhost:8080/api/v1/passports/${PASSPORT_ID}`
+- **Headers**:
+  - `X-Tenant-ID: org_saurient_demo`
+
+#### Curl Command:
 ```bash
 PASSPORT_ID=$(kubectl get carbonpassport rice-product-001-passport -o jsonpath='{.status.passportID}')
 
@@ -225,7 +549,7 @@ curl -s -H "X-Tenant-ID: org_saurient_demo" \
   http://localhost:8080/api/v1/passports/${PASSPORT_ID} | jq .
 ```
 
-### Sample JSON Response:
+#### Sample JSON Response:
 ```json
 {
   "passport_metadata": {
@@ -270,42 +594,82 @@ curl -s -H "X-Tenant-ID: org_saurient_demo" \
         "value_kg_co2e": 100,
         "percentage": 9.09
       }
-    },
-    "source_breakdown": {
-      "raw_materials": { "value_kg_co2e": 53, "percentage": 4.82 },
-      "electricity": { "value_kg_co2e": 300, "percentage": 27.27 },
-      "logistics_transport": { "value_kg_co2e": 30, "percentage": 2.73 },
-      "on_site_fuel": { "value_kg_co2e": 700, "percentage": 63.64 },
-      "packaging": { "value_kg_co2e": 17, "percentage": 1.55 }
     }
-  },
-  "methodology_and_audit": {
-    "standard_aligned": "GHG Protocol (Product Life Cycle Accounting)",
-    "system_boundary": "Cradle-to-Gate",
-    "emission_factor_database": "DEFRA 2024 (Ghana-specific factors)",
-    "calculation_version": "v1.2.0",
-    "data_quality_score": {
-      "primary_data_percent": 70,
-      "secondary_data_percent": 30,
-      "overall_quality": "98%"
-    },
-    "verification_details": {
-      "verifier_name": "AMA Ghana Independent Verification",
-      "verification_date": "2026-09-25T06:20:29Z",
-      "verifier_comments": "Verified against electricity meter logs, fuel invoices, and logistics logs.",
-      "evidence_documents_attached": [
-        "ECG_Bill_Jan2024.pdf",
-        "Diesel_Invoice_0456.pdf",
-        "Limestone_Supplier_Doc.pdf",
-        "Transport_Logistics.pdf"
-      ]
-    }
-  },
-  "compliance_exports": {
-    "cbam_ready": true,
-    "target_export_market": "European Union (EU)",
-    "export_formats_available": [ "JSON", "XML", "PDF_Certificate" ]
   }
+}
+```
+
+---
+
+### 5.6 GraphQL Query Interface (`POST /graphql`)
+
+The API Gateway supports GraphQL queries for fetching passports, facilities, and enterprise topologies.
+
+#### HTTP Request
+- **Method**: `POST`
+- **Endpoint**: `http://localhost:8080/graphql`
+- **Headers**:
+  - `Content-Type: application/json`
+  - `X-Tenant-ID: org_saurient_demo`
+
+#### HTTP Request Body:
+```json
+{
+  "query": "{ carbonPassports { passport_id tenant_id facility_id commodity_type total_footprint_kg intensity_per_unit verification_status } }"
+}
+```
+
+#### Curl Command:
+```bash
+curl -s -X POST http://localhost:8080/graphql \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: org_saurient_demo" \
+  -d '{"query": "{ carbonPassports { passport_id tenant_id facility_id commodity_type total_footprint_kg intensity_per_unit verification_status } }"}' | jq .
+```
+
+#### Expected GraphQL Response:
+```json
+{
+  "data": {
+    "carbonPassports": [
+      {
+        "passport_id": "4806cae0-30f4-49e9-aaad-7a83b7cbf34b",
+        "tenant_id": "org_saurient_demo",
+        "facility_id": "fac-rotterdam-01",
+        "commodity_type": "Cement",
+        "total_footprint_kg": 7765,
+        "intensity_per_unit": 77.65,
+        "verification_status": "Calculated"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 5.7 Tanzu Nexus Graph Overview (`GET /api/v1/nexus/graph`)
+
+Retrieve the platform's Nexus Graph node count and entity counts.
+
+#### Curl Command:
+```bash
+curl -s -H "X-Tenant-ID: org_saurient_demo" \
+  http://localhost:8080/api/v1/nexus/graph | jq .
+```
+
+#### Expected JSON Response:
+```json
+{
+  "graph_overview": {
+    "node_count": 10
+  },
+  "enterprises": [
+    { "id": "ent-saurient-global", "name": "Saurient Industrial Group" }
+  ],
+  "facilities": [
+    { "id": "fac-rotterdam-01", "name": "Rotterdam Cement Plant", "enterprise_id": "ent-saurient-global" }
+  ]
 }
 ```
 
