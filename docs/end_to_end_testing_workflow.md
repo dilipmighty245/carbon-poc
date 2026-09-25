@@ -234,7 +234,7 @@ The **API Gateway (`saurient-api`)** serves as the central entry point for REST,
 
 ### 5.2 Register Calculation Rulebook (`POST /api/v1/rules`)
 
-Deploys a custom calculation rulebook via HTTP API. This rulebook uses the **DAG Rule Chaining** engine (`rules` array with scopes, output types, formulas, and accounting modes).
+Deploys a custom calculation rulebook via HTTP API. This example uses real-world industrial data from the **International Aluminium Institute (IAI)** for **Primary Aluminium Ingot Production** ($R01 \dots R06 \rightarrow R07 \rightarrow R08$).
 
 #### HTTP Request
 - **Method**: `POST`
@@ -246,56 +246,71 @@ Deploys a custom calculation rulebook via HTTP API. This rulebook uses the **DAG
 #### HTTP Request Body:
 ```json
 {
-  "name": "steel-rulebook-2026",
+  "name": "aluminium-rulebook-iai-2026",
   "namespace": "default",
-  "commodity_type": "Steel",
+  "commodity_type": "Aluminium",
   "version": "2026.1",
   "accounting_mode": "pcf",
-  "functional_unit": "kg CO2e per ton",
-  "batch_quantity": 1000.0,
+  "functional_unit": "kg CO2e per kg Aluminium Ingot",
+  "batch_quantity": 5000.0,
   "rules": [
     {
       "id": "R01",
-      "name": "Coal Combustion",
+      "name": "Anode Consumption & Process PFCs",
       "scope": "scope1",
       "mode": "pcf",
-      "formula": "coal_tons * 2.42"
+      "formula": "anode_consumed_kg * 1.8"
     },
     {
       "id": "R02",
-      "name": "Natural Gas Direct",
+      "name": "Casting & Holding Furnaces",
       "scope": "scope1",
       "mode": "pcf",
-      "formula": "natural_gas_mmbtu * 0.053"
+      "formula": "natural_gas_m3 * 2.1"
     },
     {
       "id": "R03",
-      "name": "Grid Power",
+      "name": "Hall-Heroult Electrolysis Power",
       "scope": "scope2",
       "mode": "pcf",
-      "formula": "grid_kwh * 0.385"
+      "formula": "smelting_electricity_kwh * grid_carbon_intensity"
     },
     {
       "id": "R04",
-      "name": "Scrap Metal Upstream",
+      "name": "Bauxite Mining Upstream",
       "scope": "scope3",
       "mode": "pcf",
-      "formula": "scrap_metal_tons * 0.08"
+      "formula": "bauxite_mined_tons * 38.5"
     },
     {
       "id": "R05",
-      "name": "Freight Logistics",
+      "name": "Bayer Alumina Refining",
       "scope": "scope3",
       "mode": "pcf",
-      "formula": "transport_km * 0.12"
+      "formula": "alumina_refined_tons * 800.0"
     },
     {
       "id": "R06",
-      "name": "Total Footprint",
+      "name": "Transoceanic Freight Logistics",
+      "scope": "scope3",
+      "mode": "pcf",
+      "formula": "freight_ton_km * 0.08"
+    },
+    {
+      "id": "R07",
+      "name": "Total Cradle-to-Gate Footprint",
       "scope": "intermediate",
       "mode": "pcf",
       "outputType": "total_footprint",
-      "formula": "R01 + R02 + R03 + R04 + R05"
+      "formula": "R01 + R02 + R03 + R04 + R05 + R06"
+    },
+    {
+      "id": "R08",
+      "name": "Carbon Intensity per Kg Al",
+      "scope": "intermediate",
+      "mode": "pcf",
+      "outputType": "intensity",
+      "formula": "R07 / batch_quantity_kg"
     }
   ]
 }
@@ -307,56 +322,71 @@ curl -i -X POST http://localhost:8080/api/v1/rules \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: org_saurient_demo" \
   -d '{
-    "name": "steel-rulebook-2026",
+    "name": "aluminium-rulebook-iai-2026",
     "namespace": "default",
-    "commodity_type": "Steel",
+    "commodity_type": "Aluminium",
     "version": "2026.1",
     "accounting_mode": "pcf",
-    "functional_unit": "kg CO2e per ton",
-    "batch_quantity": 1000.0,
+    "functional_unit": "kg CO2e per kg Aluminium Ingot",
+    "batch_quantity": 5000.0,
     "rules": [
       {
         "id": "R01",
-        "name": "Coal Combustion",
+        "name": "Anode Consumption & Process PFCs",
         "scope": "scope1",
         "mode": "pcf",
-        "formula": "coal_tons * 2.42"
+        "formula": "anode_consumed_kg * 1.8"
       },
       {
         "id": "R02",
-        "name": "Natural Gas Direct",
+        "name": "Casting & Holding Furnaces",
         "scope": "scope1",
         "mode": "pcf",
-        "formula": "natural_gas_mmbtu * 0.053"
+        "formula": "natural_gas_m3 * 2.1"
       },
       {
         "id": "R03",
-        "name": "Grid Power",
+        "name": "Hall-Heroult Electrolysis Power",
         "scope": "scope2",
         "mode": "pcf",
-        "formula": "grid_kwh * 0.385"
+        "formula": "smelting_electricity_kwh * grid_carbon_intensity"
       },
       {
         "id": "R04",
-        "name": "Scrap Metal Upstream",
+        "name": "Bauxite Mining Upstream",
         "scope": "scope3",
         "mode": "pcf",
-        "formula": "scrap_metal_tons * 0.08"
+        "formula": "bauxite_mined_tons * 38.5"
       },
       {
         "id": "R05",
-        "name": "Freight Logistics",
+        "name": "Bayer Alumina Refining",
         "scope": "scope3",
         "mode": "pcf",
-        "formula": "transport_km * 0.12"
+        "formula": "alumina_refined_tons * 800.0"
       },
       {
         "id": "R06",
-        "name": "Total Footprint",
+        "name": "Transoceanic Freight Logistics",
+        "scope": "scope3",
+        "mode": "pcf",
+        "formula": "freight_ton_km * 0.08"
+      },
+      {
+        "id": "R07",
+        "name": "Total Cradle-to-Gate Footprint",
         "scope": "intermediate",
         "mode": "pcf",
         "outputType": "total_footprint",
-        "formula": "R01 + R02 + R03 + R04 + R05"
+        "formula": "R01 + R02 + R03 + R04 + R05 + R06"
+      },
+      {
+        "id": "R08",
+        "name": "Carbon Intensity per Kg Al",
+        "scope": "intermediate",
+        "mode": "pcf",
+        "outputType": "intensity",
+        "formula": "R07 / batch_quantity_kg"
       }
     ]
   }'
@@ -366,7 +396,7 @@ curl -i -X POST http://localhost:8080/api/v1/rules \
 
 ### 5.3 Register Product Batch (`POST /api/v1/products`)
 
-Registers a new product batch with activity telemetry. The payload references the pre-existing `steel-rulebook-2026` registered in Step 5.2 (or `rice-rulebook-2026` from Step 2). This provisions a Kubernetes `Product` CR and triggers operator reconciliation.
+Registers a new primary aluminium batch with activity telemetry. The payload references `aluminium-rulebook-iai-2026` registered in Step 5.2.
 
 #### HTTP Request
 - **Method**: `POST`
@@ -379,30 +409,33 @@ Registers a new product batch with activity telemetry. The payload references th
 ```json
 {
   "tenant_id": "org_saurient_demo",
-  "facility_id": "fac_rotterdam_01",
-  "batch_id": "steel-batch-2026-001",
-  "product_name": "Structural Steel Beams",
-  "commodity_type": "Steel",
+  "facility_id": "fac_nordic_smelter_01",
+  "batch_id": "aluminum-batch-iai-2026-001",
+  "product_name": "Hydro-Powered Low-Carbon Primary Aluminium Ingot",
+  "commodity_type": "Aluminium",
   "rulebook_ref": {
-    "name": "steel-rulebook-2026",
+    "name": "aluminium-rulebook-iai-2026",
     "namespace": "default"
   },
   "batch_data": {
-    "product_name": "Structural Steel Beams",
-    "commodity": "Steel",
-    "batch_id": "steel-batch-2026-001",
-    "facility_name": "fac_rotterdam_01",
-    "facility_location": "Rotterdam Industrial Zone",
-    "batch_size_quantity": 1000.0,
-    "unit_of_measure": "tons",
+    "product_name": "Hydro-Powered Low-Carbon Primary Aluminium Ingot",
+    "commodity": "Aluminium",
+    "batch_id": "aluminum-batch-iai-2026-001",
+    "facility_name": "fac_nordic_smelter_01",
+    "facility_location": "Sunndalsøra Hydro Smelter, Norway",
+    "batch_size_quantity": 5000.0,
+    "unit_of_measure": "kg",
     "export_market": "European Union"
   },
   "activity_data": {
-    "coal_tons": 500.0,
-    "natural_gas_mmbtu": 1200.0,
-    "grid_kwh": 15000.0,
-    "scrap_metal_tons": 800.0,
-    "transport_km": 450.0
+    "batch_quantity_kg": 5000.0,
+    "anode_consumed_kg": 2250.0,
+    "natural_gas_m3": 800.0,
+    "smelting_electricity_kwh": 70000.0,
+    "grid_carbon_intensity": 0.15,
+    "bauxite_mined_tons": 20.0,
+    "alumina_refined_tons": 10.0,
+    "freight_ton_km": 15000.0
   }
 }
 ```
@@ -414,20 +447,33 @@ curl -i -X POST http://localhost:8080/api/v1/products \
   -H "X-Tenant-ID: org_saurient_demo" \
   -d '{
     "tenant_id": "org_saurient_demo",
-    "facility_id": "fac_rotterdam_01",
-    "batch_id": "steel-batch-2026-001",
-    "product_name": "Structural Steel Beams",
-    "commodity_type": "Steel",
+    "facility_id": "fac_nordic_smelter_01",
+    "batch_id": "aluminum-batch-iai-2026-001",
+    "product_name": "Hydro-Powered Low-Carbon Primary Aluminium Ingot",
+    "commodity_type": "Aluminium",
     "rulebook_ref": {
-      "name": "steel-rulebook-2026",
+      "name": "aluminium-rulebook-iai-2026",
       "namespace": "default"
     },
+    "batch_data": {
+      "product_name": "Hydro-Powered Low-Carbon Primary Aluminium Ingot",
+      "commodity": "Aluminium",
+      "batch_id": "aluminum-batch-iai-2026-001",
+      "facility_name": "fac_nordic_smelter_01",
+      "facility_location": "Sunndalsøra Hydro Smelter, Norway",
+      "batch_size_quantity": 5000.0,
+      "unit_of_measure": "kg",
+      "export_market": "European Union"
+    },
     "activity_data": {
-      "coal_tons": 500.0,
-      "natural_gas_mmbtu": 1200.0,
-      "grid_kwh": 15000.0,
-      "scrap_metal_tons": 800.0,
-      "transport_km": 450.0
+      "batch_quantity_kg": 5000.0,
+      "anode_consumed_kg": 2250.0,
+      "natural_gas_m3": 800.0,
+      "smelting_electricity_kwh": 70000.0,
+      "grid_carbon_intensity": 0.15,
+      "bauxite_mined_tons": 20.0,
+      "alumina_refined_tons": 10.0,
+      "freight_ton_km": 15000.0
     }
   }'
 ```
@@ -435,15 +481,15 @@ curl -i -X POST http://localhost:8080/api/v1/products \
 #### Expected HTTP Response (`201 Created`):
 ```json
 {
-  "name": "product-steel-batch-2026-001",
+  "name": "product-aluminum-batch-iai-2026-001",
   "namespace": "default",
   "tenant_id": "org_saurient_demo",
-  "facility_id": "fac_rotterdam_01",
-  "batch_id": "steel-batch-2026-001",
-  "product_name": "Structural Steel Beams",
-  "commodity_type": "Steel",
+  "facility_id": "fac_nordic_smelter_01",
+  "batch_id": "aluminum-batch-iai-2026-001",
+  "product_name": "Hydro-Powered Low-Carbon Primary Aluminium Ingot",
+  "commodity_type": "Aluminium",
   "status": "Created",
-  "created_at": "2026-09-25T07:12:00Z"
+  "created_at": "2026-09-25T07:28:19Z"
 }
 ```
 
@@ -543,7 +589,7 @@ Query the API Gateway REST endpoint (`GET /api/v1/passports/{passport_id}`) to r
 
 #### Curl Command:
 ```bash
-PASSPORT_ID=$(kubectl get carbonpassport rice-product-001-passport -o jsonpath='{.status.passportID}')
+PASSPORT_ID=$(kubectl get carbonpassport product-aluminum-batch-iai-2026-001-passport -o jsonpath='{.status.passportID}')
 
 curl -s -H "X-Tenant-ID: org_saurient_demo" \
   http://localhost:8080/api/v1/passports/${PASSPORT_ID} | jq .
@@ -553,50 +599,98 @@ curl -s -H "X-Tenant-ID: org_saurient_demo" \
 ```json
 {
   "passport_metadata": {
-    "passport_id": "b3ca13e5-fd83-4436-af11-00c3825bdba3",
-    "unique_qr_code": "https://verify.saurient.com/passport/b3ca13e5-fd83-4436-af11-00c3825bdba3",
-    "cryptographic_hash": "e7cfeff11ffa2cc602b6bb19bfe29aa2a2347c8b7c14aaf3f25a233657ece9be",
-    "issuance_date": "2026-09-25T06:20:29Z",
+    "passport_id": "ae323e20-27fa-4058-9499-2d16464fa266",
+    "unique_qr_code": "https://verify.saurient.io/passport/ae323e20-27fa-4058-9499-2d16464fa266",
+    "cryptographic_hash": "b289e7ce44fd8887cb2009bd881f08c1e8f2057a80711cea72a6ba5acec328d9",
+    "issuance_date": "2026-09-25T07:28:19Z",
     "status": "Calculated"
   },
   "product_summary": {
-    "commodity": "Rice",
-    "product_name": "Rice",
-    "batch_number": "BATCH-RICE-2026-001",
+    "commodity": "Aluminium",
+    "product_name": "Hydro-Powered Low-Carbon Primary Aluminium Ingot",
+    "batch_number": "aluminum-batch-iai-2026-001",
     "producer_organization": "org_saurient_demo",
     "facility": {
-      "name": "fac_punjab_farm_01",
-      "location": "",
-      "country_of_origin": ""
+      "name": "fac_nordic_smelter_01",
+      "location": "Sunndalsøra Hydro Smelter, Norway",
+      "country_of_origin": "Norway"
     },
     "production_date": "0001-01-01",
     "batch_size": {
-      "quantity": 1000,
+      "quantity": 5000,
       "unit": "kg"
     }
   },
   "carbon_footprint": {
-    "total_batch_footprint_kg_co2e": 1100,
+    "total_batch_footprint_kg_co2e": 26200,
     "intensity_per_unit": {
-      "value": 1.1,
+      "value": 5.24,
       "unit": "kg CO2e per kg"
     },
     "scope_breakdown": {
       "scope_1_direct": {
-        "value_kg_co2e": 700,
-        "percentage": 63.64
+        "value_kg_co2e": 5730,
+        "percentage": 21.87
       },
       "scope_2_indirect_energy": {
-        "value_kg_co2e": 300,
-        "percentage": 27.27
+        "value_kg_co2e": 10500,
+        "percentage": 40.08
       },
       "scope_3_value_chain": {
-        "value_kg_co2e": 100,
-        "percentage": 9.09
+        "value_kg_co2e": 9970,
+        "percentage": 38.05
+      }
+    },
+    "source_breakdown": {
+      "raw_materials": {
+        "value_kg_co2e": 8770,
+        "percentage": 33.47
+      },
+      "electricity": {
+        "value_kg_co2e": 10500,
+        "percentage": 40.08
+      },
+      "logistics_transport": {
+        "value_kg_co2e": 1200,
+        "percentage": 4.58
+      },
+      "on_site_fuel": {
+        "value_kg_co2e": 5730,
+        "percentage": 21.87
+      },
+      "packaging": {
+        "value_kg_co2e": 0,
+        "percentage": 0
       }
     }
+  },
+  "methodology_and_audit": {
+    "standard_aligned": "GHG Protocol (Product Life Cycle Accounting)",
+    "system_boundary": "Cradle-to-Gate",
+    "emission_factor_database": "DEFRA 2024 (Norway-specific factors)",
+    "calculation_version": "v1.2.0",
+    "data_quality_score": {
+      "primary_data_percent": 100,
+      "secondary_data_percent": 0,
+      "overall_quality": "High (Primary Telemetry)"
+    },
+    "verification_details": {
+      "verifier_name": "Pending Independent Verification",
+      "verification_date": "2026-09-25T07:28:19Z",
+      "verifier_comments": "",
+      "evidence_documents_attached": []
+    }
+  },
+  "compliance_exports": {
+    "cbam_ready": true,
+    "target_export_market": "European Union",
+    "export_formats_available": [
+      "JSON",
+      "PDF_Certificate"
+    ]
   }
 }
+```
 ```
 
 ---
