@@ -58,27 +58,53 @@ const openAPISpecJSON = `{
   "paths": {
     "/api/v1/products": {
       "post": {
-        "summary": "Create Product",
-        "description": "Registers a new product batch with activity data telemetry, creating a Product Custom Resource in Kubernetes. The ProductReconciler will asynchronously evaluate formulas from the CalculationRulebook and issue a child CarbonPassport CR.",
+        "summary": "Create Product Batch",
+        "description": "Registers a new product batch with activity data telemetry and batch metadata, creating a Product Custom Resource in Kubernetes. The ProductReconciler automatically evaluates formulas from the referenced CalculationRulebook and issues a child CarbonPassport CR.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["tenant_id", "commodity_type"],
+                "required": ["tenant_id", "commodity_type", "rulebook_ref", "activity_data"],
                 "properties": {
                   "tenant_id": { "type": "string", "example": "org_saurient_demo" },
-                  "facility_id": { "type": "string", "example": "fac-rotterdam-01" },
-                  "batch_id": { "type": "string", "example": "cement-batch-002" },
-                  "product_name": { "type": "string", "example": "Structural Cement CEM I" },
-                  "commodity_type": { "type": "string", "example": "Cement" },
-                  "activity_data_raw": { "type": "string", "example": "{\"fuel_liters\":500,\"fuel_ef\":2.68,\"limestone_tons\":10,\"calcination_ef\":440,\"electricity_kwh\":2000,\"grid_ef\":0.85,\"renewable_ppa_kwh\":500,\"ppa_offset_ef\":0.85,\"raw_material_kg\":5000,\"material_ef\":0.12,\"freight_ton_km\":1000,\"transport_ef\":0.15}" },
+                  "facility_id": { "type": "string", "example": "fac_nordic_smelter_01" },
+                  "batch_id": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
+                  "product_name": { "type": "string", "example": "Hydro-Powered Low-Carbon Primary Aluminium Ingot" },
+                  "commodity_type": { "type": "string", "example": "Aluminium" },
                   "rulebook_ref": {
                     "type": "object",
                     "properties": {
-                      "name": { "type": "string", "example": "cement-rulebook-2026" },
+                      "name": { "type": "string", "example": "aluminium-rulebook-iai-2026" },
                       "namespace": { "type": "string", "example": "default" }
+                    }
+                  },
+                  "batch_data": {
+                    "type": "object",
+                    "properties": {
+                      "product_name": { "type": "string", "example": "Hydro-Powered Low-Carbon Primary Aluminium Ingot" },
+                      "commodity": { "type": "string", "example": "Aluminium" },
+                      "batch_id": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
+                      "facility_name": { "type": "string", "example": "fac_nordic_smelter_01" },
+                      "facility_location": { "type": "string", "example": "Sunndalsøra Hydro Smelter, Norway" },
+                      "batch_size_quantity": { "type": "number", "example": 5000.0 },
+                      "unit_of_measure": { "type": "string", "example": "kg" },
+                      "export_market": { "type": "string", "example": "European Union" }
+                    }
+                  },
+                  "activity_data": {
+                    "type": "object",
+                    "description": "Industrial telemetry inputs evaluated against CEL DAG rule expressions",
+                    "properties": {
+                      "batch_quantity_kg": { "type": "number", "example": 5000.0 },
+                      "anode_consumed_kg": { "type": "number", "example": 2250.0 },
+                      "natural_gas_m3": { "type": "number", "example": 800.0 },
+                      "smelting_electricity_kwh": { "type": "number", "example": 70000.0 },
+                      "grid_carbon_intensity": { "type": "number", "example": 0.15 },
+                      "bauxite_mined_tons": { "type": "number", "example": 20.0 },
+                      "alumina_refined_tons": { "type": "number", "example": 10.0 },
+                      "freight_ton_km": { "type": "number", "example": 15000.0 }
                     }
                   }
                 }
@@ -109,7 +135,7 @@ const openAPISpecJSON = `{
             "in": "path",
             "required": true,
             "description": "Name of the Product CR",
-            "schema": { "type": "string", "example": "product-batch-2026-09-b" }
+            "schema": { "type": "string", "example": "aluminum-batch-iai-2026-001" }
           },
           {
             "name": "namespace",
@@ -128,24 +154,47 @@ const openAPISpecJSON = `{
     "/api/v1/rules": {
       "post": {
         "summary": "Create Calculation Rulebook",
-        "description": "Creates a new CalculationRulebook Custom Resource in Kubernetes defining Scope 1-3 CEL formulas, functional unit, and batch quantity for a commodity type.",
+        "description": "Creates a new CalculationRulebook Custom Resource in Kubernetes defining Scope 1-3 CEL DAG formulas, accounting modes (pcf, ghg, cbam), functional unit, and batch quantity for a commodity type.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["commodity_type", "scope_1_formula"],
+                "required": ["name", "commodity_type", "rules"],
                 "properties": {
-                  "name": { "type": "string", "example": "cement-rulebook-2026" },
+                  "name": { "type": "string", "example": "aluminium-rulebook-iai-2026" },
                   "namespace": { "type": "string", "example": "default" },
-                  "commodity_type": { "type": "string", "example": "Cement" },
+                  "commodity_type": { "type": "string", "example": "Aluminium" },
                   "version": { "type": "string", "example": "2026.1" },
-                  "scope_1_formula": { "type": "string", "example": "(fuel_liters * fuel_ef) + (limestone_tons * calcination_ef)" },
-                  "scope_2_formula": { "type": "string", "example": "(electricity_kwh * grid_ef) - (renewable_ppa_kwh * ppa_offset_ef)" },
-                  "scope_3_formula": { "type": "string", "example": "(raw_material_kg * material_ef) + (freight_ton_km * transport_ef)" },
-                  "functional_unit": { "type": "string", "example": "kg CO2e per metric ton" },
-                  "batch_quantity": { "type": "number", "example": 100.0 }
+                  "accounting_mode": { "type": "string", "example": "pcf" },
+                  "functional_unit": { "type": "string", "example": "kg CO2e per kg Aluminium Ingot" },
+                  "batch_quantity": { "type": "number", "example": 5000.0 },
+                  "rules": {
+                    "type": "array",
+                    "description": "DAG calculation steps evaluated sequentially or in parallel",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "example": "R01" },
+                        "name": { "type": "string", "example": "Anode Consumption & Process PFCs" },
+                        "scope": { "type": "string", "example": "scope1" },
+                        "mode": { "type": "string", "example": "pcf" },
+                        "outputType": { "type": "string", "example": "intermediate" },
+                        "formula": { "type": "string", "example": "anode_consumed_kg * 1.8" }
+                      }
+                    },
+                    "example": [
+                      { "id": "R01", "name": "Anode Consumption & Process PFCs", "scope": "scope1", "mode": "pcf", "formula": "anode_consumed_kg * 1.8" },
+                      { "id": "R02", "name": "Casting & Holding Furnaces", "scope": "scope1", "mode": "pcf", "formula": "natural_gas_m3 * 2.1" },
+                      { "id": "R03", "name": "Hall-Heroult Electrolysis Power", "scope": "scope2", "mode": "pcf", "formula": "smelting_electricity_kwh * grid_carbon_intensity" },
+                      { "id": "R04", "name": "Bauxite Mining Upstream", "scope": "scope3", "mode": "pcf", "formula": "bauxite_mined_tons * 38.5" },
+                      { "id": "R05", "name": "Bayer Alumina Refining", "scope": "scope3", "mode": "pcf", "formula": "alumina_refined_tons * 800.0" },
+                      { "id": "R06", "name": "Transoceanic Freight Logistics", "scope": "scope3", "mode": "pcf", "formula": "freight_ton_km * 0.08" },
+                      { "id": "R07", "name": "Total Cradle-to-Gate Footprint", "scope": "intermediate", "mode": "pcf", "outputType": "total_footprint", "formula": "R01 + R02 + R03 + R04 + R05 + R06" },
+                      { "id": "R08", "name": "Carbon Intensity per Kg Al", "scope": "intermediate", "mode": "pcf", "outputType": "intensity", "formula": "R07 / batch_quantity_kg" }
+                    ]
+                  }
                 }
               }
             }
@@ -166,14 +215,14 @@ const openAPISpecJSON = `{
             "in": "path",
             "required": true,
             "description": "UUID of the Carbon Passport",
-            "schema": { "type": "string", "format": "uuid", "example": "6a1152b4-1c15-41cb-a72f-7daba39bf4ed" }
+            "schema": { "type": "string", "example": "aluminum-batch-iai-2026-001-passport" }
           },
           {
             "name": "X-Tenant-ID",
             "in": "header",
             "required": false,
-            "description": "Multi-tenant context isolation UUID",
-            "schema": { "type": "string", "format": "uuid", "example": "123e4567-e89b-12d3-a456-426614174000" }
+            "description": "Multi-tenant context isolation header",
+            "schema": { "type": "string", "example": "org_saurient_demo" }
           }
         ],
         "responses": {
@@ -195,13 +244,13 @@ const openAPISpecJSON = `{
       "ProductCreateResponse": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "example": "product-batch-2026-09-b" },
+          "name": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
           "namespace": { "type": "string", "example": "default" },
-          "tenant_id": { "type": "string", "format": "uuid" },
-          "facility_id": { "type": "string" },
-          "batch_id": { "type": "string" },
-          "product_name": { "type": "string" },
-          "commodity_type": { "type": "string" },
+          "tenant_id": { "type": "string", "example": "org_saurient_demo" },
+          "facility_id": { "type": "string", "example": "fac_nordic_smelter_01" },
+          "batch_id": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
+          "product_name": { "type": "string", "example": "Hydro-Powered Low-Carbon Primary Aluminium Ingot" },
+          "commodity_type": { "type": "string", "example": "Aluminium" },
           "status": { "type": "string", "example": "Pending" },
           "created_at": { "type": "string", "format": "date-time" }
         }
@@ -209,18 +258,18 @@ const openAPISpecJSON = `{
       "CarbonPassport": {
         "type": "object",
         "properties": {
-          "passport_id": { "type": "string", "format": "uuid" },
-          "tenant_id": { "type": "string", "format": "uuid" },
-          "facility_id": { "type": "string", "example": "fac-rotterdam-01" },
-          "batch_number": { "type": "string", "example": "batch-2026-09-B" },
-          "commodity_type": { "type": "string", "example": "Cement" },
+          "passport_id": { "type": "string", "example": "aluminum-batch-iai-2026-001-passport" },
+          "tenant_id": { "type": "string", "example": "org_saurient_demo" },
+          "facility_id": { "type": "string", "example": "fac_nordic_smelter_01" },
+          "batch_number": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
+          "commodity_type": { "type": "string", "example": "Aluminium" },
           "verification_status": { "type": "string", "example": "Calculated" },
-          "scope_1_kg_co2e": { "type": "number", "example": 5740.0 },
-          "scope_2_kg_co2e": { "type": "number", "example": 1275.0 },
-          "scope_3_kg_co2e": { "type": "number", "example": 750.0 },
-          "total_footprint_kg": { "type": "number", "example": 7765.0 },
-          "intensity_per_unit": { "type": "number", "example": 77.65 },
-          "data_hash": { "type": "string", "example": "9c1b07962f969092b9835faa1897e07408e613a9e02997aa1dfc719a75589ca8" }
+          "scope_1_kg_co2e": { "type": "number", "example": 5730.0 },
+          "scope_2_kg_co2e": { "type": "number", "example": 10500.0 },
+          "scope_3_kg_co2e": { "type": "number", "example": 9970.0 },
+          "total_footprint_kg": { "type": "number", "example": 26200.0 },
+          "intensity_per_unit": { "type": "number", "example": 5.24 },
+          "data_hash": { "type": "string", "example": "b47e2c90e3810a9161a052e46b9a89c92a188f1100b95d0ef92809e578c772b1" }
         }
       }
     }
@@ -275,37 +324,18 @@ const graphqlPlaygroundHTML = `<!DOCTYPE html>
     body { background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; margin: 0; }
     #root { height: 100%; }
     
-    /* Comprehensive dark theme overrides for all CodeMirror popovers & hint boxes */
-    .CodeMirror-hints,
-    .CodeMirror-hint,
+    /* Completely hide type tooltips, hover info popovers, and floating type boxes */
     .CodeMirror-info,
-    .CodeMirror-dialog,
+    .info-popover,
+    .type-name,
     div[class*="info-popover"],
     div[class*="type-name"],
     div[class*="popover"],
-    div[class*="tooltip"],
-    div[class*="hint"] {
-      background: #1e293b !important;
-      background-color: #1e293b !important;
-      color: #38bdf8 !important;
-      border: 1px solid #334155 !important;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
-      border-radius: 6px !important;
-    }
-    
-    div[class*="info-popover"] *,
-    div[class*="type-name"] *,
-    div[class*="popover"] *,
-    div[class*="tooltip"] * {
-      background: #1e293b !important;
-      background-color: #1e293b !important;
-      color: #38bdf8 !important;
-    }
-    
-    .CodeMirror-hint-active, .CodeMirror-hint-active * {
-      background: #2563eb !important;
-      background-color: #2563eb !important;
-      color: #ffffff !important;
+    div[class*="tooltip"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
   </style>
 </head>
@@ -324,18 +354,12 @@ const graphqlPlaygroundHTML = `<!DOCTYPE html>
         }
       });
 
-      // Active observer to catch dynamically spawned React / CodeMirror popover elements with white backgrounds
+      // Active observer to remove dynamically spawned hover type popovers
       const observer = new MutationObserver(function() {
-        const elements = document.querySelectorAll('#root div, #root span, #root ul, #root li, .CodeMirror-hints, .info-popover');
-        elements.forEach(function(el) {
-          const style = window.getComputedStyle(el);
-          if (style.backgroundColor === 'rgb(255, 255, 255)' || style.backgroundColor === 'white') {
-            el.style.setProperty('background', '#1e293b', 'important');
-            el.style.setProperty('background-color', '#1e293b', 'important');
-            el.style.setProperty('color', '#38bdf8', 'important');
-            el.style.setProperty('border', '1px solid #334155', 'important');
-            el.style.setProperty('box-shadow', '0 10px 15px -3px rgba(0,0,0,0.5)', 'important');
-          }
+        const popovers = document.querySelectorAll('.info-popover, .type-name, div[class*="info-popover"], div[class*="type-name"], .CodeMirror-info');
+        popovers.forEach(function(el) {
+          el.style.setProperty('display', 'none', 'important');
+          el.style.setProperty('visibility', 'hidden', 'important');
         });
       });
       observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
