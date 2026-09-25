@@ -1,4 +1,4 @@
-# Design Document: Model 3 Siloed Tenant Isolation Architecture
+# Enterprise Tenant Isolation Architecture Design Document
 
 **Author:** Principal Architect & SME  
 **Approver:** Saurient Platform Engineering Team  
@@ -8,23 +8,28 @@
 
 ---
 
-## 1. Background
+## 1. Executive Summary & Beginner's Guide
 
-The **Saurient Carbon Passport Platform** processes calculation rulebooks (CEL engine), product batch telemetry, and rich Digital Carbon Passports. Currently, the platform operates on a **Model 1 Pooled Multi-Tenancy Architecture**, where all tenants share the same Kubernetes namespace, API instances, calculation engine controllers, and PostgreSQL database enforced via logical Row-Level Security (`app.current_tenant` setting).
+### What is Tenant Isolation?
+In software engineering, a **tenant** represents an organization, enterprise, or customer using a platform. **Tenant Isolation** ensures that one organization's data, calculation rules, and compute resources are strictly separated from all other organizations.
 
-While Model 1 is cost-effective for standard/SMB users, enterprise clients (e.g., global steel manufacturers, chemical conglomerates, energy suppliers) demand **Model 3: Siloed Tenant Isolation Architecture**. Their requirements include:
+### Why is Isolation Critical for Carbon Accounting?
+The **Saurient Carbon Platform** calculates carbon footprints (Scope 1, Scope 2, and Scope 3 emissions) for global industrial and agricultural supply chains. Enterprise customers (such as steel producers, chemical plants, or food processors) have strict operational requirements:
 
-1. **Strict Physical Data Isolation**: Zero risk of logical query leakages or shared database engine vulnerabilities.
-2. **Compliance & Data Sovereignty**: Compliance with EU CBAM, GHG Protocol, and strict regional data residency mandates (e.g., GDPR Frankfurt `eu-central-1` vs. US Virginia `us-east-1`).
-3. **Noisy Neighbor Elimination**: Dedicated CPU/Memory compute quotas and dedicated database IOPS, ensuring heavy batch processing by one enterprise tenant does not degrade performance for others.
-4. **Bring Your Own Key (BYOK) Encryption**: Dedicated AWS KMS / HashiCorp Vault encryption keys managed independently per tenant.
-5. **Independent Maintenance & Disaster Recovery**: Per-tenant Point-In-Time Recovery (PITR), isolated schema migrations, and custom maintenance windows.
+1. **Confidentiality & Data Privacy**: Supply chain activity data, raw material inputs, and proprietary production volumes must never leak to competitors.
+2. **Regulatory & Regional Data Sovereignty**: European regulations (such as EU CBAM) may require data to remain within the European Union (e.g., Frankfurt `eu-central-1`), while US clients require US residency (`us-east-1`).
+3. **Dedicated Performance (No Heavy Neighbor Impact)**: Heavy batch calculations run by one enterprise must not slow down API response times for another organization.
+4. **Encryption Key Control (BYOK)**: Enterprises require encryption at rest using their own dedicated cryptographic keys (Bring Your Own Key).
+
+This document outlines the **Siloed Tenant Isolation Architecture**, where each enterprise tenant receives a dedicated compute environment, dedicated database, and dedicated encryption keys.
 
 ---
 
-## 2. High-Level Design
+## 2. High-Level Architecture Overview
 
-The **Model 3 Siloed Architecture** splits the platform into a **Global Control Plane** and **Dedicated Tenant Silos (Data Plane)**.
+The system is divided into two main layers:
+1. **Global Control Plane**: A central entry point that authenticates users, reads their organization identity (`tenant_id`), and routes incoming API requests to the correct dedicated environment.
+2. **Dedicated Tenant Silo (Data Plane)**: A completely isolated set of compute pods, Kubernetes namespaces, and database storage created specifically for a single enterprise organization.
 
 ```
                                  +---------------------------------------+
@@ -57,51 +62,39 @@ The **Model 3 Siloed Architecture** splits the platform into a **Global Control 
   +-------------------------------------+                         +-------------------------------------+
 ```
 
-### Core Architecture Components
+---
 
-1. **Global Control Plane (Tenant Router & Directory)**:
-   - Authenticates incoming OAuth2/OIDC JWT tokens.
-   - Inspects the `tenant_id` claim (or custom sub-domain e.g. `acme.api.saurient.io`).
-   - Forwards request securely to the tenant's dedicated Ingress and API Pod cluster.
+## 3. Detailed Technical Components
 
-2. **Tenant Namespace Isolation (Kubernetes Layer)**:
-   - Each enterprise tenant receives a dedicated Kubernetes namespace (`saurient-tenant-<tenant_id>`).
-   - `CalculationRulebook`, `Product`, and `CarbonPassport` Custom Resources (CRDs) live exclusively inside the tenant's namespace.
-   - Kubernetes `NetworkPolicy` objects block cross-namespace inter-pod traffic.
-   - `ResourceQuota` and `LimitRange` objects enforce tenant CPU/Memory boundaries.
+### 3.1 Global Control Plane & Gateway Routing
 
-3. **Dedicated Compute & Engine (Application Layer)**:
-   - Dedicated `VerificationServer` (API Gateway) and Kubernetes Controller instances process calculation jobs for that tenant alone.
-   - Proprietary CEL calculation rules and emission factors stay completely isolated in memory.
+When a client application or user makes a request to the platform, the **Global Ingress Gateway** performs the following steps:
 
-4. **Dedicated Persistence & Cache (Data Layer)**:
-   - **PostgreSQL**: Each tenant has a dedicated PostgreSQL instance (or isolated cloud-managed database instance with dedicated connection pools).
-   - **Redis**: Each tenant runs a dedicated Redis instance or isolated database index with tenant-specific encryption keys.
+```
+Request ---> Global Ingress Gateway ---> Validate JWT Token ---> Extract tenant_id ---> Route to Tenant Silo
+```
+
+1. **Authentication**: Validates the OAuth2 JWT token.
+2. **Tenant Extraction**: Reads the `tenant_id` claim from the token payload:
+   ```json
+   {
+     "sub": "usr_acme_admin_01",
+     "tenant_id": "org_acme_corp",
+     "iss": "https://auth.saurient.io/"
+   }
+   ```
+3. **Routing**: Forwards the request directly to Tenant A's internal dedicated API gateway (`saurient-tenant-acme-corp`).
+4. **Error Handling**: If the token is missing or invalid, the gateway immediately returns `401 Unauthorized`.
 
 ---
 
-## 3. Detailed Component Specifications
+### 3.2 Kubernetes Namespace & Compute Isolation
 
-### 3.1 Global Control Plane & Dynamic Ingress Router
+Every tenant environment is deployed into its own isolated Kubernetes namespace (`saurient-tenant-<tenant_id>`):
 
-```
-Request ---> Global Ingress Gateway ---> JWT Claims Extractor ---> Tenant Route Resolver ---> Internal Silo Service
-```
-
-- **JWT Tenant Resolution**:
-  ```json
-  {
-    "iss": "https://auth.saurient.io/",
-    "sub": "usr_acme_admin_01",
-    "tenant_id": "org_acme_corp",
-    "silo_endpoint": "https://api-internal.acme.saurient-mesh.local"
-  }
-  ```
-- If an unauthenticated or invalid tenant token is presented, the Global Gateway returns `401 Unauthorized` before reaching any siloed pods.
-
-### 3.2 Kubernetes Resource Isolation & RBAC
-
-Each enterprise silo is provisioned via GitOps / Helm with tenant-specific manifests:
+- **Isolated Resources**: All calculation rulebooks (`CalculationRulebook`), batch telemetry (`Product`), and digital carbon passports (`CarbonPassport`) reside inside the tenant's namespace.
+- **Network Isolation**: Kubernetes `NetworkPolicy` rules block direct network communications between different tenant namespaces.
+- **Compute Quotas**: `ResourceQuota` limits guarantee dedicated CPU and RAM for each tenant.
 
 ```yaml
 apiVersion: v1
@@ -110,12 +103,11 @@ metadata:
   name: saurient-tenant-acme-corp
   labels:
     saurient.io/tenant-id: "org_acme_corp"
-    saurient.io/tier: "enterprise-silo"
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: deny-cross-tenant-traffic
+  name: block-cross-tenant-network-traffic
   namespace: saurient-tenant-acme-corp
 spec:
   podSelector: {}
@@ -128,64 +120,59 @@ spec:
           saurient.io/control-plane: "true"
 ```
 
-### 3.3 Database & Key Management (BYOK)
+---
 
-- **Dedicated Connection Configuration**:
-  ```go
-  type TenantSiloConfig struct {
-      TenantID       string `json:"tenant_id"`
-      DatabaseDSN    string `json:"database_dsn"`    // e.g. postgres://acme_user:secret@db.acme.internal:5432/acme_passports
-      RedisAddr      string `json:"redis_addr"`      // e.g. redis.acme.internal:6379
-      KMSKeyARN      string `json:"kms_key_arn"`     // e.g. arn:aws:kms:eu-central-1:123456789012:key/acme-key
-      Region         string `json:"region"`          // e.g. eu-central-1
-  }
-  ```
-- **Envelope Encryption**: Field-level PII or sensitive supplier activity data is encrypted at rest using the tenant's dedicated KMS key before writing to PostgreSQL.
+### 3.3 Database & Encryption Isolation (BYOK)
+
+To guarantee database privacy:
+
+1. **Dedicated Database Instances**: Enterprise tenants write to a dedicated PostgreSQL database instance (or dedicated cloud database connection pool).
+2. **Dedicated Cache**: High-speed passport lookup queries use a dedicated Redis cache instance.
+3. **Encryption at Rest (BYOK)**: Sensitive activity data is encrypted at rest using dedicated AWS KMS or GCP KMS cryptographic keys owned by the tenant.
+
+```go
+type TenantSiloConfig struct {
+    TenantID       string `json:"tenant_id"`
+    DatabaseDSN    string `json:"database_dsn"`    // postgres://acme_user:secret@db.acme.internal:5432/acme_db
+    RedisAddr      string `json:"redis_addr"`      // redis.acme.internal:6379
+    KMSKeyARN      string `json:"kms_key_arn"`     // arn:aws:kms:eu-central-1:123456789012:key/acme-key
+    Region         string `json:"region"`          // eu-central-1
+}
+```
 
 ---
 
-## 4. API Surface & Inter-Service Interactions
+## 4. API Endpoints & Request Flow
 
-| Endpoint | Routing Behavior in Model 3 | Access Control |
+Below is how the primary platform API endpoints function under the isolated tenant architecture:
+
+| API Endpoint | Description | Isolation Guarantee |
 | :--- | :--- | :--- |
-| `POST /api/v1/product/register` | Routed to `saurient-tenant-<tenant_id>` API Pods | Verified against tenant JWT claim |
-| `GET /api/v1/carbon-passport/{id}` | Direct cache fetch from tenant's dedicated Redis instance | Verified against tenant JWT claim |
-| `POST /api/v1/calculation-rulebook` | Deploys `CalculationRulebook` CRD into tenant namespace | Admin/Compliance role in tenant JWT |
+| `POST /api/v1/product/register` | Registers a product batch & activity data | Processed exclusively by the tenant's dedicated API & CEL Engine pods |
+| `GET /api/v1/carbon-passport/{id}` | Fetches a rich Digital Carbon Passport | Read directly from the tenant's dedicated Redis / PostgreSQL store |
+| `POST /api/v1/calculation-rulebook` | Configures proprietary calculation formulas | Saved exclusively into the tenant's private Kubernetes namespace |
 
 ---
 
 ## 5. Reliability, Backup & Disaster Recovery
 
-1. **Independent Point-In-Time Recovery (PITR)**:
-   - Database WAL archives and snapshots are stored in a tenant-dedicated S3/GCS bucket encrypted with the tenant's KMS key.
-   - Restoring Tenant A's database to a state from 3 hours ago has zero impact on Tenant B's operations.
+1. **Independent Backups & PITR**:
+   - Each enterprise tenant's database has independent snapshot and Point-In-Time Recovery (PITR) policies stored in encrypted cloud storage.
+   - Performing a database restore for Tenant A has zero impact on Tenant B.
 
-2. **Isolated Schema Migrations**:
-   - Schema updates and migrations (`migrations/001_init_schema.sql`) can be canary-tested on a single enterprise tenant before rolling out globally.
+2. **Canary Software Upgrades**:
+   - Platform updates can be deployed to a single tenant environment for testing before rolling out to all enterprise clients.
 
 3. **High Availability (HA)**:
-   - Each enterprise silo deploys multi-AZ API pods (`replicas: 3`) and PostgreSQL multi-AZ replicas.
+   - Tenant environments deploy across multiple Cloud Availability Zones (Multi-AZ) to prevent downtime.
 
 ---
 
-## 6. Comparison: Model 1 vs. Model 2 vs. Model 3
+## 6. Implementation Roadmap
 
-| Architectural Metric | Model 1 (Pooled RLS) | Model 2 (Multi-Schema) | Model 3 (Siloed Pod & DB) |
-| :--- | :--- | :--- | :--- |
-| **Data Boundary** | Logical (`WHERE tenant_id = X`) | Schema (`acme.passports`) | Physical Database & Cloud VPC |
-| **K8s Isolation** | Single Shared Namespace | Shared Namespace | Dedicated Namespace per Tenant |
-| **Noisy Neighbor Risk** | Moderate | Low | Zero (Hardware ResourceQuotas) |
-| **Compliance / Data Sovereignty** | Single Region | Single Region | Multi-Region / Multi-Cloud |
-| **Key Management** | Shared Encryption Key | Shared Encryption Key | Bring Your Own Key (BYOK) per Tenant |
-| **Cost per Tenant** | Lowest | Low | Higher (Enterprise Tier) |
-
----
-
-## 7. Migration & Phased Rollout Plan
-
-1. **Phase 1: Control Plane & Gateway Routing**
-   - Implement the Central Tenant Provisioning Service and JWT Tenant Router.
-2. **Phase 2: K8s Namespace Templating & Helm Operator**
-   - Package `saurient-platform` application stack into a tenant-silo Helm chart capable of instantiating dedicated namespaces, API pods, and controllers.
-3. **Phase 3: Database & KMS Automation**
-   - Automate Terraform/Crossplane scripts for provisioning dedicated PostgreSQL databases, Redis instances, and AWS KMS / GCP KMS key policies per enterprise customer.
+1. **Phase 1: Control Plane & Gateway Router**
+   - Implement central OAuth2 JWT token verification and tenant route mapping.
+2. **Phase 2: Kubernetes Tenant Helm Chart**
+   - Create a Helm deployment template that provisions namespace, NetworkPolicies, API pods, and controllers for a new tenant.
+3. **Phase 3: Automated Cloud Provisioning**
+   - Automate infrastructure provisioning (PostgreSQL, Redis, KMS keys) using infrastructure-as-code scripts.
