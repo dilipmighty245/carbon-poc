@@ -31,3 +31,6 @@ profile.out
 .env.local
 *.pem
 *.key
+
+# Local features and design plans
+features/
