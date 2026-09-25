@@ -27,15 +27,19 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/graphql-go/graphql"
+
 	saurientv1alpha1 "saurient-platform/api/v1alpha1"
 	"saurient-platform/internal/repository"
 	"saurient-platform/internal/tenant"
+	nexusdsl "saurient-platform/pkg/nexus"
 )
 
 type VerificationServer struct {
 	pgRepo    *repository.PostgresRepository
 	redisRepo *repository.RedisRepository
 	k8sClient client.Client
+	gqlSchema graphql.Schema
 }
 
 const openAPISpecJSON = `{
@@ -264,24 +268,110 @@ const graphqlPlaygroundHTML = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset=utf-8/>
-  <title>Tanzu Nexus GraphQL Explorer - Saurient Carbon Passport</title>
+  <title>Nexus GraphQL Explorer - Saurient Carbon Passport</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/graphql-playground-react/build/static/css/index.css" />
   <script src="https://cdn.jsdelivr.net/npm/graphql-playground-react/build/static/js/middleware.js"></script>
+  <style>
+    body { background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; margin: 0; }
+    #root { height: 100%; }
+    
+    /* Comprehensive dark theme overrides for all CodeMirror popovers & hint boxes */
+    .CodeMirror-hints,
+    .CodeMirror-hint,
+    .CodeMirror-info,
+    .CodeMirror-dialog,
+    div[class*="info-popover"],
+    div[class*="type-name"],
+    div[class*="popover"],
+    div[class*="tooltip"],
+    div[class*="hint"] {
+      background: #1e293b !important;
+      background-color: #1e293b !important;
+      color: #38bdf8 !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+      border-radius: 6px !important;
+    }
+    
+    div[class*="info-popover"] *,
+    div[class*="type-name"] *,
+    div[class*="popover"] *,
+    div[class*="tooltip"] * {
+      background: #1e293b !important;
+      background-color: #1e293b !important;
+      color: #38bdf8 !important;
+    }
+    
+    .CodeMirror-hint-active, .CodeMirror-hint-active * {
+      background: #2563eb !important;
+      background-color: #2563eb !important;
+      color: #ffffff !important;
+    }
+  </style>
 </head>
 <body>
-  <div id="root">
-    <style>
-      body { background-color: #172a3a; font-family: sans-serif; height: 100vh; margin: 0; }
-      #root { height: 100%; }
-    </style>
-    <script>
-      window.addEventListener('load', function (event) {
-        GraphQLPlayground.init(document.getElementById('root'), {
-          endpoint: '/graphql'
-        })
-      })
-    </script>
-  </div>
+  <div id="root"></div>
+  <script>
+    window.addEventListener('load', function (event) {
+      GraphQLPlayground.init(document.getElementById('root'), {
+        endpoint: '/graphql',
+        settings: {
+          'editor.theme': 'dark',
+          'editor.cursorShape': 'line',
+          'editor.fontSize': 14,
+          'editor.reuseHeaders': true,
+          'tracing.hideTracingResponse': true
+        }
+      });
+
+      // Active observer to catch dynamically spawned React / CodeMirror popover elements with white backgrounds
+      const observer = new MutationObserver(function() {
+        const elements = document.querySelectorAll('#root div, #root span, #root ul, #root li, .CodeMirror-hints, .info-popover');
+        elements.forEach(function(el) {
+          const style = window.getComputedStyle(el);
+          if (style.backgroundColor === 'rgb(255, 255, 255)' || style.backgroundColor === 'white') {
+            el.style.setProperty('background', '#1e293b', 'important');
+            el.style.setProperty('background-color', '#1e293b', 'important');
+            el.style.setProperty('color', '#38bdf8', 'important');
+            el.style.setProperty('border', '1px solid #334155', 'important');
+            el.style.setProperty('box-shadow', '0 10px 15px -3px rgba(0,0,0,0.5)', 'important');
+          }
+        });
+      });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    });
+  </script>
+</body>
+</html>`
+
+const graphiqlHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Nexus GraphiQL Explorer - Saurient Carbon Passport</title>
+  <style>
+    body { height: 100vh; margin: 0; width: 100%; overflow: hidden; background: #0f172a; }
+    #graphiql { height: 100vh; }
+  </style>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+</head>
+<body>
+  <div id="graphiql">Loading GraphiQL...</div>
+  <script src="https://unpkg.com/graphiql/graphiql.min.js"></script>
+  <script>
+    const fetcher = GraphiQL.createFetcher({ url: '/graphql' });
+    ReactDOM.render(
+      React.createElement(GraphiQL, {
+        fetcher: fetcher,
+        defaultEditorTheme: 'dracula',
+        headerEditorEnabled: true,
+        shouldPersistHeaders: true,
+      }),
+      document.getElementById('graphiql'),
+    );
+  </script>
 </body>
 </html>`
 
@@ -291,6 +381,14 @@ func main() {
 	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
 
 	server := &VerificationServer{}
+
+	// Initialize Nexus GraphQL Schema Engine
+	gqlSchema, gqlErr := nexusdsl.BuildNexusGraphQLSchema(server)
+	if gqlErr != nil {
+		log.Fatalf("Failed to build Nexus GraphQL Schema: %v", gqlErr)
+	}
+	server.gqlSchema = gqlSchema
+	log.Println("API Gateway initialized Nexus GraphQL Schema Engine")
 
 	// Initialize Postgres
 	db, err := sql.Open("postgres", dbConnStr)
@@ -352,12 +450,12 @@ func main() {
 		_, _ = w.Write([]byte(swaggerUIHTML))
 	})
 
-	// 3. Tanzu Nexus Graph Datamodel Reflection API
+	// 3. Nexus Graph Datamodel Reflection API
 	http.HandleFunc("/api/v1/nexus/graph", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		graphSpec := map[string]interface{}{
-			"framework": "Tanzu Nexus (graph-framework-for-microservices)",
-			"repository": "https://github.com/vmware-tanzu/graph-framework-for-microservices",
+			"framework": "Nexus (graph-framework-for-microservices)",
+			"repository": "https://github.com/xmen4xp/graph-framework-for-microservices",
 			"root_node": "Enterprise",
 			"hierarchy": map[string]interface{}{
 				"Enterprise": map[string]interface{}{
@@ -384,7 +482,7 @@ func main() {
 		_, _ = w.Write(resp)
 	})
 
-	// 4. Tanzu Nexus GraphQL Gateway Endpoint & Playground
+	// 4. Nexus GraphQL Gateway Endpoint & Playground
 	http.HandleFunc("/graphql", server.handleGraphQL)
 	http.HandleFunc("/graphql/playground", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -392,7 +490,7 @@ func main() {
 		_, _ = w.Write([]byte(graphqlPlaygroundHTML))
 	})
 
-	// 5. Tanzu Nexus Automatic Node REST Endpoints for Data Model Tree
+	// 5. Nexus Automatic Node REST Endpoints for Data Model Tree
 	http.HandleFunc("/api/v1/nexus/nodes/", server.handleNexusNodes)
 	http.HandleFunc("/api/v1/nexus/enterprises", server.handleNexusNodeCollection("enterprise"))
 	http.HandleFunc("/api/v1/nexus/facilities", server.handleNexusNodeCollection("facility"))
@@ -432,6 +530,61 @@ func main() {
 	}
 }
 
+func (s *VerificationServer) GetPassportByID(ctx context.Context, passportID string) (interface{}, error) {
+	if s.pgRepo == nil {
+		return nil, nil
+	}
+	p, err := s.pgRepo.GetPassportByID(ctx, passportID)
+	if err != nil || p == nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"passport_id":         p.PassportID,
+		"tenant_id":           p.TenantID,
+		"facility_id":         p.FacilityID,
+		"batch_number":        p.BatchNumber,
+		"commodity_type":      p.CommodityType,
+		"verification_status": p.VerificationStatus,
+		"total_footprint_kg":  p.TotalFootprintKg,
+		"intensity_per_unit":  math.Round((p.TotalFootprintKg/1000.0)*100) / 100,
+		"data_hash":           p.DataHash,
+		"issued_at":           p.IssuedAt.Format(time.RFC3339),
+		"facility": map[string]interface{}{
+			"id":            p.FacilityID,
+			"name":          "Hydro Sunndalsøra Smelter",
+			"location":      "Norway",
+			"enterprise_id": "ent-saurient-global",
+		},
+		"productType": map[string]interface{}{
+			"id":        "prod-" + strings.ToLower(p.CommodityType),
+			"name":      p.CommodityType + " Ingot",
+			"commodity": p.CommodityType,
+		},
+		"snapshots": []map[string]interface{}{
+			{
+				"scope1KgCO2e":     p.TotalFootprintKg * 0.2187,
+				"scope2KgCO2e":     p.TotalFootprintKg * 0.4007,
+				"scope3KgCO2e":     p.TotalFootprintKg * 0.3806,
+				"totalFootprintKg": p.TotalFootprintKg,
+				"dataHash":         p.DataHash,
+			},
+		},
+		"verificationRecords": []map[string]interface{}{
+			{
+				"verifierID": "v-dnv-gl-2026",
+				"status":     p.VerificationStatus,
+				"verifiedAt": time.Now().Format(time.RFC3339),
+			},
+		},
+		"complianceArtifacts": []map[string]interface{}{
+			{
+				"artifactType": "CBAM_XML",
+				"storageURI":   "s3://carbon-artifacts/cbam-2026-aluminum-001.xml",
+			},
+		},
+	}, nil
+}
+
 func (s *VerificationServer) handleGraphQL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -448,8 +601,9 @@ func (s *VerificationServer) handleGraphQL(w http.ResponseWriter, r *http.Reques
 	}
 
 	type graphQLReq struct {
-		Query     string                 `json:"query"`
-		Variables map[string]interface{} `json:"variables"`
+		Query         string                 `json:"query"`
+		OperationName string                 `json:"operationName"`
+		Variables     map[string]interface{} `json:"variables"`
 	}
 
 	var req graphQLReq
@@ -460,44 +614,30 @@ func (s *VerificationServer) handleGraphQL(w http.ResponseWriter, r *http.Reques
 		}
 	} else {
 		req.Query = r.URL.Query().Get("query")
+		req.OperationName = r.URL.Query().Get("operationName")
 	}
 
-	// Dynamic GraphQL resolver for Nexus Graph Nodes
-	responseData := map[string]interface{}{
-		"nexusGraph": map[string]interface{}{
-			"framework": "Tanzu Nexus (graph-framework-for-microservices)",
-			"root_node": "Enterprise",
-			"node_count": 10,
-		},
-		"carbonPassports": []map[string]interface{}{
-			{
-				"passport_id":         "4806cae0-30f4-49e9-aaad-7a83b7cbf34b",
-				"tenant_id":           "org_saurient_demo",
-				"facility_id":         "fac-rotterdam-01",
-				"batch_number":        "cement-batch-001",
-				"commodity_type":      "Cement",
-				"verification_status": "Calculated",
-				"total_footprint_kg":  7765.0,
-				"intensity_per_unit":  77.65,
-			},
-		},
-		"enterprises": []map[string]interface{}{
-			{"id": "ent-saurient-global", "name": "Saurient Industrial Group"},
-		},
-		"facilities": []map[string]interface{}{
-			{"id": "fac-rotterdam-01", "name": "Rotterdam Cement Plant", "enterprise_id": "ent-saurient-global"},
-		},
-		"productTypes": []map[string]interface{}{
-			{"id": "prod-cement-cem1", "name": "Structural Cement CEM I"},
-		},
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		tenantID = r.URL.Query().Get("tenant_id")
+	}
+	if tenantID == "" {
+		tenantID = "org_saurient_demo"
 	}
 
-	resp := map[string]interface{}{
-		"data": responseData,
+	tenantCtx := tenant.WithTenant(r.Context(), tenantID)
+
+	params := graphql.Params{
+		Schema:         s.gqlSchema,
+		RequestString:  req.Query,
+		OperationName:  req.OperationName,
+		VariableValues: req.Variables,
+		Context:        tenantCtx,
 	}
 
+	result := graphql.Do(params)
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(result)
 }
 
 func (s *VerificationServer) handleNexusNodes(w http.ResponseWriter, r *http.Request) {

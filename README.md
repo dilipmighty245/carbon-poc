@@ -1,6 +1,6 @@
 # Saurient Carbon Passport Platform
 
-An event-driven, graph-native enterprise microservice platform built with the **Tanzu Nexus Graph Framework**, **Google CEL (Common Expression Language)** calculation engine, **Kubernetes Controller Runtime**, and multi-tenant **PostgreSQL Row-Level Security (RLS)** storage.
+An event-driven, graph-native enterprise microservice platform built with the **Nexus Graph Framework**, **Google CEL (Common Expression Language)** calculation engine, **Kubernetes Controller Runtime**, and multi-tenant **PostgreSQL Row-Level Security (RLS)** storage.
 
 ---
 
@@ -10,7 +10,7 @@ An event-driven, graph-native enterprise microservice platform built with the **
   - `CalculationRulebook` (`crb`): Dynamic CEL formulas for Scope 1–3 greenhouse gas emissions, functional unit definitions, and batch quantities per commodity.
   - `Product` (`prod`): Product batch registrations holding telemetry/activity data payloads, tenant context, facility ID, and `rulebookRef`.
   - `CarbonPassport` (`cp`): Auto-generated child Custom Resource managed by the `ProductReconciler` containing calculated Scope 1–3 emissions, intensity, and SHA-256 cryptographic audit digests.
-- **Tanzu Nexus Graph Data Model (`pkg/nexus/types.go`)**: Declares the hierarchical graph model (`Enterprise` $\rightarrow$ `Facility` $\rightarrow$ `ProductType` $\rightarrow$ `CarbonPassport`).
+- **Nexus Graph Data Model (`pkg/nexus/types.go`)**: Declares the hierarchical graph model (`Enterprise` $\rightarrow$ `Facility` $\rightarrow$ `ProductType` $\rightarrow$ `CarbonPassport`).
 - **Dynamic CEL Calculation Engine (`internal/engine/`)**: Compiles and evaluates Scope 1, Scope 2, Scope 3 greenhouse gas formulas dynamically.
 - **Kubernetes Operator / Reconciler (`internal/controller/`)**: Listens to `Product` CR events, evaluates CEL rules, constructs child `CarbonPassport` CRs (`ownerReferences`), writes to PostgreSQL & Redis, and updates CR `.status`.
 - **Multi-Tenant PostgreSQL Storage (`migrations/`, `internal/repository/`)**: RLS-isolated database schema with append-only audit trail logging (`passport_audit_trail`).

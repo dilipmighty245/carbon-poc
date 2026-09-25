@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	saurientv1alpha1 "saurient-platform/api/v1alpha1"
+	nexusdsl "saurient-platform/pkg/nexus"
 )
 
 func buildTestScheme(t *testing.T) *runtime.Scheme {
@@ -294,5 +295,66 @@ func TestHandleGetPassport_NoCacheNoDBUnavailable(t *testing.T) {
 	srv.handleGetPassport(rr, req)
 	if rr.Code != http.StatusServiceUnavailable {
 		t.Errorf("expected 503, got %d", rr.Code)
+	}
+}
+
+// TestHandleGraphQL_IntrospectionAndQuery tests GraphQL Playground GET, Introspection POST, and dynamic Query execution.
+func TestHandleGraphQL_IntrospectionAndQuery(t *testing.T) {
+	srv := newTestServer(t)
+	// Initialize gqlSchema for testing
+	schema, err := nexusdsl.BuildNexusGraphQLSchema(srv)
+	if err != nil {
+		t.Fatalf("BuildNexusGraphQLSchema failed: %v", err)
+	}
+	srv.gqlSchema = schema
+
+	// 1. GET without query -> Playground HTML
+	reqGet := httptest.NewRequest(http.MethodGet, "/graphql", nil)
+	rrGet := httptest.NewRecorder()
+	srv.handleGraphQL(rrGet, reqGet)
+	if rrGet.Code != http.StatusOK {
+		t.Errorf("expected 200 GET playground, got %d", rrGet.Code)
+	}
+	if !bytes.Contains(rrGet.Body.Bytes(), []byte("GraphQLPlayground")) {
+		t.Errorf("playground response missing 'GraphQLPlayground' string")
+	}
+
+	// 2. Introspection Query POST
+	introspectionPayload := `{"query":"query IntrospectionQuery { __schema { queryType { name } } }"}`
+	reqIntro := httptest.NewRequest(http.MethodPost, "/graphql", bytes.NewBufferString(introspectionPayload))
+	reqIntro.Header.Set("Content-Type", "application/json")
+	rrIntro := httptest.NewRecorder()
+	srv.handleGraphQL(rrIntro, reqIntro)
+	if rrIntro.Code != http.StatusOK {
+		t.Errorf("expected 200 Introspection, got %d", rrIntro.Code)
+	}
+	var introResp map[string]interface{}
+	if err := json.Unmarshal(rrIntro.Body.Bytes(), &introResp); err != nil {
+		t.Fatalf("unmarshal introspection response: %v", err)
+	}
+	if introResp["data"] == nil {
+		t.Error("introspection response missing 'data'")
+	}
+
+	// 3. Dynamic Query Execution POST
+	queryPayload := `{"query":"query { nexusGraph { framework root_node } carbonPassports { passport_id commodity_type total_footprint_kg } }"}`
+	reqQuery := httptest.NewRequest(http.MethodPost, "/graphql", bytes.NewBufferString(queryPayload))
+	reqQuery.Header.Set("Content-Type", "application/json")
+	reqQuery.Header.Set("X-Tenant-ID", "org_saurient_demo")
+	rrQuery := httptest.NewRecorder()
+	srv.handleGraphQL(rrQuery, reqQuery)
+	if rrQuery.Code != http.StatusOK {
+		t.Errorf("expected 200 Query execution, got %d", rrQuery.Code)
+	}
+	var queryResp map[string]interface{}
+	if err := json.Unmarshal(rrQuery.Body.Bytes(), &queryResp); err != nil {
+		t.Fatalf("unmarshal query response: %v", err)
+	}
+	data, ok := queryResp["data"].(map[string]interface{})
+	if !ok || data["nexusGraph"] == nil {
+		t.Fatalf("query response missing data.nexusGraph: %s", rrQuery.Body.String())
+	}
+	if data["carbonPassports"] == nil {
+		t.Fatalf("query response missing data.carbonPassports: %s", rrQuery.Body.String())
 	}
 }

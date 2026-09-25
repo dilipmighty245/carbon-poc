@@ -2,8 +2,8 @@ package nexusdsl
 
 import "time"
 
-// Nexus Node Marker Interface & Tag Specs representing Tanzu Nexus Graph DSL.
-// In Tanzu Nexus (graph-framework-for-microservices), domain models are declared
+// Nexus Node Marker Interface & Tag Specs representing Nexus Graph DSL.
+// In Nexus (graph-framework-for-microservices), domain models are declared
 // using Go structs annotated with `nexus:"child"`, `nexus:"link"`, and `nexus:"status"`.
 // The Nexus compiler auto-generates Kubernetes CRDs, API Gateways, and event-driven Reconcilers.
 //

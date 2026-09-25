@@ -17,7 +17,7 @@ This document provides a step-by-step guide to testing the **Saurient Carbon Pas
    - [5.3 Register Product Batch (`POST /api/v1/products`)](#53-register-product-batch-post-apiv1products)
    - [5.4 Fetch Digital Carbon Passport (`GET /api/v1/passports/{id}`)](#54-fetch-digital-carbon-passport-get-apiv1passportsid)
    - [5.5 GraphQL Query Interface (`POST /graphql`)](#55-graphql-query-interface-post-graphql)
-   - [5.6 Tanzu Nexus Graph Overview (`GET /api/v1/nexus/graph`)](#56-tanzu-nexus-graph-overview-get-apiv1nexusgraph)
+   - [5.6 Nexus Graph Overview (`GET /api/v1/nexus/graph`)](#56-nexus-graph-overview-get-apiv1nexusgraph)
 7. [Teardown & Cleanup](#teardown--cleanup)
 
 ---
@@ -659,7 +659,7 @@ curl -s -X POST http://localhost:8080/graphql \
 
 ---
 
-### 5.6 Tanzu Nexus Graph Overview (`GET /api/v1/nexus/graph`)
+### 5.6 Nexus Graph Overview (`GET /api/v1/nexus/graph`)
 
 Retrieve the platform's Nexus Graph node count and entity counts.
 
