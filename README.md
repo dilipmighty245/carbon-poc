@@ -102,7 +102,7 @@ metadata:
   name: cement-product-001
   namespace: default
 spec:
-  tenantID: "123e4567-e89b-12d3-a456-426614174000"
+  tenantID: "org_saurient_demo"
   facilityID: "fac-rotterdam-01"
   batchID: "batch-2026-09-A"
   productName: "Portland Cement Grade 52.5"
@@ -334,7 +334,7 @@ metadata:
   name: cement-product-001
   namespace: default
 spec:
-  tenantID: "123e4567-e89b-12d3-a456-426614174000"
+  tenantID: "org_saurient_demo"
   facilityID: "fac-rotterdam-01"
   batchID: "batch-2026-09-A"
   productName: "Portland Cement Grade 52.5"
@@ -362,7 +362,7 @@ EOF
 
 #### A) Check Updated GET API Response
 ```bash
-curl -s -H "X-Tenant-ID: 123e4567-e89b-12d3-a456-426614174000" \
+curl -s -H "X-Tenant-ID: org_saurient_demo" \
   http://localhost:8080/api/v1/passports/${PASSPORT_ID} | jq .
 ```
 *Expected Output*: Total footprint updated to **8569 kg CO2e** with a new cryptographic SHA-256 data hash.

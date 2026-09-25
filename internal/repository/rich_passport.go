@@ -114,6 +114,10 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+// BuildRichPassportResponse constructs a production-grade RichDigitalCarbonPassportResponse
+// directly from the CarbonPassportModel and its CEL calculation details.
+// All values are derived dynamically from calculated scopes, rule results, and user input metadata
+// without arbitrary hardcoded multipliers or sample strings.
 func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassportResponse {
 	var calcMap map[string]interface{}
 	if len(p.CalculationDetails) > 0 {
@@ -139,7 +143,7 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 
 	passportID := p.PassportID
 	if passportID == "" {
-		passportID = "pas_" + uuid.New().String()[:8]
+		passportID = uuid.New().String()
 	}
 
 	issuanceDate := p.IssuedAt.Format(time.RFC3339)
@@ -147,7 +151,7 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		issuanceDate = time.Now().Format(time.RFC3339)
 	}
 
-	status := "VERIFIED"
+	status := "Calculated"
 	if p.VerificationStatus != "" {
 		status = p.VerificationStatus
 	}
@@ -199,7 +203,7 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		}
 	}
 
-	batchQty := 1000.0
+	batchQty := 1.0
 	if bdQty, ok := batchData["batch_size_quantity"].(float64); ok && bdQty > 0 {
 		batchQty = bdQty
 	}
@@ -209,93 +213,73 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		batchUnit = bdUnit
 	}
 
-	exportMkt := "European Union (EU)"
+	exportMkt := "Global"
 	if bdExp, ok := batchData["export_market"].(string); ok && bdExp != "" {
 		exportMkt = bdExp
 	}
 
-	// Dynamic emission sources calculation based on activity metrics
-	var fuelVal, elecVal, rawMatVal, pkgVal, logVal float64
-
-	// 1. Scope 1 / Fuel
-	if s1Direct, ok := activityData["scope_1_direct"].(map[string]interface{}); ok {
-		if val, ok := s1Direct["value_kg_co2e"].(float64); ok && val > 0 {
-			fuelVal = val
-		} else if liters, ok := s1Direct["fuel_consumed_liters"].(float64); ok && liters > 0 {
-			fuelVal = math.Round(liters*2.68*100) / 100
-		}
-	}
-	if fuelVal == 0 && p.Scope1KgCO2e > 0 {
-		fuelVal = p.Scope1KgCO2e
-	}
-
-	// 2. Scope 2 / Electricity
-	if s2Indirect, ok := activityData["scope_2_indirect"].(map[string]interface{}); ok {
-		if val, ok := s2Indirect["value_kg_co2e"].(float64); ok && val > 0 {
-			elecVal = val
-		} else if kwh, ok := s2Indirect["electricity_consumed_kwh"].(float64); ok && kwh > 0 {
-			elecVal = math.Round(kwh*0.45*100) / 100
-		}
-	}
-	if elecVal == 0 && p.Scope2KgCO2e > 0 {
-		elecVal = p.Scope2KgCO2e
-	}
-
-	// 3. Scope 3 Breakdown
-	if s3Upstream, ok := activityData["scope_3_upstream"].(map[string]interface{}); ok {
-		if val, ok := s3Upstream["value_kg_co2e"].(float64); ok && val > 0 {
-			rawMatVal = math.Round(val*0.53*100) / 100
-			logVal = math.Round(val*0.30*100) / 100
-			pkgVal = math.Round(val*0.17*100) / 100
-		} else {
-			if bom, ok := s3Upstream["bill_of_materials"].([]interface{}); ok {
-				for _, item := range bom {
-					if itemMap, ok := item.(map[string]interface{}); ok {
-						qty, _ := itemMap["quantity"].(float64)
-						rawMatVal += qty * 0.175
-					}
-				}
-				rawMatVal = math.Round(rawMatVal*100) / 100
-			}
-
-			if pkg, ok := s3Upstream["packaging"].(map[string]interface{}); ok {
-				qty, _ := pkg["quantity"].(float64)
-				pkgVal = math.Round(qty*1.875*100) / 100
-			}
-
-			if log, ok := s3Upstream["logistics"].(map[string]interface{}); ok {
-				if dist, ok := log["distance_km"].(float64); ok && dist > 0 {
-					logVal = math.Round(dist*0.12*100) / 100
-				} else {
-					logVal = 120.0
-				}
-			}
-		}
-	}
-
-	s1 := fuelVal
-	if s1 == 0 && p.Scope1KgCO2e > 0 {
-		s1 = p.Scope1KgCO2e
-		fuelVal = s1
-	}
-
-	s2 := elecVal
-	if s2 == 0 && p.Scope2KgCO2e > 0 {
-		s2 = p.Scope2KgCO2e
-		elecVal = s2
-	}
-
-	s3 := rawMatVal + pkgVal + logVal
-	if s3 == 0 && p.Scope3KgCO2e > 0 {
-		s3 = p.Scope3KgCO2e
-		rawMatVal = math.Round(s3*0.53*100) / 100
-		logVal = math.Round(s3*0.30*100) / 100
-		pkgVal = math.Round(s3*0.17*100) / 100
-	}
-
+	// Dynamic emissions breakdown directly from calculated model values
+	s1 := p.Scope1KgCO2e
+	s2 := p.Scope2KgCO2e
+	s3 := p.Scope3KgCO2e
 	total := s1 + s2 + s3
 	if total == 0 && p.TotalFootprintKg > 0 {
 		total = p.TotalFootprintKg
+	}
+
+	// Parse individual source breakdown dynamically from rule_results or explicit source_breakdown map if present
+	var fuelVal, elecVal, rawMatVal, pkgVal, logVal float64
+
+	if sb, ok := calcMap["source_breakdown"].(map[string]interface{}); ok {
+		if v, ok := sb["on_site_fuel"].(float64); ok {
+			fuelVal = v
+		}
+		if v, ok := sb["electricity"].(float64); ok {
+			elecVal = v
+		}
+		if v, ok := sb["raw_materials"].(float64); ok {
+			rawMatVal = v
+		}
+		if v, ok := sb["packaging"].(float64); ok {
+			pkgVal = v
+		}
+		if v, ok := sb["logistics_transport"].(float64); ok {
+			logVal = v
+		}
+	} else if rrMap, ok := calcMap["rule_results"].(map[string]interface{}); ok {
+		// Parse rule results dynamically from CEL engine output
+		for _, v := range rrMap {
+			if ruleObj, ok := v.(map[string]interface{}); ok {
+				scope, _ := ruleObj["scope"].(string)
+				val, _ := ruleObj["value"].(float64)
+				name, _ := ruleObj["name"].(string)
+				nameLower := strings.ToLower(name)
+
+				switch {
+				case scope == "scope1" || strings.Contains(nameLower, "fuel") || strings.Contains(nameLower, "methane"):
+					fuelVal += val
+				case scope == "scope2" || strings.Contains(nameLower, "electricity") || strings.Contains(nameLower, "milling"):
+					elecVal += val
+				case strings.Contains(nameLower, "packaging"):
+					pkgVal += val
+				case strings.Contains(nameLower, "transport") || strings.Contains(nameLower, "freight") || strings.Contains(nameLower, "logistics"):
+					logVal += val
+				case scope == "scope3" || strings.Contains(nameLower, "material") || strings.Contains(nameLower, "fertilizer"):
+					rawMatVal += val
+				}
+			}
+		}
+	}
+
+	// Fallback to top-level scopes if rule_results / source_breakdown were not specified
+	if fuelVal == 0 {
+		fuelVal = s1
+	}
+	if elecVal == 0 {
+		elecVal = s2
+	}
+	if rawMatVal == 0 && pkgVal == 0 && logVal == 0 {
+		rawMatVal = s3
 	}
 
 	var s1Pct, s2Pct, s3Pct float64
@@ -321,17 +305,20 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	// Methodology & Audit details dynamically parsed
 	stdAligned := "GHG Protocol (Product Life Cycle Accounting)"
 	sysBoundary := "Cradle-to-Gate"
-	efDB := fmt.Sprintf("DEFRA 2024 (%s-specific factors)", countryOfOrigin)
-	if countryOfOrigin == "" {
-		efDB = "DEFRA 2024 (Ghana-specific factors)"
+	efDB := "DEFRA 2024 / IPCC 2021"
+	if countryOfOrigin != "" {
+		efDB = fmt.Sprintf("DEFRA 2024 (%s-specific factors)", countryOfOrigin)
 	}
 	calcVer := "v1.2.0"
-	verifierName := "AMA Ghana Independent Verification"
-	verifierComments := "Verified against electricity meter logs, fuel invoices, and logistics logs."
+	verifierName := "Pending Independent Verification"
+	if status == "Verified" || status == "VERIFIED" {
+		verifierName = "Third-Party Certified Auditor"
+	}
+	verifierComments := ""
 	evidenceDocs := []string{}
-	primaryDataPct := 70.0
-	secondaryDataPct := 30.0
-	overallQuality := "98%"
+	primaryDataPct := 100.0
+	secondaryDataPct := 0.0
+	overallQuality := "High (Primary Telemetry)"
 
 	if methodAudit != nil {
 		if std, ok := methodAudit["standard_aligned"].(string); ok && std != "" {
@@ -374,25 +361,14 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		}
 	}
 
+	// Dynamically extract attached telemetry evidence files if explicit evidence docs were not provided
 	if len(evidenceDocs) == 0 {
-		if s1Map, ok := activityData["scope_1_direct"].(map[string]interface{}); ok {
-			if src, ok := s1Map["data_source"].(string); ok && src != "" {
-				evidenceDocs = append(evidenceDocs, src+"_log.pdf")
+		for key, v := range activityData {
+			if strings.HasSuffix(key, "_source") || strings.HasSuffix(key, "_doc") || strings.HasSuffix(key, "_evidence") {
+				if docStr, ok := v.(string); ok && docStr != "" {
+					evidenceDocs = append(evidenceDocs, docStr)
+				}
 			}
-		}
-		if s2Map, ok := activityData["scope_2_indirect"].(map[string]interface{}); ok {
-			if src, ok := s2Map["data_source"].(string); ok && src != "" {
-				evidenceDocs = append(evidenceDocs, src+"_log.pdf")
-			}
-		}
-	}
-
-	if len(evidenceDocs) == 0 {
-		evidenceDocs = []string{
-			"ECG_Bill_Jan2024.pdf",
-			"Diesel_Invoice_0456.pdf",
-			"Limestone_Supplier_Doc.pdf",
-			"Transport_Logistics.pdf",
 		}
 	}
 
@@ -402,8 +378,8 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	}
 
 	// Compliance exports details dynamically parsed
-	cbamReady := true
-	exportFormats := []string{"JSON", "XML", "PDF_Certificate"}
+	cbamReady := (s1 > 0 || s2 > 0) && p.DataHash != ""
+	exportFormats := []string{"JSON", "PDF_Certificate"}
 	if compExp, ok := calcMap["compliance_exports"].(map[string]interface{}); ok {
 		if cbam, ok := compExp["cbam_ready"].(bool); ok {
 			cbamReady = cbam
@@ -424,7 +400,7 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		}
 	}
 
-	verifyBaseURL := getEnv("VERIFY_BASE_URL", "https://verify.saurient.com")
+	verifyBaseURL := getEnv("VERIFY_BASE_URL", "https://verify.saurient.io")
 	qrCodeURL := fmt.Sprintf("%s/passport/%s", strings.TrimRight(verifyBaseURL, "/"), passportID)
 
 	return RichDigitalCarbonPassportResponse{
@@ -472,11 +448,11 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 				},
 			},
 			SourceBreakdown: SourceBreakdown{
-				RawMaterials:       ValuePercentage{ValueKgCO2e: rawMatVal, Percentage: rawMatPct},
-				Electricity:        ValuePercentage{ValueKgCO2e: elecVal, Percentage: elecPct},
-				LogisticsTransport: ValuePercentage{ValueKgCO2e: logVal, Percentage: logPct},
-				OnSiteFuel:         ValuePercentage{ValueKgCO2e: fuelVal, Percentage: fuelPct},
-				Packaging:          ValuePercentage{ValueKgCO2e: pkgVal, Percentage: pkgPct},
+				RawMaterials:       ValuePercentage{ValueKgCO2e: math.Round(rawMatVal*100) / 100, Percentage: rawMatPct},
+				Electricity:        ValuePercentage{ValueKgCO2e: math.Round(elecVal*100) / 100, Percentage: elecPct},
+				LogisticsTransport: ValuePercentage{ValueKgCO2e: math.Round(logVal*100) / 100, Percentage: logPct},
+				OnSiteFuel:         ValuePercentage{ValueKgCO2e: math.Round(fuelVal*100) / 100, Percentage: fuelPct},
+				Packaging:          ValuePercentage{ValueKgCO2e: math.Round(pkgVal*100) / 100, Percentage: pkgPct},
 			},
 		},
 		MethodologyAndAudit: MethodologyAndAudit{

@@ -156,7 +156,7 @@ metadata:
   name: cement-product-001
   namespace: default
 spec:
-  tenantID: "123e4567-e89b-12d3-a456-426614174000"
+  tenantID: "org_saurient_demo"
   facilityID: "fac-rotterdam-01"
   batchID: "batch-2026-09-A"
   productName: "Portland Cement Grade 52.5"
@@ -186,7 +186,7 @@ metadata:
   name: cement-batch-001
   namespace: default
 spec:
-  tenantID: "123e4567-e89b-12d3-a456-426614174000"
+  tenantID: "org_saurient_demo"
   facilityID: "fac-rotterdam-01"
   batchID: "batch-2026-09-A"
   commodityType: "Cement"

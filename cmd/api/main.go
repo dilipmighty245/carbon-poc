@@ -64,7 +64,7 @@ const openAPISpecJSON = `{
                 "type": "object",
                 "required": ["tenant_id", "commodity_type"],
                 "properties": {
-                  "tenant_id": { "type": "string", "format": "uuid", "example": "123e4567-e89b-12d3-a456-426614174000" },
+                  "tenant_id": { "type": "string", "example": "org_saurient_demo" },
                   "facility_id": { "type": "string", "example": "fac-rotterdam-01" },
                   "batch_id": { "type": "string", "example": "cement-batch-002" },
                   "product_name": { "type": "string", "example": "Structural Cement CEM I" },
@@ -472,7 +472,7 @@ func (s *VerificationServer) handleGraphQL(w http.ResponseWriter, r *http.Reques
 		"carbonPassports": []map[string]interface{}{
 			{
 				"passport_id":         "4806cae0-30f4-49e9-aaad-7a83b7cbf34b",
-				"tenant_id":           "123e4567-e89b-12d3-a456-426614174000",
+				"tenant_id":           "org_saurient_demo",
 				"facility_id":         "fac-rotterdam-01",
 				"batch_number":        "cement-batch-001",
 				"commodity_type":      "Cement",
