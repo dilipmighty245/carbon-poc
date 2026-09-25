@@ -1126,7 +1126,7 @@ func (s *VerificationServer) handlePassports(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 	allowedOrigin := getEnv("ALLOWED_ORIGIN", "*")
 	w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Tenant-ID")
 
 	if r.Method == http.MethodOptions {
@@ -1134,16 +1134,12 @@ func (s *VerificationServer) handlePassports(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	switch r.Method {
-	case http.MethodPost:
-		s.handleCreatePassport(w, r)
-	case http.MethodPut:
-		s.handleUpdatePassport(w, r)
-	case http.MethodGet:
-		s.handleGetPassport(w, r)
-	default:
-		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	if r.Method != http.MethodGet {
+		http.Error(w, `{"error":"method not allowed - carbon passports are read-only immutable trust artifacts derived from product telemetry reconciliation"}`, http.StatusMethodNotAllowed)
+		return
 	}
+
+	s.handleGetPassport(w, r)
 }
 
 type PassportInputReq struct {

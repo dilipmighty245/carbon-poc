@@ -15,10 +15,9 @@ This document provides a step-by-step guide to testing the **Saurient Carbon Pas
    - [5.1 API Gateway Overview & Tenant Authentication](#51-api-gateway-overview--tenant-authentication)
    - [5.2 Register Calculation Rulebook (`POST /api/v1/rules`)](#52-register-calculation-rulebook-post-apiv1rules)
    - [5.3 Register Product Batch (`POST /api/v1/products`)](#53-register-product-batch-post-apiv1products)
-   - [5.4 Create Carbon Passport (`POST /api/v1/passports`)](#54-create-carbon-passport-post-apiv1passports)
-   - [5.5 Fetch Digital Carbon Passport (`GET /api/v1/passports/{id}`)](#55-fetch-digital-carbon-passport-get-apiv1passportsid)
-   - [5.6 GraphQL Query Interface (`POST /graphql`)](#56-graphql-query-interface-post-graphql)
-   - [5.7 Tanzu Nexus Graph Overview (`GET /api/v1/nexus/graph`)](#57-tanzu-nexus-graph-overview-get-apiv1nexusgraph)
+   - [5.4 Fetch Digital Carbon Passport (`GET /api/v1/passports/{id}`)](#54-fetch-digital-carbon-passport-get-apiv1passportsid)
+   - [5.5 GraphQL Query Interface (`POST /graphql`)](#55-graphql-query-interface-post-graphql)
+   - [5.6 Tanzu Nexus Graph Overview (`GET /api/v1/nexus/graph`)](#56-tanzu-nexus-graph-overview-get-apiv1nexusgraph)
 7. [Teardown & Cleanup](#teardown--cleanup)
 
 ---
@@ -495,91 +494,9 @@ curl -i -X POST http://localhost:8080/api/v1/products \
 
 ---
 
-### 5.4 Create Carbon Passport (`POST /api/v1/passports`)
+### 5.4 Fetch Digital Carbon Passport (`GET /api/v1/passports/{id}`)
 
-Registers a raw activity dataset directly to create a Carbon Passport record in PostgreSQL and Redis.
-
-#### HTTP Request
-- **Method**: `POST`
-- **Endpoint**: `http://localhost:8080/api/v1/passports`
-- **Headers**:
-  - `Content-Type: application/json`
-  - `X-Tenant-ID: org_saurient_demo`
-
-#### HTTP Request Body:
-```json
-{
-  "tenant_id": "org_saurient_demo",
-  "facility_id": "fac_rotterdam_01",
-  "batch_number": "cement-batch-001",
-  "commodity_type": "Cement",
-  "batch_data": {
-    "product_name": "Structural Cement CEM I",
-    "commodity": "Cement",
-    "batch_id": "cement-batch-001",
-    "facility_name": "Rotterdam Cement Facility",
-    "facility_location": "Rotterdam, Netherlands",
-    "batch_size_quantity": 100.0,
-    "unit_of_measure": "tons",
-    "export_market": "European Union"
-  },
-  "activity_data": {
-    "scope_1_direct": {
-      "fuel_consumed_liters": 2500.0
-    },
-    "scope_2_indirect": {
-      "electricity_consumed_kwh": 5000.0
-    },
-    "scope_3_upstream": {
-      "packaging": {
-        "quantity": 100.0
-      }
-    }
-  }
-}
-```
-
-#### Curl Command:
-```bash
-curl -i -X POST http://localhost:8080/api/v1/passports \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: org_saurient_demo" \
-  -d '{
-    "tenant_id": "org_saurient_demo",
-    "facility_id": "fac_rotterdam_01",
-    "batch_number": "cement-batch-001",
-    "commodity_type": "Cement",
-    "batch_data": {
-      "product_name": "Structural Cement CEM I",
-      "commodity": "Cement",
-      "batch_id": "cement-batch-001",
-      "facility_name": "Rotterdam Cement Facility",
-      "facility_location": "Rotterdam, Netherlands",
-      "batch_size_quantity": 100.0,
-      "unit_of_measure": "tons",
-      "export_market": "European Union"
-    },
-    "activity_data": {
-      "scope_1_direct": {
-        "fuel_consumed_liters": 2500.0
-      },
-      "scope_2_indirect": {
-        "electricity_consumed_kwh": 5000.0
-      },
-      "scope_3_upstream": {
-        "packaging": {
-          "quantity": 100.0
-        }
-      }
-    }
-  }'
-```
-
----
-
-### 5.5 Fetch Digital Carbon Passport (`GET /api/v1/passports/{id}`)
-
-Query the API Gateway REST endpoint (`GET /api/v1/passports/{passport_id}`) to retrieve the rich passport payload.
+Query the API Gateway REST endpoint (`GET /api/v1/passports/{passport_id}`) to retrieve the rich passport payload. Note that `/api/v1/passports` is a **read-only endpoint** (`GET` only). Passports are generated exclusively by the Kubernetes controller reconciliation pipeline.
 
 #### HTTP Request
 - **Method**: `GET`
@@ -695,7 +612,7 @@ curl -s -H "X-Tenant-ID: org_saurient_demo" \
 
 ---
 
-### 5.6 GraphQL Query Interface (`POST /graphql`)
+### 5.5 GraphQL Query Interface (`POST /graphql`)
 
 The API Gateway supports GraphQL queries for fetching passports, facilities, and enterprise topologies.
 
@@ -742,7 +659,7 @@ curl -s -X POST http://localhost:8080/graphql \
 
 ---
 
-### 5.7 Tanzu Nexus Graph Overview (`GET /api/v1/nexus/graph`)
+### 5.6 Tanzu Nexus Graph Overview (`GET /api/v1/nexus/graph`)
 
 Retrieve the platform's Nexus Graph node count and entity counts.
 
