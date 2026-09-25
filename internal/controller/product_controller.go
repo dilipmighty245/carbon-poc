@@ -92,6 +92,9 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			calcDetailsMap[k] = v
 		}
 	}
+	if len(result.RuleResults) > 0 {
+		calcDetailsMap["rule_results"] = result.RuleResults
+	}
 	calcDetailsJSON, _ := json.Marshal(calcDetailsMap)
 
 	// Step f: Prepare passportModel & resolve PassportID early so that PassportID is consistent across
@@ -237,6 +240,22 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
+func mapCRBRulesToEngine(crbRules []saurientv1alpha1.RuleDefinition) []engine.RuleDefinition {
+	var rules []engine.RuleDefinition
+	for _, r := range crbRules {
+		rules = append(rules, engine.RuleDefinition{
+			ID:          r.ID,
+			Name:        r.Name,
+			Scope:       engine.RuleScope(r.Scope),
+			Mode:        engine.AccountingMode(r.Mode),
+			OutputType:  engine.RuleOutputType(r.OutputType),
+			Formula:     r.Formula,
+			Description: r.Description,
+		})
+	}
+	return rules
+}
+
 // resolveRulebook returns the engine.CalculationRulebook for this Product.
 // It first tries to fetch the CR named in spec.rulebookRef, then falls back
 // to commodity-specific hardcoded defaults.
@@ -253,6 +272,8 @@ func (r *ProductReconciler) resolveRulebook(ctx context.Context, product *saurie
 		}
 		var crb saurientv1alpha1.CalculationRulebook
 		if err := r.Get(ctx, types.NamespacedName{Name: product.Spec.RulebookRef.Name, Namespace: ns}, &crb); err == nil {
+			rulebook.AccountingMode = engine.AccountingMode(crb.Spec.AccountingMode)
+			rulebook.Rules = mapCRBRulesToEngine(crb.Spec.Rules)
 			rulebook.Scope1Formula = crb.Spec.Scope1Formula
 			rulebook.Scope2Formula = crb.Spec.Scope2Formula
 			rulebook.Scope3Formula = crb.Spec.Scope3Formula
@@ -270,6 +291,8 @@ func (r *ProductReconciler) resolveRulebook(ctx context.Context, product *saurie
 	if err := r.List(ctx, &rulebookList, client.InNamespace(product.Namespace)); err == nil {
 		for _, item := range rulebookList.Items {
 			if item.Spec.CommodityType == product.Spec.CommodityType {
+				rulebook.AccountingMode = engine.AccountingMode(item.Spec.AccountingMode)
+				rulebook.Rules = mapCRBRulesToEngine(item.Spec.Rules)
 				rulebook.Scope1Formula = item.Spec.Scope1Formula
 				rulebook.Scope2Formula = item.Spec.Scope2Formula
 				rulebook.Scope3Formula = item.Spec.Scope3Formula

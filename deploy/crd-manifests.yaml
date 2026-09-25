@@ -90,14 +90,13 @@ spec:
               required:
                 - commodityType
                 - version
-                - scope1Formula
-                - scope2Formula
-                - scope3Formula
                 - functionalUnit
               properties:
                 commodityType:
                   type: string
                 version:
+                  type: string
+                accountingMode:
                   type: string
                 scope1Formula:
                   type: string
@@ -109,6 +108,29 @@ spec:
                   type: string
                 batchQuantity:
                   type: number
+                rules:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - scope
+                      - formula
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      scope:
+                        type: string
+                      mode:
+                        type: string
+                      outputType:
+                        type: string
+                      formula:
+                        type: string
+                      description:
+                        type: string
   scope: Namespaced
   names:
     plural: calculationrulebooks

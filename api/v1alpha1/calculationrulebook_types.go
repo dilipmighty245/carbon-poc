@@ -5,14 +5,46 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type RuleScope string
+type RuleOutputType string
+type AccountingMode string
+
+const (
+	Scope1       RuleScope = "scope1"
+	Scope2       RuleScope = "scope2"
+	Scope3       RuleScope = "scope3"
+	Intermediate RuleScope = "intermediate"
+
+	OutputNone           RuleOutputType = "none"
+	OutputTotalFootprint RuleOutputType = "total_footprint"
+	OutputIntensity      RuleOutputType = "intensity"
+
+	ModePCF  AccountingMode = "pcf"
+	ModeGHG  AccountingMode = "ghg"
+	ModeCBAM AccountingMode = "cbam"
+	ModeAll  AccountingMode = "all"
+)
+
+type RuleDefinition struct {
+	ID          string         `json:"id"`
+	Name        string         `json:"name,omitempty"`
+	Scope       RuleScope      `json:"scope"`
+	Mode        AccountingMode `json:"mode,omitempty"`
+	OutputType  RuleOutputType `json:"outputType,omitempty"`
+	Formula     string         `json:"formula"`
+	Description string         `json:"description,omitempty"`
+}
+
 type CalculationRulebookSpec struct {
-	CommodityType  string  `json:"commodityType"`
-	Version        string  `json:"version"`
-	Scope1Formula  string  `json:"scope1Formula"`
-	Scope2Formula  string  `json:"scope2Formula"`
-	Scope3Formula  string  `json:"scope3Formula"`
-	FunctionalUnit string  `json:"functionalUnit"`
-	BatchQuantity  float64 `json:"batchQuantity,omitempty"`
+	CommodityType  string           `json:"commodityType"`
+	Version        string           `json:"version"`
+	AccountingMode AccountingMode   `json:"accountingMode,omitempty"`
+	Rules          []RuleDefinition `json:"rules,omitempty"`
+	Scope1Formula  string           `json:"scope1Formula,omitempty"`
+	Scope2Formula  string           `json:"scope2Formula,omitempty"`
+	Scope3Formula  string           `json:"scope3Formula,omitempty"`
+	FunctionalUnit string           `json:"functionalUnit"`
+	BatchQuantity  float64          `json:"batchQuantity,omitempty"`
 }
 
 // +kubebuilder:object:root=true
