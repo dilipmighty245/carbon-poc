@@ -387,6 +387,20 @@ kubectl exec -n saurient-system deploy/postgres -- psql -U saurient -d saurient_
 
 ---
 
+## 💻 Web UI Dashboard (`digital-passport-app`)
+
+The repository includes a modern React 18 + TypeScript + Tailwind CSS web dashboard (`digital-passport-app`) for viewing digital carbon passports, monitoring emissions, and creating product batches via live REST API integration.
+
+### Starting the UI App:
+```bash
+cd digital-passport-app
+yarn install
+yarn dev
+```
+Open **`http://localhost:5173`** in your browser. For more details, see [`digital-passport-app/README.md`](./digital-passport-app/README.md).
+
+---
+
 ## 🧹 Cleaning Up
 
 - **To clean data (truncate tables, flush cache, remove CRs)**:

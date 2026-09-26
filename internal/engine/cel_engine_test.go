@@ -227,3 +227,49 @@ func TestCELEngine_AccountingModes(t *testing.T) {
 		t.Errorf("Total footprint expected 270.0, got %f", result.TotalFootprintKg)
 	}
 }
+
+func TestCELEngine_MissingVariableAutoDeclaration(t *testing.T) {
+	engine := NewCELEngine()
+
+	rulebook := CalculationRulebook{
+		CommodityType:  "Cocoa",
+		Version:        "1.0",
+		Scope1Formula:  "fuel_consumed_liters * 2.68",
+		Scope2Formula:  "electricity_consumed_kwh * 0.45",
+		Scope3Formula:  "(raw_material_kg * 0.175) + (packaging_qty * 1.875) + (transport_km * 0.12)",
+		FunctionalUnit: "kg CO2e per kg",
+		BatchQuantity:  1000.0,
+	}
+
+	// Missing packaging_qty and transport_km and fuel_consumed_liters
+	activityData := map[string]interface{}{
+		"raw_material_kg":          100.0,
+		"electricity_consumed_kwh": 200.0,
+	}
+
+	result, err := engine.Evaluate(context.Background(), rulebook, activityData)
+	if err != nil {
+		t.Fatalf("Evaluate failed unexpectedly on missing formula variables: %v", err)
+	}
+
+	// Scope 1: 0 * 2.68 = 0
+	// Scope 2: 200 * 0.45 = 90
+	// Scope 3: 100 * 0.175 + 0 * 1.875 + 0 * 0.12 = 17.5
+	expectedScope1 := 0.0
+	expectedScope2 := 90.0
+	expectedScope3 := 17.5
+	expectedTotal := 107.5
+
+	if result.Scope1Kg != expectedScope1 {
+		t.Errorf("Scope 1 expected %f, got %f", expectedScope1, result.Scope1Kg)
+	}
+	if result.Scope2Kg != expectedScope2 {
+		t.Errorf("Scope 2 expected %f, got %f", expectedScope2, result.Scope2Kg)
+	}
+	if result.Scope3Kg != expectedScope3 {
+		t.Errorf("Scope 3 expected %f, got %f", expectedScope3, result.Scope3Kg)
+	}
+	if result.TotalFootprintKg != expectedTotal {
+		t.Errorf("Total footprint expected %f, got %f", expectedTotal, result.TotalFootprintKg)
+	}
+}

@@ -15,6 +15,30 @@ import (
 
 var reIdent = regexp.MustCompile(`\b[A-Za-z_][A-Za-z0-9_]*\b`)
 
+var celKeywords = map[string]bool{
+	"true": true, "false": true, "null": true, "in": true, "has": true,
+	"size": true, "int": true, "double": true, "uint": true, "string": true,
+	"bytes": true, "list": true, "map": true, "type": true, "math": true, "dyn": true,
+}
+
+func ensureFormulaVarsDeclared(formulas []string, normalizedVars map[string]interface{}, envOpts *[]cel.EnvOption) {
+	for _, f := range formulas {
+		if f == "" {
+			continue
+		}
+		idents := reIdent.FindAllString(f, -1)
+		for _, tok := range idents {
+			if celKeywords[tok] {
+				continue
+			}
+			if _, exists := normalizedVars[tok]; !exists {
+				normalizedVars[tok] = 0.0
+				*envOpts = append(*envOpts, cel.Variable(tok, cel.DoubleType))
+			}
+		}
+	}
+}
+
 type CELEngine struct{}
 
 func NewCELEngine() *CELEngine {
@@ -63,6 +87,9 @@ func (e *CELEngine) Evaluate(ctx context.Context, rulebook CalculationRulebook, 
 	if len(rulebook.Rules) > 0 {
 		return e.evaluateDAG(ctx, rulebook, normalizedVars, envOpts)
 	}
+
+	formulas := []string{rulebook.Scope1Formula, rulebook.Scope2Formula, rulebook.Scope3Formula}
+	ensureFormulaVarsDeclared(formulas, normalizedVars, &envOpts)
 
 	env, err := cel.NewEnv(envOpts...)
 	if err != nil {
@@ -135,6 +162,12 @@ func (e *CELEngine) evaluateDAG(ctx context.Context, rulebook CalculationRuleboo
 			envOpts = append(envOpts, cel.Variable(id, cel.DoubleType))
 		}
 	}
+
+	dagFormulas := make([]string, 0, len(activeRules))
+	for _, r := range activeRules {
+		dagFormulas = append(dagFormulas, r.Formula)
+	}
+	ensureFormulaVarsDeclared(dagFormulas, normalizedVars, &envOpts)
 
 	inDegree := make(map[string]int)
 	adj := make(map[string][]string)
