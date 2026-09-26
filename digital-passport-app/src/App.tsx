@@ -17,6 +17,7 @@ import { PCFView } from './components/views/PCFView';
 import { SuppliersView } from './components/views/SuppliersView';
 import { CBAMView } from './components/views/CBAMView';
 import { AnalyticsView } from './components/views/AnalyticsView';
+import { ParisAlignmentView } from './components/views/ParisAlignmentView';
 import { AdminView } from './components/views/AdminView';
 
 export function App() {
@@ -29,8 +30,9 @@ export function App() {
         <Route path="/registration" element={<RegistrationView />} />
 
         {/* Views wrapped in main layout shell */}
-        <Route path="/dashboard" element={<Shell><ExecutiveDashboard /></Shell>} />
+        <Route path="/dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
         <Route path="/company-dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
+        <Route path="/executive-dashboard" element={<Shell><ExecutiveDashboard /></Shell>} />
         <Route path="/products/new" element={<Shell><ProductSetup /></Shell>} />
         <Route path="/mrv" element={<Shell><MRVWorkflow /></Shell>} />
         <Route path="/evidence" element={<Shell><EvidenceVerification /></Shell>} />
@@ -41,11 +43,19 @@ export function App() {
         {/* Modules & Reports */}
         <Route path="/organisation" element={<Shell><OrganisationView /></Shell>} />
         <Route path="/data" element={<Shell><IntegrationHubView /></Shell>} />
-        <Route path="/ghg" element={<Shell><GHGInventoryView /></Shell>} />
+        
+        {/* Carbon Accounting tab -> Product Carbon Footprint (07_pcf.png) */}
+        <Route path="/carbon-accounting" element={<Shell><PCFView /></Shell>} />
         <Route path="/pcf" element={<Shell><PCFView /></Shell>} />
+        <Route path="/ghg" element={<Shell><GHGInventoryView /></Shell>} />
+
+        {/* Value Chain tab -> Supplier & Customer Network (08_suppliers.png) */}
+        <Route path="/value-chain" element={<Shell><SuppliersView /></Shell>} />
         <Route path="/suppliers" element={<Shell><SuppliersView /></Shell>} />
+
         <Route path="/cbam" element={<Shell><CBAMView /></Shell>} />
         <Route path="/analytics" element={<Shell><AnalyticsView /></Shell>} />
+        <Route path="/paris-alignment" element={<Shell><ParisAlignmentView /></Shell>} />
         <Route path="/admin" element={<Shell><AdminView /></Shell>} />
 
         {/* Fallback route */}

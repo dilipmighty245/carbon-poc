@@ -10,6 +10,7 @@ import {
   GitMerge, 
   QrCode, 
   TrendingUp, 
+  Compass,
   Settings,
   Bell,
   LogOut,
@@ -25,12 +26,13 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     { to: '/dashboard', label: 'Home', icon: Home, end: true },
     { to: '/organisation', label: 'Organisation', icon: Building2 },
     { to: '/data', label: 'Data', icon: Database },
-    { to: '/ghg', label: 'Carbon Accounting', icon: BarChart3 },
-    { to: '/pcf', label: 'Value Chain', icon: Package },
+    { to: '/carbon-accounting', label: 'Carbon Accounting', icon: BarChart3 },
+    { to: '/value-chain', label: 'Value Chain', icon: Package },
     { to: '/cbam', label: 'CBAM', icon: Shield },
     { to: '/mrv', label: 'MRV & Verification', icon: GitMerge },
     { to: '/passport', label: 'Carbon Passports', icon: QrCode },
     { to: '/analytics', label: 'Analytics', icon: TrendingUp },
+    { to: '/paris-alignment', label: 'Paris Alignment', icon: Compass },
     { to: '/admin', label: 'Administration', icon: Settings },
   ];
 
