@@ -4,6 +4,9 @@ import { Users, Building2, Leaf, FileCheck, Cloud, ShieldCheck, MapPin, CheckCir
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export const ExecutiveDashboard: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState('Overview');
+  const tabs = ['Overview', 'Priority Tasks', 'Notifications', 'Recent Activity'];
+
   const kpis = [
     { label: 'Exporters onboarded', val: '124', change: '+24% vs. last quarter', icon: Users, color: 'text-emerald-600 bg-emerald-50' },
     { label: 'Facilities connected', val: '312', change: '+40% vs. last quarter', icon: Building2, color: 'text-blue-600 bg-blue-50' },
@@ -49,7 +52,24 @@ export const ExecutiveDashboard: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Executive Dashboard for Ghana</h1>
-        <p className="text-slate-500 text-sm">A high-level view for leadership, policy, and export readiness</p>
+        <p className="text-slate-500 text-sm mb-4">A high-level view for leadership, policy, and export readiness</p>
+
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* KPI Cards Grid */}

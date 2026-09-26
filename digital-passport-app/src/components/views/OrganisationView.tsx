@@ -2,6 +2,9 @@ import React from 'react';
 import { Building2, Radio, CheckCircle2 } from 'lucide-react';
 
 export const OrganisationView: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState('Facilities');
+  const tabs = ['Profile', 'Facilities', 'Processes', 'Users & Roles', 'Reporting Periods', 'Localisation', 'Approvals'];
+
   const kpis = [
     { title: 'Active Facilities', val: '4', subtitle: '3 production • 1 warehouse' },
     { title: 'Connected Devices', val: '38', subtitle: '35 online' },
@@ -20,7 +23,24 @@ export const OrganisationView: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Organisation & Facilities</h1>
-        <p className="text-xs text-slate-500">Manage company identity, operating sites, roles and reporting periods</p>
+        <p className="text-xs text-slate-500 mb-4">Manage company identity, operating sites, roles and reporting periods</p>
+
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

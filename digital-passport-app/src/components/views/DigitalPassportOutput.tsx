@@ -33,6 +33,7 @@ export const DigitalPassportOutput: React.FC = () => {
   const [passportsResult, setPassportsResult] = useState<ApiFetchResult<RichDigitalPassport[]> | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCommodity, setSelectedCommodity] = useState<string>('ALL');
+  const [passportSubTab, setPassportSubTab] = useState<string>('Registry');
 
   const [activeTab, setActiveTab] = useState<'summary' | 'evidence' | 'supply_chain' | 'certificate' | 'api_json'>('summary');
   const [copied, setCopied] = useState(false);
@@ -54,6 +55,11 @@ export const DigitalPassportOutput: React.FC = () => {
   };
 
   useEffect(() => {
+    if (id) {
+      setPassportSubTab('Passport Detail');
+    } else {
+      setPassportSubTab('Registry');
+    }
     loadData();
   }, [id, tenantId]);
 
@@ -130,14 +136,31 @@ export const DigitalPassportOutput: React.FC = () => {
               <QrCode className="w-6 h-6 text-emerald-600" />
               <h1 className="text-2xl font-bold text-slate-900">Digital Carbon Passports</h1>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 mb-3">
               Select any passport tile to view detailed Scope 1-3 lifecycle footprints, audit proofs, and EU compliance artifacts.
             </p>
+
+            {/* Sub Navigation Tabs for Screen 11 */}
+            <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+              {['Readiness', 'Preview', 'Sign & Issue', 'Registry', 'Passport Detail', 'QR Verification', 'Sharing', 'Versions'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setPassportSubTab(tab)}
+                  className={`px-3 py-1.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                    passportSubTab === tab
+                      ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
 
           <Link
             to="/products/new"
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 self-start md:self-auto"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2 self-start md:self-auto shrink-0"
           >
             <span>+ Create New Product Passport</span>
           </Link>
@@ -486,18 +509,22 @@ export const DigitalPassportOutput: React.FC = () => {
 
           {/* Interactive Tabs */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="flex border-b border-slate-200 bg-slate-50/50">
+            <div className="flex border-b border-slate-200 bg-slate-50/50 overflow-x-auto">
               {[
                 { id: 'summary', label: 'Summary', icon: '📊' },
-                { id: 'evidence', label: 'Evidence', icon: '📄' },
+                { id: 'carbon_data', label: 'Carbon Data', icon: '🌱' },
+                { id: 'lifecycle', label: 'Lifecycle', icon: '🔄' },
                 { id: 'supply_chain', label: 'Supply Chain', icon: '🔗' },
+                { id: 'evidence', label: 'Evidence', icon: '📄' },
+                { id: 'verification', label: 'Verification', icon: '🛡️' },
                 { id: 'certificate', label: 'Certificate', icon: '📜' },
+                { id: 'audit_history', label: 'Audit History', icon: '📋' },
                 { id: 'api_json', label: 'Raw API Payload', icon: '⚡' },
               ].map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex-1 py-3 px-4 text-xs font-bold flex items-center justify-center gap-2 border-b-2 transition-all ${
+                  className={`py-3 px-4 text-xs font-bold whitespace-nowrap flex items-center justify-center gap-2 border-b-2 transition-all ${
                     activeTab === tab.id
                       ? 'border-emerald-500 text-emerald-700 bg-white shadow-xs'
                       : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'

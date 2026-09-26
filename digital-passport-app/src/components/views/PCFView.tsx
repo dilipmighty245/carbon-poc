@@ -2,6 +2,9 @@ import React from 'react';
 import { Package, Award, Sparkles } from 'lucide-react';
 
 export const PCFView: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState('Projects');
+  const tabs = ['Projects', 'Output Definition', 'Boundary', 'Inventory', 'Allocation', 'Logistics', 'Calculation', 'Hotspots', 'Report'];
+
   const kpis = [
     { title: 'Passports Issued', val: '12', subtitle: '9 cocoa • 3 aluminum' },
     { title: 'Avg Carbon Intensity', val: '0.42 kg/kg', subtitle: '-18% vs industry avg' },
@@ -19,7 +22,24 @@ export const PCFView: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Product Carbon Footprint (PCF)</h1>
-        <p className="text-xs text-slate-500">ISO 14067 compliant lifecycle footprinting per product SKU</p>
+        <p className="text-xs text-slate-500 mb-4">ISO 14067 compliant lifecycle footprinting per product SKU</p>
+
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

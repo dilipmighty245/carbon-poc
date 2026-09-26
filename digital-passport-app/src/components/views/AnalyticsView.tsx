@@ -3,6 +3,9 @@ import { BarChart3, TrendingUp, Zap, Target } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export const AnalyticsView: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState('Executive');
+  const tabs = ['Executive', 'Facilities', 'Products', 'Value Chain', 'Trade Exposure', 'Scenarios'];
+
   const kpis = [
     { title: 'YTD Emission Reduction', val: '-14.2%', subtitle: 'vs 2025 Baseline' },
     { title: 'Decarbonization ROI', val: '$142,000', subtitle: 'Energy cost savings' },
@@ -23,7 +26,24 @@ export const AnalyticsView: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Analytics & Forecasting</h1>
-        <p className="text-xs text-slate-500">Decarbonization trajectory, predictive trends & financial impact analysis</p>
+        <p className="text-xs text-slate-500 mb-4">Decarbonization trajectory, predictive trends & financial impact analysis</p>
+
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

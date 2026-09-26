@@ -2,6 +2,9 @@ import React from 'react';
 import { Database, Radio, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export const IntegrationHubView: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState('Connections');
+  const tabs = ['Connections', 'Mapping Studio', 'Sync Controls', 'Import Jobs', 'Exceptions', 'Telemetry', 'Manual Entry', 'Bulk Upload'];
+
   const kpis = [
     { title: 'Active Sources', val: '7', subtitle: 'SAP, CRM, meters and files' },
     { title: 'Records Today', val: '18,420', subtitle: '99.3% accepted' },
@@ -20,7 +23,24 @@ export const IntegrationHubView: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Integration Hub</h1>
-        <p className="text-xs text-slate-500">Connect systems, devices and files to the canonical carbon model</p>
+        <p className="text-xs text-slate-500 mb-4">Connect systems, devices and files to the canonical carbon model</p>
+
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

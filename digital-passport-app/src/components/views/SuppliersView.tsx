@@ -2,6 +2,9 @@ import React from 'react';
 import { Users, Truck, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export const SuppliersView: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState('Suppliers');
+  const tabs = ['Suppliers', 'Invitations', 'Declarations', 'Evidence', 'Scorecards', 'Supply Catalogue', 'Customer Requests', 'Customer Catalogue'];
+
   const kpis = [
     { title: 'Onboarded Suppliers', val: '42', subtitle: 'Scope 3 data network' },
     { title: 'Verified Declarations', val: '86%', subtitle: 'Third-party audited' },
@@ -19,7 +22,24 @@ export const SuppliersView: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Supplier Management</h1>
-        <p className="text-xs text-slate-500">Upstream primary emission data capture & supplier sustainability scoring</p>
+        <p className="text-xs text-slate-500 mb-4">Upstream primary emission data capture & supplier sustainability scoring</p>
+
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -3,6 +3,9 @@ import { SimpleWordsCard } from '../common/SimpleWordsCard';
 import { Radio, FileSpreadsheet, CheckCircle2, ShieldAlert, FileText, ArrowRight, Clock } from 'lucide-react';
 
 export const MRVWorkflow: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState('Readiness');
+  const tabs = ['Readiness', 'Evidence Vault', 'Calculation Review', 'Data Freeze', 'Verifiers', 'Engagements', 'Conflict Check', 'Plan', 'Site Visits', 'Findings', 'Corrections', 'Report'];
+
   const simpleWordsPoints = [
     { step: 1, text: 'Measure means collecting the real-world operational and energy telemetry data.' },
     { step: 2, text: 'Report means organizing data into standardized product batch records.' },
@@ -20,7 +23,24 @@ export const MRVWorkflow: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">MRV Workflow – Measure, Report, Verify</h1>
-        <p className="text-slate-500 text-sm">The trust process behind every Digital Carbon Passport</p>
+        <p className="text-slate-500 text-sm mb-4">The trust process behind every Digital Carbon Passport</p>
+
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 3-Step Process Header */}
