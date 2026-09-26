@@ -39,7 +39,6 @@ export function App() {
 
         {/* Modules & Reports */}
         <Route path="/organisation" element={<Shell><OrganisationView /></Shell>} />
-        <Route path="/data text-slate-700" element={<Shell><IntegrationHubView /></Shell>} />
         <Route path="/data" element={<Shell><IntegrationHubView /></Shell>} />
         <Route path="/ghg" element={<Shell><GHGInventoryView /></Shell>} />
         <Route path="/pcf" element={<Shell><PCFView /></Shell>} />
