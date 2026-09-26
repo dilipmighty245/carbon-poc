@@ -3,7 +3,6 @@ import { NavLink, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   PackagePlus, 
-  Radio, 
   GitMerge, 
   FileCheck2, 
   Calculator, 
@@ -34,7 +33,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     { to: '/mrv', label: 'MRV Workflow', icon: GitMerge },
     { to: '/evidence', label: 'Evidence Audit', icon: FileCheck2 },
     { to: '/emissions', label: 'Emissions Engine', icon: Calculator },
-    { to: '/passport/GH-CB-2024-001', label: 'Digital Carbon Passport', icon: QrCode },
+    { to: '/passport', label: 'Digital Carbon Passport', icon: QrCode },
   ];
 
   const platformNavItems = [
@@ -93,11 +92,11 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
           <div className="flex items-center gap-3 pl-2 border-l border-slate-200">
             <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-semibold text-xs flex items-center justify-center shadow-xs">
-              AK
+              DT
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-xs font-semibold text-slate-900 leading-tight">Ama K.</p>
-              <p className="text-[10px] text-slate-500">Site Manager</p>
+              <p className="text-xs font-semibold text-slate-900 leading-tight">Dilip T</p>
+              <p className="text-[10px] text-slate-500">Platform Engineer</p>
             </div>
           </div>
         </div>

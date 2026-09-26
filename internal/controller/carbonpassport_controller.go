@@ -159,13 +159,21 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// Persist to Postgres using RLS transaction wrapper
 	if r.PostgresRepo != nil {
 		if passport.Status.PassportID == "" {
-			// Assign a UUID before persisting so the audit trail and status both
-			// reference the same stable identifier from the start.
-			passportModel.PassportID = uuid.New().String()
-			auditModel.PassportID = passportModel.PassportID
-			if err := r.PostgresRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
-				logger.Error(err, "Failed to save passport to Postgres database", "name", passport.Name)
-				return ctrl.Result{}, fmt.Errorf("postgres persistence error: %w", err)
+			// Check if a passport for this batch already exists in Postgres for this tenant to prevent duplicates
+			if existing, err := r.PostgresRepo.GetPassportByBatchNumber(tenantCtx, passport.Spec.BatchID); err == nil && existing != nil {
+				passportModel.PassportID = existing.PassportID
+				auditModel.PassportID = existing.PassportID
+				if err := r.PostgresRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
+					logger.Error(err, "Failed to update existing passport in Postgres database", "name", passport.Name)
+					return ctrl.Result{}, fmt.Errorf("postgres update error: %w", err)
+				}
+			} else {
+				passportModel.PassportID = uuid.New().String()
+				auditModel.PassportID = passportModel.PassportID
+				if err := r.PostgresRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
+					logger.Error(err, "Failed to save passport to Postgres database", "name", passport.Name)
+					return ctrl.Result{}, fmt.Errorf("postgres persistence error: %w", err)
+				}
 			}
 		} else {
 			if err := r.PostgresRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
