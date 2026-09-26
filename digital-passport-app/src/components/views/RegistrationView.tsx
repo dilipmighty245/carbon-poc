@@ -122,7 +122,7 @@ export const RegistrationView: React.FC = () => {
               <button type="button" className="px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50">
                 Save draft
               </button>
-              <button type="button" onClick={() => navigate('/')} className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm">
+              <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-sm">
                 Continue →
               </button>
             </div>

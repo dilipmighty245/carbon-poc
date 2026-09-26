@@ -389,3 +389,39 @@ func (r *PostgresRepository) ListPassports(ctx context.Context) ([]*CarbonPasspo
 
 	return passports, nil
 }
+
+// DeletePassportByPassportID removes audit trail records and the carbon passport matching passportID for the active tenant.
+func (r *PostgresRepository) DeletePassportByPassportID(ctx context.Context, passportID string) error {
+	return r.WithTenantTx(ctx, func(tx *sql.Tx) error {
+		_, _ = tx.ExecContext(ctx, `
+			DELETE FROM passport_audit_trail
+			WHERE passport_id = $1;
+		`, passportID)
+
+		_, err := tx.ExecContext(ctx, `
+			DELETE FROM carbon_passports
+			WHERE passport_id = $1 AND tenant_id = current_setting('app.current_tenant', true);
+		`, passportID)
+		return err
+	})
+}
+
+// DeletePassportByBatchNumber removes audit trail records and carbon passport matching batchNumber for the active tenant.
+func (r *PostgresRepository) DeletePassportByBatchNumber(ctx context.Context, batchNumber string) error {
+	return r.WithTenantTx(ctx, func(tx *sql.Tx) error {
+		_, _ = tx.ExecContext(ctx, `
+			DELETE FROM passport_audit_trail
+			WHERE passport_id IN (
+				SELECT passport_id FROM carbon_passports
+				WHERE batch_number = $1 AND tenant_id = current_setting('app.current_tenant', true)
+			);
+		`, batchNumber)
+
+		_, err := tx.ExecContext(ctx, `
+			DELETE FROM carbon_passports
+			WHERE batch_number = $1 AND tenant_id = current_setting('app.current_tenant', true);
+		`, batchNumber)
+		return err
+	})
+}
+

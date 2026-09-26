@@ -142,14 +142,26 @@ func TestHandleCreateProduct_TenantIDFromHeader(t *testing.T) {
 	}
 }
 
-// TestHandleProducts_MethodNotAllowed expects 405 for unsupported method DELETE.
+// TestHandleProducts_MethodNotAllowed expects 405 for unsupported method PATCH.
 func TestHandleProducts_MethodNotAllowed(t *testing.T) {
 	srv := newTestServer(t)
-	req := httptest.NewRequest(http.MethodDelete, "/api/v1/products", nil)
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/products", nil)
 	rr := httptest.NewRecorder()
 	srv.handleProducts(rr, req)
 	if rr.Code != http.StatusMethodNotAllowed {
 		t.Errorf("expected 405, got %d", rr.Code)
+	}
+}
+
+// TestHandleProducts_DeleteValid expects 200 for DELETE /api/v1/products/batch-001.
+func TestHandleProducts_DeleteValid(t *testing.T) {
+	srv := newTestServer(t)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/products/batch-001", nil)
+	req.Header.Set("X-Tenant-ID", "org_saurient_demo")
+	rr := httptest.NewRecorder()
+	srv.handleProducts(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rr.Code)
 	}
 }
 
@@ -264,25 +276,25 @@ func TestHandleCreateProduct_DetailedInput(t *testing.T) {
 	}
 }
 
-// TestHandleGetPassport_MissingTenantID expects 401 when no tenant context is present.
+// TestHandleGetPassport_MissingTenantID checks fallback to org_saurient_demo tenant when missing.
 func TestHandleGetPassport_MissingTenantID(t *testing.T) {
 	srv := newTestServer(t)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/passports/some-passport-id", nil)
 	rr := httptest.NewRecorder()
 	srv.handleGetPassport(rr, req)
-	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", rr.Code)
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Errorf("expected 503, got %d", rr.Code)
 	}
 }
 
-// TestHandleGetPassport_MissingPassportID expects 400 when passport_id path param is empty.
+// TestHandleGetPassport_MissingPassportID returns passport list when passport_id path param is empty.
 func TestHandleGetPassport_MissingPassportID(t *testing.T) {
 	srv := newTestServer(t)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/passports/", nil)
 	rr := httptest.NewRecorder()
 	srv.handleGetPassport(rr, req)
-	if rr.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", rr.Code)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", rr.Code)
 	}
 }
 

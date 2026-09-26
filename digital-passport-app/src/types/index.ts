@@ -31,6 +31,7 @@ export interface ProductCreateResponse {
   commodity_type: string;
   status: string;
   created_at: string;
+  passport_id?: string;
 }
 
 export interface RichDigitalPassport {

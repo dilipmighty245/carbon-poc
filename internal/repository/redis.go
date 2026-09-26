@@ -43,3 +43,12 @@ func (r *RedisRepository) GetPassport(ctx context.Context, cacheKey string) ([]b
 	}
 	return val, nil
 }
+
+// DeletePassport removes passport data from Redis by the given cacheKey.
+func (r *RedisRepository) DeletePassport(ctx context.Context, cacheKey string) error {
+	err := r.client.Del(ctx, cacheKey).Err()
+	if err != nil {
+		return fmt.Errorf("failed to delete passport key from redis: %w", err)
+	}
+	return nil
+}

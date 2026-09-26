@@ -1,5 +1,7 @@
 # Binaries and compiled output
 /bin/
+saurient-api-bin
+saurient-controller-bin
 *.exe
 *.exe;
 *.dll

@@ -23,12 +23,13 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Full screen auth & onboarding views */}
+        {/* Full screen auth & onboarding starting entry points */}
+        <Route path="/" element={<LoginView />} />
         <Route path="/login" element={<LoginView />} />
         <Route path="/registration" element={<RegistrationView />} />
 
         {/* Views wrapped in main layout shell */}
-        <Route path="/" element={<Shell><ExecutiveDashboard /></Shell>} />
+        <Route path="/dashboard" element={<Shell><ExecutiveDashboard /></Shell>} />
         <Route path="/company-dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
         <Route path="/products/new" element={<Shell><ProductSetup /></Shell>} />
         <Route path="/mrv" element={<Shell><MRVWorkflow /></Shell>} />

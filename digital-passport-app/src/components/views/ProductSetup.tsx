@@ -62,9 +62,11 @@ export const ProductSetup: React.FC = () => {
       setApiResponseJson(JSON.stringify(resp, null, 2));
       setSuccessMsg(`Product CR registered in Kubernetes: ${resp.name} (Status: ${resp.status})`);
       
-      setTimeout(() => {
-        navigate(`/passport/${batchId}`);
-      }, 2000);
+      if (resp.passport_id) {
+        setTimeout(() => {
+          navigate(`/passport/${resp.passport_id}`);
+        }, 2000);
+      }
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Failed to create product batch on backend gateway');

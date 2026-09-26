@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	saurientv1alpha1 "saurient-platform/api/v1alpha1"
@@ -34,6 +35,46 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	var passport saurientv1alpha1.CarbonPassport
 	if err := r.Get(ctx, req.NamespacedName, &passport); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	const passportFinalizer = "saurient.io/passport-finalizer"
+
+	// Cleanup database and Redis if CarbonPassport CR is being deleted
+	if !passport.DeletionTimestamp.IsZero() {
+		if controllerutil.ContainsFinalizer(&passport, passportFinalizer) {
+			logger.Info("Cleaning up database and cache for deleted CarbonPassport CR", "name", passport.Name, "batchID", passport.Spec.BatchID)
+			tenantCtx := tenant.WithTenant(ctx, passport.Spec.TenantID)
+			if r.PostgresRepo != nil {
+				if passport.Status.PassportID != "" {
+					_ = r.PostgresRepo.DeletePassportByPassportID(tenantCtx, passport.Status.PassportID)
+				}
+				if passport.Spec.BatchID != "" {
+					_ = r.PostgresRepo.DeletePassportByBatchNumber(tenantCtx, passport.Spec.BatchID)
+				}
+			}
+			if r.RedisRepo != nil {
+				if passport.Status.PassportID != "" {
+					_ = r.RedisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", passport.Spec.TenantID, passport.Status.PassportID))
+				}
+				if passport.Spec.BatchID != "" {
+					_ = r.RedisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", passport.Spec.TenantID, passport.Spec.BatchID))
+				}
+			}
+
+			controllerutil.RemoveFinalizer(&passport, passportFinalizer)
+			if err := r.Update(ctx, &passport); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	// Ensure finalizer is present
+	if !controllerutil.ContainsFinalizer(&passport, passportFinalizer) {
+		controllerutil.AddFinalizer(&passport, passportFinalizer)
+		if err := r.Update(ctx, &passport); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Evaluate CEL calculation early to check if update is required

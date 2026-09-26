@@ -827,13 +827,14 @@ type ProductCreateResponse struct {
 	CommodityType string `json:"commodity_type"`
 	Status        string `json:"status"`
 	CreatedAt     string `json:"created_at"`
+	PassportID    string `json:"passport_id,omitempty"`
 }
 
-// handleProducts routes POST and GET /api/v1/products.
+// handleProducts routes POST, GET, and DELETE /api/v1/products.
 func (s *VerificationServer) handleProducts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", getEnv("ALLOWED_ORIGIN", "*"))
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Tenant-ID")
 
 	if r.Method == http.MethodOptions {
@@ -851,7 +852,71 @@ func (s *VerificationServer) handleProducts(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if r.Method == http.MethodDelete {
+		s.handleDeleteProduct(w, r)
+		return
+	}
+
 	http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+}
+
+func (s *VerificationServer) handleDeleteProduct(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/products/")
+	path = strings.TrimPrefix(path, "/api/v1/products")
+	id := strings.TrimSpace(path)
+	if id == "" {
+		id = r.URL.Query().Get("id")
+	}
+	if id == "" {
+		id = r.URL.Query().Get("batch_id")
+	}
+	if id == "" {
+		id = r.URL.Query().Get("name")
+	}
+	if id == "" {
+		http.Error(w, `{"error":"product name or batch_id is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		tenantID = r.URL.Query().Get("tenant_id")
+	}
+	if tenantID == "" {
+		tenantID = "org_saurient_demo"
+	}
+
+	namespace := r.URL.Query().Get("namespace")
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	if s.k8sClient != nil {
+		resourceName := sanitiseK8sName(id)
+		var productCR saurientv1alpha1.Product
+		if err := s.k8sClient.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, &productCR); err == nil {
+			_ = s.k8sClient.Delete(ctx, &productCR)
+		} else if err := s.k8sClient.Get(ctx, types.NamespacedName{Name: id, Namespace: namespace}, &productCR); err == nil {
+			_ = s.k8sClient.Delete(ctx, &productCR)
+		}
+	}
+
+	tenantCtx := tenant.WithTenant(ctx, tenantID)
+	if s.pgRepo != nil {
+		_ = s.pgRepo.DeletePassportByBatchNumber(tenantCtx, id)
+		_ = s.pgRepo.DeletePassportByPassportID(tenantCtx, id)
+	}
+
+	if s.redisRepo != nil {
+		_ = s.redisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", tenantID, id))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"message":   "Product and associated carbon passport deleted successfully",
+		"target_id": id,
+	})
 }
 
 // handleCreateProduct parses batch & activity JSON, creates a Product CR in Kubernetes,
@@ -1040,6 +1105,32 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 		log.Printf("k8s client unavailable — Product CR %s/%s not persisted to cluster", namespace, resourceName)
 	}
 
+	passportID := uuid.New().String()
+	tenantCtx := tenant.WithTenant(ctx, req.TenantID)
+
+	if s.pgRepo != nil {
+		if existing, err := s.pgRepo.GetPassportByBatchNumber(tenantCtx, req.BatchID); err == nil && existing != nil {
+			passportID = existing.PassportID
+		} else {
+			calcDetailsJSON, _ := json.Marshal(activityMap)
+			passportModel := &repository.CarbonPassportModel{
+				PassportID:         passportID,
+				TenantID:           req.TenantID,
+				FacilityID:         req.FacilityID,
+				BatchNumber:        req.BatchID,
+				CommodityType:      req.CommodityType,
+				VerificationStatus: "Pending",
+				CalculationDetails: calcDetailsJSON,
+			}
+			auditModel := &repository.PassportAuditTrailModel{
+				PassportID:    passportID,
+				ActionType:    "Pending",
+				ChangePayload: calcDetailsJSON,
+			}
+			_ = s.pgRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
+		}
+	}
+
 	resp := ProductCreateResponse{
 		Name:          resourceName,
 		Namespace:     namespace,
@@ -1050,6 +1141,7 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 		CommodityType: req.CommodityType,
 		Status:        "Pending",
 		CreatedAt:     time.Now().UTC().Format(time.RFC3339),
+		PassportID:    passportID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -1290,7 +1382,7 @@ func (s *VerificationServer) handlePassports(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 	allowedOrigin := getEnv("ALLOWED_ORIGIN", "*")
 	w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Tenant-ID")
 
 	if r.Method == http.MethodOptions {
@@ -1298,12 +1390,67 @@ func (s *VerificationServer) handlePassports(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if r.Method != http.MethodGet {
-		http.Error(w, `{"error":"method not allowed - carbon passports are read-only immutable trust artifacts derived from product telemetry reconciliation"}`, http.StatusMethodNotAllowed)
+	if r.Method == http.MethodGet {
+		s.handleGetPassport(w, r)
 		return
 	}
 
-	s.handleGetPassport(w, r)
+	if r.Method == http.MethodDelete {
+		s.handleDeletePassport(w, r)
+		return
+	}
+
+	http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+}
+
+func (s *VerificationServer) handleDeletePassport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/passports/")
+	path = strings.TrimPrefix(path, "/api/v1/passports")
+	passportID := strings.TrimSpace(path)
+	if passportID == "" {
+		passportID = r.URL.Query().Get("id")
+	}
+	if passportID == "" {
+		http.Error(w, `{"error":"passport_id is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		tenantID = r.URL.Query().Get("tenant_id")
+	}
+	if tenantID == "" {
+		tenantID = "org_saurient_demo"
+	}
+
+	namespace := r.URL.Query().Get("namespace")
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	if s.k8sClient != nil {
+		var passportCR saurientv1alpha1.CarbonPassport
+		if err := s.k8sClient.Get(ctx, types.NamespacedName{Name: passportID, Namespace: namespace}, &passportCR); err == nil {
+			_ = s.k8sClient.Delete(ctx, &passportCR)
+		}
+	}
+
+	tenantCtx := tenant.WithTenant(ctx, tenantID)
+	if s.pgRepo != nil {
+		_ = s.pgRepo.DeletePassportByPassportID(tenantCtx, passportID)
+		_ = s.pgRepo.DeletePassportByBatchNumber(tenantCtx, passportID)
+	}
+
+	if s.redisRepo != nil {
+		_ = s.redisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"message":     "Carbon passport deleted successfully",
+		"passport_id": passportID,
+	})
 }
 
 type PassportInputReq struct {
@@ -2048,6 +2195,9 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
 	passport, err := s.pgRepo.GetPassportByID(tenantCtx, passportID)
 	if err != nil || passport == nil {
+		passport, err = s.pgRepo.GetPassportByBatchNumber(tenantCtx, passportID)
+	}
+	if err != nil || passport == nil {
 		writeJSONError(w, fmt.Sprintf("passport '%s' not found for tenant '%s'", passportID, tenantID), http.StatusNotFound)
 		return
 	}
@@ -2060,80 +2210,15 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 
 func (s *VerificationServer) handleListPassports(w http.ResponseWriter, r *http.Request, tenantID string) {
 	ctx := r.Context()
-	var list []repository.RichDigitalCarbonPassportResponse
+	list := make([]repository.RichDigitalCarbonPassportResponse, 0)
 
 	if s.pgRepo != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
-		if passports, err := s.pgRepo.ListPassports(tenantCtx); err == nil && len(passports) > 0 {
+		if passports, err := s.pgRepo.ListPassports(tenantCtx); err == nil {
 			for _, p := range passports {
 				list = append(list, repository.BuildRichPassportResponse(p))
 			}
 		}
-	}
-
-	if len(list) == 0 {
-		sample1 := &repository.CarbonPassportModel{
-			PassportID:         "GH-CB-2024-001",
-			TenantID:           tenantID,
-			FacilityID:         "Tema Processing Plant",
-			BatchNumber:        "GH-CB-2024-001",
-			CommodityType:      "Cocoa Beans",
-			VerificationStatus: "VERIFIED",
-			Scope1KgCO2e:       320.0,
-			Scope2KgCO2e:       180.0,
-			Scope3KgCO2e:       390.0,
-			TotalFootprintKg:   890.0,
-			DataHash:           "b47e2c90e3810a9161a052e46b9a89c92a188f1100b95d0ef92809e578c772b1",
-			IssuedAt:           time.Now().Add(-24 * time.Hour),
-		}
-		sample2 := &repository.CarbonPassportModel{
-			PassportID:         "33b95673-5995-47ca-ac68-19cd78c45819",
-			TenantID:           tenantID,
-			FacilityID:         "fac_nordic_smelter_01",
-			BatchNumber:        "aluminum-batch-iai-2026-001",
-			CommodityType:      "Aluminium",
-			VerificationStatus: "Calculated",
-			Scope1KgCO2e:       5730.0,
-			Scope2KgCO2e:       10500.0,
-			Scope3KgCO2e:       9970.0,
-			TotalFootprintKg:   26200.0,
-			DataHash:           "b289e7ce44fd8887cb2009bd881f08c1e8f2057a80711cea72a6ba5acec328d9",
-			IssuedAt:           time.Now().Add(-48 * time.Hour),
-		}
-		sample3 := &repository.CarbonPassportModel{
-			PassportID:         "4806cae0-30f4-49e9-aaad-7a83b7cbf34b",
-			TenantID:           tenantID,
-			FacilityID:         "fac-rotterdam-01",
-			BatchNumber:        "cement-batch-001",
-			CommodityType:      "Cement",
-			VerificationStatus: "VERIFIED",
-			Scope1KgCO2e:       5740.0,
-			Scope2KgCO2e:       1275.0,
-			Scope3KgCO2e:       750.0,
-			TotalFootprintKg:   7765.0,
-			DataHash:           "9c1b07962f969092b9835faa1897e07408e613a9e02997aa1dfc719a75589ca8",
-			IssuedAt:           time.Now().Add(-72 * time.Hour),
-		}
-		sample4 := &repository.CarbonPassportModel{
-			PassportID:         "GH-CB-2026-X8",
-			TenantID:           tenantID,
-			FacilityID:         "Kumasi Materials Hub",
-			BatchNumber:        "GH-CB-2026-X8",
-			CommodityType:      "Cocoa Beans",
-			VerificationStatus: "VERIFIED",
-			Scope1KgCO2e:       80.0,
-			Scope2KgCO2e:       120.0,
-			Scope3KgCO2e:       180.0,
-			TotalFootprintKg:   380.0,
-			DataHash:           "7a8b9c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b",
-			IssuedAt:           time.Now().Add(-12 * time.Hour),
-		}
-		list = append(list,
-			repository.BuildRichPassportResponse(sample1),
-			repository.BuildRichPassportResponse(sample2),
-			repository.BuildRichPassportResponse(sample3),
-			repository.BuildRichPassportResponse(sample4),
-		)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -24,7 +24,7 @@ export const LoginView: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/');
+    navigate('/dashboard');
   };
 
   return (

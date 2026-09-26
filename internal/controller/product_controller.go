@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	saurientv1alpha1 "saurient-platform/api/v1alpha1"
@@ -36,6 +37,46 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	var product saurientv1alpha1.Product
 	if err := r.Get(ctx, req.NamespacedName, &product); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	const productFinalizer = "saurient.io/product-finalizer"
+
+	// Cleanup database and Redis if Product CR is being deleted
+	if !product.DeletionTimestamp.IsZero() {
+		if controllerutil.ContainsFinalizer(&product, productFinalizer) {
+			logger.Info("Cleaning up database and cache for deleted Product CR", "name", product.Name, "batchID", product.Spec.BatchID)
+			tenantCtx := tenant.WithTenant(ctx, product.Spec.TenantID)
+			if r.PostgresRepo != nil {
+				if product.Status.PassportID != "" {
+					_ = r.PostgresRepo.DeletePassportByPassportID(tenantCtx, product.Status.PassportID)
+				}
+				if product.Spec.BatchID != "" {
+					_ = r.PostgresRepo.DeletePassportByBatchNumber(tenantCtx, product.Spec.BatchID)
+				}
+			}
+			if r.RedisRepo != nil {
+				if product.Status.PassportID != "" {
+					_ = r.RedisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", product.Spec.TenantID, product.Status.PassportID))
+				}
+				if product.Spec.BatchID != "" {
+					_ = r.RedisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", product.Spec.TenantID, product.Spec.BatchID))
+				}
+			}
+
+			controllerutil.RemoveFinalizer(&product, productFinalizer)
+			if err := r.Update(ctx, &product); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	// Ensure finalizer is present
+	if !controllerutil.ContainsFinalizer(&product, productFinalizer) {
+		controllerutil.AddFinalizer(&product, productFinalizer)
+		if err := r.Update(ctx, &product); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Step b: Parse ActivityDataRaw JSON.
@@ -130,7 +171,11 @@ func (r *ProductReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	if r.PostgresRepo != nil {
 		if passportModel.PassportID == "" {
-			passportModel.PassportID = uuid.New().String()
+			if existingP, err := r.PostgresRepo.GetPassportByBatchNumber(tenantCtx, product.Spec.BatchID); err == nil && existingP != nil {
+				passportModel.PassportID = existingP.PassportID
+			} else {
+				passportModel.PassportID = uuid.New().String()
+			}
 			auditModel.PassportID = passportModel.PassportID
 			if err := r.PostgresRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
 				logger.Error(err, "Failed to save passport to Postgres", "name", product.Name)
