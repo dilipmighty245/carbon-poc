@@ -1,4 +1,4 @@
-import type { ProductCreateRequest, ProductCreateResponse, RichDigitalPassport } from '../types';
+import type { ProductCreateRequest, ProductCreateResponse, RichDigitalPassport, RulebookCreateRequest } from '../types';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 export const DEFAULT_TENANT_ID = 'org_saurient_demo';
@@ -10,6 +10,21 @@ export interface ApiFetchResult<T> {
   status: number;
   responseTimeMs: number;
   error?: string;
+}
+
+export async function createRulebook(req: RulebookCreateRequest, tenantId = DEFAULT_TENANT_ID): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/rules`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP error ${res.status}`);
+  }
+  return await res.json();
 }
 
 export async function createProduct(req: ProductCreateRequest): Promise<ProductCreateResponse> {

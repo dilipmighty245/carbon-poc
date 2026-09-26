@@ -1,3 +1,27 @@
+export interface RuleDefinition {
+  id: string;
+  name?: string;
+  scope: 'scope1' | 'scope2' | 'scope3' | 'intermediate';
+  mode?: 'pcf' | 'ghg' | 'cbam' | 'all';
+  outputType?: 'none' | 'total_footprint' | 'intensity';
+  formula: string;
+  description?: string;
+}
+
+export interface RulebookCreateRequest {
+  name: string;
+  namespace?: string;
+  commodity_type: string;
+  version?: string;
+  accounting_mode?: string;
+  functional_unit?: string;
+  batch_quantity?: number;
+  scope_1_formula?: string;
+  scope_2_formula?: string;
+  scope_3_formula?: string;
+  rules?: RuleDefinition[];
+}
+
 export interface ProductCreateRequest {
   tenant_id: string;
   facility_id: string;
@@ -78,25 +102,10 @@ export interface RichDigitalPassport {
     };
   };
   methodology_and_audit: {
-    standard_aligned: string;
-    system_boundary: string;
-    emission_factor_database: string;
-    calculation_version: string;
-    data_quality_score: {
-      primary_data_percent: number;
-      secondary_data_percent: number;
-      overall_quality: string;
-    };
-    verification_details: {
-      verifier_name: string;
-      verification_date: string;
-      verifier_comments: string;
-      evidence_documents_attached: string[];
-    };
-  };
-  compliance_exports: {
-    cbam_ready: boolean;
-    target_export_market: string;
-    export_formats_available: string[];
+    calculation_rulebook: string;
+    accounting_standard: string;
+    verification_body: string;
+    assurance_level: string;
+    verification_id: string;
   };
 }

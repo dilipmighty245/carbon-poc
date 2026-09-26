@@ -12,9 +12,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   ShieldCheck,
-  Radio,
   RefreshCw,
-  Code2,
   Copy,
   Check,
   Search,
@@ -101,34 +99,6 @@ export const DigitalPassportOutput: React.FC = () => {
 
     return (
       <div className="space-y-6">
-        {/* Top API Gateway Banner */}
-        <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-              <Radio className={`w-5 h-5 ${passportsResult.isLive ? 'animate-pulse text-emerald-400' : 'text-amber-400'}`} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-white">Saurient Go REST API Gateway — Passport Gallery</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${passportsResult.isLive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-emerald-400 border border-slate-700'}`}>
-                  {allPassports.length} Passports Fetched ({passportsResult.responseTimeMs}ms)
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-mono">
-                Endpoint: <span className="text-emerald-400">GET /api/v1/passports</span> • Tenant: <span className="text-sky-300">{tenantId}</span>
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => loadData()}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-colors self-start md:self-auto"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-            <span>Refetch Passports</span>
-          </button>
-        </div>
-
         {/* Gallery Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -372,43 +342,6 @@ export const DigitalPassportOutput: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top API Integration Bar */}
-      <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-            <Radio className={`w-5 h-5 ${passportResult.isLive ? 'animate-pulse text-emerald-400' : 'text-amber-400'}`} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-white">Saurient Go REST API Gateway</span>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${passportResult.isLive ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
-                {passportResult.isLive ? `200 OK (${passportResult.responseTimeMs}ms)` : `Fallback Data (${passportResult.status || 'Offline'})`}
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 font-mono">
-              Endpoint: <span className="text-emerald-400">GET /api/v1/passports/{id}</span> • Tenant: <span className="text-sky-300">{tenantId}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => loadData()}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-            <span>Refetch API</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('api_json')}
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-xs"
-          >
-            <Code2 className="w-3.5 h-3.5" />
-            <span>Inspect JSON API Payload</span>
-          </button>
-        </div>
-      </div>
-
       {/* Back Link Header */}
       <div className="flex items-center justify-between">
         <Link to="/passport" className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm">
