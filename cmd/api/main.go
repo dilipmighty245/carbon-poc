@@ -14,6 +14,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,10 +37,12 @@ import (
 )
 
 type VerificationServer struct {
-	pgRepo    *repository.PostgresRepository
-	redisRepo *repository.RedisRepository
-	k8sClient client.Client
-	gqlSchema graphql.Schema
+	pgRepo      *repository.PostgresRepository
+	redisRepo   *repository.RedisRepository
+	k8sClient   client.Client
+	gqlSchema   graphql.Schema
+	rulesMutex  sync.RWMutex
+	customRules map[string]RulebookItemResponse
 }
 
 const openAPISpecJSON = `{
@@ -152,6 +155,13 @@ const openAPISpecJSON = `{
       }
     },
     "/api/v1/rules": {
+      "get": {
+        "summary": "List Calculation Rulebooks",
+        "description": "Retrieves all registered calculation rulebooks and CRDs defining Scope 1-3 formulas and accounting standards.",
+        "responses": {
+          "200": { "description": "List of CalculationRulebook items" }
+        }
+      },
       "post": {
         "summary": "Create Calculation Rulebook",
         "description": "Creates a new CalculationRulebook Custom Resource in Kubernetes defining Scope 1-3 CEL DAG formulas, accounting modes (pcf, ghg, cbam), functional unit, and batch quantity for a commodity type.",
@@ -1220,11 +1230,114 @@ type RuleRequest struct {
 	BatchQuantity  float64                         `json:"batch_quantity,omitempty"`
 }
 
-// handleRules routes POST /api/v1/rules to handleCreateRule.
+// RulebookItemResponse is the response model for GET /api/v1/rules.
+type RulebookItemResponse struct {
+	ID             string                            `json:"id"`
+	Name           string                            `json:"name"`
+	Label          string                            `json:"label"`
+	CommodityType  string                            `json:"commodity_type"`
+	Version        string                            `json:"version,omitempty"`
+	AccountingMode saurientv1alpha1.AccountingMode   `json:"accounting_mode,omitempty"`
+	Standard       string                            `json:"standard,omitempty"`
+	FunctionalUnit string                            `json:"functional_unit,omitempty"`
+	BatchQuantity  float64                           `json:"batch_quantity,omitempty"`
+	Rules          []saurientv1alpha1.RuleDefinition `json:"rules,omitempty"`
+}
+
+func getDefaultRulebooks() map[string]RulebookItemResponse {
+	return map[string]RulebookItemResponse{
+		"cocoa-rulebook-2026": {
+			ID:             "cocoa-rulebook-2026",
+			Name:           "cocoa-rulebook-2026",
+			Label:          "cocoa-rulebook-2026 (ISO 14067)",
+			CommodityType:  "Cocoa",
+			Version:        "2026.1",
+			AccountingMode: saurientv1alpha1.ModePCF,
+			Standard:       "ISO 14067 Product Footprint",
+			FunctionalUnit: "kg CO2e per kg",
+			BatchQuantity:  1000,
+			Rules: []saurientv1alpha1.RuleDefinition{
+				{ID: "R01", Name: "Direct Fuel & Generator Combustion", Scope: saurientv1alpha1.Scope1, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputNone, Formula: "fuel_consumed_liters * 2.68", Description: "Scope 1 diesel combustion emission factor"},
+				{ID: "R02", Name: "Grid Electricity Consumption", Scope: saurientv1alpha1.Scope2, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputNone, Formula: "electricity_consumed_kwh * 0.45", Description: "Scope 2 national grid carbon intensity"},
+				{ID: "R03", Name: "Raw Materials & Packaging Upstream", Scope: saurientv1alpha1.Scope3, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputNone, Formula: "batch_quantity_kg * 0.175", Description: "Scope 3 raw bean agricultural footprint"},
+				{ID: "R04", Name: "Total Batch Footprint Aggregation", Scope: saurientv1alpha1.Intermediate, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputTotalFootprint, Formula: "R01 + R02 + R03", Description: "Sum of Scope 1, 2, and 3 DAG calculation steps"},
+				{ID: "R05", Name: "Product Carbon Intensity", Scope: saurientv1alpha1.Intermediate, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputIntensity, Formula: "R04 / batch_quantity_kg", Description: "Unit carbon intensity metric"},
+			},
+		},
+		"metal-rulebook-2026": {
+			ID:             "metal-rulebook-2026",
+			Name:           "metal-rulebook-2026",
+			Label:          "metal-rulebook-2026 (EU CBAM CN 7601)",
+			CommodityType:  "Metals",
+			Version:        "2026.1",
+			AccountingMode: saurientv1alpha1.ModeCBAM,
+			Standard:       "EU CBAM Annex IV",
+			FunctionalUnit: "kg CO2e per kg Aluminium Ingot",
+			BatchQuantity:  5000,
+		},
+		"cashew-rulebook-2026": {
+			ID:             "cashew-rulebook-2026",
+			Name:           "cashew-rulebook-2026",
+			Label:          "cashew-rulebook-2026 (GHG Protocol)",
+			CommodityType:  "Cashew",
+			Version:        "2026.1",
+			AccountingMode: saurientv1alpha1.ModeGHG,
+			Standard:       "GHG Protocol Product Standard",
+			FunctionalUnit: "kg CO2e per kg",
+			BatchQuantity:  1000,
+		},
+		"textiles-rulebook-2026": {
+			ID:             "textiles-rulebook-2026",
+			Name:           "textiles-rulebook-2026",
+			Label:          "textiles-rulebook-2026 (ISO 14067)",
+			CommodityType:  "Textiles",
+			Version:        "2026.1",
+			AccountingMode: saurientv1alpha1.ModePCF,
+			Standard:       "ISO 14067 Textile Boundary",
+			FunctionalUnit: "kg CO2e per meter",
+			BatchQuantity:  1000,
+		},
+		"food-rulebook-2026": {
+			ID:             "food-rulebook-2026",
+			Name:           "food-rulebook-2026",
+			Label:          "food-rulebook-2026 (IPCC Tier 2)",
+			CommodityType:  "Processed Foods",
+			Version:        "2026.1",
+			AccountingMode: saurientv1alpha1.ModePCF,
+			Standard:       "IPCC Tier 2 Food Standard",
+			FunctionalUnit: "kg CO2e per L",
+			BatchQuantity:  1000,
+		},
+		"cement-rulebook-2026": {
+			ID:             "cement-rulebook-2026",
+			Name:           "cement-rulebook-2026",
+			Label:          "cement-rulebook-2026 (GHG Protocol)",
+			CommodityType:  "Construction",
+			Version:        "2026.1",
+			AccountingMode: saurientv1alpha1.ModeGHG,
+			Standard:       "GHG Protocol Heavy Industry",
+			FunctionalUnit: "kg CO2e per ton",
+			BatchQuantity:  1000,
+		},
+		"default-rulebook": {
+			ID:             "default-rulebook",
+			Name:           "default-rulebook",
+			Label:          "default-rulebook (Standard Scope 1-3)",
+			CommodityType:  "General",
+			Version:        "2026.1",
+			AccountingMode: saurientv1alpha1.ModeAll,
+			Standard:       "Standard Scope 1-3 GHG",
+			FunctionalUnit: "kg CO2e per unit",
+			BatchQuantity:  1000,
+		},
+	}
+}
+
+// handleRules routes GET and POST /api/v1/rules.
 func (s *VerificationServer) handleRules(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", getEnv("ALLOWED_ORIGIN", "*"))
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Tenant-ID")
 
 	if r.Method == http.MethodOptions {
@@ -1232,12 +1345,64 @@ func (s *VerificationServer) handleRules(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if r.Method != http.MethodPost {
-		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	if r.Method == http.MethodGet {
+		s.handleListRules(w, r)
 		return
 	}
 
-	s.handleCreateRule(w, r)
+	if r.Method == http.MethodPost {
+		s.handleCreateRule(w, r)
+		return
+	}
+
+	http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+}
+
+// handleListRules returns all registered CalculationRulebook CR items and default rules.
+func (s *VerificationServer) handleListRules(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	rulesMap := getDefaultRulebooks()
+
+	s.rulesMutex.RLock()
+	for k, v := range s.customRules {
+		rulesMap[k] = v
+	}
+	s.rulesMutex.RUnlock()
+
+	if s.k8sClient != nil {
+		var crbList saurientv1alpha1.CalculationRulebookList
+		if err := s.k8sClient.List(ctx, &crbList); err == nil {
+			for _, item := range crbList.Items {
+				std := "ISO 14067 Product Footprint"
+				if item.Spec.AccountingMode == saurientv1alpha1.ModeCBAM {
+					std = "EU CBAM Annex IV"
+				} else if item.Spec.AccountingMode == saurientv1alpha1.ModeGHG {
+					std = "GHG Protocol Product Standard"
+				}
+				rulesMap[item.Name] = RulebookItemResponse{
+					ID:             item.Name,
+					Name:           item.Name,
+					Label:          fmt.Sprintf("%s (%s)", item.Name, std),
+					CommodityType:  item.Spec.CommodityType,
+					Version:        item.Spec.Version,
+					AccountingMode: item.Spec.AccountingMode,
+					Standard:       std,
+					FunctionalUnit: item.Spec.FunctionalUnit,
+					BatchQuantity:  item.Spec.BatchQuantity,
+					Rules:          item.Spec.Rules,
+				}
+			}
+		}
+	}
+
+	result := make([]RulebookItemResponse, 0, len(rulesMap))
+	for _, v := range rulesMap {
+		result = append(result, v)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(result)
 }
 
 // handleCreateRule parses rule JSON and creates a CalculationRulebook CR in Kubernetes.
@@ -1308,6 +1473,31 @@ func (s *VerificationServer) handleCreateRule(w http.ResponseWriter, r *http.Req
 	} else {
 		log.Printf("k8s client unavailable — CalculationRulebook CR %s/%s not persisted to cluster", namespace, name)
 	}
+
+	std := "ISO 14067 Product Footprint"
+	if req.AccountingMode == saurientv1alpha1.ModeCBAM {
+		std = "EU CBAM Annex IV"
+	} else if req.AccountingMode == saurientv1alpha1.ModeGHG {
+		std = "GHG Protocol Product Standard"
+	}
+
+	s.rulesMutex.Lock()
+	if s.customRules == nil {
+		s.customRules = make(map[string]RulebookItemResponse)
+	}
+	s.customRules[name] = RulebookItemResponse{
+		ID:             name,
+		Name:           name,
+		Label:          fmt.Sprintf("%s (%s)", name, std),
+		CommodityType:  req.CommodityType,
+		Version:        req.Version,
+		AccountingMode: req.AccountingMode,
+		Standard:       std,
+		FunctionalUnit: req.FunctionalUnit,
+		BatchQuantity:  req.BatchQuantity,
+		Rules:          req.Rules,
+	}
+	s.rulesMutex.Unlock()
 
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{

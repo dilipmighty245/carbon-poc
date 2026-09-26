@@ -195,6 +195,25 @@ func TestHandleCreateRule_ValidInput(t *testing.T) {
 	}
 }
 
+// TestHandleListRules expects 200 and a JSON list of calculation rulebooks.
+func TestHandleListRules(t *testing.T) {
+	srv := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/rules", nil)
+	rr := httptest.NewRecorder()
+	srv.handleRules(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rr.Code, rr.Body.String())
+	}
+
+	var rules []RulebookItemResponse
+	if err := json.NewDecoder(rr.Body).Decode(&rules); err != nil {
+		t.Fatalf("failed to decode rules JSON: %v", err)
+	}
+	if len(rules) == 0 {
+		t.Errorf("expected non-empty rules list")
+	}
+}
+
 // TestHandleCreateProduct_DetailedInput tests creating a product using rich batch_data, activity_data, and telemetry_context.
 func TestHandleCreateProduct_DetailedInput(t *testing.T) {
 	srv := newTestServer(t)

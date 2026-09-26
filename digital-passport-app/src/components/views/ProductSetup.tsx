@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SimpleWordsCard } from '../common/SimpleWordsCard';
-import { createProduct, createRulebook, DEFAULT_TENANT_ID } from '../../api/client';
+import { createProduct, createRulebook, getAllRules, DEFAULT_TENANT_ID } from '../../api/client';
 import type { RuleDefinition } from '../../types';
 import { Building, Factory, Leaf, Package, FileText, CheckCircle2, AlertCircle, Radio, ShieldCheck, Sliders, Check, Plus, X, BookPlus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -30,6 +30,28 @@ export const ProductSetup: React.FC = () => {
     { id: 'cement-rulebook-2026', label: 'cement-rulebook-2026 (GHG Protocol)', standard: 'GHG Protocol Heavy Industry', commodity: 'Construction' },
     { id: 'default-rulebook', label: 'default-rulebook (Standard Scope 1-3)', standard: 'Standard Scope 1-3 GHG', commodity: 'General' },
   ]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getAllRules()
+      .then((rules) => {
+        if (isMounted && Array.isArray(rules) && rules.length > 0) {
+          const formatted = rules.map((r) => ({
+            id: r.id || r.name,
+            label: r.label || `${r.name} (${r.standard || 'ISO 14067'})`,
+            standard: r.standard || 'ISO 14067 Product Footprint',
+            commodity: r.commodity_type || 'General',
+          }));
+          setRulebooksList(formatted);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load rules from GET /api/v1/rules, fallback defaults retained:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [rulebook, setRulebook] = useState('cocoa-rulebook-2026');
 
@@ -180,6 +202,13 @@ export const ProductSetup: React.FC = () => {
   };
 
   const selectedRulebookObj = rulebooksList.find((r) => r.id === rulebook) || rulebooksList[0];
+
+  const filteredRulebooksList = rulebooksList.filter((rb) => {
+    if (!rb.commodity || rb.commodity === 'General' || rb.id === 'default-rulebook') return true;
+    const currentComm = commodity.toLowerCase();
+    const rbComm = rb.commodity.toLowerCase();
+    return currentComm.includes(rbComm) || rbComm.includes(currentComm);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -428,7 +457,7 @@ export const ProductSetup: React.FC = () => {
                     onChange={(e) => setRulebook(e.target.value)}
                     className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
                   >
-                    {rulebooksList.map((rb) => (
+                    {filteredRulebooksList.map((rb) => (
                       <option key={rb.id} value={rb.id}>
                         {rb.label}
                       </option>

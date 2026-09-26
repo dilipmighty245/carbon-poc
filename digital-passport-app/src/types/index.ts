@@ -8,6 +8,19 @@ export interface RuleDefinition {
   description?: string;
 }
 
+export interface RulebookItem {
+  id: string;
+  name: string;
+  label: string;
+  commodity_type: string;
+  version?: string;
+  accounting_mode?: string;
+  standard?: string;
+  functional_unit?: string;
+  batch_quantity?: number;
+  rules?: RuleDefinition[];
+}
+
 export interface RulebookCreateRequest {
   name: string;
   namespace?: string;

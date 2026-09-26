@@ -132,7 +132,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
               <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
                 <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-semibold text-xs flex items-center justify-center">
-                  DT
+                  S
                 </div>
               </div>
             </div>

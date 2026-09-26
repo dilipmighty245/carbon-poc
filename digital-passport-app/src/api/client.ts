@@ -1,4 +1,4 @@
-import type { ProductCreateRequest, ProductCreateResponse, RichDigitalPassport, RulebookCreateRequest } from '../types';
+import type { ProductCreateRequest, ProductCreateResponse, RichDigitalPassport, RulebookCreateRequest, RulebookItem } from '../types';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 export const DEFAULT_TENANT_ID = 'org_saurient_demo';
@@ -10,6 +10,55 @@ export interface ApiFetchResult<T> {
   status: number;
   responseTimeMs: number;
   error?: string;
+}
+
+export async function getAllRulesWithMeta(tenantId = DEFAULT_TENANT_ID): Promise<ApiFetchResult<RulebookItem[]>> {
+  const endpoint = `${API_BASE_URL}/rules`;
+  const startTime = performance.now();
+  try {
+    const res = await fetch(endpoint, {
+      headers: {
+        'X-Tenant-ID': tenantId,
+      },
+    });
+    const responseTimeMs = Math.round(performance.now() - startTime);
+
+    if (res.ok) {
+      const data = await res.json();
+      const rulesList = Array.isArray(data) ? data : [];
+      return {
+        data: rulesList,
+        isLive: true,
+        endpoint,
+        status: res.status,
+        responseTimeMs,
+      };
+    } else {
+      return {
+        data: [],
+        isLive: false,
+        endpoint,
+        status: res.status,
+        responseTimeMs,
+        error: `HTTP ${res.status}`,
+      };
+    }
+  } catch (err: any) {
+    const responseTimeMs = Math.round(performance.now() - startTime);
+    return {
+      data: [],
+      isLive: false,
+      endpoint,
+      status: 0,
+      responseTimeMs,
+      error: err.message || 'Network unreachable',
+    };
+  }
+}
+
+export async function getAllRules(tenantId = DEFAULT_TENANT_ID): Promise<RulebookItem[]> {
+  const res = await getAllRulesWithMeta(tenantId);
+  return res.data;
 }
 
 export async function createRulebook(req: RulebookCreateRequest, tenantId = DEFAULT_TENANT_ID): Promise<any> {
