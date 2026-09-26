@@ -1,0 +1,4 @@
+FROM scratch
+COPY saurient-api-bin /api
+EXPOSE 8080
+ENTRYPOINT ["/api"]
