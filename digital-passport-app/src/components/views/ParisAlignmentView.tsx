@@ -156,7 +156,7 @@ export const ParisAlignmentView: React.FC = () => {
                     NDC REFERENCE
                   </label>
                   <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 font-semibold text-slate-800 truncate">
-                    Ghana National NDC · Demo mapping
+                    Ghana National NDC mapping
                   </div>
                 </div>
                 <div>

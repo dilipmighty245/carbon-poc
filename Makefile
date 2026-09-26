@@ -63,6 +63,8 @@ dev-setup: check-prereqs
 	@echo "Check pods: kubectl get pods -A"
 	@echo "Check CarbonPassport CRs: kubectl get carbonpassport -A"
 	@echo "=========================================================================="
+	@echo "==> Starting Digital Passport App (React / Vite)..."
+	cd digital-passport-app && yarn install && yarn start
 
 clean:
 	@echo "==> Cleaning up Kind cluster and build artifacts..."
