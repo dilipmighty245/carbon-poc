@@ -63,10 +63,11 @@ dev-setup: check-prereqs
 	@echo "Check pods: kubectl get pods -A"
 	@echo "Check CarbonPassport CRs: kubectl get carbonpassport -A"
 	@echo "=========================================================================="
-	@echo "==> Starting Digital Passport App (React / Vite)..."
-	cd digital-passport-app && yarn install && yarn start
+	@echo "==> Building and starting Digital Passport App (React / Vite)..."
+	cd digital-passport-app && yarn install && yarn build && yarn dev
 
 clean:
 	@echo "==> Cleaning up Kind cluster and build artifacts..."
 	-kind delete cluster --name $(CLUSTER_NAME)
 	rm -rf bin/
+	rm -f digital-passport-app/yarn.lock yarn.lock
