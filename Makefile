@@ -36,6 +36,8 @@ dev-setup: check-prereqs
 	@echo "==> Loading Docker images into Kind..."
 	kind load docker-image $(CONTROLLER_IMG) --name $(CLUSTER_NAME)
 	kind load docker-image $(API_IMG) --name $(CLUSTER_NAME)
+	docker save postgres:16-alpine | docker exec -i saurient-dev-control-plane ctr -n k8s.io images import -
+	docker save redis:7-alpine | docker exec -i saurient-dev-control-plane ctr -n k8s.io images import -
 
 	@echo "==> Deploying PostgreSQL and Redis..."
 	kubectl apply -f deploy/postgres-manifests.yaml

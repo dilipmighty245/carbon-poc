@@ -1,10 +1,181 @@
 import React, { useState } from 'react';
-import { Download, Search } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Download, Search, AlertTriangle, ShieldCheck } from 'lucide-react';
+import type { CBAMSubTab, CBAMProductData } from '../../types/cbam';
+import { BlockerDrawer } from './cbam/BlockerDrawer';
+import { CBAMOverview } from './cbam/CBAMOverview';
+import { ApplicabilityWizard } from './cbam/ApplicabilityWizard';
+import { CNClassificationView } from './cbam/CNClassificationView';
+import { InstallationsView } from './cbam/InstallationsView';
+import { MonitoringPlansView } from './cbam/MonitoringPlansView';
+import { ProcessesPrecursorsView } from './cbam/ProcessesPrecursorsView';
+import { CalculationsTraceView } from './cbam/CalculationsTraceView';
+import { DeclarantsView } from './cbam/DeclarantsView';
+import { ExposureView } from './cbam/ExposureView';
+import { CostAnalysisView } from './cbam/CostAnalysisView';
+import { DataPackGeneratorView } from './cbam/DataPackGeneratorView';
+import { RegistryTransferView } from './cbam/RegistryTransferView';
 
 export const CBAMView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('Overview');
-  const tabs = [
+  const [activeTab, setActiveTab] = useState<CBAMSubTab>('Overview');
+  const [isBlockerDrawerOpen, setIsBlockerDrawerOpen] = useState(false);
+
+  // Initial Seeded Demo Products
+  const initialProducts: CBAMProductData[] = [
+    {
+      id: 'prod-steel-001',
+      name: 'Steel Process Frames',
+      sku: 'SKU-ST-7308',
+      cnCode: '7308 90',
+      sector: 'Iron & Steel',
+      isSimpleGood: false,
+      functionalUnit: 'Tonne of steel product',
+      annualVolumeTonnes: 1820,
+      reportingYear: 2026,
+      countryOfOrigin: 'Ghana',
+      countryOfProduction: 'Ghana',
+      installationName: 'Tema Processing Plant',
+      installationOperator: 'Saurient Demo Manufacturing Ltd.',
+      status: 'DATA_PENDING',
+      directEmissionsIntensity: 0.642,
+      indirectEmissionsIntensity: 0.421,
+      precursorEmissionsIntensity: 1.102,
+      totalSpecificEmissions: 2.165,
+      estimatedExposureEUR: 126800,
+      verifiedSharePct: 72,
+      precursors: [
+        {
+          id: 'prec-001',
+          name: 'Iron Ore Pellets',
+          cnCode: '2601 12 00',
+          quantityTonnes: 1450,
+          originInstallation: 'Monrovia Ore Prep Plant',
+          country: 'Liberia',
+          method: 'ACTUAL',
+          embeddedEmissionsIntensity: 1.102,
+          isVerified: false, // Blocker trigger!
+        },
+      ],
+      rules: [
+        { ruleId: 'APP-001', ruleVersion: 'EU-CBAM-2026.1', sector: 'Universal', title: '8-Digit CN Classification', description: 'Valid Annex I CN code present', outcome: 'PASS', severity: 'BLOCKER', requiredEvidenceTypes: ['CUSTOMS_ENTRY'], ownerRole: 'TRADE_COMPLIANCE' },
+        { ruleId: 'APP-003', ruleVersion: 'EU-CBAM-2026.1', sector: 'Universal', title: 'Country of Origin Specified', description: 'Valid non-EU origin recorded', outcome: 'PASS', severity: 'BLOCKER', requiredEvidenceTypes: ['ORIGIN_CERT'], ownerRole: 'TRADE_COMPLIANCE' },
+        { ruleId: 'THR-001', ruleVersion: 'EU-CBAM-2026.1', sector: 'Universal', title: '50-Tonne Annual Mass Threshold', description: 'Imports exceed 50 t threshold limit', outcome: 'PASS', severity: 'BLOCKER', requiredEvidenceTypes: ['CUSTOMS_MANIFEST'], ownerRole: 'TRADE_COMPLIANCE' },
+        { ruleId: 'INS-001', ruleVersion: 'EU-CBAM-2026.1', sector: 'Universal', title: 'Installation & Operator Identity', description: 'Valid operator registration & coordinates', outcome: 'PASS', severity: 'BLOCKER', requiredEvidenceTypes: ['PERMIT'], ownerRole: 'PLANT_OPERATOR' },
+        { ruleId: 'MON-001', ruleVersion: 'EU-CBAM-2026.1', sector: 'Universal', title: 'Approved Monitoring Plan', description: 'Monitoring methodology approved for FY 2026', outcome: 'PASS', severity: 'BLOCKER', requiredEvidenceTypes: ['MONITORING_PLAN'], ownerRole: 'SUSTAINABILITY_MANAGER' },
+        { ruleId: 'CAL-001', ruleVersion: 'EU-CBAM-2026.1', sector: 'Universal', title: 'Direct Emissions Reconciled', description: 'Direct process fuel emissions verified', outcome: 'PASS', severity: 'BLOCKER', requiredEvidenceTypes: ['FUEL_INVOICE'], ownerRole: 'SUSTAINABILITY_MANAGER' },
+        { ruleId: 'PRE-001', ruleVersion: 'EU-CBAM-2026.1', sector: 'Universal', title: 'Precursor Verification Report Missing', description: 'Iron ore pellets actual emissions require verifier report', outcome: 'FAIL', severity: 'BLOCKER', requiredEvidenceTypes: ['PRECURSOR_VERIFICATION_REPORT'], ownerRole: 'SUSTAINABILITY_MANAGER', message: 'Precursor report missing for Iron Ore Pellets' },
+      ],
+      calculationLines: [
+        { id: 'cl-1', category: 'Direct Fuel', sourceName: 'Natural Gas Reheating', activityValue: 12400, activityUnit: 'GJ', emissionFactor: 0.0561, factorUnit: 'tCO₂/GJ', formula: 'Activity x Factor', emissionstCO2e: 695.6, evidenceRef: 'MTR-TEMA-G04', status: 'VALIDATED' },
+        { id: 'cl-2', category: 'Direct Fuel', sourceName: 'Anode Carbon Consumption', activityValue: 142, activityUnit: 't', emissionFactor: 3.32, factorUnit: 'tCO₂/t', formula: 'Activity x Factor', emissionstCO2e: 471.4, evidenceRef: 'ERP-BATCH-882', status: 'VALIDATED' },
+        { id: 'cl-3', category: 'Indirect Electricity', sourceName: 'EAF Smelter Power', activityValue: 1820, activityUnit: 'MWh', emissionFactor: 0.421, factorUnit: 'tCO₂/MWh', formula: 'Activity x Factor', emissionstCO2e: 766.2, evidenceRef: 'MTR-TEMA-E01', status: 'VALIDATED' },
+        { id: 'cl-4', category: 'Precursor', sourceName: 'Iron Ore Pellets', activityValue: 1450, activityUnit: 't', emissionFactor: 1.102, factorUnit: 'tCO₂/t', formula: 'Attributed Precursor Intensity', emissionstCO2e: 1597.9, evidenceRef: 'EVD-PRE-LIB-01', status: 'WARNING' },
+      ],
+      datasetFrozen: false,
+    },
+    {
+      id: 'prod-cocoa-002',
+      name: 'Refined Cocoa Butter',
+      sku: 'SKU-CB-1804',
+      cnCode: '1804 00',
+      sector: 'Foodstuff',
+      isSimpleGood: true,
+      functionalUnit: 'kg of cocoa butter',
+      annualVolumeTonnes: 450,
+      reportingYear: 2026,
+      countryOfOrigin: 'Ghana',
+      countryOfProduction: 'Ghana',
+      installationName: 'Tema Processing Plant',
+      installationOperator: 'Saurient Demo Manufacturing Ltd.',
+      status: 'OUT_OF_SCOPE',
+      directEmissionsIntensity: 0.42,
+      indirectEmissionsIntensity: 0.18,
+      precursorEmissionsIntensity: 2.24,
+      totalSpecificEmissions: 2.84,
+      estimatedExposureEUR: 0,
+      verifiedSharePct: 100,
+      precursors: [],
+      rules: [
+        { ruleId: 'APP-002', ruleVersion: 'EU-CBAM-2026.1', sector: 'Universal', title: 'Annex I Catalogue Check', description: 'Foodstuff / Cocoa Butter is not listed in Regulation (EU) 2023/956 Annex I', outcome: 'NA', severity: 'INFO', requiredEvidenceTypes: [], ownerRole: 'TRADE_COMPLIANCE' },
+      ],
+      calculationLines: [
+        { id: 'cl-cb-1', category: 'Direct Fuel', sourceName: 'Boiler Steam', activityValue: 3200, activityUnit: 'GJ', emissionFactor: 0.0561, factorUnit: 'tCO₂/GJ', formula: 'Activity x Factor', emissionstCO2e: 179.5, evidenceRef: 'MTR-STEAM-01', status: 'VALIDATED' },
+      ],
+      datasetFrozen: true,
+      freezeManifestHash: 'sha256:8f4e9102b37194628ab83719027c819230198401829370129371029370192837',
+      freezeTimestamp: '2026-09-26T14:30:00Z',
+    },
+  ];
+
+  const [products, setProducts] = useState<CBAMProductData[]>(initialProducts);
+  const [selectedProductId, setSelectedProductId] = useState<string>('prod-steel-001');
+
+  const selectedProduct = products.find((p) => p.id === setSelectedProductId ? selectedProductId : p.id) || products[0];
+
+  const handleSelectProduct = (p: CBAMProductData) => {
+    setSelectedProductId(p.id);
+  };
+
+  // Interactive Blocker Resolution Handler
+  const handleResolveRule = (ruleId: string) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id !== selectedProductId) return p;
+
+        const updatedRules = p.rules.map((r) =>
+          r.ruleId === ruleId
+            ? { ...r, outcome: 'PASS' as const, severity: 'INFO' as const, message: undefined, resolved: true }
+            : r
+        );
+
+        const updatedPrecursors = p.precursors.map((prec) =>
+          prec.id === 'prec-001'
+            ? { ...prec, isVerified: true, verificationReportId: 'VR-PREC-2026-0091', embeddedEmissionsIntensity: 0.779 }
+            : prec
+        );
+
+        const updatedLines = p.calculationLines.map((line) =>
+          line.id === 'cl-4'
+            ? { ...line, emissionFactor: 0.779, emissionstCO2e: 1129.5, status: 'VALIDATED' as const }
+            : line
+        );
+
+        // Recalculate emissions intensity
+        const newPrecursorIntensity = 0.779;
+        const newTotal = p.directEmissionsIntensity + p.indirectEmissionsIntensity + newPrecursorIntensity;
+
+        return {
+          ...p,
+          status: 'READY_FOR_VERIFICATION' as const,
+          precursorEmissionsIntensity: newPrecursorIntensity,
+          totalSpecificEmissions: newTotal,
+          rules: updatedRules,
+          precursors: updatedPrecursors,
+          calculationLines: updatedLines,
+          verifiedSharePct: 94,
+        };
+      })
+    );
+  };
+
+  // Interactive Dataset Freeze Handler
+  const handleFreezeDataset = () => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id !== selectedProductId) return p;
+        return {
+          ...p,
+          status: 'READY_FOR_HANDOVER' as const,
+          datasetFrozen: true,
+          freezeManifestHash: 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+          freezeTimestamp: new Date().toISOString(),
+          verifierReportId: 'VR-2026-TEMA-8841',
+          verifierOpinion: 'UNMODIFIED' as const,
+        };
+      })
+    );
+  };
+
+  const tabs: CBAMSubTab[] = [
     'Overview',
     'Applicability',
     'CN Classification',
@@ -19,52 +190,23 @@ export const CBAMView: React.FC = () => {
     'Registry Transfer',
   ];
 
-  const kpis = [
-    { title: 'Covered Volume', val: '1,820 t', subtitle: 'Steel and aluminium', color: 'text-emerald-600' },
-    { title: 'Embedded Emissions', val: '3,940 tCO₂e', subtitle: 'Verified share 72%', color: 'text-emerald-600' },
-    { title: 'Estimated Exposure', val: '€246,400', subtitle: 'Scenario assumption', color: 'text-emerald-600' },
-    { title: 'Data Gaps', val: '6', subtitle: '2 material blockers', color: 'text-amber-600' },
-  ];
-
-  const monthData = [
-    { month: 'O', val: 42, fill: '#f59e0b' },
-    { month: 'N', val: 56, fill: '#10b981' },
-    { month: 'D', val: 48, fill: '#06b6d4' },
-    { month: 'J', val: 68, fill: '#06b6d4' },
-    { month: 'F', val: 52, fill: '#10b981' },
-    { month: 'M', val: 76, fill: '#f59e0b' },
-    { month: 'A', val: 62, fill: '#06b6d4' },
-    { month: 'M', val: 82, fill: '#10b981' },
-    { month: 'J', val: 70, fill: '#06b6d4' },
-    { month: 'J', val: 88, fill: '#06b6d4' },
-    { month: 'A', val: 78, fill: '#10b981' },
-    { month: 'S', val: 94, fill: '#06b6d4' },
-  ];
-
-  const records = [
-    { name: 'Refined Cocoa Butter', code: 'CN 1804 00', status: 'OUTSIDE SCOPE', statusClass: 'bg-slate-100 text-slate-600 border-slate-200', exposure: 'N/A' },
-    { name: 'Steel Process Frames', code: 'CN 7308 90', status: 'APPLICABLE', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', exposure: '€126,800' },
-    { name: 'Aluminium Housings', code: 'CN 7616 99', status: 'APPLICABLE', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', exposure: '€86,300' },
-    { name: 'Fertiliser Blend', code: 'CN 3105 20', status: 'REVIEW', statusClass: 'bg-amber-50 text-amber-700 border-amber-100', exposure: '€33,300' },
-  ];
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Top Header Row with Breadcrumb & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
           <span className="hover:text-slate-800">CBAM</span>
           <span>/</span>
-          <span className="text-slate-900 font-bold">CBAM Exposure</span>
+          <span className="text-slate-900 font-bold">{activeTab}</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
-            <span>Tema Processing Plant</span>
+            <span>{selectedProduct.installationName}</span>
             <span className="text-slate-400 text-[10px]">▾</span>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
-            <span>FY 2026</span>
+            <span>FY {selectedProduct.reportingYear}</span>
             <span className="text-slate-400 text-[10px]">▾</span>
           </div>
           <div className="relative">
@@ -76,30 +218,39 @@ export const CBAMView: React.FC = () => {
             />
           </div>
           <span className="bg-sky-100 text-sky-800 text-[10px] font-mono font-bold px-2.5 py-1 rounded-md tracking-wider">
-            SIMULATED
+            SAURIENT DEMO
           </span>
         </div>
       </div>
 
-      {/* Main Title Banner & Actions */}
+      {/* Main Title Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">CBAM Exposure</h1>
-          <p className="text-xs text-slate-500 font-medium">Interactive product-level applicability, emissions and cost assumptions</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">CBAM Verification Readiness Platform</h1>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Versioned rules, evidence validation, calculation provenance and verifier handover
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2">
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Download</span>
+          <button
+            onClick={() => setIsBlockerDrawerOpen(true)}
+            className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+            <span>Checklist & Blockers</span>
           </button>
-          <button className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors">
-            Primary action
+          <button
+            onClick={() => setActiveTab('Data Pack')}
+            className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Generate Dossier</span>
           </button>
         </div>
       </div>
 
-      {/* Sub Navigation Tabs */}
+      {/* 12 Sub Navigation Tabs */}
       <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
         {tabs.map((tab) => (
           <button
@@ -116,108 +267,52 @@ export const CBAMView: React.FC = () => {
         ))}
       </div>
 
-      {/* KPI Cards (4 columns) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {kpis.map((k, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-semibold text-slate-400 block mb-1">{k.title}</span>
-            <span className="text-2xl font-black text-slate-900 tracking-tight">{k.val}</span>
-            <span className={`text-xs font-semibold block mt-1 ${k.color}`}>{k.subtitle}</span>
-          </div>
-        ))}
-      </div>
+      {/* Sub-Tab View Switching */}
+      {activeTab === 'Overview' && (
+        <CBAMOverview
+          products={products}
+          selectedProduct={selectedProduct}
+          onSelectProduct={handleSelectProduct}
+          onOpenBlockers={() => setIsBlockerDrawerOpen(true)}
+        />
+      )}
 
-      {/* Middle Row (2/3 Exposure Chart + 1/3 Assumption Notes) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2/3: Exposure by product and scenario */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-          <h3 className="font-bold text-slate-900 text-sm mb-4">Exposure by product and scenario</h3>
+      {activeTab === 'Applicability' && <ApplicabilityWizard product={selectedProduct} />}
 
-          <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthData} barCategoryGap="25%">
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis hide />
-                <Tooltip />
-                <Bar dataKey="val" radius={[4, 4, 0, 0]}>
-                  {monthData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      {activeTab === 'CN Classification' && <CNClassificationView product={selectedProduct} />}
 
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100 text-xs">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4]"></span>
-                <span className="text-slate-600 font-medium text-[11px]">Current period</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-                <span className="text-slate-600 font-medium text-[11px]">Verified / primary data</span>
-              </div>
-            </div>
-            <span className="text-[11px] text-slate-400 font-medium">Units and boundary shown in every chart</span>
-          </div>
-        </div>
+      {activeTab === 'Installations' && <InstallationsView product={selectedProduct} />}
 
-        {/* Right 1/3: Assumption notes */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
-          <h3 className="font-bold text-slate-900 text-sm">Assumption notes</h3>
+      {activeTab === 'Monitoring Plans' && <MonitoringPlansView product={selectedProduct} />}
 
-          <div className="space-y-3 flex-1 flex flex-col justify-center">
-            <div className="p-4 bg-amber-50/70 border border-amber-100 rounded-xl space-y-1">
-              <h4 className="font-bold text-xs text-amber-900">Scenario assumptions</h4>
-              <p className="text-[11px] text-amber-700">CBAM price €82/tCO₂e · EUR/GHS 17.4</p>
-              <p className="text-[10px] text-amber-600">No free-allocation benefit included.</p>
-            </div>
+      {activeTab === 'Processes' && (
+        <ProcessesPrecursorsView product={selectedProduct} onResolveBlocker={handleResolveRule} />
+      )}
 
-            <div className="p-4 bg-rose-50/70 border border-rose-100 rounded-xl space-y-1">
-              <h4 className="font-bold text-xs text-rose-900">DEMO — not a regulatory submission</h4>
-              <p className="text-[11px] text-rose-700">Commercial exposure estimate only.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {activeTab === 'Calculations' && <CalculationsTraceView product={selectedProduct} />}
 
-      {/* Bottom Card: Records and provenance */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-sm">Records and provenance</h3>
+      {activeTab === 'Declarants' && <DeclarantsView product={selectedProduct} />}
 
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 font-bold text-[10px] rounded-md tracking-wider transition-colors">
-              EXPORT CSV
-            </button>
-            <button className="px-3 py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 font-bold text-[10px] rounded-md tracking-wider transition-colors">
-              PRINTABLE HTML
-            </button>
-          </div>
-        </div>
+      {activeTab === 'Exposure' && <ExposureView product={selectedProduct} />}
 
-        <div className="divide-y divide-slate-100 text-xs">
-          {records.map((r, i) => (
-            <div key={i} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="w-56">
-                <span className="font-bold text-slate-900">{r.name}</span>
-              </div>
-              <div className="w-36 text-slate-500 font-mono text-[11px]">
-                <span>{r.code}</span>
-              </div>
-              <div className="w-44">
-                <span className={`border font-semibold px-3 py-1 rounded-full text-[11px] inline-block ${r.statusClass}`}>
-                  {r.status}
-                </span>
-              </div>
-              <div className="text-right font-bold text-slate-900 w-32">
-                <span>{r.exposure}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {activeTab === 'Cost' && <CostAnalysisView product={selectedProduct} />}
+
+      {activeTab === 'Data Pack' && (
+        <DataPackGeneratorView product={selectedProduct} onFreezeDataset={handleFreezeDataset} />
+      )}
+
+      {activeTab === 'Registry Transfer' && <RegistryTransferView product={selectedProduct} />}
+
+      {/* Reusable Blocker Drawer Component */}
+      <BlockerDrawer
+        isOpen={isBlockerDrawerOpen}
+        onClose={() => setIsBlockerDrawerOpen(false)}
+        rules={selectedProduct.rules}
+        onResolveRule={(ruleId) => {
+          handleResolveRule(ruleId);
+          setIsBlockerDrawerOpen(false);
+        }}
+      />
     </div>
   );
 };
