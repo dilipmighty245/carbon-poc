@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrgApprovals, saveOrgApproval } from '../../../api/client';
 import {
   ShieldAlert,
   CheckCircle2,
@@ -103,6 +104,16 @@ export const OrgApprovalsTab: React.FC = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [actionSuccessToast, setActionSuccessToast] = useState<string | null>(null);
 
+  useEffect(() => {
+    getOrgApprovals()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setApprovalsList(data);
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch approvals from backend:', err));
+  }, []);
+
   // Current acting role for SoD check (simulated)
   const currentActingRole = 'Compliance Manager'; // e.g. Dr. Lena Hoffmann
 
@@ -115,12 +126,13 @@ export const OrgApprovalsTab: React.FC = () => {
     return a.status === filterStatus;
   });
 
-  const handleDecision = (action: 'Approved' | 'Returned' | 'Rejected') => {
+  const handleDecision = async (action: 'Approved' | 'Returned' | 'Rejected') => {
     if (!selectedRequest) return;
 
+    let updatedReq: ApprovalRequest | null = null;
     const updated = approvalsList.map((a) => {
       if (a.id === selectedRequest.id) {
-        return {
+        updatedReq = {
           ...a,
           status: action,
           history: [
@@ -133,9 +145,18 @@ export const OrgApprovalsTab: React.FC = () => {
             },
           ],
         };
+        return updatedReq;
       }
       return a;
     });
+
+    if (updatedReq) {
+      try {
+        await saveOrgApproval(updatedReq);
+      } catch (err) {
+        console.warn('Backend save approval decision failed:', err);
+      }
+    }
 
     setApprovalsList(updated);
     setSelectedRequest(null);
@@ -249,8 +270,8 @@ export const OrgApprovalsTab: React.FC = () => {
                   <span className="text-[10px] text-slate-400 font-mono">{a.facility}</span>
                 </td>
                 <td className="py-3.5 px-4">
-                  <span className="font-bold text-slate-900 block">{a.submittedBy.name}</span>
-                  <span className="text-[10px] text-slate-400 font-mono">{a.submittedBy.role}</span>
+                  <span className="font-bold text-slate-900 block">{a.submittedBy?.name || 'Unknown'}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{a.submittedBy?.role || ''}</span>
                 </td>
                 <td className="py-3.5 px-4">
                   <span
@@ -311,7 +332,7 @@ export const OrgApprovalsTab: React.FC = () => {
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-slate-400 block uppercase">Submitted By</span>
-                  <span className="font-bold text-slate-900 block">{selectedRequest.submittedBy.name} ({selectedRequest.submittedBy.role})</span>
+                  <span className="font-bold text-slate-900 block">{selectedRequest.submittedBy?.name || 'Unknown'} ({selectedRequest.submittedBy?.role || ''})</span>
                 </div>
                 <span className="font-mono text-[10px] text-slate-500">{selectedRequest.submittedDate}</span>
               </div>
@@ -320,7 +341,7 @@ export const OrgApprovalsTab: React.FC = () => {
               <div className="space-y-2">
                 <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">What Changed (Proposed Modifications)</span>
                 <div className="space-y-2">
-                  {selectedRequest.whatChanged.map((diff, idx) => (
+                  {(selectedRequest.whatChanged || []).map((diff, idx) => (
                     <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="p-2 bg-rose-50/70 rounded-lg border border-rose-100">
                         <span className="text-[9px] font-mono font-bold text-rose-700 block uppercase">Old Value ({diff.field})</span>

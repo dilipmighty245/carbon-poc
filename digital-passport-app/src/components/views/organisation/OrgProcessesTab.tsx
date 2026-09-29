@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrgProcesses, saveOrgProcess, deleteOrgProcess } from '../../../api/client';
 import {
   Workflow,
   Plus,
@@ -11,7 +12,8 @@ import {
   CheckCircle2,
   AlertCircle,
   FileCode,
-  ArrowRight
+  ArrowRight,
+  Trash2
 } from 'lucide-react';
 
 export interface ProcessItem {
@@ -172,6 +174,16 @@ export const OrgProcessesTab: React.FC = () => {
   const [selectedProcess, setSelectedProcess] = useState<ProcessItem | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  useEffect(() => {
+    getOrgProcesses()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProcessesList(data);
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch processes from backend:', err));
+  }, []);
+
   // New Process Form
   const [newProcessName, setNewProcessName] = useState('');
   const [newFacilityName, setNewFacilityName] = useState('Tema Processing Plant');
@@ -181,14 +193,14 @@ export const OrgProcessesTab: React.FC = () => {
     .filter((p) => (selectedFacilityFilter === 'all' ? true : p.facilityName === selectedFacilityFilter))
     .filter(
       (p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.productionLine.toLowerCase().includes(searchQuery.toLowerCase())
+        (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.productionLine || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-  const uniqueFacilities = Array.from(new Set(processesList.map((p) => p.facilityName)));
+  const uniqueFacilities = Array.from(new Set(processesList.map((p) => p.facilityName).filter(Boolean)));
 
-  const handleAddProcess = (e: React.FormEvent) => {
+  const handleAddProcess = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProcessName) return;
 
@@ -214,9 +226,27 @@ export const OrgProcessesTab: React.FC = () => {
       },
     };
 
+    try {
+      await saveOrgProcess(newP);
+    } catch (err) {
+      console.warn('Backend save process failed, saving locally:', err);
+    }
+
     setProcessesList([...processesList, newP]);
     setIsAddOpen(false);
     setNewProcessName('');
+  };
+
+  const handleDeleteProcess = async (id: string) => {
+    try {
+      await deleteOrgProcess(id);
+    } catch (err) {
+      console.warn('Backend delete process failed, removing locally:', err);
+    }
+    setProcessesList((prev) => prev.filter((p) => p.id !== id));
+    if (selectedProcess && selectedProcess.id === id) {
+      setSelectedProcess(null);
+    }
   };
 
   return (
@@ -243,7 +273,7 @@ export const OrgProcessesTab: React.FC = () => {
                 <span className="text-[9px] font-mono font-bold text-slate-400 block">{p.id}</span>
                 <h4 className="font-bold text-slate-900 truncate text-[11px]">{p.name}</h4>
                 <div className="flex items-center gap-1 pt-1">
-                  {p.scopes.map((s, sIdx) => (
+                  {(p.scopes || []).map((s, sIdx) => (
                     <span key={sIdx} className="bg-white text-[9px] font-mono font-bold text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">
                       {s}
                     </span>
@@ -319,18 +349,18 @@ export const OrgProcessesTab: React.FC = () => {
                 </td>
                 <td className="py-3.5 px-4 max-w-xs">
                   <div className="flex items-center gap-1.5 text-[11px]">
-                    <span className="text-slate-600 font-medium truncate">{p.inputs.join(', ')}</span>
+                    <span className="text-slate-600 font-medium truncate">{(p.inputs || []).join(', ') || 'None'}</span>
                     <ArrowRight className="w-3 h-3 text-slate-400 shrink-0" />
-                    <span className="text-emerald-800 font-bold truncate">{p.outputs.join(', ')}</span>
+                    <span className="text-emerald-800 font-bold truncate">{(p.outputs || []).join(', ') || 'None'}</span>
                   </div>
                 </td>
                 <td className="py-3.5 px-4">
                   <span className="font-medium text-slate-700 block">{p.energySource}</span>
-                  <span className="font-mono text-[10px] text-slate-400">{p.meters.join(', ')}</span>
+                  <span className="font-mono text-[10px] text-slate-400">{(p.meters || []).join(', ') || 'None'}</span>
                 </td>
                 <td className="py-3.5 px-4">
                   <div className="flex items-center gap-1">
-                    {p.scopes.map((s, idx) => (
+                    {(p.scopes || []).map((s, idx) => (
                       <span
                         key={idx}
                         className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border ${
@@ -387,7 +417,7 @@ export const OrgProcessesTab: React.FC = () => {
                 <div className="space-y-1">
                   <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Process Inputs</span>
                   <ul className="list-disc list-inside text-slate-800 font-medium space-y-0.5">
-                    {selectedProcess.inputs.map((i, idx) => (
+                    {(selectedProcess.inputs || []).map((i, idx) => (
                       <li key={idx}>{i}</li>
                     ))}
                   </ul>
@@ -396,7 +426,7 @@ export const OrgProcessesTab: React.FC = () => {
                 <div className="space-y-1">
                   <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase block">Process Outputs</span>
                   <ul className="list-disc list-inside text-slate-800 font-medium space-y-0.5">
-                    {selectedProcess.outputs.map((o, idx) => (
+                    {(selectedProcess.outputs || []).map((o, idx) => (
                       <li key={idx}>{o}</li>
                     ))}
                   </ul>
@@ -413,29 +443,36 @@ export const OrgProcessesTab: React.FC = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-slate-800">
                   <div className="p-2.5 bg-white rounded-lg border border-emerald-100">
                     <span className="text-[9px] font-mono text-slate-400 block uppercase">Linked Product</span>
-                    <span className="font-bold text-slate-900 block truncate">{selectedProcess.pcfTrace.product}</span>
+                    <span className="font-bold text-slate-900 block truncate">{selectedProcess.pcfTrace?.product || 'N/A'}</span>
                   </div>
                   <div className="p-2.5 bg-white rounded-lg border border-emerald-100">
                     <span className="text-[9px] font-mono text-slate-400 block uppercase">Batch Code</span>
-                    <span className="font-mono font-bold text-slate-900 block truncate">{selectedProcess.pcfTrace.batch}</span>
+                    <span className="font-mono font-bold text-slate-900 block truncate">{selectedProcess.pcfTrace?.batch || 'N/A'}</span>
                   </div>
                   <div className="p-2.5 bg-white rounded-lg border border-emerald-100">
                     <span className="text-[9px] font-mono text-slate-400 block uppercase">Activity Rate</span>
-                    <span className="font-bold text-slate-900 block">{selectedProcess.pcfTrace.activityRate}</span>
+                    <span className="font-bold text-slate-900 block">{selectedProcess.pcfTrace?.activityRate || 'N/A'}</span>
                   </div>
                   <div className="p-2.5 bg-white rounded-lg border border-emerald-100">
                     <span className="text-[9px] font-mono text-slate-400 block uppercase">Emission Factor</span>
-                    <span className="font-mono font-bold text-slate-900 block">{selectedProcess.pcfTrace.emissionFactor}</span>
+                    <span className="font-mono font-bold text-slate-900 block">{selectedProcess.pcfTrace?.emissionFactor || 'N/A'}</span>
                   </div>
                   <div className="sm:col-span-2 p-2.5 bg-white rounded-lg border border-emerald-200">
                     <span className="text-[9px] font-mono text-slate-400 block uppercase">Attributed Process Emissions</span>
-                    <span className="font-black text-emerald-700 text-sm block">{selectedProcess.pcfTrace.calculatedEmissions}</span>
+                    <span className="font-black text-emerald-700 text-sm block">{selectedProcess.pcfTrace?.calculatedEmissions || 'N/A'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end">
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+              <button
+                onClick={() => handleDeleteProcess(selectedProcess.id)}
+                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1.5 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Delete Process</span>
+              </button>
               <button
                 onClick={() => setSelectedProcess(null)}
                 className="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800"

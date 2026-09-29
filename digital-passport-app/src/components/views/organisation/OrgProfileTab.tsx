@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrgProfile, saveOrgProfile } from '../../../api/client';
 import {
   Building2,
   Scale,
@@ -142,13 +143,37 @@ export const OrgProfileTab: React.FC = () => {
   const [draftProfile, setDraftProfile] = useState<OrgProfileData>(initialOrgProfile);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  useEffect(() => {
+    getOrgProfile()
+      .then((data) => {
+        if (data && data.legalName) {
+          const merged: OrgProfileData = {
+            ...initialOrgProfile,
+            ...data,
+            primaryContact: { ...initialOrgProfile.primaryContact, ...(data.primaryContact || {}) },
+            sustainabilityContact: { ...initialOrgProfile.sustainabilityContact, ...(data.sustainabilityContact || {}) },
+            boundary: { ...initialOrgProfile.boundary, ...(data.boundary || {}) },
+            verification: { ...initialOrgProfile.verification, ...(data.verification || {}) },
+          };
+          setProfile(merged);
+          setDraftProfile(merged);
+        }
+      })
+      .catch((err) => console.warn('Failed to load profile from backend:', err));
+  }, []);
+
   const handleOpenEdit = () => {
     setDraftProfile({ ...profile });
     setIsEditOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await saveOrgProfile(draftProfile);
+    } catch (err) {
+      console.warn('Backend save profile failed, updating local state:', err);
+    }
     setProfile(draftProfile);
     setIsEditOpen(false);
     setSavedSuccess(true);
@@ -281,21 +306,21 @@ export const OrgProfileTab: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
               <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider block">Primary Admin Contact</span>
-              <h4 className="font-bold text-slate-900 text-sm">{profile.primaryContact.name}</h4>
-              <p className="text-slate-500 font-medium">{profile.primaryContact.title}</p>
+              <h4 className="font-bold text-slate-900 text-sm">{profile.primaryContact?.name || 'Unspecified'}</h4>
+              <p className="text-slate-500 font-medium">{profile.primaryContact?.title || ''}</p>
               <div className="pt-2 text-[11px] text-slate-600 space-y-1">
-                <div className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-400" /> {profile.primaryContact.email}</div>
-                <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-400" /> {profile.primaryContact.phone}</div>
+                <div className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-400" /> {profile.primaryContact?.email || ''}</div>
+                <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-400" /> {profile.primaryContact?.phone || ''}</div>
               </div>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
               <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider block">Sustainability & CBAM Lead</span>
-              <h4 className="font-bold text-slate-900 text-sm">{profile.sustainabilityContact.name}</h4>
-              <p className="text-slate-500 font-medium">{profile.sustainabilityContact.title}</p>
+              <h4 className="font-bold text-slate-900 text-sm">{profile.sustainabilityContact?.name || 'Unspecified'}</h4>
+              <p className="text-slate-500 font-medium">{profile.sustainabilityContact?.title || ''}</p>
               <div className="pt-2 text-[11px] text-slate-600 space-y-1">
-                <div className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-400" /> {profile.sustainabilityContact.email}</div>
-                <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-400" /> {profile.sustainabilityContact.phone}</div>
+                <div className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-400" /> {profile.sustainabilityContact?.email || ''}</div>
+                <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-400" /> {profile.sustainabilityContact?.phone || ''}</div>
               </div>
             </div>
           </div>
@@ -318,23 +343,23 @@ export const OrgProfileTab: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <span className="text-slate-500 font-medium">Consolidation Approach</span>
-                <span className="font-bold text-slate-900">{profile.boundary.consolidationApproach}</span>
+                <span className="font-bold text-slate-900">{profile.boundary?.consolidationApproach || 'Operational Control'}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <span className="text-slate-500 font-medium">Base Year</span>
-                <span className="font-bold text-slate-900">{profile.boundary.baseYear}</span>
+                <span className="font-bold text-slate-900">{profile.boundary?.baseYear || '2024'}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <span className="text-slate-500 font-medium">Reporting Currency</span>
-                <span className="font-bold text-slate-900">{profile.boundary.reportingCurrency}</span>
+                <span className="font-bold text-slate-900">{profile.boundary?.reportingCurrency || 'EUR (€)'}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <span className="text-slate-500 font-medium">Default Units</span>
-                <span className="font-bold text-slate-900">{profile.boundary.defaultUnits}</span>
+                <span className="font-bold text-slate-900">{profile.boundary?.defaultUnits || 'tCO₂e'}</span>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 space-y-1">
                 <span className="text-[10px] font-mono text-slate-400 block uppercase">Accounting Standard</span>
-                <span className="font-bold text-slate-900 block">{profile.boundary.ghgStandard}</span>
+                <span className="font-bold text-slate-900 block">{profile.boundary?.ghgStandard || 'GHG Protocol'}</span>
               </div>
             </div>
           </div>
@@ -355,21 +380,21 @@ export const OrgProfileTab: React.FC = () => {
               <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-mono text-emerald-700 uppercase font-bold block">Assurance Body</span>
-                  <span className="font-bold text-slate-900 text-xs block">{profile.verification.provider}</span>
+                  <span className="font-bold text-slate-900 text-xs block">{profile.verification?.provider || 'Unverified'}</span>
                 </div>
                 <span className="bg-emerald-600 text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded">ISO 14065</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <span className="text-slate-500 font-medium">Assurance Level</span>
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{profile.verification.assuranceLevel}</span>
+                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{profile.verification?.assuranceLevel || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <span className="text-slate-500 font-medium">Valid Period</span>
-                <span className="font-mono text-slate-700 font-bold">{profile.verification.verifiedDate} → {profile.verification.expiryDate}</span>
+                <span className="font-mono text-slate-700 font-bold">{profile.verification?.verifiedDate || ''} → {profile.verification?.expiryDate || ''}</span>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 space-y-1">
                 <span className="text-[10px] font-mono text-slate-400 block uppercase">Certificate Hash</span>
-                <span className="font-mono text-[11px] text-slate-700 font-bold block truncate">{profile.verification.certificateHash}</span>
+                <span className="font-mono text-[11px] text-slate-700 font-bold block truncate">{profile.verification?.certificateHash || 'N/A'}</span>
               </div>
             </div>
           </div>

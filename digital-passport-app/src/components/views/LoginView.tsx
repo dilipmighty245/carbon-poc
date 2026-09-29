@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Leaf, ShieldCheck, ArrowRight } from 'lucide-react';
+import { loginUser } from '../../api/client';
 
 export const LoginView: React.FC = () => {
   const navigate = useNavigate();
@@ -22,8 +23,13 @@ export const LoginView: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await loginUser(email, password);
+    } catch (err) {
+      console.warn('Backend login check failed, proceeding in demo mode:', err);
+    }
     navigate('/dashboard');
   };
 

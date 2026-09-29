@@ -212,3 +212,196 @@ export async function getNexusCarbonPassports() {
     return null;
   }
 }
+
+// Organisation REST API Client Functions
+
+export async function loginUser(email: string, password: string, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function getOrgProfile(tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/profile`, {
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function saveOrgProfile(profile: any, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/profile`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function getOrgFacilities(tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/facilities`, {
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function saveOrgFacility(facility: any, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/facilities`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(facility),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function deleteOrgFacility(id: string, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/facilities/${id}`, {
+    method: 'DELETE',
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function getOrgProcesses(tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/processes`, {
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function saveOrgProcess(process: any, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/processes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(process),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function deleteOrgProcess(id: string, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/processes/${id}`, {
+    method: 'DELETE',
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function getOrgUsers(tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/users`, {
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function saveOrgUser(user: any, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(user),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function updateOrgUserRole(userId: string, role: string, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/users/role`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify({ user_id: userId, role }),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function getOrgReportingPeriods(tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/reporting-periods`, {
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function saveOrgReportingPeriod(period: any, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/reporting-periods`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(period),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function getOrgLocalisation(tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/localisation`, {
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function saveOrgLocalisation(loc: any, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/localisation`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(loc),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function getOrgApprovals(tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/approvals`, {
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function saveOrgApproval(approval: any, tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/organisation/approvals`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(approval),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}

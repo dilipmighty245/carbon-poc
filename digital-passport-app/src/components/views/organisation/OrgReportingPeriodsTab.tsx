@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrgReportingPeriods, saveOrgReportingPeriod } from '../../../api/client';
 import {
   Calendar,
   Lock,
@@ -98,6 +99,16 @@ export const OrgReportingPeriodsTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  useEffect(() => {
+    getOrgReportingPeriods()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setPeriods(data);
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch reporting periods from backend:', err));
+  }, []);
+
   // New period form
   const [newPeriodName, setNewPeriodName] = useState('');
   const [newPeriodType, setNewPeriodType] = useState('Quarterly');
@@ -106,11 +117,11 @@ export const OrgReportingPeriodsTab: React.FC = () => {
 
   const filteredPeriods = periods.filter(
     (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchQuery.toLowerCase())
+      (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreatePeriod = (e: React.FormEvent) => {
+  const handleCreatePeriod = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPeriodName) return;
 
@@ -127,27 +138,35 @@ export const OrgReportingPeriodsTab: React.FC = () => {
       versions: [],
     };
 
+    try {
+      await saveOrgReportingPeriod(newP);
+    } catch (err) {
+      console.warn('Backend save period failed, saving locally:', err);
+    }
+
     setPeriods([...periods, newP]);
     setIsCreateOpen(false);
     setNewPeriodName('');
   };
 
-  const handleAdvanceStep = (periodId: string) => {
-    setPeriods(
-      periods.map((p) => {
-        if (p.id === periodId && p.currentStepIndex < 4) {
-          const nextIdx = p.currentStepIndex + 1;
-          const statusMap: ('OPEN' | 'DATA LOCKED' | 'SUBMITTED' | 'VERIFIED')[] = ['OPEN', 'DATA LOCKED', 'SUBMITTED', 'VERIFIED'];
-          const nextStatus = statusMap[nextIdx] || 'VERIFIED';
-          return {
-            ...p,
-            currentStepIndex: nextIdx,
-            verificationStatus: nextStatus,
-          };
-        }
-        return p;
-      })
-    );
+  const handleAdvanceStep = async (periodId: string) => {
+    const updatedList = periods.map((p) => {
+      if (p.id === periodId && p.currentStepIndex < 4) {
+        const nextIdx = p.currentStepIndex + 1;
+        const statusMap: ('OPEN' | 'DATA LOCKED' | 'SUBMITTED' | 'VERIFIED')[] = ['OPEN', 'DATA LOCKED', 'SUBMITTED', 'VERIFIED'];
+        const nextStatus = statusMap[nextIdx] || 'VERIFIED';
+        const updated = {
+          ...p,
+          currentStepIndex: nextIdx,
+          verificationStatus: nextStatus,
+        };
+        saveOrgReportingPeriod(updated).catch((err) => console.warn('Backend update period failed:', err));
+        return updated;
+      }
+      return p;
+    });
+
+    setPeriods(updatedList);
     if (selectedPeriod && selectedPeriod.id === periodId && selectedPeriod.currentStepIndex < 4) {
       const nextIdx = selectedPeriod.currentStepIndex + 1;
       const statusMap: ('OPEN' | 'DATA LOCKED' | 'SUBMITTED' | 'VERIFIED')[] = ['OPEN', 'DATA LOCKED', 'SUBMITTED', 'VERIFIED'];
@@ -314,9 +333,9 @@ export const OrgReportingPeriodsTab: React.FC = () => {
               {/* Version History Log */}
               <div className="space-y-3">
                 <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Recalculation & Version Log</span>
-                {selectedPeriod.versions.length > 0 ? (
+                {(selectedPeriod.versions || []).length > 0 ? (
                   <div className="space-y-2">
-                    {selectedPeriod.versions.map((v, idx) => (
+                    {(selectedPeriod.versions || []).map((v, idx) => (
                       <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                         <div>
                           <span className="font-mono font-bold text-slate-900 mr-2">{v.version}</span>
