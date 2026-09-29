@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrgUsers, saveOrgUser, updateOrgUserRole } from '../../../api/client';
 import {
   UserPlus,
   Search,
@@ -96,6 +97,16 @@ export const OrgUsersRolesTab: React.FC = () => {
   const [selectedUserForRole, setSelectedUserForRole] = useState<UserMember | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
+  useEffect(() => {
+    getOrgUsers()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setUsers(data);
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch users from backend:', err));
+  }, []);
+
   // Invite form
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -103,12 +114,12 @@ export const OrgUsersRolesTab: React.FC = () => {
 
   const filteredUsers = users.filter(
     (u) =>
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.role.toLowerCase().includes(searchQuery.toLowerCase())
+      (u.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.role || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleInviteUser = (e: React.FormEvent) => {
+  const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail) return;
 
@@ -122,14 +133,25 @@ export const OrgUsersRolesTab: React.FC = () => {
       status: 'Pending',
     };
 
+    try {
+      await saveOrgUser(newU);
+    } catch (err) {
+      console.warn('Backend save user failed, saving locally:', err);
+    }
+
     setUsers([...users, newU]);
     setIsInviteOpen(false);
     setInviteName('');
     setInviteEmail('');
   };
 
-  const handleUpdateRole = (newRole: string) => {
+  const handleUpdateRole = async (newRole: string) => {
     if (!selectedUserForRole) return;
+    try {
+      await updateOrgUserRole(selectedUserForRole.id, newRole);
+    } catch (err) {
+      console.warn('Backend update role failed, updating locally:', err);
+    }
     setUsers(users.map((u) => (u.id === selectedUserForRole.id ? { ...u, role: newRole } : u)));
     setSelectedUserForRole(null);
   };

@@ -102,6 +102,17 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center gap-3">
+              <a 
+                href="http://localhost:8080/swagger/" 
+                target="_blank" 
+                rel="noreferrer"
+                className="hidden lg:flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200 text-xs font-bold text-emerald-800 transition-colors"
+                title="Open OpenAPI / Swagger Gateway Documentation"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>REST API Gateway: localhost:8080</span>
+              </a>
+
               <div className="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                 Tema Processing Plant

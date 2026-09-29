@@ -47,6 +47,7 @@ dev-setup: check-prereqs
 	@echo "==> Applying database schema migrations..."
 	@until kubectl exec -n saurient-system deploy/postgres -- pg_isready -U saurient >/dev/null 2>&1; do sleep 1; done
 	kubectl exec -n saurient-system deploy/postgres -i -- psql -U saurient -d saurient_db < migrations/001_init_schema.sql
+	kubectl exec -n saurient-system deploy/postgres -i -- psql -U saurient -d saurient_db < migrations/002_organisation_schema.sql
 
 	@echo "==> Deploying Custom Resource Definitions (CRDs)..."
 	kubectl apply -f deploy/crd-manifests.yaml
@@ -60,13 +61,14 @@ dev-setup: check-prereqs
 	@echo "=========================================================================="
 	@echo "Saurient Carbon Passport Platform local dev cluster is UP & READY!"
 	@echo "=========================================================================="
-	@echo "API Gateway endpoint: http://localhost:8080/healthz"
-	@echo "Sample CarbonPassport CR created: 'cement-batch-001'"
-	@echo "Check pods: kubectl get pods -A"
-	@echo "Check CarbonPassport CRs: kubectl get carbonpassport -A"
+	@echo "React Frontend UI:             http://localhost:5173"
+	@echo "API Gateway Endpoint:          http://localhost:8080/healthz"
+	@echo "REST API Base URL:             http://localhost:8080/api/v1"
+	@echo "Swagger Interactive API Docs:  http://localhost:8080/swagger/"
+	@echo "GraphQL Playground:            http://localhost:8080/graphql/playground"
 	@echo "=========================================================================="
-	@echo "==> Building and starting Digital Passport App (React / Vite)..."
-	cd digital-passport-app && yarn install && yarn build && yarn dev
+	@echo "==> Building Digital Passport App (React / Vite)..."
+	cd digital-passport-app && npm run build
 
 clean:
 	@echo "==> Cleaning up Kind cluster and build artifacts..."

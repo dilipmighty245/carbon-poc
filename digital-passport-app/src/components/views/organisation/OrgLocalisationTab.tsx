@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrgLocalisation, saveOrgLocalisation } from '../../../api/client';
 import {
   Globe,
   Sliders,
@@ -60,6 +61,23 @@ export const OrgLocalisationTab: React.FC = () => {
   const [draftConfig, setDraftConfig] = useState<LocalisationConfig>(initialLocalisation);
   const [savedToast, setSavedToast] = useState(false);
 
+  useEffect(() => {
+    getOrgLocalisation()
+      .then((data) => {
+        if (data && data.country) {
+          const merged: LocalisationConfig = {
+            ...initialLocalisation,
+            ...data,
+            units: { ...initialLocalisation.units, ...(data.units || {}) },
+            regulatory: { ...initialLocalisation.regulatory, ...(data.regulatory || {}) },
+          };
+          setConfig(merged);
+          setDraftConfig(merged);
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch localisation from backend:', err));
+  }, []);
+
   const handleApplyPreset = (preset: 'Ghana' | 'India' | 'EU' | 'UK') => {
     if (preset === 'Ghana') {
       setDraftConfig(initialLocalisation);
@@ -92,8 +110,13 @@ export const OrgLocalisationTab: React.FC = () => {
     }
   };
 
-  const handleSaveConfig = (e: React.FormEvent) => {
+  const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await saveOrgLocalisation(draftConfig);
+    } catch (err) {
+      console.warn('Backend save localisation failed, saving locally:', err);
+    }
     setConfig(draftConfig);
     setIsCreateOpen(false);
     setSavedToast(true);
@@ -204,20 +227,20 @@ export const OrgLocalisationTab: React.FC = () => {
           <div className="space-y-3 text-xs">
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
               <span className="text-slate-500 font-medium">Electricity & Energy</span>
-              <span className="font-mono font-bold text-slate-900">{config.units.energy}</span>
+              <span className="font-mono font-bold text-slate-900">{config.units?.energy || 'kWh'}</span>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
               <span className="text-slate-500 font-medium">Fuel & Liquids</span>
-              <span className="font-mono font-bold text-slate-900">{config.units.fuel}</span>
+              <span className="font-mono font-bold text-slate-900">{config.units?.fuel || 'Litres'}</span>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
               <span className="text-slate-500 font-medium">Mass & Production</span>
-              <span className="font-mono font-bold text-slate-900">{config.units.mass}</span>
+              <span className="font-mono font-bold text-slate-900">{config.units?.mass || 'Tonnes'}</span>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
               <span className="text-slate-500 font-medium">GHG Emissions</span>
               <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                {config.units.emissions}
+                {config.units?.emissions || 'tCO₂e'}
               </span>
             </div>
           </div>
@@ -238,15 +261,15 @@ export const OrgLocalisationTab: React.FC = () => {
           <div className="space-y-3 text-xs">
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
               <span className="text-[10px] font-mono text-slate-400 block uppercase">Grid Emission Factor Region</span>
-              <span className="font-bold text-slate-900 block">{config.regulatory.gridRegion}</span>
+              <span className="font-bold text-slate-900 block">{config.regulatory?.gridRegion || 'Standard Grid'}</span>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
               <span className="text-[10px] font-mono text-slate-400 block uppercase">Emission Factor Database</span>
-              <span className="font-bold text-slate-900 block">{config.regulatory.efDataset}</span>
+              <span className="font-bold text-slate-900 block">{config.regulatory?.efDataset || 'IPCC AR6'}</span>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
               <span className="text-[10px] font-mono text-slate-400 block uppercase">CBAM Destination Framework</span>
-              <span className="font-bold text-emerald-800 block">{config.regulatory.cbamDestination}</span>
+              <span className="font-bold text-emerald-800 block">{config.regulatory?.cbamDestination || 'European Union'}</span>
             </div>
           </div>
         </div>

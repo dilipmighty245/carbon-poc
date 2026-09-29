@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrgReportingPeriods, saveOrgReportingPeriod } from '../../../api/client';
 import {
   Calendar,
   Lock,
@@ -98,19 +99,33 @@ export const OrgReportingPeriodsTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  useEffect(() => {
+    getOrgReportingPeriods()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setPeriods(data);
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch reporting periods from backend:', err));
+  }, []);
+
   // New period form
   const [newPeriodName, setNewPeriodName] = useState('');
   const [newPeriodType, setNewPeriodType] = useState('Quarterly');
   const [newStartDate, setNewStartDate] = useState('2026-10-01');
   const [newEndDate, setNewEndDate] = useState('2026-12-31');
 
+  // Correction request form
+  const [isCorrectionOpen, setIsCorrectionOpen] = useState(false);
+  const [correctionReason, setCorrectionReason] = useState('');
+
   const filteredPeriods = periods.filter(
     (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchQuery.toLowerCase())
+      (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreatePeriod = (e: React.FormEvent) => {
+  const handleCreatePeriod = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPeriodName) return;
 
@@ -127,27 +142,35 @@ export const OrgReportingPeriodsTab: React.FC = () => {
       versions: [],
     };
 
+    try {
+      await saveOrgReportingPeriod(newP);
+    } catch (err) {
+      console.warn('Backend save period failed, saving locally:', err);
+    }
+
     setPeriods([...periods, newP]);
     setIsCreateOpen(false);
     setNewPeriodName('');
   };
 
-  const handleAdvanceStep = (periodId: string) => {
-    setPeriods(
-      periods.map((p) => {
-        if (p.id === periodId && p.currentStepIndex < 4) {
-          const nextIdx = p.currentStepIndex + 1;
-          const statusMap: ('OPEN' | 'DATA LOCKED' | 'SUBMITTED' | 'VERIFIED')[] = ['OPEN', 'DATA LOCKED', 'SUBMITTED', 'VERIFIED'];
-          const nextStatus = statusMap[nextIdx] || 'VERIFIED';
-          return {
-            ...p,
-            currentStepIndex: nextIdx,
-            verificationStatus: nextStatus,
-          };
-        }
-        return p;
-      })
-    );
+  const handleAdvanceStep = async (periodId: string) => {
+    const updatedList = periods.map((p) => {
+      if (p.id === periodId && p.currentStepIndex < 4) {
+        const nextIdx = p.currentStepIndex + 1;
+        const statusMap: ('OPEN' | 'DATA LOCKED' | 'SUBMITTED' | 'VERIFIED')[] = ['OPEN', 'DATA LOCKED', 'SUBMITTED', 'VERIFIED'];
+        const nextStatus = statusMap[nextIdx] || 'VERIFIED';
+        const updated = {
+          ...p,
+          currentStepIndex: nextIdx,
+          verificationStatus: nextStatus,
+        };
+        saveOrgReportingPeriod(updated).catch((err) => console.warn('Backend update period failed:', err));
+        return updated;
+      }
+      return p;
+    });
+
+    setPeriods(updatedList);
     if (selectedPeriod && selectedPeriod.id === periodId && selectedPeriod.currentStepIndex < 4) {
       const nextIdx = selectedPeriod.currentStepIndex + 1;
       const statusMap: ('OPEN' | 'DATA LOCKED' | 'SUBMITTED' | 'VERIFIED')[] = ['OPEN', 'DATA LOCKED', 'SUBMITTED', 'VERIFIED'];
@@ -157,6 +180,35 @@ export const OrgReportingPeriodsTab: React.FC = () => {
         verificationStatus: statusMap[nextIdx] || 'VERIFIED',
       });
     }
+  };
+
+  const handleRequestCorrection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPeriod || !correctionReason) return;
+
+    const newVerNum = (selectedPeriod.versions || []).length + 1;
+    const newVer = {
+      version: `v1.${newVerNum}`,
+      date: new Date().toISOString().split('T')[0],
+      author: 'Dr. Lena Hoffmann (Compliance Lead)',
+      reason: correctionReason,
+    };
+
+    const updated = {
+      ...selectedPeriod,
+      versions: [...(selectedPeriod.versions || []), newVer],
+    };
+
+    try {
+      await saveOrgReportingPeriod(updated);
+    } catch (err) {
+      console.warn('Backend update period failed:', err);
+    }
+
+    setPeriods(periods.map((p) => (p.id === updated.id ? updated : p)));
+    setSelectedPeriod(updated);
+    setIsCorrectionOpen(false);
+    setCorrectionReason('');
   };
 
   return (
@@ -290,6 +342,22 @@ export const OrgReportingPeriodsTab: React.FC = () => {
                 </div>
               </div>
 
+              {/* Data Lock Notice & Request Correction for Audited / Locked Periods */}
+              {selectedPeriod.currentStepIndex >= 1 && (
+                <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-amber-900 font-semibold">
+                    <Lock className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>Period data is locked under ISO 14065 audit rules. Any change creates a controlled recalculation version.</span>
+                  </div>
+                  <button
+                    onClick={() => setIsCorrectionOpen(true)}
+                    className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded-lg border border-amber-300 text-xs shrink-0 cursor-pointer"
+                  >
+                    Request Correction
+                  </button>
+                </div>
+              )}
+
               {/* Action Buttons for Lifecycle Advancement */}
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                 <div>
@@ -314,9 +382,9 @@ export const OrgReportingPeriodsTab: React.FC = () => {
               {/* Version History Log */}
               <div className="space-y-3">
                 <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Recalculation & Version Log</span>
-                {selectedPeriod.versions.length > 0 ? (
+                {(selectedPeriod.versions || []).length > 0 ? (
                   <div className="space-y-2">
-                    {selectedPeriod.versions.map((v, idx) => (
+                    {(selectedPeriod.versions || []).map((v, idx) => (
                       <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                         <div>
                           <span className="font-mono font-bold text-slate-900 mr-2">{v.version}</span>
@@ -343,6 +411,57 @@ export const OrgReportingPeriodsTab: React.FC = () => {
                 Close View
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request Correction Modal */}
+      {isCorrectionOpen && selectedPeriod && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-amber-50">
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-amber-700" />
+                <h3 className="font-bold text-slate-900 text-sm">Request Controlled Recalculation</h3>
+              </div>
+              <button onClick={() => setIsCorrectionOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleRequestCorrection} className="p-5 space-y-4 text-xs">
+              <p className="text-slate-600">
+                Reporting Period <strong className="text-slate-900">{selectedPeriod.name}</strong> is locked. Submitting a correction request will spawn a new recalculation version entry (e.g. v1.{(selectedPeriod.versions || []).length + 1}) for audit trail compliance.
+              </p>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Reason for Recalculation / Correction *</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Describe updated activity data, meter calibration correction, or emission factor update..."
+                  value={correctionReason}
+                  onChange={(e) => setCorrectionReason(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-amber-600 text-xs"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCorrectionOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs"
+                >
+                  Submit Recalculation Request
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

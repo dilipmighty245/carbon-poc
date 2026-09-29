@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrgFacilities, saveOrgFacility, deleteOrgFacility } from '../../../api/client';
 import {
   Factory,
   MapPin,
@@ -15,7 +16,8 @@ import {
   User,
   Zap,
   Globe,
-  PlusCircle
+  PlusCircle,
+  Trash2
 } from 'lucide-react';
 
 export interface Facility {
@@ -222,6 +224,16 @@ export const OrgFacilitiesTab: React.FC = () => {
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  useEffect(() => {
+    getOrgFacilities()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setFacilitiesList(data);
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch facilities from backend:', err));
+  }, []);
+
   // New facility form state
   const [newFacilityName, setNewFacilityName] = useState('');
   const [newFacilityType, setNewFacilityType] = useState('Production Facility');
@@ -230,12 +242,12 @@ export const OrgFacilitiesTab: React.FC = () => {
 
   const filteredFacilities = facilitiesList.filter(
     (f) =>
-      f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.country.toLowerCase().includes(searchQuery.toLowerCase())
+      (f.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (f.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (f.country || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddFacility = (e: React.FormEvent) => {
+  const handleAddFacility = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFacilityName) return;
 
@@ -267,10 +279,28 @@ export const OrgFacilitiesTab: React.FC = () => {
       processTree: [],
     };
 
+    try {
+      await saveOrgFacility(newFac);
+    } catch (err) {
+      console.warn('Backend save facility failed, saving locally:', err);
+    }
+
     setFacilitiesList([...facilitiesList, newFac]);
     setIsAddOpen(false);
     setNewFacilityName('');
     setNewFacilityAddress('');
+  };
+
+  const handleDeleteFacility = async (id: string) => {
+    try {
+      await deleteOrgFacility(id);
+    } catch (err) {
+      console.warn('Backend delete facility failed, removing locally:', err);
+    }
+    setFacilitiesList((prev) => prev.filter((f) => f.id !== id));
+    if (selectedFacility && selectedFacility.id === id) {
+      setSelectedFacility(null);
+    }
   };
 
   return (
@@ -506,10 +536,10 @@ export const OrgFacilitiesTab: React.FC = () => {
                 <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase block">Operations Manager</span>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm">{selectedFacility.manager.name}</h4>
-                    <p className="text-slate-500 font-medium text-[11px]">{selectedFacility.manager.title}</p>
+                    <h4 className="font-bold text-slate-900 text-sm">{selectedFacility.manager?.name || 'Unassigned'}</h4>
+                    <p className="text-slate-500 font-medium text-[11px]">{selectedFacility.manager?.title || ''}</p>
                   </div>
-                  <span className="font-mono text-[11px] text-slate-600 font-medium">{selectedFacility.manager.email}</span>
+                  <span className="font-mono text-[11px] text-slate-600 font-medium">{selectedFacility.manager?.email || ''}</span>
                 </div>
               </div>
 
@@ -517,12 +547,12 @@ export const OrgFacilitiesTab: React.FC = () => {
               <div className="space-y-3">
                 <h4 className="font-bold text-slate-900 text-sm">Energy Mix & Utility Connectivity</h4>
                 <div className="flex flex-wrap gap-2">
-                  {selectedFacility.energySources.map((e, idx) => (
+                  {(selectedFacility.energySources || []).map((e, idx) => (
                     <span key={idx} className="bg-slate-100 text-slate-800 font-medium px-3 py-1 rounded-lg text-xs border border-slate-200">
                       ⚡ {e}
                     </span>
                   ))}
-                  {selectedFacility.utilities.map((u, idx) => (
+                  {(selectedFacility.utilities || []).map((u, idx) => (
                     <span key={idx} className="bg-slate-100 text-slate-800 font-medium px-3 py-1 rounded-lg text-xs border border-slate-200">
                       💧 {u}
                     </span>
@@ -530,34 +560,60 @@ export const OrgFacilitiesTab: React.FC = () => {
                 </div>
               </div>
 
-              {/* Process Tree Hierarchy */}
-              {selectedFacility.processTree.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-slate-900 text-sm">Process Lines & Connected Telemetry</h4>
-                  <div className="space-y-3">
-                    {selectedFacility.processTree.map((p) => (
-                      <div key={p.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                        <span className="font-bold text-slate-900 block">{p.name} ({p.id})</span>
-                        {p.lines.map((l) => (
-                          <div key={l.id} className="pl-3 border-l-2 border-emerald-500 space-y-1">
-                            <span className="font-medium text-slate-700 block">{l.name}</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {l.meters.map((m, mIdx) => (
-                                <span key={mIdx} className="bg-white font-mono text-[10px] text-slate-700 px-2 py-0.5 rounded border border-slate-200">
-                                  📡 {m.name} ({m.type})
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+              {/* Data Hierarchy Tree */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-slate-900 text-sm">Telemetry Data Hierarchy</h4>
+                  <span className="text-[10px] font-mono text-slate-400">Organisation → Facility → Process → Line → Meter</span>
                 </div>
-              )}
+
+                <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-2 text-xs font-mono">
+                  {/* Root Node: Facility */}
+                  <div className="flex items-center gap-2 p-2.5 bg-emerald-50 text-emerald-900 rounded-xl border border-emerald-200 font-bold">
+                    <span>🏢 {selectedFacility.name} ({selectedFacility.id})</span>
+                  </div>
+
+                  {/* Level 1: Processes */}
+                  {(selectedFacility.processTree || []).map((proc) => (
+                    <div key={proc.id} className="pl-4 border-l-2 border-slate-300 space-y-2 my-1">
+                      <div className="flex items-center gap-2 p-2 bg-sky-50 text-sky-900 rounded-xl border border-sky-200 font-semibold">
+                        <span>⚙️ Process: {proc.name} ({proc.id})</span>
+                      </div>
+
+                      {/* Level 2: Lines */}
+                      {(proc.lines || []).map((line) => (
+                        <div key={line.id} className="pl-4 border-l-2 border-slate-300 space-y-2 my-1">
+                          <div className="flex items-center gap-2 p-2 bg-slate-100 text-slate-800 rounded-xl border border-slate-200 font-medium">
+                            <span>🏭 Line: {line.name} ({line.id})</span>
+                          </div>
+
+                          {/* Level 3: Meters / Sensors */}
+                          {(line.meters || []).map((meter, mIdx) => (
+                            <div key={mIdx} className="pl-4 border-l-2 border-emerald-400 my-1">
+                              <div className="flex items-center justify-between p-2 bg-white text-emerald-800 rounded-lg border border-emerald-100 font-mono text-[11px]">
+                                <span>📡 {meter.name}</span>
+                                <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-bold">
+                                  {meter.type}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end">
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+              <button
+                onClick={() => handleDeleteFacility(selectedFacility.id)}
+                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1.5 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Delete Facility</span>
+              </button>
               <button
                 onClick={() => setSelectedFacility(null)}
                 className="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800"

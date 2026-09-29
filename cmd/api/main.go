@@ -31,6 +31,7 @@ import (
 	"github.com/graphql-go/graphql"
 
 	saurientv1alpha1 "saurient-platform/api/v1alpha1"
+	"saurient-platform/internal/api"
 	"saurient-platform/internal/repository"
 	"saurient-platform/internal/tenant"
 	nexusdsl "saurient-platform/pkg/nexus"
@@ -546,6 +547,10 @@ func main() {
 	// 7. Digital Carbon Passport REST CRUD & Verification API
 	http.HandleFunc("/api/v1/passports", server.handlePassports)
 	http.HandleFunc("/api/v1/passports/", server.handlePassports)
+
+	// 8. Organisation & Internal Workspace REST API
+	orgHandler := api.NewOrganisationHandler(server.pgRepo)
+	orgHandler.RegisterRoutes(http.DefaultServeMux)
 
 	// Redirect root / to /swagger/
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
