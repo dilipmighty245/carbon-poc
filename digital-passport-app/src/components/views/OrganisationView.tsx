@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Download, Search, Building2, Factory, Workflow, Users, Calendar, Globe, ShieldAlert } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Download, Building2, Factory, Workflow, Users, Calendar, Globe, ShieldAlert, Building } from 'lucide-react';
 import { OrgProfileTab } from './organisation/OrgProfileTab';
 import { OrgFacilitiesTab } from './organisation/OrgFacilitiesTab';
 import { OrgProcessesTab } from './organisation/OrgProcessesTab';
@@ -9,6 +10,7 @@ import { OrgLocalisationTab } from './organisation/OrgLocalisationTab';
 import { OrgApprovalsTab } from './organisation/OrgApprovalsTab';
 
 export const OrganisationView: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Profile');
 
   const tabs = [
@@ -56,6 +58,13 @@ export const OrganisationView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/registration')}
+            className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
+          >
+            <Building className="w-3.5 h-3.5" />
+            <span>Registration Wizard</span>
+          </button>
           <button className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2">
             <Download className="w-3.5 h-3.5 text-slate-500" />
             <span>Export Registry Dossier</span>
