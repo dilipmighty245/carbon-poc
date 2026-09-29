@@ -560,31 +560,50 @@ export const OrgFacilitiesTab: React.FC = () => {
                 </div>
               </div>
 
-              {/* Process Tree Hierarchy */}
-              {(selectedFacility.processTree || []).length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-slate-900 text-sm">Process Lines & Connected Telemetry</h4>
-                  <div className="space-y-3">
-                    {(selectedFacility.processTree || []).map((p) => (
-                      <div key={p.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                        <span className="font-bold text-slate-900 block">{p.name} ({p.id})</span>
-                        {(p.lines || []).map((l) => (
-                          <div key={l.id} className="pl-3 border-l-2 border-emerald-500 space-y-1">
-                            <span className="font-medium text-slate-700 block">{l.name}</span>
-                            <div className="flex flex-wrap gap-1.5">
-                              {(l.meters || []).map((m, mIdx) => (
-                                <span key={mIdx} className="bg-white font-mono text-[10px] text-slate-700 px-2 py-0.5 rounded border border-slate-200">
-                                  📡 {m.name} ({m.type})
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+              {/* Data Hierarchy Tree */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-slate-900 text-sm">Telemetry Data Hierarchy</h4>
+                  <span className="text-[10px] font-mono text-slate-400">Organisation → Facility → Process → Line → Meter</span>
                 </div>
-              )}
+
+                <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-2 text-xs font-mono">
+                  {/* Root Node: Facility */}
+                  <div className="flex items-center gap-2 p-2.5 bg-emerald-50 text-emerald-900 rounded-xl border border-emerald-200 font-bold">
+                    <span>🏢 {selectedFacility.name} ({selectedFacility.id})</span>
+                  </div>
+
+                  {/* Level 1: Processes */}
+                  {(selectedFacility.processTree || []).map((proc) => (
+                    <div key={proc.id} className="pl-4 border-l-2 border-slate-300 space-y-2 my-1">
+                      <div className="flex items-center gap-2 p-2 bg-sky-50 text-sky-900 rounded-xl border border-sky-200 font-semibold">
+                        <span>⚙️ Process: {proc.name} ({proc.id})</span>
+                      </div>
+
+                      {/* Level 2: Lines */}
+                      {(proc.lines || []).map((line) => (
+                        <div key={line.id} className="pl-4 border-l-2 border-slate-300 space-y-2 my-1">
+                          <div className="flex items-center gap-2 p-2 bg-slate-100 text-slate-800 rounded-xl border border-slate-200 font-medium">
+                            <span>🏭 Line: {line.name} ({line.id})</span>
+                          </div>
+
+                          {/* Level 3: Meters / Sensors */}
+                          {(line.meters || []).map((meter, mIdx) => (
+                            <div key={mIdx} className="pl-4 border-l-2 border-emerald-400 my-1">
+                              <div className="flex items-center justify-between p-2 bg-white text-emerald-800 rounded-lg border border-emerald-100 font-mono text-[11px]">
+                                <span>📡 {meter.name}</span>
+                                <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-bold">
+                                  {meter.type}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
