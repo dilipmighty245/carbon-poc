@@ -76,9 +76,9 @@ export const initialOrgProfile: OrgProfileData = {
   taxId: 'GH-TAX-99812-C',
   lei: '5493001KJTIIGC8Y1R12',
   primaryContact: {
-    name: "Amara Okafor",
+    name: "Santosh Samudrala",
     title: "Chief Executive Officer",
-    email: "a.okafor@saurient-carbon.com",
+    email: "santosh.samudrala@saurient-carbon.com",
     phone: "+233 24 412 3456",
   },
   sustainabilityContact: {
