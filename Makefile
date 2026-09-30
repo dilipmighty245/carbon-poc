@@ -67,8 +67,9 @@ dev-setup: check-prereqs
 	@echo "Swagger Interactive API Docs:  http://localhost:8080/swagger/"
 	@echo "GraphQL Playground:            http://localhost:8080/graphql/playground"
 	@echo "=========================================================================="
-	@echo "==> Building Digital Passport App (React / Vite)..."
-	cd digital-passport-app && npm run build
+
+	@echo "==> Building & Starting Digital Passport App (React / Vite)..."
+	cd digital-passport-app && npm run dev
 
 clean:
 	@echo "==> Cleaning up Kind cluster and build artifacts..."
