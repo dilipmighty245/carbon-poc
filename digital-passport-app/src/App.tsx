@@ -34,22 +34,29 @@ export function App() {
         <Route path="/company-dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
         <Route path="/executive-dashboard" element={<Shell><ExecutiveDashboard /></Shell>} />
         <Route path="/products/new" element={<Shell><ProductSetup /></Shell>} />
+        
+        {/* MRV Verification Routes */}
         <Route path="/mrv" element={<Shell><MRVWorkflow /></Shell>} />
+        <Route path="/mrv/:tab" element={<Shell><MRVWorkflow /></Shell>} />
+
         <Route path="/evidence" element={<Shell><EvidenceVerification /></Shell>} />
         <Route path="/emissions" element={<Shell><EmissionsCalculation /></Shell>} />
-        <Route path="/passport/:id" element={<Shell><DigitalPassportOutput /></Shell>} />
+        
+        {/* Digital Passport Routes */}
         <Route path="/passport" element={<Shell><DigitalPassportOutput /></Shell>} />
+        <Route path="/passport/:tab" element={<Shell><DigitalPassportOutput /></Shell>} />
+        <Route path="/passport/:tab/:passportId" element={<Shell><DigitalPassportOutput /></Shell>} />
 
         {/* Modules & Reports */}
         <Route path="/organisation" element={<Shell><OrganisationView /></Shell>} />
         <Route path="/data" element={<Shell><IntegrationHubView /></Shell>} />
         
-        {/* Carbon Accounting tab -> Product Carbon Footprint (07_pcf.png) */}
+        {/* Carbon Accounting tab -> Product Carbon Footprint */}
         <Route path="/carbon-accounting" element={<Shell><PCFView /></Shell>} />
         <Route path="/pcf" element={<Shell><PCFView /></Shell>} />
         <Route path="/ghg" element={<Shell><GHGInventoryView /></Shell>} />
 
-        {/* Value Chain tab -> Supplier & Customer Network (08_suppliers.png) */}
+        {/* Value Chain tab -> Supplier & Customer Network */}
         <Route path="/value-chain" element={<Shell><SuppliersView /></Shell>} />
         <Route path="/suppliers" element={<Shell><SuppliersView /></Shell>} />
 
