@@ -1,0 +1,38 @@
+# Binaries and compiled output
+/bin/
+saurient-api-bin
+saurient-controller-bin
+*.exe
+*.exe;
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go dependencies / vendoring
+/vendor/
+
+# IDE & Editor configuration
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.cursor/
+High-level Design Template.md
+
+# Test / Coverage artifacts
+coverage.txt
+coverage.out
+profile.out
+
+# Local environment variables and secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Local features and design plans
+features/
