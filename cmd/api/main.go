@@ -548,6 +548,9 @@ func main() {
 	http.HandleFunc("/api/v1/passports", server.handlePassports)
 	http.HandleFunc("/api/v1/passports/", server.handlePassports)
 
+	// 7b. EU 2026 CBAM Regulation Benchmarks API
+	http.HandleFunc("/api/v1/cbam/benchmarks", server.handleCBAMBenchmarks)
+
 	// 8. Organisation & Internal Workspace REST API
 	orgHandler := api.NewOrganisationHandler(server.pgRepo)
 	orgHandler.RegisterRoutes(http.DefaultServeMux)
@@ -1251,6 +1254,25 @@ type RulebookItemResponse struct {
 
 func getDefaultRulebooks() map[string]RulebookItemResponse {
 	return map[string]RulebookItemResponse{
+		"steel-rulebook-2026": {
+			ID:             "steel-rulebook-2026",
+			Name:           "steel-rulebook-2026",
+			Label:          "steel-rulebook-2026 (EU CBAM CN 7208 / 7209)",
+			CommodityType:  "Steel",
+			Version:        "2026.1",
+			AccountingMode: saurientv1alpha1.ModeCBAM,
+			Standard:       "EU CBAM Regulation 2025/2621 & 2026/1740",
+			FunctionalUnit: "kg CO2e per kg Steel Coil",
+			BatchQuantity:  10000,
+			Rules: []saurientv1alpha1.RuleDefinition{
+				{ID: "R01", Name: "Iron Ore & Scrap Upstream", Scope: saurientv1alpha1.Scope3, Mode: saurientv1alpha1.ModeCBAM, OutputType: saurientv1alpha1.OutputNone, Formula: "raw_material_kg * 0.45", Description: "Scope 3 raw material input footprint"},
+				{ID: "R02", Name: "Direct Fuel & Blast Furnace Combustion", Scope: saurientv1alpha1.Scope1, Mode: saurientv1alpha1.ModeCBAM, OutputType: saurientv1alpha1.OutputNone, Formula: "fuel_consumed_liters * 2.68", Description: "Scope 1 stationary fuel & blast furnace combustion"},
+				{ID: "R03", Name: "Grid Electricity & Smelting Power", Scope: saurientv1alpha1.Scope2, Mode: saurientv1alpha1.ModeCBAM, OutputType: saurientv1alpha1.OutputNone, Formula: "electricity_consumed_kwh * 0.716", Description: "Scope 2 grid electricity (PAS800 telemetry)"},
+				{ID: "R04", Name: "Inbound & Outbound Logistics", Scope: saurientv1alpha1.Scope3, Mode: saurientv1alpha1.ModeCBAM, OutputType: saurientv1alpha1.OutputNone, Formula: "freight_ton_km * 0.085", Description: "Freight logistics transport"},
+				{ID: "R05", Name: "Total Batch Footprint Aggregation", Scope: saurientv1alpha1.Intermediate, Mode: saurientv1alpha1.ModeCBAM, OutputType: saurientv1alpha1.OutputTotalFootprint, Formula: "R01 + R02 + R03 + R04", Description: "Sum of Scope 1, 2, and 3 DAG calculation steps"},
+				{ID: "R06", Name: "Steel Carbon Intensity", Scope: saurientv1alpha1.Intermediate, Mode: saurientv1alpha1.ModeCBAM, OutputType: saurientv1alpha1.OutputIntensity, Formula: "R05 / batch_quantity_kg", Description: "Unit carbon intensity metric (target 1.633 kgCO2e/kg)"},
+			},
+		},
 		"cocoa-rulebook-2026": {
 			ID:             "cocoa-rulebook-2026",
 			Name:           "cocoa-rulebook-2026",
@@ -2352,6 +2374,56 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 	_ = json.NewEncoder(w).Encode(richResp)
 }
 
+func (s *VerificationServer) handleCBAMBenchmarks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", getEnv("ALLOWED_ORIGIN", "*"))
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Tenant-ID")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	benchmarks := map[string]interface{}{
+		"regulation":          "EU Implementing Regulations (EU) 2025/2621 & (EU) 2026/1740",
+		"effective_date":      "1 January 2026",
+		"markup_percent_2026": 10.0,
+		"steel_benchmarks": map[string]interface{}{
+			"bf_bof_tco2e_per_t":                         1.370,
+			"dri_eaf_tco2e_per_t":                        0.481,
+			"scrap_eaf_tco2e_per_t":                      0.072,
+			"unverified_default_fallback_tco2e_per_t":    3.167,
+			"unverified_default_2026_markup_tco2e_per_t": 3.4837,
+		},
+		"cn_code_benchmarks": []map[string]interface{}{
+			{
+				"cn_code":              "7208 39 00",
+				"description":          "Flat-rolled products of iron or non-alloy steel, hot-rolled",
+				"sector":               "Iron & Steel",
+				"benchmark_bf_bof":     1.370,
+				"benchmark_dri_eaf":    0.481,
+				"benchmark_scrap_eaf":  0.072,
+				"default_fallback":     3.167,
+				"default_2026_markup":  3.4837,
+			},
+			{
+				"cn_code":              "7209 16 90",
+				"description":          "Flat-rolled products of iron or non-alloy steel, cold-rolled",
+				"sector":               "Iron & Steel",
+				"benchmark_bf_bof":     1.370,
+				"benchmark_dri_eaf":    0.481,
+				"benchmark_scrap_eaf":  0.072,
+				"default_fallback":     3.167,
+				"default_2026_markup":  3.4837,
+			},
+		},
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(benchmarks)
+}
+
 func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/passports")
@@ -2368,6 +2440,28 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 
 	if passportID == "" {
 		s.handleListPassports(w, r, tenantID)
+		return
+	}
+
+	if passportID == "ST-2026-00981" || passportID == "pas-st-2026-00981" {
+		steelModel := &repository.CarbonPassportModel{
+			PassportID:         "pas-st-2026-00981",
+			TenantID:           "Saurient Demo Steel Industries Ltd",
+			FacilityID:         "Hyderabad Manufacturing Facility",
+			BatchNumber:        "ST-2026-00981",
+			CommodityType:      "Steel",
+			VerificationStatus: "VERIFIED",
+			Scope1KgCO2e:       4200.0,
+			Scope2KgCO2e:       3580.0,
+			Scope3KgCO2e:       8550.0,
+			TotalFootprintKg:   16330.0,
+			DataHash:           "7e28a91f3e77a102bc9a1144cdcc7388105b907712e40122aa",
+			IssuedAt:           time.Now(),
+		}
+		richResp := repository.BuildRichPassportResponse(steelModel)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(richResp)
 		return
 	}
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type {
   EngagementMeta,
   EvidenceItem,
@@ -13,6 +13,8 @@ import {
   INITIAL_CORRECTIONS,
   INITIAL_AUDIT,
 } from '../data/mrvMockData';
+import { STEEL_ENGAGEMENT_META } from '../data/steelData';
+import { useScenario } from './ScenarioContext';
 
 interface FreezeInfo {
   id: string;
@@ -76,7 +78,16 @@ const defaultContextValue: MrvContextType = {
 const MrvContext = createContext<MrvContextType>(defaultContextValue);
 
 export const MrvProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [meta] = useState<EngagementMeta>(ENGAGEMENT_META);
+  const { scenario } = useScenario();
+  const [meta, setMeta] = useState<EngagementMeta>(scenario === 'steel' ? STEEL_ENGAGEMENT_META : ENGAGEMENT_META);
+
+  useEffect(() => {
+    if (scenario === 'steel') {
+      setMeta(STEEL_ENGAGEMENT_META);
+    } else {
+      setMeta(ENGAGEMENT_META);
+    }
+  }, [scenario]);
   const [evidence, setEvidence] = useState<EvidenceItem[]>(INITIAL_EVIDENCE);
   const [findings, setFindings] = useState<FindingItem[]>(INITIAL_FINDINGS);
   const [corrections] = useState<CorrectionItem[]>(INITIAL_CORRECTIONS);

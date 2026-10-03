@@ -1,7 +1,11 @@
-import React, { createContext, useContext, useMemo, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, useState, useCallback, useEffect, ReactNode } from 'react';
 import {
   PROJECT, ACTIVITIES, LOGISTICS_LEGS, ALLOCATION, BASELINE_VERSION,
 } from '../data/pcfData';
+import {
+  STEEL_PROJECT, STEEL_ACTIVITIES, STEEL_LOGISTICS_LEGS,
+} from '../data/steelData';
+import { useScenario } from './ScenarioContext';
 import type {
   PcfProject, ActivityRecord, LogisticsLeg, AllocationData, CalculationVersion, Scenario
 } from '../types/pcf';
@@ -54,9 +58,23 @@ interface PcfContextType {
 const PcfContext = createContext<PcfContextType | null>(null);
 
 export function PcfProvider({ children }: { children: ReactNode }) {
-  const [project] = useState<PcfProject>(PROJECT);
-  const [activities, setActivities] = useState<ActivityRecord[]>(ACTIVITIES);
-  const [legs, setLegs] = useState<LogisticsLeg[]>(LOGISTICS_LEGS);
+  const { scenario } = useScenario();
+
+  const [project, setProject] = useState<PcfProject>(scenario === 'steel' ? STEEL_PROJECT : PROJECT);
+  const [activities, setActivities] = useState<ActivityRecord[]>(scenario === 'steel' ? STEEL_ACTIVITIES : ACTIVITIES);
+  const [legs, setLegs] = useState<LogisticsLeg[]>(scenario === 'steel' ? STEEL_LOGISTICS_LEGS : LOGISTICS_LEGS);
+
+  useEffect(() => {
+    if (scenario === 'steel') {
+      setProject(STEEL_PROJECT);
+      setActivities(STEEL_ACTIVITIES);
+      setLegs(STEEL_LOGISTICS_LEGS);
+    } else {
+      setProject(PROJECT);
+      setActivities(ACTIVITIES);
+      setLegs(LOGISTICS_LEGS);
+    }
+  }, [scenario]);
   const [allocationMethod, setAllocationMethod] = useState<string>('Physical / Mass');
   const [boundaryType, setBoundaryType] = useState<string>('Cradle-to-Gate');
   const [boundaryApproved, setBoundaryApproved] = useState<boolean>(true);
