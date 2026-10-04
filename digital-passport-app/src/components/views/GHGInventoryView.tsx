@@ -139,7 +139,7 @@ export const GHGInventoryView: React.FC = () => {
     : [
         { name: 'Natural gas · Boiler 2', qty: '182,400 Nm³', factor: '2.021 kgCO₂e/Nm³', emissions: '368.7 tCO₂e' },
         { name: 'Grid electricity · Tema', qty: '2,410 MWh', factor: '0.385 kgCO₂e/kWh', emissions: '927.9 tCO₂e' },
-        { name: 'Purchased cocoa beans', qty: '8,460 t', factor: '0.412 tCO₂e/t', emissions: '3,485.5 tCO₂e' },
+        { name: 'Purchased Iron Ore & Scrap Precursors', qty: '8,460 t', factor: '0.618 tCO₂e/t', emissions: '5,228.2 tCO₂e' },
         { name: 'Outbound freight', qty: '3.8m tkm', factor: '0.071 kgCO₂e/tkm', emissions: '269.8 tCO₂e' },
       ];
 

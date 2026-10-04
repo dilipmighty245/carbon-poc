@@ -229,7 +229,7 @@ export const COCOA_ASSET_TREE: AssetNode = {
 
 export const OrgAssetTreeTab: React.FC = () => {
   const { scenario } = useScenario();
-  const [selectedTree, setSelectedTree] = useState<'steel' | 'cocoa'>(scenario === 'steel' ? 'steel' : 'cocoa');
+  const [selectedTree, setSelectedTree] = useState<'steel' | 'cocoa'>('steel');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({
     'ORG-ST-2026-001': true,

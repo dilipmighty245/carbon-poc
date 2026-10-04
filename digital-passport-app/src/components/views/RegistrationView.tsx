@@ -14,50 +14,50 @@ export const RegistrationView: React.FC = () => {
   // Controlled form state for registration wizard
   const [formData, setFormData] = useState({
     // Account Owner
-    ownerName: 'Kwame Mensah',
-    ownerEmail: 'kwame.mensah@saurientcocoa.com',
-    ownerPhone: '+233 24 412 8092',
-    ownerRole: 'Head of Sustainability & Supply Chain',
+    ownerName: 'Marcus Vance',
+    ownerEmail: 'm.vance@saurientsteel.com',
+    ownerPhone: '+44 20 7946 0912',
+    ownerRole: 'Chief Sustainability Officer & VP Supply Chain',
     // Legal Identity
-    legalName: 'Ghana Cocoa Processing Corporation Ltd.',
-    tradingName: 'Saurient Premium Cocoa Exports',
-    registrationNumber: 'CS1029482024',
-    incorporationDate: '2012-04-18',
-    legalForm: 'Private Limited Company (Ltd)',
-    countryOfRegistration: 'Ghana',
+    legalName: 'Saurient Demo Steel Industries Ltd.',
+    tradingName: 'Saurient Steel Global',
+    registrationNumber: 'GB-REG-2024-9981',
+    incorporationDate: '2010-06-15',
+    legalForm: 'Public Limited Company (PLC)',
+    countryOfRegistration: 'United Kingdom',
     // Addresses & Tax
-    addressLine1: '14 Independence Avenue',
-    addressLine2: 'Industrial Area',
-    city: 'Tema',
-    region: 'Greater Accra',
-    postalCode: 'GA-092-1049',
-    country: 'Ghana',
-    taxResidency: 'Ghana',
-    reportingCurrency: 'EUR (€) / GHS (₵)',
-    taxId: 'GH-TAX-99812-C',
-    vatNumber: 'VAT-GH-2400882',
+    addressLine1: 'Steelworks Way, Docklands Industrial Zone',
+    addressLine2: 'Port of Rotterdam / London Terminal',
+    city: 'London',
+    region: 'Greater London',
+    postalCode: 'E14 5AB',
+    country: 'United Kingdom',
+    taxResidency: 'United Kingdom',
+    reportingCurrency: 'EUR (€)',
+    taxId: 'GB-TAX-99812-ST',
+    vatNumber: 'GB-VAT-2400882-ST',
     leiNumber: '5493001KJTIIGC8Y1R12',
     // Trade & Customs
-    eoriNumber: 'GB123456789000',
-    hsTariffCode: '1801.00 — Cocoa beans, whole or broken',
-    departurePorts: 'Tema Sea Port, Takoradi Commercial Hub',
-    targetMarkets: 'European Union (CBAM Zone), North America',
+    eoriNumber: 'GB987654321000',
+    hsTariffCode: '7208 39 00 — Flat-rolled products of iron/steel (Hot-Rolled Coil)',
+    departurePorts: 'Port of Rotterdam, Port of London commercial hub',
+    targetMarkets: 'European Union (CBAM Zone)',
     // Industry & Operations
-    primarySector: 'Cocoa Processing & Export',
-    annualProduction: '45,000 Metric Tons / Year',
-    facilitiesCount: '3 Plants (Tema, Kumasi, Takoradi)',
-    gridSupplier: 'Electricity Company of Ghana (ECG)',
-    renewableShare: '35% Solar Rooftop Installation',
-    auditStatus: 'Certified (TÜV Rheinland)',
+    primarySector: 'Iron & Steel Manufacturing (CBAM Covered Sector)',
+    annualProduction: '250,000 Metric Tonnes / Year',
+    facilitiesCount: '2 Facilities (Blast Furnace Mill & Rolling Line)',
+    gridSupplier: 'National Grid UK / European Power Exchange',
+    renewableShare: '42% Direct PPA Wind & Solar',
+    auditStatus: 'Certified (Meridian Assurance Ltd)',
     // Contacts
     sustainabilityLead: 'Dr. Lena Hoffmann (l.hoffmann@saurient-carbon.com)',
-    complianceOfficer: 'Kofi Annan (k.annan@saurientcocoa.com)',
-    financeDirector: 'Abena Osei (a.osei@saurientcocoa.com)',
+    complianceOfficer: 'Marcus Vance (m.vance@saurientsteel.com)',
+    financeDirector: 'Helena Schmidt (h.schmidt@saurientsteel.com)',
     // Boundary
     consolidationApproach: 'Operational Control',
     baseYear: '2024',
     defaultUnits: 'tCO₂e (metric tonnes)',
-    ghgStandard: 'GHG Protocol Corporate Standard & EU CBAM Reg 2023/1773',
+    ghgStandard: 'EU CBAM Regulation 2023/1773 & ISO 14067 Product Footprint',
   });
 
   const handleChange = (field: string, value: string) => {
@@ -520,7 +520,7 @@ export const RegistrationView: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Primary HS Code Tariff Chapter *</label>
-                    <input type="text" defaultValue="1801.00 — Cocoa beans, whole or broken" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" defaultValue="7208 39 00 — Flat-rolled products of iron/steel (Hot-Rolled Coil)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Primary Export Departure Ports *</label>
@@ -611,15 +611,15 @@ export const RegistrationView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Sustainability Lead *</label>
-                    <input type="text" defaultValue="Ama Asantewaa (ama@saurientcocoa.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" defaultValue="Dr. Lena Hoffmann (l.hoffmann@saurient-carbon.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Compliance Officer *</label>
-                    <input type="text" defaultValue="Kofi Boateng (kofi@saurientcocoa.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" defaultValue="Marcus Vance (m.vance@saurientsteel.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Customs & Logistics Contact *</label>
-                    <input type="text" defaultValue="Esi Osei (esi@saurientcocoa.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" defaultValue="Helena Schmidt (h.schmidt@saurientsteel.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                 </div>
               </div>
@@ -667,8 +667,8 @@ export const RegistrationView: React.FC = () => {
                   <div className="flex items-start gap-3">
                     <input type="checkbox" defaultChecked className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                     <div>
-                      <p className="font-bold text-slate-900">EU Deforestation Regulation (EUDR) Compliance</p>
-                      <p className="text-slate-600">We declare that all cocoa batches exported carry polygon plot coordinates with zero deforestation after Dec 31, 2020.</p>
+                      <p className="font-bold text-slate-900">EU CBAM & Heavy Industry Compliance Declaration</p>
+                      <p className="text-slate-600">We declare that all steel coil batches exported carry verified blast furnace / EAF telemetry with EU CBAM Annex IV compliant direct/indirect carbon intensity breakdowns.</p>
                     </div>
                   </div>
 

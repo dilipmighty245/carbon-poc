@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { QrCode, RefreshCw } from 'lucide-react';
 import { getAllPassportsWithMeta, DEFAULT_TENANT_ID, type ApiFetchResult } from '../../api/client';
 import type { RichDigitalPassport } from '../../types';
@@ -46,16 +46,16 @@ export const DEFAULT_FALLBACK_PASSPORTS: RichDigitalPassport[] = [
         unit: 'kg CO2e/kg',
       },
       scope_breakdown: {
-        scope_1_direct: { value_kg_co2e: 4200, percentage: 25.7 },
-        scope_2_indirect_energy: { value_kg_co2e: 3580, percentage: 21.9 },
-        scope_3_value_chain: { value_kg_co2e: 8550, percentage: 52.4 },
+        scope_1_direct: { value_kg_co2e: 10288, percentage: 63.0 },
+        scope_2_indirect_energy: { value_kg_co2e: 3593, percentage: 22.0 },
+        scope_3_value_chain: { value_kg_co2e: 2449, percentage: 15.0 },
       },
       source_breakdown: {
-        raw_materials: { value_kg_co2e: 6800, percentage: 41.6 },
-        electricity: { value_kg_co2e: 3580, percentage: 21.9 },
-        logistics_transport: { value_kg_co2e: 1300, percentage: 8.0 },
-        on_site_fuel: { value_kg_co2e: 4200, percentage: 25.7 },
-        packaging: { value_kg_co2e: 450, percentage: 2.8 },
+        raw_materials: { value_kg_co2e: 1300, percentage: 8.0 },
+        electricity: { value_kg_co2e: 3593, percentage: 22.0 },
+        logistics_transport: { value_kg_co2e: 800, percentage: 4.9 },
+        on_site_fuel: { value_kg_co2e: 10288, percentage: 63.0 },
+        packaging: { value_kg_co2e: 349, percentage: 2.1 },
       },
     },
     methodology_and_audit: {
@@ -75,47 +75,47 @@ export const DEFAULT_FALLBACK_PASSPORTS: RichDigitalPassport[] = [
       status: 'VERIFIED',
     },
     product_summary: {
-      commodity: 'Cocoa',
-      product_name: 'Organic Cocoa Butter Batch #408',
-      batch_number: 'CB-2026-001',
-      producer_organization: 'Asante Cocoa Cooperative',
+      commodity: 'Hot-Rolled Steel Coil',
+      product_name: 'Cold-Rolled Steel Sheet Batch #0982',
+      batch_number: 'ST-2026-00982',
+      producer_organization: 'Saurient Demo Steel Industries Ltd',
       facility: {
-        name: 'Tema Processing Plant',
-        location: 'Tema, Ghana',
-        country_of_origin: 'Ghana',
+        name: 'Hyderabad Manufacturing Facility',
+        location: 'Hyderabad, India',
+        country_of_origin: 'India',
       },
-      production_date: '2026-03-15',
+      production_date: '2026-03-20',
       batch_size: {
-        quantity: 5000,
+        quantity: 8000,
         unit: 'kg',
       },
-      hs_code: '1804.00',
+      hs_code: '7209.16',
     },
     carbon_footprint: {
-      total_batch_footprint_kg_co2e: 12250,
+      total_batch_footprint_kg_co2e: 14480,
       intensity_per_unit: {
-        value: 2.450,
+        value: 1.810,
         unit: 'kg CO2e/kg',
       },
       scope_breakdown: {
-        scope_1_direct: { value_kg_co2e: 1750, percentage: 14.3 },
-        scope_2_indirect_energy: { value_kg_co2e: 2500, percentage: 20.4 },
-        scope_3_value_chain: { value_kg_co2e: 8000, percentage: 65.3 },
+        scope_1_direct: { value_kg_co2e: 6800, percentage: 47.0 },
+        scope_2_indirect_energy: { value_kg_co2e: 3600, percentage: 24.9 },
+        scope_3_value_chain: { value_kg_co2e: 4080, percentage: 28.1 },
       },
       source_breakdown: {
-        raw_materials: { value_kg_co2e: 7000, percentage: 57.1 },
-        electricity: { value_kg_co2e: 2500, percentage: 20.4 },
-        logistics_transport: { value_kg_co2e: 1000, percentage: 8.2 },
-        on_site_fuel: { value_kg_co2e: 1750, percentage: 14.3 },
+        raw_materials: { value_kg_co2e: 4080, percentage: 28.1 },
+        electricity: { value_kg_co2e: 3600, percentage: 24.9 },
+        logistics_transport: { value_kg_co2e: 1800, percentage: 12.4 },
+        on_site_fuel: { value_kg_co2e: 5000, percentage: 34.6 },
         packaging: { value_kg_co2e: 0, percentage: 0.0 },
       },
     },
     methodology_and_audit: {
-      calculation_rulebook: 'cocoa-rulebook-2026',
-      accounting_standard: 'GHG Protocol Product Standard',
+      calculation_rulebook: 'steel-rulebook-2026',
+      accounting_standard: 'EU CBAM Annex IV / ISO 14067',
       verification_body: 'Meridian Assurance Ltd',
       assurance_level: 'Reasonable Assurance',
-      verification_id: 'VER-2026-001',
+      verification_id: 'ST-VER-2026-0982',
     },
   },
 ];
@@ -132,7 +132,8 @@ const PASSPORT_TABS = [
 ];
 
 export const DigitalPassportOutput: React.FC = () => {
-  const { tab = 'registry', passportId } = useParams<{ tab?: string; passportId?: string }>();
+  const { tab = 'registry', passportId: pathPassportId } = useParams<{ tab?: string; passportId?: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [passportsResult, setPassportsResult] = useState<ApiFetchResult<RichDigitalPassport[]> | null>(null);
@@ -151,10 +152,11 @@ export const DigitalPassportOutput: React.FC = () => {
   }, [tenantId]);
 
   const activeTabId = tab.toLowerCase();
+  const effectivePassportId = pathPassportId || searchParams.get('id');
 
   const handleTabChange = (newTabId: string) => {
-    if (passportId) {
-      navigate(`/passport/${newTabId}/${passportId}`);
+    if (effectivePassportId) {
+      navigate(`/passport/${newTabId}/${effectivePassportId}`);
     } else {
       navigate(`/passport/${newTabId}`);
     }
@@ -170,7 +172,22 @@ export const DigitalPassportOutput: React.FC = () => {
   }
 
   const fetchedPassports = passportsResult?.data || [];
-  const passports = fetchedPassports.length > 0 ? fetchedPassports : DEFAULT_FALLBACK_PASSPORTS;
+  let passports = fetchedPassports.length > 0 ? fetchedPassports : DEFAULT_FALLBACK_PASSPORTS;
+
+  const steelIdx = passports.findIndex(
+    (p) =>
+      p.passport_metadata?.passport_id === 'pas-st-2026-00981' ||
+      p.product_summary?.batch_number === 'ST-2026-00981' ||
+      p.product_summary?.commodity?.toLowerCase().includes('steel')
+  );
+
+  if (steelIdx === -1) {
+    passports = [DEFAULT_FALLBACK_PASSPORTS[0], ...passports];
+  } else if (steelIdx > 0) {
+    const steelItem = passports[steelIdx];
+    const rest = passports.filter((_, idx) => idx !== steelIdx);
+    passports = [steelItem, ...rest];
+  }
 
   return (
     <div className="space-y-6">

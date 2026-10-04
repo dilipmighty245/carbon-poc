@@ -14,7 +14,7 @@ export const ApplicabilityWizard: React.FC<ApplicabilityWizardProps> = ({ produc
   const isElectricityOrHydrogen = sectorInput.toLowerCase().includes('electricity') || sectorInput.toLowerCase().includes('hydrogen');
   const volumeNumber = parseFloat(annualVolumeInput) || 0;
   const isBelowThreshold = volumeNumber < 50 && !isElectricityOrHydrogen;
-  const isOutOfScope = cnCodeInput.startsWith('1804') || sectorInput.toLowerCase().includes('cocoa');
+  const isOutOfScope = cnCodeInput.startsWith('1001') || sectorInput.toLowerCase().includes('agriculture');
 
   return (
     <div className="space-y-6">

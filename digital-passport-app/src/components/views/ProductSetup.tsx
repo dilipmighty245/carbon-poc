@@ -9,21 +9,22 @@ export const ProductSetup: React.FC = () => {
   const navigate = useNavigate();
 
   // Form states with fresh default batch ID generator
-  const [commodity, setCommodity] = useState('Cocoa');
-  const [productName, setProductName] = useState('Fermented Cocoa Beans');
-  const [facility, setFacility] = useState('Tema Processing Plant');
-  const [batchId, setBatchId] = useState(`CB-2026-${Math.floor(1000 + Math.random() * 9000)}`);
-  const [supplier, setSupplier] = useState('Asunafo Farmers Cooperative');
-  const [bom, setBom] = useState('Cocoa beans (raw), water, packaging');
-  const [packaging, setPackaging] = useState('60 kg jute bags');
-  const [unitOfMeasure, setUnitOfMeasure] = useState('kg');
-  const [batchQuantity, setBatchQuantity] = useState<number>(1000);
-  const [exportMarket, setExportMarket] = useState('European Union (EU)');
+  const [commodity, setCommodity] = useState('Steel & Heavy Industry');
+  const [productName, setProductName] = useState('Hot-Rolled Steel Coil (CN 7208 39 00)');
+  const [facility, setFacility] = useState('Hyderabad Manufacturing Facility');
+  const [batchId, setBatchId] = useState(`ST-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+  const [supplier, setSupplier] = useState('Saurient Mining & Ore Supply Ltd');
+  const [bom, setBom] = useState('Iron Ore (62% Fe Grade), Scrap Steel, Coking Coal, Flux');
+  const [packaging, setPackaging] = useState('Strapped Steel Coil Bundles on Wood Skids');
+  const [unitOfMeasure, setUnitOfMeasure] = useState('tonnes');
+  const [batchQuantity, setBatchQuantity] = useState<number>(500);
+  const [exportMarket, setExportMarket] = useState('European Union (EU - CBAM Port Rotterdam)');
 
   // Dynamic Rulebooks State
   const [rulebooksList, setRulebooksList] = useState([
-    { id: 'cocoa-rulebook-2026', label: 'cocoa-rulebook-2026 (ISO 14067)', standard: 'ISO 14067 Product Footprint', commodity: 'Cocoa' },
+    { id: 'steel-rulebook-2026', label: 'steel-rulebook-2026 (EU CBAM CN 7208 39 00)', standard: 'EU CBAM Annex IV (Steel)', commodity: 'Hot-Rolled Steel Coil' },
     { id: 'metal-rulebook-2026', label: 'metal-rulebook-2026 (EU CBAM CN 7601)', standard: 'EU CBAM Annex IV', commodity: 'Metals' },
+    { id: 'cocoa-rulebook-2026', label: 'cocoa-rulebook-2026 (ISO 14067)', standard: 'ISO 14067 Product Footprint', commodity: 'Cocoa' },
     { id: 'cashew-rulebook-2026', label: 'cashew-rulebook-2026 (GHG Protocol)', standard: 'GHG Protocol Product Standard', commodity: 'Cashew' },
     { id: 'textiles-rulebook-2026', label: 'textiles-rulebook-2026 (ISO 14067)', standard: 'ISO 14067 Textile Boundary', commodity: 'Textiles' },
     { id: 'food-rulebook-2026', label: 'food-rulebook-2026 (IPCC Tier 2)', standard: 'IPCC Tier 2 Food Standard', commodity: 'Processed Foods' },
@@ -53,13 +54,13 @@ export const ProductSetup: React.FC = () => {
     };
   }, []);
 
-  const [rulebook, setRulebook] = useState('cocoa-rulebook-2026');
+  const [rulebook, setRulebook] = useState('steel-rulebook-2026');
 
   // Add Rulebook Modal State & DAG Rules Form State
   const [showAddRulebookModal, setShowAddRulebookModal] = useState(false);
   const [newRulebookName, setNewRulebookName] = useState('');
-  const [newRulebookStandard, setNewRulebookStandard] = useState('ISO 14067 Product Standard');
-  const [newRulebookCommodity, setNewRulebookCommodity] = useState('Cocoa');
+  const [newRulebookStandard, setNewRulebookStandard] = useState('EU CBAM Annex IV (Steel)');
+  const [newRulebookCommodity, setNewRulebookCommodity] = useState('Hot-Rolled Steel Coil');
   const [newRulebookMode, setNewRulebookMode] = useState<'pcf' | 'ghg' | 'cbam' | 'all'>('pcf');
   const [newFunctionalUnit, setNewFunctionalUnit] = useState('kg CO2e per kg');
   const [newBatchQty, setNewBatchQty] = useState<number>(1000);

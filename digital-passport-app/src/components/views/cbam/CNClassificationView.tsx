@@ -11,13 +11,14 @@ export const CNClassificationView: React.FC<CNClassificationViewProps> = ({ prod
   const [, setSearchParams] = useSearchParams();
 
   const cnCatalogue = [
+    { code: 'CN 7208 39', name: 'Flat-rolled products of iron or non-alloy steel (Hot-Rolled Coil)', sector: 'Iron & Steel', status: 'COVERED', type: 'Complex Good', unit: 'Tonne' },
+    { code: 'CN 7209 16', name: 'Cold-rolled flat steel sheet in coils', sector: 'Iron & Steel', status: 'COVERED', type: 'Complex Good', unit: 'Tonne' },
     { code: 'CN 7308 90', name: 'Structures and parts of structures of iron or steel', sector: 'Iron & Steel', status: 'COVERED', type: 'Complex Good', unit: 'Tonne' },
     { code: 'CN 7616 99', name: 'Other articles of aluminium', sector: 'Aluminium', status: 'COVERED', type: 'Simple / Complex', unit: 'Tonne' },
     { code: 'CN 2523 29', name: 'Portland cement (other than white)', sector: 'Cement', status: 'COVERED', type: 'Complex Good', unit: 'Tonne' },
     { code: 'CN 3105 20', name: 'Fertilisers containing nitrogen, phosphorus & potassium', sector: 'Fertilisers', status: 'COVERED', type: 'Complex Good', unit: 'kg Nitrogen' },
     { code: 'CN 2804 10', name: 'Hydrogen (pure or gas mixture)', sector: 'Hydrogen', status: 'COVERED', type: 'Simple Good', unit: 'Tonne H₂' },
     { code: 'CN 2716 00', name: 'Electrical energy', sector: 'Electricity', status: 'COVERED', type: 'Simple Good', unit: 'MWh' },
-    { code: 'CN 1804 00', name: 'Cocoa butter, fat and oil', sector: 'Foodstuff', status: 'OUTSIDE SCOPE', type: 'Excluded', unit: 'kg' },
   ];
 
   return (

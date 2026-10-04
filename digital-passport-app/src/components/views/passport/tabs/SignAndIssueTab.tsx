@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { KeyRound, ShieldCheck, CheckCircle2, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
 
@@ -8,11 +8,17 @@ interface SignAndIssueTabProps {
 }
 
 export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) => {
+  const { passportId: pathPassportId } = useParams<{ passportId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const passportId = searchParams.get('id');
+  const passportId = pathPassportId || searchParams.get('id');
 
-  const passport = passports.find((p) => p.passport_metadata.passport_id === passportId) || passports[0];
+  const passport =
+    passports.find(
+      (p) =>
+        p.passport_metadata.passport_id === passportId ||
+        p.product_summary.batch_number === passportId
+    ) || passports[0];
 
   const [signingKey, setSigningKey] = useState('0xKEY-ORATOR-PROD-SECURE-ED25519-88492');
   const [authorizedSigner, setAuthorizedSigner] = useState('Dr. Elena Rostova (Chief Sustainability Officer)');
@@ -45,15 +51,15 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
         <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
           <div className="flex justify-between items-center border-b border-slate-200 pb-2">
             <span className="font-bold text-slate-500">Target Product</span>
-            <span className="font-bold text-slate-900">{passport?.product_summary.product_name}</span>
+            <span className="font-bold text-slate-900">{passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil'}</span>
           </div>
           <div className="flex justify-between items-center border-b border-slate-200 pb-2">
             <span className="font-bold text-slate-500">Batch ID</span>
-            <span className="font-mono text-slate-900">{passport?.product_summary.batch_number}</span>
+            <span className="font-mono text-slate-900">{passport?.product_summary?.batch_number || 'ST-2026-00981'}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-bold text-slate-500">Dataset Lock Hash</span>
-            <span className="font-mono text-emerald-700 font-bold">{passport?.audit_trail.dataset_lock_hash}</span>
+            <span className="font-mono text-emerald-700 font-bold">{(passport as any)?.audit_trail?.dataset_lock_hash || passport?.passport_metadata?.cryptographic_hash || '7e28a91f3e77a102bc9a1144cdcc7388105b907712e40122aa'}</span>
           </div>
         </div>
 

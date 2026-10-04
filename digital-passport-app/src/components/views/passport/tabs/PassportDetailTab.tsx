@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Leaf, Award, ShieldCheck, QrCode, Share2, FileText, ArrowLeft, Building2, CheckCircle2, History, ArrowRight } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
 
@@ -8,10 +8,11 @@ interface PassportDetailTabProps {
 }
 
 export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports }) => {
-  const { passportId } = useParams<{ passportId: string }>();
+  const { passportId: pathPassportId } = useParams<{ passportId?: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const targetId = passportId || 'pas-st-2026-00981';
+  const targetId = pathPassportId || searchParams.get('id') || passports[0]?.passport_metadata?.passport_id || 'pas-st-2026-00981';
 
   const passport =
     passports.find(

@@ -47,7 +47,7 @@ export const PassportSharingTab: React.FC<PassportSharingTabProps> = ({ passport
         {/* Selected Target */}
         <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
           <span className="font-bold text-slate-500">Target Passport:</span>
-          <span className="font-bold text-slate-900">{passport?.product_summary.product_name} ({passport?.passport_metadata.passport_id})</span>
+          <span className="font-bold text-slate-900">{passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil'} ({passport?.passport_metadata?.passport_id || 'pas-st-2026-00981'})</span>
         </div>
 
         <form onSubmit={handleSave} className="space-y-6 text-xs">
