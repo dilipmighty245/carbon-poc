@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Check, RefreshCw, Download, Search } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useScenario } from '../../context/ScenarioContext';
 
 export const GHGInventoryView: React.FC = () => {
   const { scenario } = useScenario();
-  const [activeTab, setActiveTab] = useState('Overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
   const tabs = [
     'Overview',
     'Boundary',
@@ -18,6 +20,13 @@ export const GHGInventoryView: React.FC = () => {
     'Review',
     'Report',
   ];
+
+  const activeTab =
+    tabs.find((t) => t.toLowerCase().replace(/\s+/g, '-') === requestedTab?.toLowerCase()) || 'Overview';
+
+  const handleTabChange = (t: string) => {
+    setSearchParams({ tab: t.toLowerCase().replace(/\s+/g, '-') });
+  };
 
   const isSteel = scenario === 'steel';
 
@@ -190,7 +199,7 @@ export const GHGInventoryView: React.FC = () => {
         {tabs.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
             className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab
                 ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 font-bold'

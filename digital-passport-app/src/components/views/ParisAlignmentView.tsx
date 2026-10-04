@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, Check, QrCode, ArrowUpRight, Copy } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { useScenario } from '../../context/ScenarioContext';
 
 export const ParisAlignmentView: React.FC = () => {
   const { scenario } = useScenario();
-  const [activeTab, setActiveTab] = useState<
-    'ndc_mapping' | 'company_target' | 'mitigation_actions' | 'transparency_score' | 'passport_summary'
-  >('ndc_mapping');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+
+  const activeTab: 'ndc_mapping' | 'company_target' | 'mitigation_actions' | 'transparency_score' | 'passport_summary' =
+    requestedTab && ['ndc_mapping', 'company_target', 'mitigation_actions', 'transparency_score', 'passport_summary'].includes(requestedTab)
+      ? (requestedTab as any)
+      : 'ndc_mapping';
+
+  const handleTabChange = (id: string) => {
+    setSearchParams({ tab: id });
+  };
 
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -116,7 +125,7 @@ export const ParisAlignmentView: React.FC = () => {
         {tabs.map((t) => (
           <button
             key={t.id}
-            onClick={() => setActiveTab(t.id as any)}
+            onClick={() => handleTabChange(t.id)}
             className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
               activeTab === t.id
                 ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 font-bold'

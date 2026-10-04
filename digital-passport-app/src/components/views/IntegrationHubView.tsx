@@ -35,7 +35,7 @@ export const IntegrationHubView: React.FC = () => {
       'Connections': 'connections',
     };
     const param = paramMap[tab] || tab.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/data?tab=${param}`, { replace: true });
+    navigate(`/data?tab=${param}`);
   };
 
   const tabs = ['Connections', 'Mapping Studio', 'Sync Controls', 'Import Jobs', 'Exceptions', 'Telemetry', 'Manual Entry', 'Bulk Upload'];

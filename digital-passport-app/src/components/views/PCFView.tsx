@@ -139,7 +139,7 @@ function InnerPCFWorkspace() {
             key={tab.key}
             onClick={() => {
               setActiveTab(tab.key);
-              navigate(`/pcf?tab=${tab.key}`, { replace: true });
+              navigate(`/pcf?tab=${tab.key}`);
             }}
             data-testid={`tab-${tab.key}`}
             className={`px-3.5 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${

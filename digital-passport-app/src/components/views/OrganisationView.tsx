@@ -52,7 +52,7 @@ export const OrganisationView: React.FC = () => {
       'Approvals': 'approvals',
     };
     const param = paramMap[tabId] || 'profile';
-    navigate(`/organisation?tab=${param}`, { replace: true });
+    navigate(`/organisation?tab=${param}`);
   };
 
   const tabs = [

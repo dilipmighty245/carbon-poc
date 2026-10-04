@@ -34,7 +34,7 @@ export const GovernmentView: React.FC = () => {
 
   const handleTabSwitch = (tab: 'overview' | 'drilldown' | 'ndc' | 'policy') => {
     setActiveTab(tab);
-    navigate(`/government?tab=${tab}`, { replace: true });
+    navigate(`/government?tab=${tab}`);
   };
   const [privacyMode, setPrivacyMode] = useState<boolean>(true);
   const [selectedRegion, setSelectedRegion] = useState<'all' | 'telangana' | 'odisha'>('telangana');

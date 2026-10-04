@@ -26,7 +26,7 @@ export const EmissionsCalculation: React.FC = () => {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    navigate(`/emissions?tab=${tab}`, { replace: true });
+    navigate(`/emissions?tab=${tab}`);
   };
 
   const isSteel = scenario === 'steel';
