@@ -86,14 +86,19 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
 
         {/* Passport Header */}
         <div className="flex items-start justify-between border-b-2 border-emerald-100 pb-6">
-          <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-              EU CBAM Compliant Digital Carbon Passport
-            </span>
-            <h1 className="text-2xl font-black text-slate-900 pt-1">{prod.product_name}</h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Produced by <span className="font-bold text-slate-800">{prod.producer_organization}</span>
-            </p>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 p-1 flex items-center justify-center shrink-0 shadow-sm">
+              <img src="/saurient-logo.png" alt="Saurient Platform Logo" className="w-full h-full object-contain rounded-lg" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+                EU CBAM Compliant Digital Carbon Passport
+              </span>
+              <h1 className="text-2xl font-black text-slate-900 pt-1">{prod.product_name}</h1>
+              <p className="text-xs text-slate-500 font-medium">
+                Produced by <span className="font-bold text-slate-800">{prod.producer_organization}</span>
+              </p>
+            </div>
           </div>
 
           <div className="text-right space-y-1">

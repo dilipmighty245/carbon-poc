@@ -240,12 +240,6 @@ export const OrgProfileTab: React.FC = () => {
     setTimeout(() => setSavedSuccess(false), 4000);
   };
 
-  const monogram = profile.legalName
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('');
-
   return (
     <div className="space-y-6">
       {/* Toast Notification */}
@@ -264,8 +258,8 @@ export const OrgProfileTab: React.FC = () => {
       {/* Header Banner */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-700 to-slate-900 text-white font-black text-xl flex items-center justify-center shadow-inner tracking-wider">
-            {monogram}
+          <div className="w-16 h-16 rounded-2xl bg-slate-950 border border-slate-800 p-1.5 flex items-center justify-center shadow-md overflow-hidden shrink-0">
+            <img src="/saurient-logo.png" alt="Saurient Logo" className="w-full h-full object-contain rounded-xl" />
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">

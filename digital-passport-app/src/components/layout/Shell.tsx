@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Home, 
@@ -48,13 +48,13 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         <aside className="w-64 bg-[#0C1322] text-white flex flex-col justify-between hidden md:flex shrink-0 border-r border-slate-800">
           <div>
             {/* Logo Header */}
-            <div className="p-5 flex items-center gap-3 border-b border-slate-800/80">
-              <div className="w-8 h-8 rounded-lg bg-[#00E599] text-slate-950 font-black text-lg flex items-center justify-center shadow-md">
-                S
+            <div className="p-4 flex items-center gap-3 border-b border-slate-800/80">
+              <div className="w-9 h-9 rounded-xl bg-slate-900 border border-emerald-500/30 overflow-hidden shrink-0 flex items-center justify-center p-0.5 shadow-md">
+                <img src="/saurient-logo.png" alt="Saurient Logo" className="w-full h-full object-contain rounded-lg" />
               </div>
               <div>
                 <h1 className="font-black text-sm tracking-wider text-white uppercase leading-tight">SAURIENT</h1>
-                <p className="text-[10px] text-slate-400 font-medium">Carbon Passport Platform</p>
+                <p className="text-[10px] text-emerald-400 font-semibold tracking-wide">Carbon Passport</p>
               </div>
             </div>
 
