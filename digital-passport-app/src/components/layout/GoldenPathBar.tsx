@@ -41,13 +41,15 @@ export const GoldenPathBar: React.FC<GoldenPathBarProps> = ({
       const fullUrl = location.pathname + location.search;
       const matchIdx = STORYBOARD_SCENES.findIndex((s) => {
         if (s.route === fullUrl) return true;
-        if (s.route.includes('?') && fullUrl === s.route) return true;
-        if (!s.route.includes('?') && s.route === location.pathname) return true;
         // Fallback matching for base paths without query strings
-        if (location.pathname === '/organisation' && (location.search === '' || location.search === '?tab=profile') && s.route === '/organisation?tab=profile') return true;
-        if (location.pathname === '/data' && (location.search === '' || location.search === '?tab=telemetry') && s.route === '/data?tab=telemetry') return true;
-        if (location.pathname === '/emissions' && (location.search === '' || location.search === '?tab=factors') && s.route === '/emissions?tab=factors') return true;
-        if (location.pathname === '/pcf' && (location.search === '' || location.search === '?tab=projects') && s.route === '/pcf?tab=projects') return true;
+        if (location.pathname === '/organisation' && location.search === '' && s.route === '/organisation?tab=profile') return true;
+        if (location.pathname === '/data' && location.search === '' && s.route === '/data?tab=telemetry') return true;
+        if (location.pathname === '/emissions' && location.search === '' && s.route === '/emissions?tab=factors') return true;
+        if (location.pathname === '/pcf' && location.search === '' && s.route === '/pcf?tab=projects') return true;
+        if (location.pathname === '/government' && location.search === '' && s.route === '/government?tab=overview') return true;
+        if (location.pathname === '/cbam' && location.search === '' && s.route === '/cbam?tab=overview') return true;
+        if (location.pathname === '/admin' && location.search === '' && s.route === '/admin?tab=architecture') return true;
+        if (!s.route.includes('?') && s.route === location.pathname) return true;
         return false;
       });
       if (matchIdx !== -1 && matchIdx !== currentSceneIdx) {

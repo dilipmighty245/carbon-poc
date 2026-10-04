@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { QrCode, ShieldCheck, Copy, CheckCircle2, Download, ExternalLink } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
 
@@ -8,9 +8,18 @@ interface QrVerificationTabProps {
 }
 
 export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports }) => {
+  const { passportId: pathPassportId } = useParams<{ passportId?: string }>();
   const [searchParams] = useSearchParams();
-  const passportId = searchParams.get('id');
-  const passport = passports.find((p) => p.passport_metadata.passport_id === passportId) || passports[0];
+  const passportId = searchParams.get('id') || pathPassportId;
+
+  const targetId = passportId || 'pas-st-2026-00981';
+  const passport =
+    passports.find(
+      (p) =>
+        p.passport_metadata?.passport_id === targetId ||
+        p.product_summary?.batch_number === targetId ||
+        p.passport_metadata?.passport_id?.toLowerCase() === targetId.toLowerCase()
+    ) || passports[0];
 
   const verificationUrl = `https://passport.saurient.org/verify/${passport?.passport_metadata.passport_id || 'PASSPORT-2026-COCOA-001'}`;
 

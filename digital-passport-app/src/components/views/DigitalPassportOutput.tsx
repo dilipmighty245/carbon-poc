@@ -153,7 +153,11 @@ export const DigitalPassportOutput: React.FC = () => {
   const activeTabId = tab.toLowerCase();
 
   const handleTabChange = (newTabId: string) => {
-    navigate(`/passport/${newTabId}`);
+    if (passportId) {
+      navigate(`/passport/${newTabId}/${passportId}`);
+    } else {
+      navigate(`/passport/${newTabId}`);
+    }
   };
 
   if (loading) {

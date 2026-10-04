@@ -1,6 +1,7 @@
 import React from 'react';
 import { DollarSign, Calendar, Clock, CreditCard } from 'lucide-react';
 import type { CBAMProductData } from '../../../types/cbam';
+import { ExposureView } from './ExposureView';
 
 interface CostAnalysisViewProps {
   product: CBAMProductData;
@@ -9,6 +10,10 @@ interface CostAnalysisViewProps {
 export const CostAnalysisView: React.FC<CostAnalysisViewProps> = ({ product }) => {
   return (
     <div className="space-y-6">
+      {/* Financial Exposure & EU ETS Scenario Modeling */}
+      <ExposureView product={product} />
+
+      {/* Financial Obligations & Certificate Surrender Timeline */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
         <div className="flex items-center justify-between">
           <div>

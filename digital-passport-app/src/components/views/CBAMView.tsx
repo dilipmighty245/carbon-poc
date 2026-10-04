@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Download, Search, AlertTriangle, ShieldCheck } from 'lucide-react';
 import type { CBAMSubTab, CBAMProductData } from '../../types/cbam';
 import { BlockerDrawer } from './cbam/BlockerDrawer';
@@ -15,8 +16,50 @@ import { CostAnalysisView } from './cbam/CostAnalysisView';
 import { DataPackGeneratorView } from './cbam/DataPackGeneratorView';
 import { RegistryTransferView } from './cbam/RegistryTransferView';
 
+const TAB_PARAM_MAP: Record<string, CBAMSubTab> = {
+  overview: 'Overview',
+  applicability: 'Applicability',
+  classification: 'CN Classification',
+  'cn-classification': 'CN Classification',
+  installations: 'Installations',
+  monitoring: 'Monitoring Plans',
+  'monitoring-plans': 'Monitoring Plans',
+  processes: 'Processes',
+  calculations: 'Calculations',
+  declarants: 'Declarants',
+  exposure: 'Exposure',
+  cost: 'Cost',
+  datapack: 'Data Pack',
+  'data-pack': 'Data Pack',
+  registry: 'Registry Transfer',
+  'registry-transfer': 'Registry Transfer',
+};
+
+const TAB_TO_PARAM_MAP: Record<CBAMSubTab, string> = {
+  Overview: 'overview',
+  Applicability: 'applicability',
+  'CN Classification': 'classification',
+  Installations: 'installations',
+  'Monitoring Plans': 'monitoring',
+  Processes: 'processes',
+  Calculations: 'calculations',
+  Declarants: 'declarants',
+  Exposure: 'exposure',
+  Cost: 'cost',
+  'Data Pack': 'datapack',
+  'Registry Transfer': 'registry',
+};
+
 export const CBAMView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<CBAMSubTab>('Overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabQuery = searchParams.get('tab')?.toLowerCase();
+  const activeTab: CBAMSubTab = (tabQuery && TAB_PARAM_MAP[tabQuery]) || 'Overview';
+
+  const handleTabChange = (newTab: CBAMSubTab) => {
+    const param = TAB_TO_PARAM_MAP[newTab] || 'overview';
+    setSearchParams({ tab: param });
+  };
+
   const [isBlockerDrawerOpen, setIsBlockerDrawerOpen] = useState(false);
 
   // Initial Seeded Demo Products
@@ -290,7 +333,7 @@ export const CBAMView: React.FC = () => {
             <span>Checklist & Blockers</span>
           </button>
           <button
-            onClick={() => setActiveTab('Data Pack')}
+            onClick={() => handleTabChange('Data Pack')}
             className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
           >
             <Download className="w-3.5 h-3.5" />
@@ -304,7 +347,7 @@ export const CBAMView: React.FC = () => {
         {tabs.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
             className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
               activeTab === tab
                 ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 font-bold'

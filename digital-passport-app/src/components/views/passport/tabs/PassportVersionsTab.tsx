@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { History, GitCommit, ShieldCheck, ArrowRight, Clock } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
 
@@ -8,17 +8,42 @@ interface PassportVersionsTabProps {
 }
 
 export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passports }) => {
+  const { passportId: pathPassportId } = useParams<{ passportId?: string }>();
   const [searchParams] = useSearchParams();
-  const passportId = searchParams.get('id');
-  const passport = passports.find((p) => p.passport_metadata.passport_id === passportId) || passports[0];
+  const passportId = searchParams.get('id') || pathPassportId;
+
+  const targetId = passportId || 'pas-st-2026-00981';
+
+  const passport =
+    passports.find(
+      (p) =>
+        p.passport_metadata?.passport_id === targetId ||
+        p.product_summary?.batch_number === targetId ||
+        p.passport_metadata?.passport_id?.toLowerCase() === targetId.toLowerCase()
+    ) || passports[0];
+
+  const issuedAt =
+    (passport as any)?.audit_trail?.issued_at ||
+    passport?.passport_metadata?.issuance_date ||
+    '2026-03-28T14:30:00Z';
+
+  const issuedBy =
+    (passport as any)?.audit_trail?.issued_by ||
+    passport?.methodology_and_audit?.verification_body ||
+    'Dr. Elena Rostova (Meridian Assurance Ltd)';
+
+  const lockHash =
+    (passport as any)?.audit_trail?.dataset_lock_hash ||
+    passport?.passport_metadata?.cryptographic_hash ||
+    '7e28a91f3e77a102bc9a1144cdcc7388105b907712e40122aa';
 
   const versionHistory = [
     {
       version: 'v1.1 (Current Issued)',
-      date: passport?.audit_trail.issued_at || '2026-03-28T14:30:00Z',
-      author: passport?.audit_trail.issued_by || 'Dr. Elena Rostova',
+      date: issuedAt,
+      author: issuedBy,
       changes: 'Updated CBAM carbon price paid reconciliation & finalized verifier statement',
-      hash: passport?.audit_trail.dataset_lock_hash || '0xa7b4c9e1f2d34890',
+      hash: lockHash,
       active: true,
     },
     {
@@ -48,7 +73,7 @@ export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passpo
         <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
           <span className="font-bold text-slate-500">Target Product:</span>
           <span className="font-bold text-slate-900">
-            {passport?.product_summary.product_name} ({passport?.passport_metadata.passport_id})
+            {passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil'} ({passport?.passport_metadata?.passport_id || targetId})
           </span>
         </div>
 

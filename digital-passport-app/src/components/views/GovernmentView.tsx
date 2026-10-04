@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Building, 
   MapPin, 
@@ -8,6 +9,7 @@ import {
   Lock, 
   Eye, 
   ChevronRight,
+  ArrowRight,
   Sparkles,
   BarChart3,
   CheckCircle2,
@@ -16,7 +18,24 @@ import {
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 export const GovernmentView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'drilldown' | 'ndc' | 'policy'>('overview');
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const requestedTab = searchParams.get('tab') as 'overview' | 'drilldown' | 'ndc' | 'policy' | null;
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'drilldown' | 'ndc' | 'policy'>(
+    requestedTab && ['overview', 'drilldown', 'ndc', 'policy'].includes(requestedTab) ? requestedTab : 'overview'
+  );
+
+  useEffect(() => {
+    if (requestedTab && ['overview', 'drilldown', 'ndc', 'policy'].includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [requestedTab]);
+
+  const handleTabSwitch = (tab: 'overview' | 'drilldown' | 'ndc' | 'policy') => {
+    setActiveTab(tab);
+    navigate(`/government?tab=${tab}`, { replace: true });
+  };
   const [privacyMode, setPrivacyMode] = useState<boolean>(true);
   const [selectedRegion, setSelectedRegion] = useState<'all' | 'telangana' | 'odisha'>('telangana');
 
@@ -129,7 +148,7 @@ export const GovernmentView: React.FC = () => {
         ].map((t) => (
           <button
             key={t.id}
-            onClick={() => setActiveTab(t.id as any)}
+            onClick={() => handleTabSwitch(t.id as any)}
             className={`px-4 py-2 text-xs font-bold whitespace-nowrap border-b-2 transition-colors ${
               activeTab === t.id
                 ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-xl'
@@ -143,51 +162,63 @@ export const GovernmentView: React.FC = () => {
 
       {/* Main Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left 2/3: Sector Intensity Chart */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Steel Sector Verified Intensity vs Global Baseline</h3>
-                <p className="text-xs text-slate-500">Comparing verified batch intensities across regional manufacturing clusters</p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left 2/3: Sector Intensity Chart */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Steel Sector Verified Intensity vs Global Baseline</h3>
+                  <p className="text-xs text-slate-500">Comparing verified batch intensities across regional manufacturing clusters</p>
+                </div>
+                <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-lg border border-emerald-200">
+                  Avg: 1.633 tCO₂e/t
+                </span>
               </div>
-              <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-lg border border-emerald-200">
-                Avg: 1.633 tCO₂e/t
-              </span>
+
+              <div className="h-64 w-full pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} barCategoryGap="30%">
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} unit=" t" />
+                    <Tooltip formatter={(val: any) => [`${val} tCO₂e/t`, 'Carbon Intensity']} />
+                    <Bar dataKey="val" radius={[6, 6, 0, 0]}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            <div className="h-64 w-full pt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} barCategoryGap="30%">
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} unit=" t" />
-                  <Tooltip formatter={(val: any) => [`${val} tCO₂e/t`, 'Carbon Intensity']} />
-                  <Bar dataKey="val" radius={[6, 6, 0, 0]}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            {/* Right 1/3: Sector Breakdown Cards */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-slate-900">Registered Sector Summary</h3>
+              <div className="space-y-3">
+                {sectorData.map((sec, idx) => (
+                  <div key={idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">{sec.sector}</h4>
+                      <p className="text-[10px] text-slate-400">{sec.count} Facilities • Avg {sec.avgIntensity}</p>
+                    </div>
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                      {sec.cbamReady} Ready
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Right 1/3: Sector Breakdown Cards */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-slate-900">Registered Sector Summary</h3>
-            <div className="space-y-3">
-              {sectorData.map((sec, idx) => (
-                <div key={idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-xs text-slate-900">{sec.sector}</h4>
-                    <p className="text-[10px] text-slate-400">{sec.count} Facilities • Avg {sec.avgIntensity}</p>
-                  </div>
-                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                    {sec.cbamReady} Ready
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => handleTabSwitch('drilldown')}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+            >
+              <span>Drill Down by Region</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -235,6 +266,16 @@ export const GovernmentView: React.FC = () => {
               <span className="text-[11px] text-slate-500 block mt-1">94% Average Data Quality</span>
             </div>
           </div>
+
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <button
+              onClick={() => navigate('/paris-alignment')}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+            >
+              <span>Check Paris Alignment</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -265,6 +306,16 @@ export const GovernmentView: React.FC = () => {
               </p>
             </div>
           </div>
+
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <button
+              onClick={() => handleTabSwitch('policy')}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+            >
+              <span>View Reduction Insights</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -291,6 +342,16 @@ export const GovernmentView: React.FC = () => {
                 Requiring smart-meter telemetry for CBAM exports eliminates default penalty markups and protects EU export revenues.
               </p>
             </div>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <button
+              onClick={() => navigate('/admin?tab=architecture')}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+            >
+              <span>View System Architecture</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Search, Check, Info, ShieldCheck } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, Check, Info, ShieldCheck, ArrowRight } from 'lucide-react';
 import type { CBAMProductData } from '../../../types/cbam';
 
 interface CNClassificationViewProps {
@@ -7,6 +8,8 @@ interface CNClassificationViewProps {
 }
 
 export const CNClassificationView: React.FC<CNClassificationViewProps> = ({ product }) => {
+  const [, setSearchParams] = useSearchParams();
+
   const cnCatalogue = [
     { code: 'CN 7308 90', name: 'Structures and parts of structures of iron or steel', sector: 'Iron & Steel', status: 'COVERED', type: 'Complex Good', unit: 'Tonne' },
     { code: 'CN 7616 99', name: 'Other articles of aluminium', sector: 'Aluminium', status: 'COVERED', type: 'Simple / Complex', unit: 'Tonne' },
@@ -84,6 +87,16 @@ export const CNClassificationView: React.FC<CNClassificationViewProps> = ({ prod
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t border-slate-100">
+          <button
+            onClick={() => setSearchParams({ tab: 'cost' })}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+          >
+            <span>Open Cost Analysis</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
