@@ -9,22 +9,22 @@ export const ProductSetup: React.FC = () => {
   const navigate = useNavigate();
 
   // Form states with fresh default batch ID generator
-  const [commodity, setCommodity] = useState('Steel & Heavy Industry');
-  const [productName, setProductName] = useState('Hot-Rolled Steel Coil (CN 7208 39 00)');
-  const [facility, setFacility] = useState('Hyderabad Manufacturing Facility');
-  const [batchId, setBatchId] = useState(`ST-2026-${Math.floor(1000 + Math.random() * 9000)}`);
-  const [supplier, setSupplier] = useState('Saurient Mining & Ore Supply Ltd');
-  const [bom, setBom] = useState('Iron Ore (62% Fe Grade), Scrap Steel, Coking Coal, Flux');
-  const [packaging, setPackaging] = useState('Strapped Steel Coil Bundles on Wood Skids');
-  const [unitOfMeasure, setUnitOfMeasure] = useState('tonnes');
-  const [batchQuantity, setBatchQuantity] = useState<number>(500);
-  const [exportMarket, setExportMarket] = useState('European Union (EU - CBAM Port Rotterdam)');
+  const [commodity, setCommodity] = useState('Cocoa');
+  const [productName, setProductName] = useState('Fermented Cocoa Beans');
+  const [facility, setFacility] = useState('Tema Processing Plant');
+  const [batchId, setBatchId] = useState(`CB-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+  const [supplier, setSupplier] = useState('Asunafo Farmers Cooperative');
+  const [bom, setBom] = useState('Cocoa beans (raw), water, packaging');
+  const [packaging, setPackaging] = useState('60 kg jute bags');
+  const [unitOfMeasure, setUnitOfMeasure] = useState('kg');
+  const [batchQuantity, setBatchQuantity] = useState<number>(1000);
+  const [exportMarket, setExportMarket] = useState('European Union (EU)');
 
   // Dynamic Rulebooks State
   const [rulebooksList, setRulebooksList] = useState([
+    { id: 'cocoa-rulebook-2026', label: 'cocoa-rulebook-2026 (ISO 14067)', standard: 'ISO 14067 Product Footprint', commodity: 'Cocoa' },
     { id: 'steel-rulebook-2026', label: 'steel-rulebook-2026 (EU CBAM CN 7208 39 00)', standard: 'EU CBAM Annex IV (Steel)', commodity: 'Hot-Rolled Steel Coil' },
     { id: 'metal-rulebook-2026', label: 'metal-rulebook-2026 (EU CBAM CN 7601)', standard: 'EU CBAM Annex IV', commodity: 'Metals' },
-    { id: 'cocoa-rulebook-2026', label: 'cocoa-rulebook-2026 (ISO 14067)', standard: 'ISO 14067 Product Footprint', commodity: 'Cocoa' },
     { id: 'cashew-rulebook-2026', label: 'cashew-rulebook-2026 (GHG Protocol)', standard: 'GHG Protocol Product Standard', commodity: 'Cashew' },
     { id: 'textiles-rulebook-2026', label: 'textiles-rulebook-2026 (ISO 14067)', standard: 'ISO 14067 Textile Boundary', commodity: 'Textiles' },
     { id: 'food-rulebook-2026', label: 'food-rulebook-2026 (IPCC Tier 2)', standard: 'IPCC Tier 2 Food Standard', commodity: 'Processed Foods' },
@@ -54,13 +54,13 @@ export const ProductSetup: React.FC = () => {
     };
   }, []);
 
-  const [rulebook, setRulebook] = useState('steel-rulebook-2026');
+  const [rulebook, setRulebook] = useState('cocoa-rulebook-2026');
 
   // Add Rulebook Modal State & DAG Rules Form State
   const [showAddRulebookModal, setShowAddRulebookModal] = useState(false);
   const [newRulebookName, setNewRulebookName] = useState('');
-  const [newRulebookStandard, setNewRulebookStandard] = useState('EU CBAM Annex IV (Steel)');
-  const [newRulebookCommodity, setNewRulebookCommodity] = useState('Hot-Rolled Steel Coil');
+  const [newRulebookStandard, setNewRulebookStandard] = useState('ISO 14067 Product Standard');
+  const [newRulebookCommodity, setNewRulebookCommodity] = useState('Cocoa');
   const [newRulebookMode, setNewRulebookMode] = useState<'pcf' | 'ghg' | 'cbam' | 'all'>('pcf');
   const [newFunctionalUnit, setNewFunctionalUnit] = useState('kg CO2e per kg');
   const [newBatchQty, setNewBatchQty] = useState<number>(1000);
@@ -249,7 +249,11 @@ export const ProductSetup: React.FC = () => {
 
       if (resp.passport_id) {
         setTimeout(() => {
-          navigate(`/passport/${resp.passport_id}`);
+          navigate(`/passport/detail/${resp.passport_id}`);
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          navigate('/passport/registry');
         }, 1500);
       }
     } catch (err: any) {
@@ -295,8 +299,9 @@ export const ProductSetup: React.FC = () => {
           <div className="space-y-3 pt-2">
             {[
               { name: 'Cocoa', desc: 'Beans, cocoa butter, cocoa powder, chocolate', icon: '🍫', active: commodity === 'Cocoa', rulebook: 'cocoa-rulebook-2026' },
+              { name: 'Steel & Heavy Industry', desc: 'Hot-rolled steel coil, billets, wire rods (EU CBAM)', icon: '🏗️', active: commodity === 'Steel & Heavy Industry' || commodity === 'Steel', rulebook: 'steel-rulebook-2026' },
               { name: 'Cashew', desc: 'Raw cashew nuts, processed kernels', icon: '🥜', active: commodity === 'Cashew', rulebook: 'cashew-rulebook-2026' },
-              { name: 'Textiles', desc: 'Cotton, woven fabrics, apparel (Made in Ghana)', icon: '👕', active: commodity === 'Textiles', rulebook: 'textiles-rulebook-2026' },
+              { name: 'Textiles', desc: 'Cotton, woven fabrics, apparel', icon: '👕', active: commodity === 'Textiles', rulebook: 'textiles-rulebook-2026' },
               { name: 'Processed Foods', desc: 'Pineapple, mango, shea products, fruit juices', icon: '🥫', active: commodity === 'Processed Foods', rulebook: 'food-rulebook-2026' },
               { name: 'Metals', desc: 'Gold, bauxite, manganese, processed minerals', icon: '🪨', active: commodity === 'Metals', rulebook: 'metal-rulebook-2026' },
             ].map((item, idx) => (
@@ -308,24 +313,76 @@ export const ProductSetup: React.FC = () => {
                   setRulebook(item.rulebook);
                   if (item.name === 'Cocoa') {
                     setProductName('Fermented Cocoa Beans');
+                    setFacility('Tema Processing Plant');
+                    setSupplier('Asunafo Farmers Cooperative');
                     setBom('Cocoa beans (raw), water, packaging');
                     setPackaging('60 kg jute bags');
+                    setUnitOfMeasure('kg');
+                    setBatchQuantity(1000);
+                    setExportMarket('European Union (EU)');
+                    setBatchId(`CB-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+                    setFuelLiters(150);
+                    setElecKwh(1200);
+                  } else if (item.name === 'Steel & Heavy Industry') {
+                    setProductName('Hot-Rolled Steel Coil (CN 7208 39 00)');
+                    setFacility('Hyderabad Manufacturing Facility');
+                    setSupplier('Saurient Mining & Ore Supply Ltd');
+                    setBom('Iron Ore (62% Fe Grade), Scrap Steel, Coking Coal, Flux');
+                    setPackaging('Strapped Steel Coil Bundles on Wood Skids');
+                    setUnitOfMeasure('kg');
+                    setBatchQuantity(10000);
+                    setExportMarket('European Union (EU - CBAM Port Rotterdam)');
+                    setBatchId(`ST-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+                    setFuelLiters(3800);
+                    setElecKwh(8000);
                   } else if (item.name === 'Cashew') {
                     setProductName('Raw Processed Cashew Nuts');
+                    setFacility('Sunyani Cashew Processing Hub');
+                    setSupplier('Brong Ahafo Cashew Outgrowers');
                     setBom('Cashew nuts (raw), steam, kernel packaging');
                     setPackaging('25 kg vacuum sealed tins');
+                    setUnitOfMeasure('kg');
+                    setBatchQuantity(1000);
+                    setExportMarket('European Union (EU)');
+                    setBatchId(`CSH-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+                    setFuelLiters(120);
+                    setElecKwh(950);
                   } else if (item.name === 'Textiles') {
                     setProductName('Organic Cotton Fabric');
+                    setFacility('Accra Textile Mill');
+                    setSupplier('Volta Cotton Producers');
                     setBom('Raw organic cotton yarn, eco-dyes');
                     setPackaging('100m fabric rolls');
+                    setUnitOfMeasure('kg');
+                    setBatchQuantity(1000);
+                    setExportMarket('European Union (EU)');
+                    setBatchId(`TEX-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+                    setFuelLiters(200);
+                    setElecKwh(1500);
                   } else if (item.name === 'Processed Foods') {
                     setProductName('Shea Butter Granules');
+                    setFacility('Tamale Shea Processing Facility');
+                    setSupplier('Northern Women Shea Collective');
                     setBom('Shea nuts, extraction solvent, drums');
                     setPackaging('200 L steel drums');
+                    setUnitOfMeasure('kg');
+                    setBatchQuantity(1000);
+                    setExportMarket('European Union (EU)');
+                    setBatchId(`SF-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+                    setFuelLiters(180);
+                    setElecKwh(1100);
                   } else if (item.name === 'Metals') {
                     setProductName('Low-Carbon Aluminium Ingot');
+                    setFacility('Valco Smelter Tema');
+                    setSupplier('Ghana Bauxite Company');
                     setBom('Bauxite ore, alumina, anode blocks');
                     setPackaging('1 Metric Ton strapped pallets');
+                    setUnitOfMeasure('kg');
+                    setBatchQuantity(5000);
+                    setExportMarket('European Union (EU)');
+                    setBatchId(`AL-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+                    setFuelLiters(2500);
+                    setElecKwh(12000);
                   }
                 }}
                 className={`w-full text-left p-3 rounded-xl border transition-all flex items-start gap-3 ${

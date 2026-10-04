@@ -72,13 +72,13 @@ export const STEEL_PROJECT_ROWS: ProjectRow[] = [
 
 export const STEEL_ACTIVITIES: ActivityRecord[] = [
   {
-    id: 'ACT-ST-001', stage: 'Energy', category: 'Energy', activity: 'Schneider PAS800 Grid Power',
+    id: 'ACT-ST-001', stage: 'Energy', category: 'Energy', activity: 'Sattric Smart Meter Grid Power',
     quantity: 5000, unit: 'kWh', scope: 'Scope 2', process: 'EAF & Reheating Furnace',
-    source: 'PAS800', sourceSystem: 'Schneider PAS800 SCADA', ef: '0.716 kgCO2e/kWh', efValue: 0.716,
+    source: 'PAS800', sourceSystem: 'Sattric Smart Meter SCADA', ef: '0.716 kgCO2e/kWh', efValue: 0.716,
     factorVersion: 'India Central Grid 2026', co2e: 3580, evidence: true, quality: 98, status: 'Validated',
-    facility: 'Hyderabad Manufacturing Facility', equipment: 'EAF Transformer & Mill Line', meter: 'MTR-PAS800-EL01',
-    timestamp: '2026-03-18 11:30', supplier: 'Telangana State Power', createdBy: 'system.pas800',
-    lastUpdated: '2026-03-31', provenance: ['Schneider PAS800', 'API Gateway', 'Validated Reading', 'CEL Engine', 'PCF Result'],
+    facility: 'Hyderabad Manufacturing Facility', equipment: 'EAF Transformer & Mill Line', meter: 'MTR-STTR-EL01',
+    timestamp: '2026-03-18 11:30', supplier: 'Telangana State Power', createdBy: 'system.sattric',
+    lastUpdated: '2026-03-31', provenance: ['Sattric Smart Meter', 'API Gateway', 'Validated Reading', 'CEL Engine', 'PCF Result'],
   },
   {
     id: 'ACT-ST-002', stage: 'Fuel', category: 'Fuel', activity: 'Natural Gas / Furnace Fuel',

@@ -32,7 +32,7 @@ export const PassportRegistryTab: React.FC<PassportRegistryTabProps> = ({ passpo
     return matchesSearch && matchesCommodity;
   });
 
-  const commodities = ['ALL', 'STEEL', 'METALS', 'ALUMINIUM', 'HEAVY INDUSTRY'];
+  const commodities = ['ALL', 'COCOA', 'STEEL', 'CASHEW', 'METALS', 'CEMENT', 'TEXTILES', 'HEAVY INDUSTRY'];
 
   return (
     <div className="space-y-6">
@@ -92,9 +92,17 @@ export const PassportRegistryTab: React.FC<PassportRegistryTabProps> = ({ passpo
             const producerOrg = p.product_summary?.producer_organization || 'Saurient Demo Steel Industries Ltd';
             const batchNum = p.product_summary?.batch_number || 'ST-2026-00981';
             const countryOrigin = p.product_summary?.facility?.country_of_origin || 'India';
-            const intensityVal = p.carbon_footprint?.intensity_per_unit?.value ?? 1.633;
+            const intensityVal = p.carbon_footprint?.intensity_per_unit?.value || (
+              p.product_summary?.commodity?.toLowerCase().includes('steel') ? 1.633 :
+              p.product_summary?.commodity?.toLowerCase().includes('cocoa') ? 0.359 :
+              p.product_summary?.commodity?.toLowerCase().includes('cement') ? 7765 : 1.25
+            );
             const intensityUnit = p.carbon_footprint?.intensity_per_unit?.unit || 'kg CO2e/kg';
-            const totalEmissions = p.carbon_footprint?.total_batch_footprint_kg_co2e ?? 16330;
+            const totalEmissions = p.carbon_footprint?.total_batch_footprint_kg_co2e || (
+              p.product_summary?.commodity?.toLowerCase().includes('steel') ? 16330 :
+              p.product_summary?.commodity?.toLowerCase().includes('cocoa') ? 1117 :
+              p.product_summary?.commodity?.toLowerCase().includes('cement') ? 7765 : 12500
+            );
 
             return (
               <div

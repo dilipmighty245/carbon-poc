@@ -229,6 +229,22 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		total = p.TotalFootprintKg
 	}
 
+	// Try extracting from activity_data inside calcMap if s1, s2, s3 are 0
+	if total == 0 {
+		if fuelLiters, ok := activityData["fuel_consumed_liters"].(float64); ok && fuelLiters > 0 {
+			s1 = math.Round(fuelLiters * 2.68)
+		}
+		if elecKwh, ok := activityData["electricity_consumed_kwh"].(float64); ok && elecKwh > 0 {
+			s2 = math.Round(elecKwh * 0.45)
+		}
+		if rawKg, ok := activityData["raw_material_kg"].(float64); ok && rawKg > 0 {
+			s3 = math.Round(rawKg * 0.175)
+		} else if bQty, ok := batchData["batch_size_quantity"].(float64); ok && bQty > 0 {
+			s3 = math.Round(bQty * 0.175)
+		}
+		total = s1 + s2 + s3
+	}
+
 	isSteelCommodity := strings.Contains(strings.ToLower(commodity), "steel") ||
 		strings.Contains(strings.ToLower(productName), "steel") ||
 		p.BatchNumber == "ST-2026-00981" ||
@@ -278,13 +294,21 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		}
 	}
 
-	// Fallback to top-level scopes or realistic sector defaults if emissions total is zero
-	if total == 0 {
-		if isSteelCommodity {
-			if batchQty <= 1 {
-				batchQty = 10000.0
-			}
-			total = batchQty * 1.633
+	// Fallback to top-level scopes or realistic sector defaults if emissions total is zero or missing direct scopes
+	if total == 0 || (isSteelCommodity && (s1 == 0 || s2 == 0)) {
+		batchQtyInKg := batchQty
+		if strings.EqualFold(batchUnit, "tonnes") || strings.EqualFold(batchUnit, "tonne") || strings.EqualFold(batchUnit, "t") {
+			batchQtyInKg = batchQty * 1000.0
+		}
+		if batchQtyInKg <= 1 {
+			batchQtyInKg = 10000.0
+		}
+
+		commLower := strings.ToLower(commodity)
+		prodLower := strings.ToLower(productName)
+
+		if isSteelCommodity || strings.Contains(commLower, "steel") || strings.Contains(prodLower, "steel") {
+			total = math.Round(batchQtyInKg * 1.633)
 			s1 = math.Round(total * 0.630)
 			s2 = math.Round(total * 0.220)
 			s3 = math.Round(total * 0.150)
@@ -293,19 +317,30 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 			rawMatVal = math.Round(total * 0.080)
 			logVal = math.Round(total * 0.050)
 			pkgVal = math.Round(total * 0.020)
+		} else if strings.Contains(commLower, "cocoa") || strings.Contains(prodLower, "cocoa") {
+			total = math.Round(batchQtyInKg * 0.359)
+			s1 = math.Round(total * 0.450)
+			s2 = math.Round(total * 0.150)
+			s3 = math.Round(total * 0.400)
+			fuelVal = s1
+			elecVal = s2
+			rawMatVal = s3
+		} else if strings.Contains(commLower, "cement") || strings.Contains(prodLower, "cement") {
+			total = math.Round(batchQtyInKg * 0.7765)
+			s1 = math.Round(total * 0.739)
+			s2 = math.Round(total * 0.164)
+			s3 = math.Round(total * 0.097)
+			fuelVal = s1
+			elecVal = s2
+			rawMatVal = s3
 		} else {
-			if batchQty <= 1 {
-				batchQty = 10000.0
-			}
-			total = batchQty * 1.850
+			total = math.Round(batchQtyInKg * 1.250)
 			s1 = math.Round(total * 0.500)
 			s2 = math.Round(total * 0.300)
 			s3 = math.Round(total * 0.200)
 			fuelVal = s1
 			elecVal = s2
-			rawMatVal = math.Round(total * 0.120)
-			logVal = math.Round(total * 0.050)
-			pkgVal = math.Round(total * 0.030)
+			rawMatVal = s3
 		}
 	} else {
 		if fuelVal == 0 {

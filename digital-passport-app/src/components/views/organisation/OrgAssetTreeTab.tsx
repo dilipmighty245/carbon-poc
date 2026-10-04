@@ -57,12 +57,12 @@ export const STEEL_ASSET_TREE: AssetNode = {
               status: 'ACTIVE',
               children: [
                 {
-                  id: 'MTR-PAS800-EL01',
-                  name: 'Schneider Electric PAS800 SCADA Power Meter',
+                  id: 'MTR-STTR-EL01',
+                  name: 'Sattric Smart Meter SCADA Power Gateway',
                   type: 'meter',
                   status: 'ONLINE',
                   telemetryType: 'kWh Power & Demand Telemetry',
-                  protocol: 'Modbus TCP/IP via PAS800 Gateway',
+                  protocol: 'Modbus TCP/IP via Sattric Gateway',
                   samplingInterval: '1-Minute Instantaneous',
                   qualityScore: 99,
                 },

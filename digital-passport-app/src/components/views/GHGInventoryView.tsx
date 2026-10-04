@@ -33,9 +33,9 @@ export const GHGInventoryView: React.FC = () => {
   const kpis = isSteel
     ? [
         { title: 'Scope 1 (Furnace Gas)', val: '4,200 kgCO₂e', subtitle: '25.7% of batch total', color: 'text-rose-600' },
-        { title: 'Scope 2 (PAS800 Power)', val: '3,580 kgCO₂e', subtitle: '21.9% of batch total', color: 'text-sky-600' },
+        { title: 'Scope 2 (Sattric Power)', val: '3,580 kgCO₂e', subtitle: '21.9% of batch total', color: 'text-sky-600' },
         { title: 'Scope 3 (Precursors)', val: '8,550 kgCO₂e', subtitle: '52.4% of batch total', color: 'text-emerald-600' },
-        { title: 'Primary Telemetry', val: '94%', subtitle: 'Schneider PAS800 & GAIL meters', color: 'text-emerald-600' },
+        { title: 'Primary Telemetry', val: '94%', subtitle: 'Sattric Smart Meter & GAIL meters', color: 'text-emerald-600' },
       ]
     : [
         { title: 'Scope 1', val: '3,148 tCO₂e', subtitle: '24.5% of total', color: 'text-emerald-600' },
@@ -86,7 +86,7 @@ export const GHGInventoryView: React.FC = () => {
         },
         {
           title: 'Telemetry & SCADA integrity',
-          subtitle: 'Schneider PAS800 SCADA & GAIL Gas Flow Meters',
+          subtitle: 'Sattric Smart Meter SCADA & GAIL Gas Flow Meters',
           badge: 'PASSED',
           badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
           icon: Check,
@@ -131,7 +131,7 @@ export const GHGInventoryView: React.FC = () => {
   const records = isSteel
     ? [
         { name: 'Natural gas · Reheating Furnace F-01', qty: '2,000 m³', factor: '2.100 kgCO₂e/m³', emissions: '4,200 kgCO₂e' },
-        { name: 'EAF Substation power · PAS800 SCADA', qty: '5,000 kWh', factor: '0.716 kgCO₂e/kWh', emissions: '3,580 kgCO₂e' },
+        { name: 'EAF Substation power · Sattric Smart Meter', qty: '5,000 kWh', factor: '0.716 kgCO₂e/kWh', emissions: '3,580 kgCO₂e' },
         { name: 'Direct Reduced Iron (DRI) precursor', qty: '11,000 kg', factor: '0.777 kgCO₂e/kg', emissions: '8,550 kgCO₂e' },
         { name: 'Inbound Electric Rail freight (Odisha -> Hyd)', qty: '10,200 tkm', factor: '0.028 kgCO₂e/tkm', emissions: '285.6 kgCO₂e' },
         { name: 'Outbound Sea freight (Nhava Sheva -> Antwerp)', qty: '125,000 tkm', factor: '0.012 kgCO₂e/tkm', emissions: '1,500 kgCO₂e' },

@@ -44,10 +44,10 @@ export const IntegrationHubView: React.FC = () => {
 
   const kpis = isSteel
     ? [
-        { title: 'Active Industrial Gateways', val: '4', subtitle: 'Schneider PAS800, GAIL Gas, SAP, DRI', color: 'text-[#10b981]' },
+        { title: 'Active Industrial Gateways', val: '4', subtitle: 'Sattric Smart Meter, GAIL Gas, SAP, DRI', color: 'text-[#10b981]' },
         { title: 'Telemetry Records Today', val: '142,800', subtitle: '1-min live readings accepted', color: 'text-[#10b981]' },
         { title: 'Data Quality Inbox', val: '0 Blockers', subtitle: '98% completeness achieved', color: 'text-emerald-600' },
-        { title: 'PAS800 SCADA Uptime', val: '99.9%', subtitle: 'Continuous cast telemetry', color: 'text-emerald-600' },
+        { title: 'Sattric SCADA Uptime', val: '99.9%', subtitle: 'Continuous cast telemetry', color: 'text-emerald-600' },
       ]
     : [
         { title: 'Active Sources', val: '7', subtitle: 'SAP, CRM, meters and files', color: 'text-[#10b981]' },
@@ -74,7 +74,7 @@ export const IntegrationHubView: React.FC = () => {
   const gates = isSteel
     ? [
         {
-          title: 'Schneider PAS800 SCADA Gateway',
+          title: 'Sattric Smart Meter Gateway (PAS800)',
           subtitle: 'Modbus TCP/IP · 1-minute power telemetry feed',
           badge: 'CONNECTED',
           badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
@@ -127,7 +127,7 @@ export const IntegrationHubView: React.FC = () => {
 
   const records = isSteel
     ? [
-        { name: 'MTR-PAS800-EL01 (Schneider)', type: 'EAF & Mill Power Telemetry', status: 'HEALTHY', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', time: 'Live (1-min)' },
+        { name: 'MTR-STTR-EL01 (Sattric Smart Meter)', type: 'EAF & Mill Power Telemetry', status: 'HEALTHY', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', time: 'Live (1-min)' },
         { name: 'MTR-GAS-02 (GAIL Meter)', type: 'Reheating Furnace Natural Gas', status: 'HEALTHY', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', time: '5 min ago' },
         { name: 'Saurient Odisha DRI Feed', type: 'Precursor Material Declaration', status: 'VERIFIED', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', time: 'Batch ST-00981' },
         { name: 'SAP S/4HANA ERP', type: 'Production Order & Weighbridge', status: 'SYNCED', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', time: '10,000 kg Steel' },
@@ -180,7 +180,7 @@ export const IntegrationHubView: React.FC = () => {
           </h1>
           <p className="text-xs text-slate-500 font-medium">
             {isSteel
-              ? 'Schneider PAS800 SCADA, gas flow meters, and supplier pre-assessment feeds'
+              ? 'Sattric Smart Meter, GAIL gas flow meters, and supplier pre-assessment feeds'
               : 'Connect systems, devices and files to the canonical carbon model'}
           </p>
         </div>
@@ -191,7 +191,7 @@ export const IntegrationHubView: React.FC = () => {
             <span>Export Ingestion Log</span>
           </button>
           <button className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors">
-            {isSteel ? 'Connect PAS800 Gateway' : 'Primary action'}
+            {isSteel ? 'Connect Sattric Gateway' : 'Primary action'}
           </button>
         </div>
       </div>
@@ -220,8 +220,8 @@ export const IntegrationHubView: React.FC = () => {
             <div className="flex items-center gap-3">
               <Radio className="w-5 h-5 text-[#00E599] animate-pulse" />
               <div>
-                <span className="text-[#00E599] font-bold block text-sm">LIVE SCHNEIDER PAS800 TELEMETRY FEED</span>
-                <span className="text-slate-400 text-[10px]">Gateway ID: GW-HYD-PAS800-01 · 1-Minute Sampling</span>
+                <span className="text-[#00E599] font-bold block text-sm">LIVE SATTRIC SMART METER TELEMETRY FEED</span>
+                <span className="text-slate-400 text-[10px]">Gateway ID: GW-HYD-SATTRIC-01 · 1-Minute Sampling</span>
               </div>
             </div>
             <span className="bg-emerald-500/20 text-[#00E599] border border-emerald-500/40 text-[10px] font-bold px-2.5 py-1 rounded-md">
@@ -265,7 +265,7 @@ export const IntegrationHubView: React.FC = () => {
           </div>
 
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 font-semibold flex items-center justify-between">
-            <span>✓ All Schneider PAS800 SCADA telemetry feeds and GAIL gas invoices have passed automated audit checks.</span>
+            <span>✓ All Sattric Smart Meter telemetry feeds and GAIL gas invoices have passed automated audit checks.</span>
             <span className="font-mono text-xs font-bold bg-white text-emerald-800 px-2.5 py-1 rounded border border-emerald-300">
               AUDIT READY
             </span>
@@ -289,7 +289,7 @@ export const IntegrationHubView: React.FC = () => {
         {/* Left 2/3: Ingestion volume and quality */}
         <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <h3 className="font-bold text-slate-900 text-sm mb-4">
-            {isSteel ? 'PAS800 Telemetry & Ingestion Volume' : 'Ingestion volume and quality'}
+            {isSteel ? 'Sattric Telemetry & Ingestion Volume' : 'Ingestion volume and quality'}
           </h3>
 
           <div className="h-56 w-full">

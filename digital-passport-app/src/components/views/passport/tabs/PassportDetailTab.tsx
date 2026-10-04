@@ -5,14 +5,20 @@ import type { RichDigitalPassport } from '../../../../types';
 
 interface PassportDetailTabProps {
   passports: RichDigitalPassport[];
+  selectedPassportId?: string | null;
 }
 
-export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports }) => {
+export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports, selectedPassportId }) => {
   const { passportId: pathPassportId } = useParams<{ passportId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const targetId = pathPassportId || searchParams.get('id') || passports[0]?.passport_metadata?.passport_id || 'pas-st-2026-00981';
+  const targetId =
+    selectedPassportId ||
+    pathPassportId ||
+    searchParams.get('id') ||
+    passports[0]?.passport_metadata?.passport_id ||
+    'pas-st-2026-00981';
 
   const passport =
     passports.find(

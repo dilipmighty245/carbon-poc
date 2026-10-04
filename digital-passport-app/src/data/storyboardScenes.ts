@@ -38,14 +38,14 @@ export const STORYBOARD_SCENES: StoryboardScene[] = [
   {
     id: 3, code: 'SCENE 03', chapter: 'Establish the Source of Truth',
     title: 'Map the Factory', screenName: 'Organisation → Facility → Assets', route: '/organisation?tab=asset-tree',
-    metric: 'Schneider PAS800 • Electricity • Diesel • Gas • Counter',
-    narration: 'We first define the organizational and operational boundary: from company down to Hyderabad plant, production line, furnace utilities, and Schneider PAS800 meter gateways.',
+    metric: 'Sattric Smart Meter • Electricity • Diesel • Gas • Counter',
+    narration: 'We first define the organizational and operational boundary: from company down to Hyderabad plant, production line, furnace utilities, and Sattric smart meter gateways.',
     primaryAction: 'Inspect Telemetry',
   },
   {
     id: 4, code: 'SCENE 04', chapter: 'Establish the Source of Truth',
     title: 'Live Industrial Data Arrives', screenName: 'Data Acquisition Dashboard', route: '/data?tab=telemetry',
-    metric: 'LIVE TELEMETRY • Schneider PAS800 Gateway Feed',
+    metric: 'LIVE TELEMETRY • Sattric Smart Meter Feed',
     narration: 'Operational telemetry flows directly from industrial smart meters through the gateway into the Carbon Passport ingestion layer—eliminating manual spreadsheet dependency.',
     primaryAction: 'Run Data Quality',
   },

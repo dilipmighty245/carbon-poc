@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { QrCode, RefreshCw } from 'lucide-react';
+import { QrCode, RefreshCw, Plus } from 'lucide-react';
 import { getAllPassportsWithMeta, DEFAULT_TENANT_ID, type ApiFetchResult } from '../../api/client';
 import type { RichDigitalPassport } from '../../types';
 
@@ -75,47 +75,47 @@ export const DEFAULT_FALLBACK_PASSPORTS: RichDigitalPassport[] = [
       status: 'VERIFIED',
     },
     product_summary: {
-      commodity: 'Hot-Rolled Steel Coil',
-      product_name: 'Cold-Rolled Steel Sheet Batch #0982',
-      batch_number: 'ST-2026-00982',
-      producer_organization: 'Saurient Demo Steel Industries Ltd',
+      commodity: 'Cocoa',
+      product_name: 'Fermented Cocoa Beans',
+      batch_number: 'CB-2026-9852',
+      producer_organization: 'org_saurient_demo',
       facility: {
-        name: 'Hyderabad Manufacturing Facility',
-        location: 'Hyderabad, India',
-        country_of_origin: 'India',
+        name: 'Tema Processing Plant',
+        location: 'Tema, Greater Accra, Ghana',
+        country_of_origin: 'Ghana',
       },
-      production_date: '2026-03-20',
+      production_date: '2026-03-25',
       batch_size: {
-        quantity: 8000,
+        quantity: 1000,
         unit: 'kg',
       },
-      hs_code: '7209.16',
+      hs_code: '1801.00',
     },
     carbon_footprint: {
-      total_batch_footprint_kg_co2e: 14480,
+      total_batch_footprint_kg_co2e: 359,
       intensity_per_unit: {
-        value: 1.810,
+        value: 0.359,
         unit: 'kg CO2e/kg',
       },
       scope_breakdown: {
-        scope_1_direct: { value_kg_co2e: 6800, percentage: 47.0 },
-        scope_2_indirect_energy: { value_kg_co2e: 3600, percentage: 24.9 },
-        scope_3_value_chain: { value_kg_co2e: 4080, percentage: 28.1 },
+        scope_1_direct: { value_kg_co2e: 161, percentage: 45.0 },
+        scope_2_indirect_energy: { value_kg_co2e: 54, percentage: 15.0 },
+        scope_3_value_chain: { value_kg_co2e: 144, percentage: 40.0 },
       },
       source_breakdown: {
-        raw_materials: { value_kg_co2e: 4080, percentage: 28.1 },
-        electricity: { value_kg_co2e: 3600, percentage: 24.9 },
-        logistics_transport: { value_kg_co2e: 1800, percentage: 12.4 },
-        on_site_fuel: { value_kg_co2e: 5000, percentage: 34.6 },
+        raw_materials: { value_kg_co2e: 144, percentage: 40.0 },
+        electricity: { value_kg_co2e: 54, percentage: 15.0 },
+        logistics_transport: { value_kg_co2e: 30, percentage: 8.3 },
+        on_site_fuel: { value_kg_co2e: 131, percentage: 36.5 },
         packaging: { value_kg_co2e: 0, percentage: 0.0 },
       },
     },
     methodology_and_audit: {
-      calculation_rulebook: 'steel-rulebook-2026',
-      accounting_standard: 'EU CBAM Annex IV / ISO 14067',
+      calculation_rulebook: 'cocoa-rulebook-2026',
+      accounting_standard: 'ISO 14067 Product Footprint',
       verification_body: 'Meridian Assurance Ltd',
       assurance_level: 'Reasonable Assurance',
-      verification_id: 'ST-VER-2026-0982',
+      verification_id: 'GH-VER-2026-0852',
     },
   },
 ];
@@ -151,8 +151,10 @@ export const DigitalPassportOutput: React.FC = () => {
     loadData();
   }, [tenantId]);
 
-  const activeTabId = tab.toLowerCase();
-  const effectivePassportId = pathPassportId || searchParams.get('id');
+  const knownTabs = ['registry', 'readiness', 'preview', 'sign-issue', 'detail', 'passport-detail', 'qr', 'sharing', 'versions'];
+  const isKnownTab = knownTabs.includes(tab.toLowerCase());
+  const activeTabId = isKnownTab ? tab.toLowerCase() : 'detail';
+  const effectivePassportId = isKnownTab ? (pathPassportId || searchParams.get('id')) : tab;
 
   const handleTabChange = (newTabId: string) => {
     if (effectivePassportId) {
@@ -219,6 +221,16 @@ export const DigitalPassportOutput: React.FC = () => {
             ))}
           </div>
         </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/products/new')}
+            className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create Product Batch</span>
+          </button>
+        </div>
       </div>
 
       {/* Render Active Sub-View */}
@@ -227,7 +239,7 @@ export const DigitalPassportOutput: React.FC = () => {
       {activeTabId === 'preview' && <PassportPreviewTab passports={passports} />}
       {activeTabId === 'sign-issue' && <SignAndIssueTab passports={passports} />}
       {(activeTabId === 'detail' || activeTabId === 'passport-detail') && (
-        <PassportDetailTab passports={passports} />
+        <PassportDetailTab passports={passports} selectedPassportId={effectivePassportId} />
       )}
       {activeTabId === 'qr' && <QrVerificationTab passports={passports} />}
       {activeTabId === 'sharing' && <PassportSharingTab passports={passports} />}

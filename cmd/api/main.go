@@ -38,12 +38,14 @@ import (
 )
 
 type VerificationServer struct {
-	pgRepo      *repository.PostgresRepository
-	redisRepo   *repository.RedisRepository
-	k8sClient   client.Client
-	gqlSchema   graphql.Schema
-	rulesMutex  sync.RWMutex
-	customRules map[string]RulebookItemResponse
+	pgRepo            *repository.PostgresRepository
+	redisRepo         *repository.RedisRepository
+	k8sClient         client.Client
+	gqlSchema         graphql.Schema
+	rulesMutex        sync.RWMutex
+	customRules       map[string]RulebookItemResponse
+	passportsMutex    sync.RWMutex
+	inMemoryPassports map[string]*repository.CarbonPassportModel
 }
 
 const openAPISpecJSON = `{
@@ -415,7 +417,9 @@ func main() {
 	dbConnStr := getEnv("POSTGRES_URL", "postgresql://saurient:saurient123@localhost:5432/saurient_db?sslmode=disable")
 	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
 
-	server := &VerificationServer{}
+	server := &VerificationServer{
+		inMemoryPassports: make(map[string]*repository.CarbonPassportModel),
+	}
 
 	// Initialize Nexus GraphQL Schema Engine
 	gqlSchema, gqlErr := nexusdsl.BuildNexusGraphQLSchema(server)
@@ -1129,53 +1133,94 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 	passportID := uuid.New().String()
 	tenantCtx := tenant.WithTenant(ctx, req.TenantID)
 
-	if s.pgRepo != nil {
-		if existing, err := s.pgRepo.GetPassportByBatchNumber(tenantCtx, req.BatchID); err == nil && existing != nil {
-			passportID = existing.PassportID
-		} else {
-			s1Val := req.Scope1KgCO2e
-			s2Val := req.Scope2KgCO2e
-			s3Val := req.Scope3KgCO2e
-			bQty := 10000.0
-			if req.BatchData != nil && req.BatchData.BatchSizeQuantity > 0 {
-				bQty = req.BatchData.BatchSizeQuantity
-			}
-			if s1Val == 0 && s2Val == 0 && s3Val == 0 {
-				if strings.Contains(strings.ToLower(req.CommodityType), "steel") || strings.Contains(strings.ToLower(req.ProductName), "steel") {
-					tot := bQty * 1.633
-					s1Val = math.Round(tot * 0.630)
-					s2Val = math.Round(tot * 0.220)
-					s3Val = math.Round(tot * 0.150)
-				} else {
-					tot := bQty * 1.850
-					s1Val = math.Round(tot * 0.500)
-					s2Val = math.Round(tot * 0.300)
-					s3Val = math.Round(tot * 0.200)
-				}
-			}
-			totVal := s1Val + s2Val + s3Val
+	s1Val := req.Scope1KgCO2e
+	s2Val := req.Scope2KgCO2e
+	s3Val := req.Scope3KgCO2e
+	bQty := 1000.0
+	if req.BatchData != nil && req.BatchData.BatchSizeQuantity > 0 {
+		bQty = req.BatchData.BatchSizeQuantity
+	}
 
-			calcDetailsJSON, _ := json.Marshal(activityMap)
-			passportModel := &repository.CarbonPassportModel{
-				PassportID:         passportID,
-				TenantID:           req.TenantID,
-				FacilityID:         req.FacilityID,
-				BatchNumber:        req.BatchID,
-				CommodityType:      req.CommodityType,
-				VerificationStatus: "VERIFIED",
-				Scope1KgCO2e:       s1Val,
-				Scope2KgCO2e:       s2Val,
-				Scope3KgCO2e:       s3Val,
-				TotalFootprintKg:   totVal,
-				CalculationDetails: calcDetailsJSON,
-			}
-			auditModel := &repository.PassportAuditTrailModel{
-				PassportID:    passportID,
-				ActionType:    "VERIFIED",
-				ChangePayload: calcDetailsJSON,
-			}
-			_ = s.pgRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
+	if s1Val == 0 {
+		if liters, ok := activityMap["fuel_consumed_liters"].(float64); ok && liters > 0 {
+			s1Val = liters * 2.68
 		}
+	}
+	if s2Val == 0 {
+		if kwh, ok := activityMap["electricity_consumed_kwh"].(float64); ok && kwh > 0 {
+			s2Val = kwh * 0.45
+		}
+	}
+	if s3Val == 0 {
+		if rawKg, ok := activityMap["raw_material_kg"].(float64); ok && rawKg > 0 {
+			s3Val = rawKg * 0.175
+		} else {
+			s3Val = bQty * 0.175
+		}
+	}
+
+	if s1Val == 0 && s2Val == 0 {
+		comm := strings.ToLower(req.CommodityType)
+		prod := strings.ToLower(req.ProductName)
+		if strings.Contains(comm, "steel") || strings.Contains(prod, "steel") {
+			tot := bQty * 1.633
+			s1Val = math.Round(tot * 0.630)
+			s2Val = math.Round(tot * 0.220)
+			s3Val = math.Round(tot * 0.150)
+		} else if strings.Contains(comm, "cocoa") || strings.Contains(prod, "cocoa") {
+			tot := bQty * 0.359
+			s1Val = math.Round(tot * 0.450)
+			s2Val = math.Round(tot * 0.150)
+			s3Val = math.Round(tot * 0.400)
+		} else if strings.Contains(comm, "cashew") || strings.Contains(prod, "cashew") {
+			tot := bQty * 0.520
+			s1Val = math.Round(tot * 0.400)
+			s2Val = math.Round(tot * 0.200)
+			s3Val = math.Round(tot * 0.400)
+		} else if strings.Contains(comm, "cement") || strings.Contains(prod, "cement") {
+			tot := bQty * 0.7765
+			s1Val = math.Round(tot * 0.700)
+			s2Val = math.Round(tot * 0.200)
+			s3Val = math.Round(tot * 0.100)
+		} else {
+			tot := bQty * 1.250
+			s1Val = math.Round(tot * 0.500)
+			s2Val = math.Round(tot * 0.300)
+			s3Val = math.Round(tot * 0.200)
+		}
+	}
+	totVal := s1Val + s2Val + s3Val
+
+	calcDetailsJSON, _ := json.Marshal(activityMap)
+	passportModel := &repository.CarbonPassportModel{
+		PassportID:         passportID,
+		TenantID:           req.TenantID,
+		FacilityID:         req.FacilityID,
+		BatchNumber:        req.BatchID,
+		CommodityType:      req.CommodityType,
+		VerificationStatus: "VERIFIED",
+		Scope1KgCO2e:       s1Val,
+		Scope2KgCO2e:       s2Val,
+		Scope3KgCO2e:       s3Val,
+		TotalFootprintKg:   totVal,
+		CalculationDetails: calcDetailsJSON,
+		IssuedAt:           time.Now(),
+	}
+
+	s.passportsMutex.Lock()
+	if s.inMemoryPassports == nil {
+		s.inMemoryPassports = make(map[string]*repository.CarbonPassportModel)
+	}
+	s.inMemoryPassports[passportID] = passportModel
+	s.passportsMutex.Unlock()
+
+	if s.pgRepo != nil {
+		auditModel := &repository.PassportAuditTrailModel{
+			PassportID:    passportID,
+			ActionType:    "VERIFIED",
+			ChangePayload: calcDetailsJSON,
+		}
+		_ = s.pgRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
 	}
 
 	resp := ProductCreateResponse{
@@ -2527,6 +2572,27 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	s.passportsMutex.RLock()
+	if memModel, ok := s.inMemoryPassports[passportID]; ok {
+		s.passportsMutex.RUnlock()
+		richResp := repository.BuildRichPassportResponse(memModel)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(richResp)
+		return
+	}
+	for _, memModel := range s.inMemoryPassports {
+		if memModel.BatchNumber == passportID {
+			s.passportsMutex.RUnlock()
+			richResp := repository.BuildRichPassportResponse(memModel)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(richResp)
+			return
+		}
+	}
+	s.passportsMutex.RUnlock()
+
 	if s.redisRepo != nil {
 		cacheKey := fmt.Sprintf("%s:%s", tenantID, passportID)
 		cachedData, err := s.redisRepo.GetPassport(ctx, cacheKey)
@@ -2612,20 +2678,61 @@ func (s *VerificationServer) handleListPassports(w http.ResponseWriter, r *http.
 	}
 	list = append(list, repository.BuildRichPassportResponse(steelModel))
 
+	rawList := list
+
+	s.passportsMutex.RLock()
+	for _, p := range s.inMemoryPassports {
+		if p.BatchNumber != "ST-2026-00981" && p.PassportID != "pas-st-2026-00981" {
+			rawList = append(rawList, repository.BuildRichPassportResponse(p))
+		}
+	}
+	s.passportsMutex.RUnlock()
+
 	if s.pgRepo != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
 		if passports, err := s.pgRepo.ListPassports(tenantCtx); err == nil {
 			for _, p := range passports {
 				if p.BatchNumber != "ST-2026-00981" && p.PassportID != "pas-st-2026-00981" {
-					list = append(list, repository.BuildRichPassportResponse(p))
+					rawList = append(rawList, repository.BuildRichPassportResponse(p))
 				}
 			}
 		}
 	}
 
+	// Deduplicate by BatchNumber (favoring Calculated / Verified over Pending)
+	dedupMap := make(map[string]repository.RichDigitalCarbonPassportResponse)
+	var orderedKeys []string
+
+	for _, item := range rawList {
+		batchKey := item.ProductSummary.BatchNumber
+		if batchKey == "" {
+			batchKey = item.PassportMetadata.PassportID
+		}
+
+		existing, found := dedupMap[batchKey]
+		if !found {
+			dedupMap[batchKey] = item
+			orderedKeys = append(orderedKeys, batchKey)
+		} else {
+			// If existing status is Pending and new item is Calculated or VERIFIED, replace it
+			if strings.EqualFold(existing.PassportMetadata.Status, "Pending") &&
+				!strings.EqualFold(item.PassportMetadata.Status, "Pending") {
+				dedupMap[batchKey] = item
+			} else if existing.CarbonFootprint.TotalBatchFootprintKgCO2e == 0 &&
+				item.CarbonFootprint.TotalBatchFootprintKgCO2e > 0 {
+				dedupMap[batchKey] = item
+			}
+		}
+	}
+
+	finalList := make([]repository.RichDigitalCarbonPassportResponse, 0, len(orderedKeys))
+	for _, key := range orderedKeys {
+		finalList = append(finalList, dedupMap[key])
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(list)
+	_ = json.NewEncoder(w).Encode(finalList)
 }
 
 func getEnv(key, fallback string) string {
