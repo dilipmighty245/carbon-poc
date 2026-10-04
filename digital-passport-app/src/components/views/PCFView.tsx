@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { PcfProvider, usePcf } from '../../context/PcfContext';
 import { ReadinessTracker } from '../pcf/ReadinessTracker';
 import { ProjectsTab } from '../pcf/tabs/ProjectsTab';
@@ -33,6 +34,23 @@ const TABS: TabConfig[] = [
 
 function InnerPCFWorkspace() {
   const { activeTab, setActiveTab, project } = usePcf();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+
+  useEffect(() => {
+    if (requestedTab) {
+      const match = TABS.find((t) => 
+        t.key === requestedTab || 
+        t.key.startsWith(requestedTab) || 
+        (requestedTab === 'result' && t.key === 'calculation') || 
+        (requestedTab === 'lineage' && t.key === 'hotspots')
+      );
+      if (match) {
+        setActiveTab(match.key);
+      }
+    }
+  }, [requestedTab, setActiveTab]);
   const [search, setSearch] = useState('');
   const primaryRef = useRef<() => void>(() => toast.info('No action bound for this stage.'));
 
@@ -119,7 +137,10 @@ function InnerPCFWorkspace() {
         {TABS.map((tab, i) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              setActiveTab(tab.key);
+              navigate(`/pcf?tab=${tab.key}`, { replace: true });
+            }}
             data-testid={`tab-${tab.key}`}
             className={`px-3.5 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === tab.key

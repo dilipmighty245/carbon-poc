@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { Check, RefreshCw, Download, Search } from 'lucide-react';
+import { Check, RefreshCw, Download, Search, ShieldCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useScenario } from '../../context/ScenarioContext';
 
 export const CompanyDashboardView: React.FC = () => {
+  const { scenario } = useScenario();
   const [activeTab, setActiveTab] = useState('Overview');
   const tabs = ['Overview', 'Priority Tasks', 'Notifications', 'Recent Activity'];
 
-  const kpis = [
-    { title: 'Total CCF', val: '12,842 tCO₂e', subtitle: '↓ 8.4% vs baseline', color: 'text-emerald-600' },
-    { title: 'PCF Intensity', val: '2.84 kgCO₂e/kg', subtitle: '↓ 6.1% latest batch', color: 'text-emerald-600' },
-    { title: 'Data Completeness', val: '94.2%', subtitle: '↑ 4.6% this period', color: 'text-emerald-600' },
-    { title: 'Passport Readiness', val: '8 of 10 gates', subtitle: '2 verification actions open', color: 'text-emerald-600' },
-  ];
+  const isSteel = scenario === 'steel';
+
+  const kpis = isSteel
+    ? [
+        { title: 'Total CCF (Corporate)', val: '16,330 tCO₂e', subtitle: '↓ 12.2% vs 2025 baseline', color: 'text-emerald-600' },
+        { title: 'PCF Steel Intensity', val: '1.633 kgCO₂e/kg', subtitle: 'Batch ST-2026-00981 verified', color: 'text-emerald-600' },
+        { title: 'Data Completeness', val: '98.0%', subtitle: 'PAS800 SCADA Telemetry active', color: 'text-emerald-600' },
+        { title: 'Passport Readiness', val: '10 of 10 gates', subtitle: '100% verified & issuance ready', color: 'text-emerald-600' },
+      ]
+    : [
+        { title: 'Total CCF', val: '12,842 tCO₂e', subtitle: '↓ 8.4% vs baseline', color: 'text-emerald-600' },
+        { title: 'PCF Intensity', val: '2.84 kgCO₂e/kg', subtitle: '↓ 6.1% latest batch', color: 'text-emerald-600' },
+        { title: 'Data Completeness', val: '94.2%', subtitle: '↑ 4.6% this period', color: 'text-emerald-600' },
+        { title: 'Passport Readiness', val: '8 of 10 gates', subtitle: '2 verification actions open', color: 'text-emerald-600' },
+      ];
 
   const monthData = [
     { month: 'O', val: 42, fill: '#f59e0b' },
@@ -31,7 +42,7 @@ export const CompanyDashboardView: React.FC = () => {
   const gates = [
     {
       title: 'Identity and boundary',
-      subtitle: 'Complete and approved',
+      subtitle: 'Complete and approved (ISO 14067)',
       badge: 'PASSED',
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
       icon: Check,
@@ -39,15 +50,15 @@ export const CompanyDashboardView: React.FC = () => {
     },
     {
       title: 'Evidence and data quality',
-      subtitle: 'Two items need attention',
-      badge: 'REVIEW',
-      badgeClass: 'bg-amber-50 text-amber-700 border-amber-200/60',
-      icon: RefreshCw,
-      iconClass: 'text-amber-600 bg-amber-50',
+      subtitle: isSteel ? 'PAS800 SCADA telemetry 98% complete' : 'Two items need attention',
+      badge: isSteel ? 'PASSED' : 'REVIEW',
+      badgeClass: isSteel ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60',
+      icon: isSteel ? Check : RefreshCw,
+      iconClass: isSteel ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50',
     },
     {
       title: 'Version provenance',
-      subtitle: 'Immutable calculation trace',
+      subtitle: 'Immutable calculation trace (CEL DAG)',
       badge: 'AVAILABLE',
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
       icon: Check,
@@ -55,15 +66,22 @@ export const CompanyDashboardView: React.FC = () => {
     },
   ];
 
-  const records = [
-    { name: 'PCF calculation v3.2', type: 'Refined Cocoa Butter', status: 'LOCKED', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '2.84 kgCO₂e/kg' },
-    { name: 'Supplier declaration', type: 'Aqua Packaging Ghana', status: 'REVIEW', statusClass: 'bg-amber-50 text-amber-700 border-amber-100', val: '86% complete' },
-    { name: 'Passport CP-GH-2026-00481', type: 'Batch CB-2026-001', status: 'READY', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '8/10 gates' },
-    { name: 'CBAM assessment', type: 'Aluminium Housing', status: 'ACTION', statusClass: 'bg-rose-50 text-rose-700 border-rose-100', val: '€86,300 exposure' },
-  ];
+  const records = isSteel
+    ? [
+        { name: 'PCF Steel Coil v1.0', type: 'Hot-Rolled Steel Coil (ST-2026-00981)', status: 'LOCKED', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '1.633 kgCO₂e/kg' },
+        { name: 'Supplier declaration', type: 'Saurient Odisha DRI Facility', status: 'VERIFIED', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '100% primary data' },
+        { name: 'Passport pas-st-2026-00981', type: 'Batch ST-2026-00981', status: 'READY', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '10/10 gates' },
+        { name: 'EU CBAM Assessment', type: 'CN 7208 39 00 Steel Coil', status: 'COMPLIANT', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '€1,339,060 exposure' },
+      ]
+    : [
+        { name: 'PCF calculation v3.2', type: 'Refined Cocoa Butter', status: 'LOCKED', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '2.84 kgCO₂e/kg' },
+        { name: 'Supplier declaration', type: 'Aqua Packaging Ghana', status: 'REVIEW', statusClass: 'bg-amber-50 text-amber-700 border-amber-100', val: '86% complete' },
+        { name: 'Passport CP-GH-2026-00481', type: 'Batch CB-2026-001', status: 'READY', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '8/10 gates' },
+        { name: 'CBAM assessment', type: 'Aluminium Housing', status: 'ACTION', statusClass: 'bg-rose-50 text-rose-700 border-rose-100', val: '€86,300 exposure' },
+      ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Top Header Row with Breadcrumb & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
@@ -74,7 +92,7 @@ export const CompanyDashboardView: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
-            <span>Tema Processing Plant</span>
+            <span>{isSteel ? 'Hyderabad Manufacturing Facility' : 'Tema Processing Plant'}</span>
             <span className="text-slate-400 text-[10px]">▾</span>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
@@ -90,7 +108,7 @@ export const CompanyDashboardView: React.FC = () => {
             />
           </div>
           <span className="bg-sky-100 text-sky-800 text-[10px] font-mono font-bold px-2.5 py-1 rounded-md tracking-wider">
-            SIMULATED
+            {isSteel ? 'SAURIENT STEEL DEMO' : 'SIMULATED'}
           </span>
         </div>
       </div>
@@ -98,8 +116,14 @@ export const CompanyDashboardView: React.FC = () => {
       {/* Main Title Banner & Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Company Dashboard</h1>
-          <p className="text-xs text-slate-500 font-medium">Carbon, data quality, compliance and issuance health at a glance</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            {isSteel ? 'Saurient Steel Industries — Executive Dashboard' : 'Company Dashboard'}
+          </h1>
+          <p className="text-xs text-slate-500 font-medium">
+            {isSteel 
+              ? 'Hot-Rolled Steel Coil Batch ST-2026-00981 carbon footprints, PAS800 telemetry, and CBAM readiness'
+              : 'Carbon, data quality, compliance and issuance health at a glance'}
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -107,8 +131,9 @@ export const CompanyDashboardView: React.FC = () => {
             <Download className="w-3.5 h-3.5 text-slate-500" />
             <span>Download</span>
           </button>
-          <button className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors">
-            Primary action
+          <button className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4" />
+            <span>Verification Status: Active</span>
           </button>
         </div>
       </div>
@@ -119,9 +144,9 @@ export const CompanyDashboardView: React.FC = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+            className={`px-4 py-2 text-xs font-bold whitespace-nowrap border-b-2 transition-all ${
               activeTab === tab
-                ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 font-bold'
+                ? 'border-emerald-600 text-emerald-800 bg-emerald-50/60'
                 : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
             }`}
           >
@@ -130,115 +155,98 @@ export const CompanyDashboardView: React.FC = () => {
         ))}
       </div>
 
-      {/* KPI Cards (4 columns) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {kpis.map((k, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-semibold text-slate-400 block mb-1">{k.title}</span>
-            <span className="text-2xl font-black text-slate-900 tracking-tight">{k.val}</span>
-            <span className={`text-xs font-semibold block mt-1 ${k.color}`}>{k.subtitle}</span>
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpis.map((kpi, idx) => (
+          <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+            <span className="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">{kpi.title}</span>
+            <div className="text-2xl font-black text-slate-900 tracking-tight">{kpi.val}</div>
+            <div className={`text-xs font-bold ${kpi.color}`}>{kpi.subtitle}</div>
           </div>
         ))}
       </div>
 
-      {/* Middle Row (2/3 Chart + 1/3 Priority actions) */}
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2/3: Emissions by scope */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-          <h3 className="font-bold text-slate-900 text-sm mb-4">Emissions by scope</h3>
-
-          <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthData} barCategoryGap="25%">
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis hide />
-                <Tooltip />
-                <Bar dataKey="val" radius={[4, 4, 0, 0]}>
-                  {monthData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100 text-xs">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4]"></span>
-                <span className="text-slate-600 font-medium text-[11px]">Current period</span>
+        {/* Left Column: Monthly Trend Chart & Gates */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">
+                  {isSteel ? 'Monthly Steel Emissions & Output Telemetry' : 'Monthly Emissions Trend'}
+                </h3>
+                <p className="text-xs text-slate-500">FY 2026 PAS800 SCADA meter readings and production logs</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-                <span className="text-slate-600 font-medium text-[11px]">Verified / primary data</span>
-              </div>
+              <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded">
+                tCO₂e / Tonne
+              </span>
             </div>
-            <span className="text-[11px] text-slate-400 font-medium">Units and boundary shown in every chart</span>
+
+            <div className="h-60 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthData} barCategoryGap="20%">
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip />
+                  <Bar dataKey="val" radius={[4, 4, 0, 0]}>
+                    {monthData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
 
-        {/* Right 1/3: Priority actions */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
-          <h3 className="font-bold text-slate-900 text-sm">Priority actions</h3>
-
-          <div className="space-y-3 flex-1 flex flex-col justify-center">
-            {gates.map((g, i) => {
-              const IconComp = g.icon;
-              return (
-                <div key={i} className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-lg shrink-0 ${g.iconClass}`}>
-                      <IconComp className="w-4 h-4" />
+          {/* Verification Gates Box */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+            <h3 className="font-bold text-slate-900 text-sm">Verification Gates & Compliance Audit Status</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {gates.map((g, i) => {
+                const Icon = g.icon;
+                return (
+                  <div key={i} className="p-4 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className={`p-1.5 rounded-lg ${g.iconClass}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${g.badgeClass}`}>
+                        {g.badge}
+                      </span>
                     </div>
                     <div>
-                      <h4 className="font-bold text-xs text-slate-900">{g.title}</h4>
-                      <p className="text-[11px] text-slate-400">{g.subtitle}</p>
+                      <h4 className="font-bold text-slate-900 text-xs">{g.title}</h4>
+                      <p className="text-slate-500 text-[11px] mt-0.5">{g.subtitle}</p>
                     </div>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold border tracking-wider ${g.badgeClass}`}>
-                    {g.badge}
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Recent Records */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="font-bold text-slate-900 text-sm">Active Product & Passport Records</h3>
+            <span className="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded">LIVE</span>
+          </div>
+
+          <div className="space-y-3">
+            {records.map((r, i) => (
+              <div key={i} className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 text-xs">{r.name}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${r.statusClass}`}>
+                    {r.status}
                   </span>
                 </div>
-              );
-            })}
+                <p className="text-[11px] text-slate-500 font-medium">{r.type}</p>
+                <div className="pt-1 text-[11px] font-mono font-bold text-slate-800">{r.val}</div>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
-
-      {/* Bottom Card: Records and provenance */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-sm">Records and provenance</h3>
-
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 font-bold text-[10px] rounded-md tracking-wider transition-colors">
-              EXPORT CSV
-            </button>
-            <button className="px-3 py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 font-bold text-[10px] rounded-md tracking-wider transition-colors">
-              PRINTABLE HTML
-            </button>
-          </div>
-        </div>
-
-        <div className="divide-y divide-slate-100 text-xs">
-          {records.map((r, i) => (
-            <div key={i} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="w-56">
-                <span className="font-bold text-slate-900">{r.name}</span>
-              </div>
-              <div className="w-36 text-slate-500 font-medium">
-                <span>{r.type}</span>
-              </div>
-              <div className="w-44">
-                <span className={`border font-semibold px-3 py-1 rounded-full text-[11px] inline-block ${r.statusClass}`}>
-                  {r.status}
-                </span>
-              </div>
-              <div className="text-right font-medium text-slate-500 text-[11px] w-32">
-                <span>{r.val}</span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
   QrCode, 
   TrendingUp, 
   Compass,
+  Landmark,
   Settings,
   Bell
 } from 'lucide-react';
@@ -35,6 +36,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     { to: '/mrv', label: 'MRV & Verification', icon: GitMerge },
     { to: '/passport', label: 'Carbon Passports', icon: QrCode },
     { to: '/analytics', label: 'Analytics', icon: TrendingUp },
+    { to: '/government', label: 'Government Policy', icon: Landmark },
     { to: '/paris-alignment', label: 'Paris Alignment', icon: Compass },
     { to: '/admin', label: 'Administration', icon: Settings },
   ];
@@ -130,7 +132,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
               <div className="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                Tema Processing Plant
+                {scenario === 'steel' ? 'Hyderabad Steel Facility' : 'Tema Processing Plant'}
               </div>
 
               <button className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg relative transition-colors">

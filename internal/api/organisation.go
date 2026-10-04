@@ -164,22 +164,42 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 		p, err := h.repo.GetTenantProfile(ctx)
 		if err != nil || p == nil {
 			// Return default profile structure for current tenant
-			p = &repository.TenantProfileModel{
-				TenantID:               tenantID,
-				LegalName:              "Saurient Industrial Group B.V.",
-				TradingName:            "Saurient Carbon Solutions",
-				OrganisationID:         "ORG-SAUR-2026-EU",
-				RegistrationNumber:     "NL884920193B01",
-				CountryOfIncorporation: "Netherlands",
-				RegisteredAddress:      "Keizersgracht 421, 1016 EK Amsterdam",
-				Headquarters:           "Amsterdam, Netherlands",
-				Industry:               "Aluminium & Industrial Materials",
-				NaceCode:               "C24.42 - Aluminium production",
-				PrimaryProducts:        "Primary Aluminium Ingots, Low-Carbon Billets",
-				Website:                "https://saurient.io",
-				TaxID:                  "NL884920193B01",
-				LEI:                    "724500123456789ABCDE",
-				Status:                 "ACTIVE",
+			if tenantID == "org_saurient_demo" || tenantID == "org_saurient_steel" {
+				p = &repository.TenantProfileModel{
+					TenantID:               tenantID,
+					LegalName:              "Saurient Demo Steel Industries Ltd",
+					TradingName:            "Saurient Steel",
+					OrganisationID:         "ORG-ST-2026-001",
+					RegistrationNumber:     "IN-2026-ST-7208",
+					CountryOfIncorporation: "India / EU CBAM Registered Declarant",
+					RegisteredAddress:      "IDAL Industrial Area, Hyderabad, Telangana 500037, India",
+					Headquarters:           "Hyderabad, Telangana, India",
+					Industry:               "Iron & Steel Manufacturing (CN 7208 39 00)",
+					NaceCode:               "C24.10 - Manufacture of basic iron and steel",
+					PrimaryProducts:        "Hot-Rolled Steel Coil (ST-2026-00981), S355JR Structural Steel",
+					Website:                "https://www.saurient-steel.org",
+					TaxID:                  "36AABCU9603R1ZM",
+					LEI:                    "3358001KJTIIGC8Y1R99",
+					Status:                 "ACTIVE",
+				}
+			} else {
+				p = &repository.TenantProfileModel{
+					TenantID:               tenantID,
+					LegalName:              "Saurient Industrial Group B.V.",
+					TradingName:            "Saurient Carbon Solutions",
+					OrganisationID:         "ORG-SAUR-2026-EU",
+					RegistrationNumber:     "NL884920193B01",
+					CountryOfIncorporation: "Netherlands",
+					RegisteredAddress:      "Keizersgracht 421, 1016 EK Amsterdam",
+					Headquarters:           "Amsterdam, Netherlands",
+					Industry:               "Aluminium & Industrial Materials",
+					NaceCode:               "C24.42 - Aluminium production",
+					PrimaryProducts:        "Primary Aluminium Ingots, Low-Carbon Billets",
+					Website:                "https://saurient.io",
+					TaxID:                  "NL884920193B01",
+					LEI:                    "724500123456789ABCDE",
+					Status:                 "ACTIVE",
+				}
 			}
 		}
 		w.WriteHeader(http.StatusOK)

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Check, RefreshCw, Download, Search } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useScenario } from '../../context/ScenarioContext';
 
 export const AdminView: React.FC = () => {
+  const { scenario } = useScenario();
   const [activeTab, setActiveTab] = useState('Configuration');
   const tabs = ['Configuration', 'Users & Roles', 'Audit Trail', 'API Portal', 'System Health', 'Backups', 'Reference Data'];
 
@@ -74,7 +76,7 @@ export const AdminView: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
-            <span>Tema Processing Plant</span>
+            <span>{scenario === 'steel' ? 'Hyderabad Steel Facility' : 'Tema Processing Plant'}</span>
             <span className="text-slate-400 text-[10px]">▾</span>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">

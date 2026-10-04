@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getOrgProcesses, saveOrgProcess, deleteOrgProcess } from '../../../api/client';
+import { useScenario } from '../../../context/ScenarioContext';
 import {
   Workflow,
   Plus,
@@ -37,6 +38,72 @@ export interface ProcessItem {
     calculatedEmissions: string;
   };
 }
+
+export const steelProcessesList: ProcessItem[] = [
+  {
+    id: 'PRC-ST-001',
+    name: 'Electric Arc Furnace (EAF) & Melting Shop',
+    facilityId: 'FAC-HYD-001',
+    facilityName: 'Hyderabad Manufacturing Facility',
+    inputs: ['Direct Reduced Iron (DRI)', 'Steel Scrap', 'Pass-through Power'],
+    outputs: ['Liquid Steel Billets', 'EAF Slag'],
+    productionLine: 'EAF Melt Shop Line 1',
+    energySource: 'Schneider PAS800 Substation (110kV)',
+    meters: ['MTR-PAS800-EL01'],
+    scopes: ['Scope 2'],
+    status: 'Active',
+    description: 'Primary melting of iron precursors using electric arc technology.',
+    pcfTrace: {
+      product: 'Hot-Rolled Steel Coil',
+      batch: 'ST-2026-00981',
+      activityRate: '5,000 kWh / batch',
+      emissionFactor: '0.716 kg CO₂e / kWh',
+      calculatedEmissions: '3,580 kg CO₂e / batch',
+    },
+  },
+  {
+    id: 'PRC-ST-002',
+    name: 'Reheating Furnace & Hot Strip Mill',
+    facilityId: 'FAC-HYD-001',
+    facilityName: 'Hyderabad Manufacturing Facility',
+    inputs: ['Steel Billets', 'GAIL Natural Gas'],
+    outputs: ['Hot-Rolled Steel Coils (7208 39 00)'],
+    productionLine: 'Hot Strip Mill Line A',
+    energySource: 'GAIL Pipeline Natural Gas',
+    meters: ['MTR-GAS-02'],
+    scopes: ['Scope 1'],
+    status: 'Active',
+    description: 'Gas-fired slab reheating and multi-pass continuous rolling into coil form.',
+    pcfTrace: {
+      product: 'Hot-Rolled Steel Coil',
+      batch: 'ST-2026-00981',
+      activityRate: '2,000 m³ gas / batch',
+      emissionFactor: '2.100 kg CO₂e / m³',
+      calculatedEmissions: '4,200 kg CO₂e / batch',
+    },
+  },
+  {
+    id: 'PRC-ST-003',
+    name: 'Coil Finishing, Strapping & Port Shipping',
+    facilityId: 'FAC-HYD-001',
+    facilityName: 'Hyderabad Manufacturing Facility',
+    inputs: ['Hot-Rolled Coils', 'Steel Strapping', 'Freight Transport'],
+    outputs: ['Bundled Export Steel Coil'],
+    productionLine: 'Automatic Strapping & QR Line',
+    energySource: 'Electric Rail & Sea Freight',
+    meters: ['Scale S-01', 'Logistics API Feed'],
+    scopes: ['Scope 3'],
+    status: 'Active',
+    description: 'Coil cooling, edge trimming, strapping, QR passport tagging, and multimodal export shipping.',
+    pcfTrace: {
+      product: 'Hot-Rolled Steel Coil',
+      batch: 'ST-2026-00981',
+      activityRate: '10,000 kg coil batch',
+      emissionFactor: '0.618 kg CO₂e / kg DRI + Freight',
+      calculatedEmissions: '8,550 kg CO₂e / batch',
+    },
+  },
+];
 
 export const initialProcesses: ProcessItem[] = [
   {
@@ -168,13 +235,20 @@ export const initialProcesses: ProcessItem[] = [
 ];
 
 export const OrgProcessesTab: React.FC = () => {
-  const [processesList, setProcessesList] = useState<ProcessItem[]>(initialProcesses);
+  const { scenario } = useScenario();
+  const isSteel = scenario === 'steel';
+  const defaultList = isSteel ? steelProcessesList : initialProcesses;
+  const [processesList, setProcessesList] = useState<ProcessItem[]>(defaultList);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacilityFilter, setSelectedFacilityFilter] = useState<string>('all');
   const [selectedProcess, setSelectedProcess] = useState<ProcessItem | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   useEffect(() => {
+    if (isSteel) {
+      setProcessesList(steelProcessesList);
+      return;
+    }
     getOrgProcesses()
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -182,7 +256,7 @@ export const OrgProcessesTab: React.FC = () => {
         }
       })
       .catch((err) => console.warn('Failed to fetch processes from backend:', err));
-  }, []);
+  }, [isSteel]);
 
   // New Process Form
   const [newProcessName, setNewProcessName] = useState('');
@@ -256,7 +330,9 @@ export const OrgProcessesTab: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[10px] font-mono font-bold uppercase text-emerald-800 tracking-wider">Sequential Process Flow Strip</span>
-            <h3 className="text-base font-bold text-slate-900">Tema Processing Plant — Cocoa Butter Refining Flow</h3>
+            <h3 className="text-base font-bold text-slate-900">
+              {isSteel ? 'Hyderabad Steel Facility — Hot-Rolled Steel Coil Manufacturing Flow' : 'Tema Processing Plant — Cocoa Butter Refining Flow'}
+            </h3>
           </div>
           <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px] font-bold px-2.5 py-1 rounded-md">
             ISO 14067 & CBAM Compliant Flow

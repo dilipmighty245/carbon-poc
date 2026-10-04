@@ -158,7 +158,7 @@ export const CBAMView: React.FC = () => {
   const [products, setProducts] = useState<CBAMProductData[]>(initialProducts);
   const [selectedProductId, setSelectedProductId] = useState<string>('prod-steel-001');
 
-  const selectedProduct = products.find((p) => p.id === setSelectedProductId ? selectedProductId : p.id) || products[0];
+  const selectedProduct = products.find((p) => p.id === selectedProductId) || products[0];
 
   const handleSelectProduct = (p: CBAMProductData) => {
     setSelectedProductId(p.id);

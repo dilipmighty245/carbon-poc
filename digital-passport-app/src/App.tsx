@@ -18,6 +18,7 @@ import { SuppliersView } from './components/views/SuppliersView';
 import { CBAMView } from './components/views/CBAMView';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { ParisAlignmentView } from './components/views/ParisAlignmentView';
+import { GovernmentView } from './components/views/GovernmentView';
 import { AdminView } from './components/views/AdminView';
 
 export function App() {
@@ -62,6 +63,7 @@ export function App() {
 
         <Route path="/cbam" element={<Shell><CBAMView /></Shell>} />
         <Route path="/analytics" element={<Shell><AnalyticsView /></Shell>} />
+        <Route path="/government" element={<Shell><GovernmentView /></Shell>} />
         <Route path="/paris-alignment" element={<Shell><ParisAlignmentView /></Shell>} />
         <Route path="/admin" element={<Shell><AdminView /></Shell>} />
 

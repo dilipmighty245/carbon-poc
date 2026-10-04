@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getOrgProfile, saveOrgProfile } from '../../../api/client';
+import { useScenario } from '../../../context/ScenarioContext';
 import {
   Building2,
   Scale,
@@ -11,8 +12,7 @@ import {
   Clock,
   CheckCircle2,
   X,
-  Save,
-  Check
+  Save
 } from 'lucide-react';
 
 export interface OrgProfileData {
@@ -60,6 +60,52 @@ export interface OrgProfileData {
     expiryDate: string;
   };
 }
+
+export const steelOrgProfile: OrgProfileData = {
+  legalName: 'Saurient Demo Steel Industries Ltd',
+  tradingName: 'Saurient Steel',
+  organisationId: 'ORG-ST-2026-001',
+  registrationNumber: 'IN-2026-ST-7208',
+  countryOfIncorporation: 'India / EU CBAM Registered Declarant',
+  registeredAddress: 'IDAL Industrial Area, Hyderabad, Telangana 500037, India',
+  headquarters: 'Hyderabad, Telangana, India',
+  industry: 'Iron & Steel Manufacturing (CN 7208 39 00)',
+  naceCode: 'C 24.10 · Manufacture of basic iron and steel',
+  primaryProducts: 'Hot-Rolled Steel Coil (ST-2026-00981), S355JR Structural Steel',
+  website: 'https://www.saurient-steel.org',
+  taxId: '36AABCU9603R1ZM',
+  lei: '3358001KJTIIGC8Y1R99',
+  primaryContact: {
+    name: 'Santosh Samudrala',
+    title: 'Managing Director & CEO',
+    email: 'santosh.samudrala@saurient.org',
+    phone: '+91 40 2345 6789',
+  },
+  sustainabilityContact: {
+    name: 'Ramesh Varma',
+    title: 'Head of Decarbonization & CBAM Compliance',
+    email: 'r.varma@saurient-steel.org',
+    phone: '+91 40 2345 9988',
+  },
+  boundary: {
+    consolidationApproach: 'Operational Control',
+    baseYear: '2024',
+    reportingCurrency: 'EUR (€) / INR (₹)',
+    defaultUnits: 'tCO₂e (metric tonnes)',
+    ghgStandard: 'ISO 14067 / EU CBAM Regulation (EU) 2026/1740',
+    reportingPeriod: 'Calendar Year (Jan – Dec)',
+  },
+  status: 'Verified',
+  verification: {
+    provider: 'Meridian Assurance Ltd',
+    accreditorId: 'UKAS 0009 · ISO 14065 & ISO/IEC 17029',
+    standard: 'ISO 14064-3 / ISO 14067',
+    assuranceLevel: 'Reasonable Assurance',
+    certificateHash: '7e28a91f3e77a102bc9a1144cdcc7388105b907712e40122aa',
+    verifiedDate: '2026-03-28',
+    expiryDate: '2027-03-27',
+  },
+};
 
 export const initialOrgProfile: OrgProfileData = {
   legalName: 'Saurient Carbon Processing Ltd.',
@@ -138,15 +184,29 @@ export const auditTrailData = [
 ];
 
 export const OrgProfileTab: React.FC = () => {
-  const [profile, setProfile] = useState<OrgProfileData>(initialOrgProfile);
+  const { scenario } = useScenario();
+  const defaultProfile = scenario === 'steel' ? steelOrgProfile : initialOrgProfile;
+
+  const [profile, setProfile] = useState<OrgProfileData>(defaultProfile);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [draftProfile, setDraftProfile] = useState<OrgProfileData>(initialOrgProfile);
+  const [draftProfile, setDraftProfile] = useState<OrgProfileData>(defaultProfile);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
+    setProfile(defaultProfile);
+    setDraftProfile(defaultProfile);
+  }, [scenario]);
+
+  useEffect(() => {
+    if (scenario === 'steel') {
+      setProfile(steelOrgProfile);
+      setDraftProfile(steelOrgProfile);
+      return;
+    }
+
     getOrgProfile()
       .then((data) => {
-        if (data && data.legalName) {
+        if (data && data.legalName && data.legalName !== 'Saurient Industrial Group B.V.') {
           const merged: OrgProfileData = {
             ...initialOrgProfile,
             ...data,
@@ -160,7 +220,7 @@ export const OrgProfileTab: React.FC = () => {
         }
       })
       .catch((err) => console.warn('Failed to load profile from backend:', err));
-  }, []);
+  }, [scenario]);
 
   const handleOpenEdit = () => {
     setDraftProfile({ ...profile });

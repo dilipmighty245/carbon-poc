@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Search, Check, QrCode, ArrowUpRight, Copy } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+import { useScenario } from '../../context/ScenarioContext';
 
 export const ParisAlignmentView: React.FC = () => {
+  const { scenario } = useScenario();
   const [activeTab, setActiveTab] = useState<
     'ndc_mapping' | 'company_target' | 'mitigation_actions' | 'transparency_score' | 'passport_summary'
   >('ndc_mapping');
@@ -50,11 +52,11 @@ export const ParisAlignmentView: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
-            <span>Saurient Demo Manufacturing</span>
+            <span>{scenario === 'steel' ? 'Saurient Steel Industries Ltd' : 'Saurient Demo Manufacturing'}</span>
             <span className="text-slate-400 text-[10px]">▾</span>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
-            <span>Tema Processing Plant</span>
+            <span>{scenario === 'steel' ? 'Hyderabad Steel Facility' : 'Tema Processing Plant'}</span>
             <span className="text-slate-400 text-[10px]">▾</span>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Play, 
   Pause, 
@@ -26,6 +26,7 @@ export const GoldenPathBar: React.FC<GoldenPathBarProps> = ({
   onScenarioChange
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentSceneIdx, setCurrentSceneIdx] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
@@ -34,12 +35,26 @@ export const GoldenPathBar: React.FC<GoldenPathBarProps> = ({
   const scene = STORYBOARD_SCENES[currentSceneIdx] || STORYBOARD_SCENES[0];
   const totalScenes = STORYBOARD_SCENES.length;
 
-  // Navigate on scene change if autoNav is true
+  // Synchronize current scene indicator when route changes externally via sidebar/navigation
   useEffect(() => {
-    if (autoNav && activeScenario === 'steel') {
-      navigate(scene.route);
+    if (activeScenario === 'steel') {
+      const fullUrl = location.pathname + location.search;
+      const matchIdx = STORYBOARD_SCENES.findIndex((s) => {
+        if (s.route === fullUrl) return true;
+        if (s.route.includes('?') && fullUrl === s.route) return true;
+        if (!s.route.includes('?') && s.route === location.pathname) return true;
+        // Fallback matching for base paths without query strings
+        if (location.pathname === '/organisation' && (location.search === '' || location.search === '?tab=profile') && s.route === '/organisation?tab=profile') return true;
+        if (location.pathname === '/data' && (location.search === '' || location.search === '?tab=telemetry') && s.route === '/data?tab=telemetry') return true;
+        if (location.pathname === '/emissions' && (location.search === '' || location.search === '?tab=factors') && s.route === '/emissions?tab=factors') return true;
+        if (location.pathname === '/pcf' && (location.search === '' || location.search === '?tab=projects') && s.route === '/pcf?tab=projects') return true;
+        return false;
+      });
+      if (matchIdx !== -1 && matchIdx !== currentSceneIdx) {
+        setCurrentSceneIdx(matchIdx);
+      }
     }
-  }, [currentSceneIdx, autoNav, activeScenario, navigate, scene.route]);
+  }, [location.pathname, location.search, activeScenario]);
 
   // Handle auto-play timer
   useEffect(() => {
@@ -48,7 +63,11 @@ export const GoldenPathBar: React.FC<GoldenPathBarProps> = ({
       interval = setInterval(() => {
         setCurrentSceneIdx((prev) => {
           if (prev < totalScenes - 1) {
-            return prev + 1;
+            const nextIdx = prev + 1;
+            if (autoNav && activeScenario === 'steel') {
+              navigate(STORYBOARD_SCENES[nextIdx].route);
+            }
+            return nextIdx;
           } else {
             setIsPlaying(false);
             return prev;
@@ -59,17 +78,25 @@ export const GoldenPathBar: React.FC<GoldenPathBarProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isPlaying, totalScenes]);
+  }, [isPlaying, totalScenes, autoNav, activeScenario, navigate]);
 
   const handleNext = () => {
     if (currentSceneIdx < totalScenes - 1) {
-      setCurrentSceneIdx((prev) => prev + 1);
+      const nextIdx = currentSceneIdx + 1;
+      setCurrentSceneIdx(nextIdx);
+      if (autoNav && activeScenario === 'steel') {
+        navigate(STORYBOARD_SCENES[nextIdx].route);
+      }
     }
   };
 
   const handlePrev = () => {
     if (currentSceneIdx > 0) {
-      setCurrentSceneIdx((prev) => prev - 1);
+      const prevIdx = currentSceneIdx - 1;
+      setCurrentSceneIdx(prevIdx);
+      if (autoNav && activeScenario === 'steel') {
+        navigate(STORYBOARD_SCENES[prevIdx].route);
+      }
     }
   };
 
@@ -77,6 +104,9 @@ export const GoldenPathBar: React.FC<GoldenPathBarProps> = ({
     const idx = parseInt(e.target.value, 10);
     if (!isNaN(idx) && idx >= 0 && idx < totalScenes) {
       setCurrentSceneIdx(idx);
+      if (autoNav && activeScenario === 'steel') {
+        navigate(STORYBOARD_SCENES[idx].route);
+      }
     }
   };
 

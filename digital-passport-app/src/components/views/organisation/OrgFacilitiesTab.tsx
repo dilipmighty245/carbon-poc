@@ -17,7 +17,8 @@ import {
   Zap,
   Globe,
   PlusCircle,
-  Trash2
+  Trash2,
+  Layers
 } from 'lucide-react';
 
 export interface Facility {
@@ -49,6 +50,77 @@ export interface Facility {
 }
 
 export const initialFacilities: Facility[] = [
+  {
+    id: "FAC-ST-001",
+    name: "Hyderabad Manufacturing Facility",
+    type: "Steel Rolling & EAF Mill",
+    country: "India",
+    countryCode: "IN",
+    address: "IDAL Industrial Area, Hyderabad, Telangana 500037, India",
+    status: "Active",
+    processesCount: 4,
+    devicesCount: 12,
+    dataCompleteness: 98,
+    emissions: "16,330 tCO₂e",
+    readiness: "Audit-Ready",
+    geo: { lat: "17.3850° N", lng: "78.4867° E", timezone: "IST (UTC+5:30)" },
+    productionCapacity: "120,000 tonnes / year",
+    operatingHours: "24/7 · Continuous Cast",
+    manager: {
+      name: "Ramesh Varma",
+      title: "VP Steel Operations",
+      email: "r.varma@saurient-steel.com",
+    },
+    energySources: ["Telangana Grid Power", "Schneider PAS800 Substation", "Solar 2.5 MW"],
+    utilities: ["GAIL Natural Gas Pipeline", "Industrial Cooling Recirculation"],
+    products: ["Hot-Rolled Steel Coil (ST-2026-00981)", "S355JR Structural Steel"],
+    emissionSources: [
+      { name: "Schneider PAS800 EAF Power SCADA", scope: "Scope 2" },
+      { name: "Reheating Furnace Natural Gas", scope: "Scope 1" },
+      { name: "Direct Reduced Iron (DRI) Precursor", scope: "Scope 3" },
+    ],
+    processTree: [
+      {
+        id: "PRC-ST-01",
+        name: "Electric Arc Furnace (EAF) & Melting Shop",
+        lines: [
+          {
+            id: "LINE-EAF-01",
+            name: "EAF Melt Shop Line 1",
+            meters: [
+              { name: "Schneider PAS800 Power Meter (MTR-PAS800-EL01)", type: "kWh Telemetry" },
+              { name: "Substation Transformer Meter T-01", type: "High Voltage Import" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "PRC-ST-02",
+        name: "Reheating Furnace & Hot Rolling Mill",
+        lines: [
+          {
+            id: "LINE-MILL-01",
+            name: "Hot Strip Mill Line A (7208 39 00)",
+            meters: [
+              { name: "GAIL Natural Gas Flow Meter (MTR-GAS-02)", type: "Gas Flow Telemetry" },
+              { name: "Reheating Furnace Temp Sensor TS-04", type: "Thermal Logger" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "PRC-ST-03",
+        name: "Coil Finishing, Strapping & Port Freight",
+        lines: [
+          {
+            id: "LINE-STRAP-01",
+            name: "Automatic Strapping & QR Line",
+            meters: [{ name: "Certified Batch Scale & QR Scanner S-01", type: "Mass Scale" }],
+          },
+        ],
+      },
+    ],
+  },
   {
     id: "FAC-GH-001",
     name: "Tema Processing Plant",
@@ -217,7 +289,11 @@ export const initialFacilities: Facility[] = [
   },
 ];
 
-export const OrgFacilitiesTab: React.FC = () => {
+interface OrgFacilitiesTabProps {
+  onSelectAssetTree?: () => void;
+}
+
+export const OrgFacilitiesTab: React.FC<OrgFacilitiesTabProps> = ({ onSelectAssetTree }) => {
   const [facilitiesList, setFacilitiesList] = useState<Facility[]>(initialFacilities);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -439,7 +515,20 @@ export const OrgFacilitiesTab: React.FC = () => {
                   <span><strong className="text-slate-900">{f.processesCount}</strong> Processes</span>
                   <span><strong className="text-slate-900">{f.devicesCount}</strong> Telemetry Devices</span>
                 </div>
-                <span className="font-mono font-bold text-slate-900">{f.emissions}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectAssetTree) onSelectAssetTree();
+                      else setSelectedFacility(f);
+                    }}
+                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-lg text-[11px] border border-emerald-200 transition-colors flex items-center gap-1"
+                  >
+                    <Layers className="w-3 h-3 text-emerald-700" />
+                    <span>View Asset Tree</span>
+                  </button>
+                  <span className="font-mono font-bold text-slate-900">{f.emissions}</span>
+                </div>
               </div>
             </div>
           ))}
@@ -482,12 +571,24 @@ export const OrgFacilitiesTab: React.FC = () => {
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-right">
-                    <button
-                      onClick={() => setSelectedFacility(f)}
-                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] transition-colors"
-                    >
-                      View Details
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          if (onSelectAssetTree) onSelectAssetTree();
+                          else setSelectedFacility(f);
+                        }}
+                        className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-lg text-[11px] border border-emerald-200 transition-colors flex items-center gap-1"
+                      >
+                        <Layers className="w-3 h-3 text-emerald-700" />
+                        <span>Asset Tree</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedFacility(f)}
+                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] transition-colors"
+                      >
+                        Details
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

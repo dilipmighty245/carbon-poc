@@ -22,6 +22,7 @@ const TAB_COMPONENTS: Record<string, React.FC> = {
   calculation: CalculationReviewTab,
   freeze: DataFreezeTab,
   verifiers: VerifiersTab,
+  onboarding: VerifiersTab,
   engagements: EngagementsTab,
   conflict: ConflictCheckTab,
   plan: PlanTab,
@@ -29,6 +30,7 @@ const TAB_COMPONENTS: Record<string, React.FC> = {
   findings: FindingsTab,
   corrections: CorrectionsTab,
   report: ReportTab,
+  statement: ReportTab,
 };
 
 function InnerMRVWorkflow() {

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Check, RefreshCw, Download, Search } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useScenario } from '../../context/ScenarioContext';
 
 export const GHGInventoryView: React.FC = () => {
+  const { scenario } = useScenario();
   const [activeTab, setActiveTab] = useState('Overview');
   const tabs = [
     'Overview',
@@ -17,61 +19,120 @@ export const GHGInventoryView: React.FC = () => {
     'Report',
   ];
 
-  const kpis = [
-    { title: 'Scope 1', val: '3,148 tCO₂e', subtitle: '24.5% of total', color: 'text-emerald-600' },
-    { title: 'Scope 2', val: '4,266 tCO₂e', subtitle: '33.2% of total', color: 'text-emerald-600' },
-    { title: 'Scope 3', val: '5,428 tCO₂e', subtitle: '42.3% of total', color: 'text-emerald-600' },
-    { title: 'Primary Data', val: '81%', subtitle: 'Target 85%', color: 'text-emerald-600' },
-  ];
+  const isSteel = scenario === 'steel';
 
-  const monthData = [
-    { month: 'O', val: 42, fill: '#f59e0b' },
-    { month: 'N', val: 56, fill: '#10b981' },
-    { month: 'D', val: 48, fill: '#06b6d4' },
-    { month: 'J', val: 68, fill: '#06b6d4' },
-    { month: 'F', val: 52, fill: '#10b981' },
-    { month: 'M', val: 76, fill: '#f59e0b' },
-    { month: 'A', val: 62, fill: '#06b6d4' },
-    { month: 'M', val: 82, fill: '#10b981' },
-    { month: 'J', val: 70, fill: '#06b6d4' },
-    { month: 'J', val: 88, fill: '#06b6d4' },
-    { month: 'A', val: 78, fill: '#10b981' },
-    { month: 'S', val: 94, fill: '#06b6d4' },
-  ];
+  const kpis = isSteel
+    ? [
+        { title: 'Scope 1 (Furnace Gas)', val: '4,200 kgCO₂e', subtitle: '25.7% of batch total', color: 'text-rose-600' },
+        { title: 'Scope 2 (PAS800 Power)', val: '3,580 kgCO₂e', subtitle: '21.9% of batch total', color: 'text-sky-600' },
+        { title: 'Scope 3 (Precursors)', val: '8,550 kgCO₂e', subtitle: '52.4% of batch total', color: 'text-emerald-600' },
+        { title: 'Primary Telemetry', val: '94%', subtitle: 'Schneider PAS800 & GAIL meters', color: 'text-emerald-600' },
+      ]
+    : [
+        { title: 'Scope 1', val: '3,148 tCO₂e', subtitle: '24.5% of total', color: 'text-emerald-600' },
+        { title: 'Scope 2', val: '4,266 tCO₂e', subtitle: '33.2% of total', color: 'text-emerald-600' },
+        { title: 'Scope 3', val: '5,428 tCO₂e', subtitle: '42.3% of total', color: 'text-emerald-600' },
+        { title: 'Primary Data', val: '81%', subtitle: 'Target 85%', color: 'text-emerald-600' },
+      ];
 
-  const gates = [
-    {
-      title: 'Identity and boundary',
-      subtitle: 'Complete and approved',
-      badge: 'PASSED',
-      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
-      icon: Check,
-      iconClass: 'text-emerald-600 bg-emerald-50',
-    },
-    {
-      title: 'Evidence and data quality',
-      subtitle: 'Two items need attention',
-      badge: 'REVIEW',
-      badgeClass: 'bg-amber-50 text-amber-700 border-amber-200/60',
-      icon: RefreshCw,
-      iconClass: 'text-amber-600 bg-amber-50',
-    },
-    {
-      title: 'Version provenance',
-      subtitle: 'Immutable calculation trace',
-      badge: 'AVAILABLE',
-      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
-      icon: Check,
-      iconClass: 'text-emerald-600 bg-emerald-50',
-    },
-  ];
+  const monthData = isSteel
+    ? [
+        { month: 'Oct', val: 1420, fill: '#10b981' },
+        { month: 'Nov', val: 1380, fill: '#10b981' },
+        { month: 'Dec', val: 1450, fill: '#06b6d4' },
+        { month: 'Jan', val: 1520, fill: '#06b6d4' },
+        { month: 'Feb', val: 1490, fill: '#10b981' },
+        { month: 'Mar', val: 1633, fill: '#10b981' },
+        { month: 'Apr', val: 1580, fill: '#06b6d4' },
+        { month: 'May', val: 1610, fill: '#10b981' },
+        { month: 'Jun', val: 1550, fill: '#06b6d4' },
+        { month: 'Jul', val: 1620, fill: '#06b6d4' },
+        { month: 'Aug', val: 1590, fill: '#10b981' },
+        { month: 'Sep', val: 1633, fill: '#10b981' },
+      ]
+    : [
+        { month: 'O', val: 42, fill: '#f59e0b' },
+        { month: 'N', val: 56, fill: '#10b981' },
+        { month: 'D', val: 48, fill: '#06b6d4' },
+        { month: 'J', val: 68, fill: '#06b6d4' },
+        { month: 'F', val: 52, fill: '#10b981' },
+        { month: 'M', val: 76, fill: '#f59e0b' },
+        { month: 'A', val: 62, fill: '#06b6d4' },
+        { month: 'M', val: 82, fill: '#10b981' },
+        { month: 'J', val: 70, fill: '#06b6d4' },
+        { month: 'J', val: 88, fill: '#06b6d4' },
+        { month: 'A', val: 78, fill: '#10b981' },
+        { month: 'S', val: 94, fill: '#06b6d4' },
+      ];
 
-  const records = [
-    { name: 'Natural gas · Boiler 2', qty: '182,400 Nm³', factor: '2.021 kgCO₂e/Nm³', emissions: '368.7 tCO₂e' },
-    { name: 'Grid electricity · Tema', qty: '2,410 MWh', factor: '0.385 kgCO₂e/kWh', emissions: '927.9 tCO₂e' },
-    { name: 'Purchased cocoa beans', qty: '8,460 t', factor: '0.412 tCO₂e/t', emissions: '3,485.5 tCO₂e' },
-    { name: 'Outbound freight', qty: '3.8m tkm', factor: '0.071 kgCO₂e/tkm', emissions: '269.8 tCO₂e' },
-  ];
+  const gates = isSteel
+    ? [
+        {
+          title: 'Identity and boundary',
+          subtitle: 'Saurient Demo Steel Industries Ltd · Hyderabad Plant',
+          badge: 'PASSED',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+          icon: Check,
+          iconClass: 'text-emerald-600 bg-emerald-50',
+        },
+        {
+          title: 'Telemetry & SCADA integrity',
+          subtitle: 'Schneider PAS800 SCADA & GAIL Gas Flow Meters',
+          badge: 'PASSED',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+          icon: Check,
+          iconClass: 'text-emerald-600 bg-emerald-50',
+        },
+        {
+          title: 'Version provenance',
+          subtitle: 'Google CEL DAG Rule Engine (STEEL-PCF-2026-v1.0)',
+          badge: 'AVAILABLE',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+          icon: Check,
+          iconClass: 'text-emerald-600 bg-emerald-50',
+        },
+      ]
+    : [
+        {
+          title: 'Identity and boundary',
+          subtitle: 'Complete and approved',
+          badge: 'PASSED',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+          icon: Check,
+          iconClass: 'text-emerald-600 bg-emerald-50',
+        },
+        {
+          title: 'Evidence and data quality',
+          subtitle: 'Two items need attention',
+          badge: 'REVIEW',
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200/60',
+          icon: RefreshCw,
+          iconClass: 'text-amber-600 bg-amber-50',
+        },
+        {
+          title: 'Version provenance',
+          subtitle: 'Immutable calculation trace',
+          badge: 'AVAILABLE',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+          icon: Check,
+          iconClass: 'text-emerald-600 bg-emerald-50',
+        },
+      ];
+
+  const records = isSteel
+    ? [
+        { name: 'Natural gas · Reheating Furnace F-01', qty: '2,000 m³', factor: '2.100 kgCO₂e/m³', emissions: '4,200 kgCO₂e' },
+        { name: 'EAF Substation power · PAS800 SCADA', qty: '5,000 kWh', factor: '0.716 kgCO₂e/kWh', emissions: '3,580 kgCO₂e' },
+        { name: 'Direct Reduced Iron (DRI) precursor', qty: '11,000 kg', factor: '0.777 kgCO₂e/kg', emissions: '8,550 kgCO₂e' },
+        { name: 'Inbound Electric Rail freight (Odisha -> Hyd)', qty: '10,200 tkm', factor: '0.028 kgCO₂e/tkm', emissions: '285.6 kgCO₂e' },
+        { name: 'Outbound Sea freight (Nhava Sheva -> Antwerp)', qty: '125,000 tkm', factor: '0.012 kgCO₂e/tkm', emissions: '1,500 kgCO₂e' },
+      ]
+    : [
+        { name: 'Natural gas · Boiler 2', qty: '182,400 Nm³', factor: '2.021 kgCO₂e/Nm³', emissions: '368.7 tCO₂e' },
+        { name: 'Grid electricity · Tema', qty: '2,410 MWh', factor: '0.385 kgCO₂e/kWh', emissions: '927.9 tCO₂e' },
+        { name: 'Purchased cocoa beans', qty: '8,460 t', factor: '0.412 tCO₂e/t', emissions: '3,485.5 tCO₂e' },
+        { name: 'Outbound freight', qty: '3.8m tkm', factor: '0.071 kgCO₂e/tkm', emissions: '269.8 tCO₂e' },
+      ];
 
   return (
     <div className="space-y-6">
@@ -85,7 +146,7 @@ export const GHGInventoryView: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
-            <span>Tema Processing Plant</span>
+            <span>{scenario === 'steel' ? 'Hyderabad Steel Facility' : 'Tema Processing Plant'}</span>
             <span className="text-slate-400 text-[10px]">▾</span>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
