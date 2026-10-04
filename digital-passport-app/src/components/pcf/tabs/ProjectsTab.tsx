@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePcf } from '../../../context/PcfContext';
+import { useScenario } from '../../../context/ScenarioContext';
 import { KpiCard } from '../common/KpiCard';
 import { StatusChip } from '../common/StatusChip';
 import { CreateProjectWizard } from '../CreateProjectWizard';
 import { PROJECT_ROWS, PROJECT_KPIS } from '../../../data/pcfData';
+import { STEEL_PROJECT_ROWS } from '../../../data/steelData';
 import type { ProjectRow } from '../../../types/pcf';
 import { FolderKanban, FileEdit, Calculator, Clock, BadgeCheck, MoreHorizontal } from 'lucide-react';
 import { toast } from '../../../utils/toast';
@@ -15,13 +18,22 @@ interface ProjectsTabProps {
 
 export function ProjectsTab({ registerPrimary, search }: ProjectsTabProps) {
   const { setActiveTab } = usePcf();
+  const { scenario } = useScenario();
+  const navigate = useNavigate();
   const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
     registerPrimary(() => setWizardOpen(true));
   }, [registerPrimary]);
 
-  const rows = PROJECT_ROWS.filter((r) => {
+  const isSteel = scenario === 'steel';
+  const projectRows = isSteel ? STEEL_PROJECT_ROWS : PROJECT_ROWS;
+
+  const kpis = isSteel
+    ? { total: 3, draft: 1, calcReady: 1, awaitingVerification: 0, verified: 1 }
+    : PROJECT_KPIS;
+
+  const rows = projectRows.filter((r) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return [r.id, r.product, r.batch, r.facility, r.status].some((v) =>
@@ -30,22 +42,23 @@ export function ProjectsTab({ registerPrimary, search }: ProjectsTabProps) {
   });
 
   const open = (r: ProjectRow) => {
-    if (r.primary) {
-      toast.success(`Opened ${r.id}`);
+    if (r.primary || r.id === 'PCF-ST-2026-001' || r.id === 'PCF-GH-2026-001') {
+      toast.success(`Opened ${r.id} (${r.product})`);
       setActiveTab('output');
+      navigate('/pcf?tab=output');
     } else {
-      toast.info(`${r.id} is a demo record — only PCF-GH-2026-001 is fully populated.`);
+      toast.info(`${r.id} is a demo record — only ${isSteel ? 'PCF-ST-2026-001' : 'PCF-GH-2026-001'} is fully populated.`);
     }
   };
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <KpiCard label="Total PCF Projects" value={PROJECT_KPIS.total} icon={FolderKanban} testId="kpi-total" />
-        <KpiCard label="Draft" value={PROJECT_KPIS.draft} icon={FileEdit} testId="kpi-draft" />
-        <KpiCard label="Calculation Ready" value={PROJECT_KPIS.calcReady} icon={Calculator} testId="kpi-calcready" />
-        <KpiCard label="Awaiting Verification" value={PROJECT_KPIS.awaitingVerification} icon={Clock} testId="kpi-awaiting" />
-        <KpiCard label="Verified" value={PROJECT_KPIS.verified} accent icon={BadgeCheck} testId="kpi-verified" />
+        <KpiCard label="Total PCF Projects" value={kpis.total} icon={FolderKanban} testId="kpi-total" />
+        <KpiCard label="Draft" value={kpis.draft} icon={FileEdit} testId="kpi-draft" />
+        <KpiCard label="Calculation Ready" value={kpis.calcReady} icon={Calculator} testId="kpi-calcready" />
+        <KpiCard label="Awaiting Verification" value={kpis.awaitingVerification} icon={Clock} testId="kpi-awaiting" />
+        <KpiCard label="Verified" value={kpis.verified} accent icon={BadgeCheck} testId="kpi-verified" />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">

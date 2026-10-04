@@ -8,6 +8,7 @@ import { EvidenceVaultTab } from './mrv/tabs/EvidenceVaultTab';
 import { CalculationReviewTab } from './mrv/tabs/CalculationReviewTab';
 import { DataFreezeTab } from './mrv/tabs/DataFreezeTab';
 import { VerifiersTab } from './mrv/tabs/VerifiersTab';
+import { OnboardingTab } from './mrv/tabs/OnboardingTab';
 import { EngagementsTab } from './mrv/tabs/EngagementsTab';
 import { ConflictCheckTab } from './mrv/tabs/ConflictCheckTab';
 import { PlanTab } from './mrv/tabs/PlanTab';
@@ -22,7 +23,7 @@ const TAB_COMPONENTS: Record<string, React.FC> = {
   calculation: CalculationReviewTab,
   freeze: DataFreezeTab,
   verifiers: VerifiersTab,
-  onboarding: VerifiersTab,
+  onboarding: OnboardingTab,
   engagements: EngagementsTab,
   conflict: ConflictCheckTab,
   plan: PlanTab,

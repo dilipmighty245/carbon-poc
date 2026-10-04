@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { toast } from '../../utils/toast';
+import { useScenario } from '../../context/ScenarioContext';
 
 const STEPS = [
   'Organisation', 'Facility', 'Product', 'Batch', 'Reporting Period',
   'PCF Methodology', 'Declared / Functional Unit', 'Boundary', 'Review', 'Create',
 ];
 
-const DEFAULTS = {
+const COCOA_DEFAULTS = {
   organisation: 'Asante Cocoa Cooperative',
   facility: 'Tema Processing Plant',
   product: 'Refined Cocoa Butter',
@@ -18,18 +19,37 @@ const DEFAULTS = {
   boundary: 'Cradle-to-Gate',
 };
 
+const STEEL_DEFAULTS = {
+  organisation: 'Saurient Demo Steel Industries Ltd',
+  facility: 'Hyderabad Manufacturing Facility',
+  product: 'Hot-Rolled Steel Coil',
+  batch: 'ST-2026-00981',
+  period: 'Q1 2026',
+  methodology: 'ISO 14067 / EU CBAM Regulation',
+  unit: '1 kg Hot-Rolled Steel Coil',
+  boundary: 'Cradle-to-Gate',
+};
+
 interface CreateProjectWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function CreateProjectWizard({ open, onOpenChange }: CreateProjectWizardProps) {
+  const { scenario } = useScenario();
+  const isSteel = scenario === 'steel';
+  const defaults = isSteel ? STEEL_DEFAULTS : COCOA_DEFAULTS;
+
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState(DEFAULTS);
+  const [form, setForm] = useState(defaults);
+
+  useEffect(() => {
+    setForm(defaults);
+  }, [scenario]);
 
   if (!open) return null;
 
-  const set = (k: keyof typeof DEFAULTS, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: keyof typeof COCOA_DEFAULTS, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const close = () => {
     onOpenChange(false);
@@ -38,7 +58,7 @@ export function CreateProjectWizard({ open, onOpenChange }: CreateProjectWizardP
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const back = () => setStep((s) => Math.max(s - 1, 0));
   const create = () => {
-    toast.success('PCF project created (simulated). Opening PCF-GH-2026-001.');
+    toast.success(`PCF project created (simulated). Opening ${isSteel ? 'PCF-ST-2026-001' : 'PCF-GH-2026-001'}.`);
     close();
   };
 
@@ -91,22 +111,22 @@ export function CreateProjectWizard({ open, onOpenChange }: CreateProjectWizardP
         <div className="min-h-[180px] py-2">
           {step === 0 && (
             <Field label="Select Organisation">
-              <Sel k="organisation" options={['Asante Cocoa Cooperative', 'Kumasi Growers Union', 'Volta Cocoa Ltd']} />
+              <Sel k="organisation" options={isSteel ? ['Saurient Demo Steel Industries Ltd', 'Odisha Mining Corp', 'Deccan Steel Ltd'] : ['Asante Cocoa Cooperative', 'Kumasi Growers Union', 'Volta Cocoa Ltd']} />
             </Field>
           )}
           {step === 1 && (
             <Field label="Select Facility">
-              <Sel k="facility" options={['Tema Processing Plant', 'Kumasi Facility']} />
+              <Sel k="facility" options={isSteel ? ['Hyderabad Manufacturing Facility', 'Telangana Rolling Mill'] : ['Tema Processing Plant', 'Kumasi Facility']} />
             </Field>
           )}
           {step === 2 && (
             <Field label="Select Product">
-              <Sel k="product" options={['Refined Cocoa Butter', 'Natural Cocoa Powder', 'Cocoa Liquor']} />
+              <Sel k="product" options={isSteel ? ['Hot-Rolled Steel Coil', 'Cold-Rolled Steel Sheet', 'Galvanised Steel Rebar'] : ['Refined Cocoa Butter', 'Natural Cocoa Powder', 'Cocoa Liquor']} />
             </Field>
           )}
           {step === 3 && (
             <Field label="Select Batch">
-              <Sel k="batch" options={['CB-2026-001', 'CB-2026-002', 'CB-2026-003']} />
+              <Sel k="batch" options={isSteel ? ['ST-2026-00981', 'ST-2026-00982', 'ST-2026-00810'] : ['CB-2026-001', 'CB-2026-002', 'CB-2026-003']} />
             </Field>
           )}
           {step === 4 && (

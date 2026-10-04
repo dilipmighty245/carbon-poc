@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
-import { Building2, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Building2, ShieldCheck, UserCheck, ArrowRight } from 'lucide-react';
 import { useMrv } from '../../../../context/MrvContext';
 import { VERIFIER_ORGS, VERIFIER_TEAM } from '../../../../data/mrvMockData';
 import { Kpi, StatusBadge, Field, SectionCard } from '../shared';
 import type { VerifierOrgItem } from '../../../../types/mrv';
+import { toast } from '../../../../utils/toast';
 
 export const VerifiersTab: React.FC = () => {
   const { engagement } = useMrv();
+  const navigate = useNavigate();
   const [sel, setSel] = useState<VerifierOrgItem | null>(null);
+
+  const handleAssign = (orgName: string) => {
+    toast.success(`Assigned ${orgName} — opening verifier team onboarding.`);
+    navigate('/mrv/onboarding');
+  };
 
   return (
     <div className="space-y-5">
@@ -25,7 +33,19 @@ export const VerifiersTab: React.FC = () => {
         </p>
       </div>
 
-      <SectionCard title="Verifier Organisations" testid="verifier-orgs">
+      <SectionCard 
+        title="Verifier Organisations" 
+        testid="verifier-orgs"
+        action={
+          <button
+            onClick={() => handleAssign('Meridian Assurance Ltd')}
+            className="text-xs font-bold text-slate-950 bg-[#00E599] hover:bg-[#00c985] px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 shadow-xs"
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>Assign Verifier</span>
+          </button>
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -47,12 +67,21 @@ export const VerifiersTab: React.FC = () => {
                   <td className="py-3 pr-3 text-slate-500">{o.engagements}</td>
                   <td className="py-3 pr-3"><StatusBadge status={o.status} /></td>
                   <td className="py-3 pr-3">
-                    <button
-                      onClick={() => setSel(o)}
-                      className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg hover:bg-emerald-100"
-                    >
-                      Profile
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleAssign(o.org)}
+                        className="text-xs font-bold text-slate-950 bg-[#00E599] hover:bg-[#00c985] px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <span>Assign Verifier</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => setSel(o)}
+                        className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg hover:bg-slate-200"
+                      >
+                        Profile
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

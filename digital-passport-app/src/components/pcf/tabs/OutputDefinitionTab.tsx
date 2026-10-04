@@ -89,13 +89,13 @@ export function OutputDefinitionTab({ registerPrimary }: OutputDefinitionTabProp
                 data-testid="select-unit-basis"
                 className="w-full h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-500"
               >
-                <option value="kg">kg Refined Cocoa Butter</option>
-                <option value="t">tonne Refined Cocoa Butter</option>
-                <option value="carton">25 kg carton</option>
+                <option value="kg">kg {project.product}</option>
+                <option value="t">tonne {project.product}</option>
+                <option value="unit">Packaging Unit ({project.packagingUnit})</option>
               </select>
             </Field>
             <Field label="Batch Production">
-              <ReadValue value="100,000 kg" />
+              <ReadValue value={`${project.productionQuantity.toLocaleString()} kg`} />
             </Field>
             <Field label="Packaging Unit">
               <ReadValue value={project.packagingUnit} />

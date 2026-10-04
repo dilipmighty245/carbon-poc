@@ -47,6 +47,7 @@ export const TABS = [
   { key: "calculation", label: "Calculation Review", primary: "Complete Review" },
   { key: "freeze", label: "Data Freeze", primary: "Freeze Dataset" },
   { key: "verifiers", label: "Verifiers", primary: "Assign Verifier" },
+  { key: "onboarding", label: "Onboarding", primary: "Run Conflict Check" },
   { key: "engagements", label: "Engagements", primary: "Open Engagement" },
   { key: "conflict", label: "Conflict Check", primary: "Complete Conflict Check" },
   { key: "plan", label: "Plan", primary: "Approve Verification Plan" },
