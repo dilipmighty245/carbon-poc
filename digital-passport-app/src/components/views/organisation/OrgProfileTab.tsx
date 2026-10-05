@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { getOrgProfile, saveOrgProfile } from '../../../api/client';
-import { useScenario } from '../../../context/ScenarioContext';
 import {
   Building2,
   Scale,
@@ -184,26 +183,12 @@ export const auditTrailData = [
 ];
 
 export const OrgProfileTab: React.FC = () => {
-  const { scenario } = useScenario();
-  const defaultProfile = scenario === 'steel' ? steelOrgProfile : initialOrgProfile;
-
-  const [profile, setProfile] = useState<OrgProfileData>(defaultProfile);
+  const [profile, setProfile] = useState<OrgProfileData>(initialOrgProfile);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [draftProfile, setDraftProfile] = useState<OrgProfileData>(defaultProfile);
+  const [draftProfile, setDraftProfile] = useState<OrgProfileData>(initialOrgProfile);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    setProfile(defaultProfile);
-    setDraftProfile(defaultProfile);
-  }, [scenario]);
-
-  useEffect(() => {
-    if (scenario === 'steel') {
-      setProfile(steelOrgProfile);
-      setDraftProfile(steelOrgProfile);
-      return;
-    }
-
     getOrgProfile()
       .then((data) => {
         if (data && data.legalName && data.legalName !== 'Saurient Industrial Group B.V.') {
@@ -220,7 +205,7 @@ export const OrgProfileTab: React.FC = () => {
         }
       })
       .catch((err) => console.warn('Failed to load profile from backend:', err));
-  }, [scenario]);
+  }, []);
 
   const handleOpenEdit = () => {
     setDraftProfile({ ...profile });

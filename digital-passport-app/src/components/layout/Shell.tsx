@@ -16,15 +16,12 @@ import {
   Settings,
   Bell
 } from 'lucide-react';
-import { GoldenPathBar } from './GoldenPathBar';
-import { useScenario } from '../../context/ScenarioContext';
 
 interface ShellProps {
   children: React.ReactNode;
 }
 
 export const Shell: React.FC<ShellProps> = ({ children }) => {
-  const { scenario, setScenario } = useScenario();
   const navItems = [
     { to: '/dashboard', label: 'Home', icon: Home, end: true },
     { to: '/organisation', label: 'Organisation', icon: Building2 },
@@ -91,27 +88,17 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           {/* Footer Demo Info */}
           <div className="p-4 border-t border-slate-800/80">
             <div className="mb-2">
-              <span className="inline-block px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-900 bg-[#00E599] rounded-md shadow-xs">
-                {scenario === 'steel' ? 'GOLDEN PATH DEMO' : 'AGRI DEMO'}
+              <span className="inline-block px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-900 bg-white rounded-md shadow-xs">
+                DEMO
               </span>
             </div>
-            <p className="text-xs font-bold text-white truncate">
-              {scenario === 'steel' ? 'Saurient Demo Steel Industries' : 'Asante Cocoa Cooperative'}
-            </p>
-            <p className="text-[10px] text-slate-400 mt-0.5">
-              {scenario === 'steel' ? 'Hyderabad Steel Facility • 2026' : 'Tema Processing Plant • FY 2026'}
-            </p>
+            <p className="text-xs font-bold text-white truncate">Saurient Demo Manufacturing Ltd.</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Company Operator • FY 2026</p>
           </div>
         </aside>
 
         {/* Main Content & Top Header Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          {/* Golden Path Presentation Toolbar */}
-          <GoldenPathBar 
-            activeScenario={scenario} 
-            onScenarioChange={(newScenario) => setScenario(newScenario)} 
-          />
-
           {/* Top Bar */}
           <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40">
             <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
@@ -134,7 +121,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
               <div className="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                {scenario === 'steel' ? 'Hyderabad Steel Facility' : 'Tema Processing Plant'}
+                Tema Processing Plant
               </div>
 
               <button className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg relative transition-colors">
