@@ -1,0 +1,3 @@
+FROM scratch
+COPY saurient-controller-bin /controller
+ENTRYPOINT ["/controller"]
