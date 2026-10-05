@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Leaf, ShieldCheck, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { loginUser } from '../../api/client';
 
 export const LoginView: React.FC = () => {
@@ -37,13 +37,15 @@ export const LoginView: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-white flex flex-col md:flex-row items-center justify-between p-8 md:p-16">
       {/* Left Branding Column */}
       <div className="max-w-xl space-y-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xl shadow-lg">
-            S
-          </div>
+        <div className="flex items-center gap-5">
+          <img
+            src="/saurient-logo.png"
+            alt="Saurient Logo"
+            className="w-28 h-28 md:w-36 md:h-36 object-contain rounded-3xl drop-shadow-2xl shrink-0"
+          />
           <div>
-            <h1 className="text-xl font-bold tracking-tight">SAURIENT</h1>
-            <p className="text-xs text-slate-400 font-medium">Carbon Passport Platform</p>
+            <h1 className="text-4xl md:text-5xl font-black tracking-widest text-white">SAURIENT</h1>
+            <p className="text-xs md:text-sm text-emerald-400 font-bold uppercase tracking-wider mt-1">Carbon Passport Platform</p>
           </div>
         </div>
 

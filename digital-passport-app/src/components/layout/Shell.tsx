@@ -12,15 +12,19 @@ import {
   QrCode, 
   TrendingUp, 
   Compass,
+  Landmark,
   Settings,
   Bell
 } from 'lucide-react';
+import { GoldenPathBar } from './GoldenPathBar';
+import { useScenario } from '../../context/ScenarioContext';
 
 interface ShellProps {
   children: React.ReactNode;
 }
 
 export const Shell: React.FC<ShellProps> = ({ children }) => {
+  const { scenario, setScenario } = useScenario();
   const navItems = [
     { to: '/dashboard', label: 'Home', icon: Home, end: true },
     { to: '/organisation', label: 'Organisation', icon: Building2 },
@@ -32,6 +36,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     { to: '/mrv', label: 'MRV & Verification', icon: GitMerge },
     { to: '/passport', label: 'Carbon Passports', icon: QrCode },
     { to: '/analytics', label: 'Analytics', icon: TrendingUp },
+    { to: '/government', label: 'Government Policy', icon: Landmark },
     { to: '/paris-alignment', label: 'Paris Alignment', icon: Compass },
     { to: '/admin', label: 'Administration', icon: Settings },
   ];
@@ -43,13 +48,15 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         <aside className="w-64 bg-[#0C1322] text-white flex flex-col justify-between hidden md:flex shrink-0 border-r border-slate-800">
           <div>
             {/* Logo Header */}
-            <div className="p-5 flex items-center gap-3 border-b border-slate-800/80">
-              <div className="w-8 h-8 rounded-lg bg-[#00E599] text-slate-950 font-black text-lg flex items-center justify-center shadow-md">
-                S
-              </div>
+            <div className="p-4 flex items-center gap-3.5 border-b border-slate-800/80">
+              <img
+                src="/saurient-logo.png"
+                alt="Saurient Logo"
+                className="w-20 h-20 object-contain rounded-2xl drop-shadow-xl shrink-0"
+              />
               <div>
-                <h1 className="font-black text-sm tracking-wider text-white uppercase leading-tight">SAURIENT</h1>
-                <p className="text-[10px] text-slate-400 font-medium">Carbon Passport Platform</p>
+                <h1 className="font-black text-lg tracking-widest text-white uppercase leading-tight">SAURIENT</h1>
+                <p className="text-xs text-emerald-400 font-bold tracking-wide">Carbon Passport</p>
               </div>
             </div>
 
@@ -84,17 +91,27 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           {/* Footer Demo Info */}
           <div className="p-4 border-t border-slate-800/80">
             <div className="mb-2">
-              <span className="inline-block px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-900 bg-white rounded-md shadow-xs">
-                DEMO
+              <span className="inline-block px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-900 bg-[#00E599] rounded-md shadow-xs">
+                {scenario === 'steel' ? 'GOLDEN PATH DEMO' : 'AGRI DEMO'}
               </span>
             </div>
-            <p className="text-xs font-bold text-white truncate">Saurient Demo Manufacturing Ltd.</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">Company Operator • FY 2026</p>
+            <p className="text-xs font-bold text-white truncate">
+              {scenario === 'steel' ? 'Saurient Demo Steel Industries' : 'Asante Cocoa Cooperative'}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              {scenario === 'steel' ? 'Hyderabad Steel Facility • 2026' : 'Tema Processing Plant • FY 2026'}
+            </p>
           </div>
         </aside>
 
         {/* Main Content & Top Header Area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+          {/* Golden Path Presentation Toolbar */}
+          <GoldenPathBar 
+            activeScenario={scenario} 
+            onScenarioChange={(newScenario) => setScenario(newScenario)} 
+          />
+
           {/* Top Bar */}
           <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40">
             <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
@@ -117,7 +134,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
               <div className="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                Tema Processing Plant
+                {scenario === 'steel' ? 'Hyderabad Steel Facility' : 'Tema Processing Plant'}
               </div>
 
               <button className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg relative transition-colors">

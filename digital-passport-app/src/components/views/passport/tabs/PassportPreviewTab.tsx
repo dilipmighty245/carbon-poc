@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { Leaf, Award, ShieldCheck, QrCode, FileText, ArrowRight, Printer } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
 
@@ -8,23 +8,45 @@ interface PassportPreviewTabProps {
 }
 
 export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passports }) => {
+  const { passportId: pathPassportId } = useParams<{ passportId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const passportId = searchParams.get('id');
+  const passportId = pathPassportId || searchParams.get('id');
 
-  const passport = passports.find((p) => p.passport_metadata.passport_id === passportId) || passports[0];
+  const passport =
+    passports.find(
+      (p) =>
+        p.passport_metadata?.passport_id === passportId ||
+        p.product_summary?.batch_number === passportId
+    ) || passports[0];
 
-  if (!passport) {
-    return (
-      <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-sm max-w-xl mx-auto">
-        <h3 className="text-base font-bold text-slate-900">No Passport Selected for Preview</h3>
-      </div>
-    );
-  }
+  const issuedAt =
+    (passport as any)?.audit_trail?.issued_at ||
+    passport?.passport_metadata?.issuance_date ||
+    '2026-03-28T10:00:00Z';
 
-  const prod = passport.product_summary;
-  const footprint = passport.carbon_footprint;
-  const verifier = passport.verification;
+  const prod = {
+    product_name: passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil',
+    producer_organization: passport?.product_summary?.producer_organization || 'Saurient Demo Steel Industries Ltd',
+    batch_number: passport?.product_summary?.batch_number || 'ST-2026-00981',
+    quantity: passport?.product_summary?.batch_size?.quantity ?? (passport?.product_summary as any)?.quantity ?? 10000,
+    unit: passport?.product_summary?.batch_size?.unit ?? (passport?.product_summary as any)?.unit ?? 'kg',
+    facility_name: passport?.product_summary?.facility?.name || 'Hyderabad Manufacturing Facility',
+    country_of_origin: passport?.product_summary?.facility?.country_of_origin || 'India',
+    hs_code: passport?.product_summary?.hs_code || '7208 39 00',
+  };
+
+  const footprint = {
+    intensity_value: passport?.carbon_footprint?.intensity_per_unit?.value ?? 1.633,
+    intensity_unit: passport?.carbon_footprint?.intensity_per_unit?.unit || 'kg CO2e/kg',
+    total_emissions: passport?.carbon_footprint?.total_batch_footprint_kg_co2e ?? 16330,
+  };
+
+  const verifier = {
+    body: (passport as any)?.verification?.verifier_body || passport?.methodology_and_audit?.verification_body || 'Meridian Assurance Ltd',
+    statement_id: (passport as any)?.verification?.verification_statement_id || passport?.methodology_and_audit?.verification_id || 'ST-VER-2026-0981',
+    assurance_level: (passport as any)?.verification?.assurance_level || passport?.methodology_and_audit?.assurance_level || 'Reasonable Assurance',
+  };
 
   return (
     <div className="space-y-6">
@@ -46,7 +68,7 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
             <span>Print PDF</span>
           </button>
           <button
-            onClick={() => navigate(`/passport/sign-issue?id=${passport.passport_metadata.passport_id}`)}
+            onClick={() => navigate(`/passport/sign-issue/${passport?.passport_metadata?.passport_id || 'pas-st-2026-00981'}`)}
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
           >
             <span>Proceed to Sign & Issue</span>
@@ -64,20 +86,27 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
 
         {/* Passport Header */}
         <div className="flex items-start justify-between border-b-2 border-emerald-100 pb-6">
-          <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-              EU CBAM Compliant Digital Carbon Passport
-            </span>
-            <h1 className="text-2xl font-black text-slate-900 pt-1">{prod.product_name}</h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Produced by <span className="font-bold text-slate-800">{prod.producer_organization}</span>
-            </p>
+          <div className="flex items-start gap-4">
+            <img
+              src="/saurient-logo.png"
+              alt="Saurient Platform Logo"
+              className="w-20 h-20 md:w-24 md:h-24 object-contain rounded-2xl drop-shadow-md shrink-0"
+            />
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+                EU CBAM Compliant Digital Carbon Passport
+              </span>
+              <h1 className="text-2xl font-black text-slate-900 pt-1">{prod.product_name}</h1>
+              <p className="text-xs text-slate-500 font-medium">
+                Produced by <span className="font-bold text-slate-800">{prod.producer_organization}</span>
+              </p>
+            </div>
           </div>
 
           <div className="text-right space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block">PASSPORT ID</span>
             <span className="text-xs font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 block">
-              {passport.passport_metadata.passport_id}
+              {passport?.passport_metadata?.passport_id || 'pas-st-2026-00981'}
             </span>
           </div>
         </div>
@@ -90,12 +119,12 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
               Verified Carbon Intensity
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black">{footprint.intensity_per_unit.value}</span>
-              <span className="text-xs font-bold text-emerald-200">{footprint.intensity_per_unit.unit}</span>
+              <span className="text-4xl font-black">{footprint.intensity_value}</span>
+              <span className="text-xs font-bold text-emerald-200">{footprint.intensity_unit}</span>
             </div>
             <div className="pt-2 border-t border-emerald-500/40 text-xs text-emerald-100 flex items-center justify-between">
               <span>Total Batch Emissions</span>
-              <span className="font-bold text-white">{footprint.total_batch_footprint_kg_co2e.toLocaleString()} kgCO2e</span>
+              <span className="font-bold text-white">{footprint.total_emissions.toLocaleString()} kgCO2e</span>
             </div>
           </div>
 
@@ -108,11 +137,11 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-400">Body:</span>
-                <span className="font-bold text-slate-800">{verifier.verifier_body}</span>
+                <span className="font-bold text-slate-800">{verifier.body}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Statement:</span>
-                <span className="font-mono font-bold text-slate-800">{verifier.verification_statement_id}</span>
+                <span className="font-mono font-bold text-slate-800">{verifier.statement_id}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Level:</span>
@@ -138,7 +167,7 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
             </div>
             <div className="p-3">
               <span className="text-[10px] text-slate-400 block font-medium">Facility / Origin</span>
-              <span className="font-bold text-slate-800">{prod.facility.name} ({prod.facility.country_of_origin})</span>
+              <span className="font-bold text-slate-800">{prod.facility_name} ({prod.country_of_origin})</span>
             </div>
             <div className="p-3">
               <span className="text-[10px] text-slate-400 block font-medium">CN / HS Code</span>
@@ -160,7 +189,7 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
           </div>
 
           <div className="text-right font-mono text-[10px] text-slate-400">
-            Issued: {new Date(passport.audit_trail.issued_at).toLocaleDateString()}
+            Issued: {new Date(issuedAt).toLocaleDateString()}
           </div>
         </div>
       </div>
