@@ -87,9 +87,11 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
         {/* Passport Header */}
         <div className="flex items-start justify-between border-b-2 border-emerald-100 pb-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 p-1 flex items-center justify-center shrink-0 shadow-sm">
-              <img src="/saurient-logo.png" alt="Saurient Platform Logo" className="w-full h-full object-contain rounded-lg" />
-            </div>
+            <img
+              src="/saurient-logo.png"
+              alt="Saurient Platform Logo"
+              className="w-20 h-20 md:w-24 md:h-24 object-contain rounded-2xl drop-shadow-md shrink-0"
+            />
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
                 EU CBAM Compliant Digital Carbon Passport

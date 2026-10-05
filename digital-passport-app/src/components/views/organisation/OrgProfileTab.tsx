@@ -258,9 +258,11 @@ export const OrgProfileTab: React.FC = () => {
       {/* Header Banner */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-slate-950 border border-slate-800 p-1.5 flex items-center justify-center shadow-md overflow-hidden shrink-0">
-            <img src="/saurient-logo.png" alt="Saurient Logo" className="w-full h-full object-contain rounded-xl" />
-          </div>
+          <img
+            src="/saurient-logo.png"
+            alt="Saurient Logo"
+            className="w-24 h-24 md:w-28 md:h-28 object-contain rounded-3xl drop-shadow-md shrink-0"
+          />
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">Legal Identity</span>

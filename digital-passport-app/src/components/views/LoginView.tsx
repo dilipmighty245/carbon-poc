@@ -37,13 +37,15 @@ export const LoginView: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-white flex flex-col md:flex-row items-center justify-between p-8 md:p-16">
       {/* Left Branding Column */}
       <div className="max-w-xl space-y-8">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-emerald-500/30 p-1 flex items-center justify-center shadow-xl overflow-hidden shrink-0">
-            <img src="/saurient-logo.png" alt="Saurient Logo" className="w-full h-full object-contain rounded-xl" />
-          </div>
+        <div className="flex items-center gap-5">
+          <img
+            src="/saurient-logo.png"
+            alt="Saurient Logo"
+            className="w-28 h-28 md:w-36 md:h-36 object-contain rounded-3xl drop-shadow-2xl shrink-0"
+          />
           <div>
-            <h1 className="text-2xl font-black tracking-wider text-white">SAURIENT</h1>
-            <p className="text-xs text-emerald-400 font-semibold">Carbon Passport Platform</p>
+            <h1 className="text-4xl md:text-5xl font-black tracking-widest text-white">SAURIENT</h1>
+            <p className="text-xs md:text-sm text-emerald-400 font-bold uppercase tracking-wider mt-1">Carbon Passport Platform</p>
           </div>
         </div>
 

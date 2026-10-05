@@ -197,11 +197,15 @@ export const RegistrationView: React.FC = () => {
     <div className="min-h-screen bg-slate-100 flex">
       {/* Left Stepper Sidebar */}
       <aside className="w-72 bg-slate-950 text-white p-6 space-y-6 hidden md:block shrink-0 border-r border-slate-800">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-          <div className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-base">S</div>
+        <div className="flex items-center gap-3.5 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <img
+            src="/saurient-logo.png"
+            alt="Saurient Logo"
+            className="w-20 h-20 object-contain rounded-2xl drop-shadow-xl shrink-0"
+          />
           <div>
-            <h1 className="font-bold text-sm tracking-wide text-white">SAURIENT</h1>
-            <p className="text-[10px] text-slate-400 font-medium">Company Registration</p>
+            <h1 className="font-black text-lg tracking-widest text-white uppercase leading-tight">SAURIENT</h1>
+            <p className="text-xs text-emerald-400 font-bold tracking-wide">Company Registration</p>
           </div>
         </div>
 
