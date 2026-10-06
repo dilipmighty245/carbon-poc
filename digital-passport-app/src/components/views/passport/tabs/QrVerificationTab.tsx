@@ -10,9 +10,9 @@ interface QrVerificationTabProps {
 export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports }) => {
   const [searchParams] = useSearchParams();
   const passportId = searchParams.get('id');
-  const passport = passports.find((p) => p.passport_metadata.passport_id === passportId) || passports[0];
+  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId) || passports[0];
 
-  const verificationUrl = `https://passport.saurient.org/verify/${passport?.passport_metadata.passport_id || 'PASSPORT-2026-COCOA-001'}`;
+  const verificationUrl = `https://passport.saurient.org/verify/${passport?.passport_metadata?.passport_id || passportId || 'PASSPORT-2026-COCOA-001'}`;
 
   const copyUrl = () => {
     navigator.clipboard.writeText(verificationUrl);
@@ -57,7 +57,7 @@ export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports 
             <rect x="45" y="20" width="8" height="20" fill="#064e3b" />
           </svg>
           <span className="text-[10px] font-mono text-slate-300 block mt-3 uppercase tracking-widest">
-            {passport?.passport_metadata.passport_id}
+            {passport?.passport_metadata?.passport_id || passportId || 'PASSPORT-2026-COCOA-001'}
           </span>
         </div>
 
@@ -65,16 +65,18 @@ export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports 
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2 text-left">
           <div className="flex justify-between items-center border-b border-slate-200 pb-1.5">
             <span className="text-slate-500 font-medium">Product Name</span>
-            <span className="font-bold text-slate-900">{passport?.product_summary.product_name}</span>
+            <span className="font-bold text-slate-900">{passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil'}</span>
           </div>
           <div className="flex justify-between items-center border-b border-slate-200 pb-1.5">
             <span className="text-slate-500 font-medium">Carbon Intensity</span>
-            <span className="font-bold text-emerald-700">{passport?.carbon_footprint.intensity_per_unit.value} kgCO2e</span>
+            <span className="font-bold text-emerald-700">
+              {passport?.carbon_footprint?.intensity_per_unit?.value ?? 1.633} {passport?.carbon_footprint?.intensity_per_unit?.unit || 'kgCO2e'}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-500 font-medium">Verification Status</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-              {passport?.passport_metadata.status}
+              {passport?.passport_metadata?.status || 'VERIFIED'}
             </span>
           </div>
         </div>

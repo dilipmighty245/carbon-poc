@@ -10,7 +10,7 @@ interface PassportSharingTabProps {
 export const PassportSharingTab: React.FC<PassportSharingTabProps> = ({ passports }) => {
   const [searchParams] = useSearchParams();
   const passportId = searchParams.get('id');
-  const passport = passports.find((p) => p.passport_metadata.passport_id === passportId) || passports[0];
+  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId) || passports[0];
 
   const [shareMode, setShareMode] = useState<'PUBLIC' | 'RESTRICTED' | 'CUSTOMS_ONLY'>('RESTRICTED');
   const [allowedEmails, setAllowedEmails] = useState('customs-clearance@eu.europa.eu, auditor@bureauveritas.com');
@@ -38,7 +38,9 @@ export const PassportSharingTab: React.FC<PassportSharingTabProps> = ({ passport
         {/* Selected Target */}
         <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
           <span className="font-bold text-slate-500">Target Passport:</span>
-          <span className="font-bold text-slate-900">{passport?.product_summary.product_name} ({passport?.passport_metadata.passport_id})</span>
+          <span className="font-bold text-slate-900">
+            {passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil'} ({passport?.passport_metadata?.passport_id || passportId || 'PASS-2026-375-v1.0'})
+          </span>
         </div>
 
         <form onSubmit={handleSave} className="space-y-6 text-xs">

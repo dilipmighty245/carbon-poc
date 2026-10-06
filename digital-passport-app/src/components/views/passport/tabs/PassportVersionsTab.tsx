@@ -10,15 +10,15 @@ interface PassportVersionsTabProps {
 export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passports }) => {
   const [searchParams] = useSearchParams();
   const passportId = searchParams.get('id');
-  const passport = passports.find((p) => p.passport_metadata.passport_id === passportId) || passports[0];
+  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId) || passports[0];
 
   const versionHistory = [
     {
       version: 'v1.1 (Current Issued)',
-      date: passport?.audit_trail.issued_at || '2026-03-28T14:30:00Z',
-      author: passport?.audit_trail.issued_by || 'Dr. Elena Rostova',
+      date: (passport as any)?.audit_trail?.issued_at || passport?.passport_metadata?.issuance_date || '2026-03-28T14:30:00Z',
+      author: (passport as any)?.audit_trail?.issued_by || 'Dr. Elena Rostova',
       changes: 'Updated CBAM carbon price paid reconciliation & finalized verifier statement',
-      hash: passport?.audit_trail.dataset_lock_hash || '0xa7b4c9e1f2d34890',
+      hash: (passport as any)?.audit_trail?.dataset_lock_hash || passport?.passport_metadata?.cryptographic_hash || '0xa7b4c9e1f2d34890',
       active: true,
     },
     {
@@ -48,7 +48,7 @@ export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passpo
         <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
           <span className="font-bold text-slate-500">Target Product:</span>
           <span className="font-bold text-slate-900">
-            {passport?.product_summary.product_name} ({passport?.passport_metadata.passport_id})
+            {passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil'} ({passport?.passport_metadata?.passport_id || passportId || 'PASS-2026-375-v1.0'})
           </span>
         </div>
 
