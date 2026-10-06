@@ -14,7 +14,8 @@ import {
   Compass,
   Landmark,
   Settings,
-  Bell
+  Bell,
+  Network
 } from 'lucide-react';
 
 interface ShellProps {
@@ -32,6 +33,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
     { to: '/cbam', label: 'CBAM', icon: Shield },
     { to: '/mrv', label: 'MRV & Verification', icon: GitMerge },
     { to: '/passport', label: 'Carbon Passports', icon: QrCode },
+    { to: '/trace', label: 'Trace Carbon', icon: Network },
     { to: '/analytics', label: 'Analytics', icon: TrendingUp },
     { to: '/government', label: 'Government Policy', icon: Landmark },
     { to: '/paris-alignment', label: 'Paris Alignment', icon: Compass },

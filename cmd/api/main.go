@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -18,8 +17,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	_ "github.com/lib/pq"
-	"github.com/redis/go-redis/v9"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,14 +29,13 @@ import (
 
 	saurientv1alpha1 "saurient-platform/api/v1alpha1"
 	"saurient-platform/internal/api"
-	"saurient-platform/internal/repository"
+	"saurient-platform/internal/nexus"
 	"saurient-platform/internal/tenant"
 	nexusdsl "saurient-platform/pkg/nexus"
 )
 
 type VerificationServer struct {
-	pgRepo      *repository.PostgresRepository
-	redisRepo   *repository.RedisRepository
+	nexusEngine *nexus.NexusGraphEngine
 	k8sClient   client.Client
 	gqlSchema   graphql.Schema
 	rulesMutex  sync.RWMutex
@@ -412,10 +408,10 @@ const graphiqlHTML = `<!DOCTYPE html>
 
 func main() {
 	port := getEnv("PORT", "8080")
-	dbConnStr := getEnv("POSTGRES_URL", "postgresql://saurient:saurient123@localhost:5432/saurient_db?sslmode=disable")
-	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
 
-	server := &VerificationServer{}
+	server := &VerificationServer{
+		nexusEngine: nexus.GetNexusEngine(),
+	}
 
 	// Initialize Nexus GraphQL Schema Engine
 	gqlSchema, gqlErr := nexusdsl.BuildNexusGraphQLSchema(server)
@@ -423,27 +419,7 @@ func main() {
 		log.Fatalf("Failed to build Nexus GraphQL Schema: %v", gqlErr)
 	}
 	server.gqlSchema = gqlSchema
-	log.Println("API Gateway initialized Nexus GraphQL Schema Engine")
-
-	// Initialize Postgres
-	db, err := sql.Open("postgres", dbConnStr)
-	if err == nil && db.Ping() == nil {
-		server.pgRepo = repository.NewPostgresRepository(db)
-		log.Println("API Gateway connected to PostgreSQL")
-	} else {
-		log.Printf("API Gateway starting with Postgres disconnected: %v", err)
-	}
-
-	// Initialize Redis
-	rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	if err := rdb.Ping(ctx).Err(); err == nil {
-		server.redisRepo = repository.NewRedisRepository(rdb)
-		log.Println("API Gateway connected to Redis")
-	} else {
-		log.Printf("API Gateway starting with Redis disconnected: %v", err)
-	}
+	log.Println("API Gateway initialized Nexus GraphQL Schema & Graph Engine")
 
 	// Initialize Kubernetes client for Product CR management
 	k8sScheme := runtime.NewScheme()
@@ -549,8 +525,15 @@ func main() {
 	http.HandleFunc("/api/v1/passports/", server.handlePassports)
 
 	// 8. Organisation & Internal Workspace REST API
-	orgHandler := api.NewOrganisationHandler(server.pgRepo)
+	orgHandler := api.NewOrganisationHandler(server.nexusEngine)
 	orgHandler.RegisterRoutes(http.DefaultServeMux)
+
+	// 9. ACV Verification & Nexus Lineage REST API
+	acvHandler := api.NewACVHandler(server.nexusEngine)
+	acvHandler.RegisterRoutes(http.DefaultServeMux)
+
+	lineageHandler := api.NewLineageHandler()
+	lineageHandler.RegisterRoutes(http.DefaultServeMux)
 
 	// Redirect root / to /swagger/
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -570,10 +553,10 @@ func main() {
 }
 
 func (s *VerificationServer) GetPassportByID(ctx context.Context, passportID string) (interface{}, error) {
-	if s.pgRepo == nil {
+	if s.nexusEngine == nil {
 		return nil, nil
 	}
-	p, err := s.pgRepo.GetPassportByID(ctx, passportID)
+	p, err := s.nexusEngine.GetPassportByID(ctx, passportID)
 	if err != nil || p == nil {
 		return nil, err
 	}
@@ -918,13 +901,10 @@ func (s *VerificationServer) handleDeleteProduct(w http.ResponseWriter, r *http.
 	}
 
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
-	if s.pgRepo != nil {
-		_ = s.pgRepo.DeletePassportByBatchNumber(tenantCtx, id)
-		_ = s.pgRepo.DeletePassportByPassportID(tenantCtx, id)
-	}
-
-	if s.redisRepo != nil {
-		_ = s.redisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", tenantID, id))
+	if s.nexusEngine != nil {
+		_ = s.nexusEngine.DeletePassportByBatchNumber(tenantCtx, id)
+		_ = s.nexusEngine.DeletePassportByPassportID(tenantCtx, id)
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, id))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -1123,12 +1103,12 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 	passportID := uuid.New().String()
 	tenantCtx := tenant.WithTenant(ctx, req.TenantID)
 
-	if s.pgRepo != nil {
-		if existing, err := s.pgRepo.GetPassportByBatchNumber(tenantCtx, req.BatchID); err == nil && existing != nil {
+	if s.nexusEngine != nil {
+		if existing, err := s.nexusEngine.GetPassportByBatchNumber(tenantCtx, req.BatchID); err == nil && existing != nil {
 			passportID = existing.PassportID
 		} else {
 			calcDetailsJSON, _ := json.Marshal(activityMap)
-			passportModel := &repository.CarbonPassportModel{
+			passportModel := &nexus.CarbonPassportModel{
 				PassportID:         passportID,
 				TenantID:           req.TenantID,
 				FacilityID:         req.FacilityID,
@@ -1137,12 +1117,12 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 				VerificationStatus: "Pending",
 				CalculationDetails: calcDetailsJSON,
 			}
-			auditModel := &repository.PassportAuditTrailModel{
+			auditModel := &nexus.PassportAuditTrailModel{
 				PassportID:    passportID,
 				ActionType:    "Pending",
 				ChangePayload: calcDetailsJSON,
 			}
-			_ = s.pgRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
+			_ = s.nexusEngine.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
 		}
 	}
 
@@ -1632,13 +1612,10 @@ func (s *VerificationServer) handleDeletePassport(w http.ResponseWriter, r *http
 	}
 
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
-	if s.pgRepo != nil {
-		_ = s.pgRepo.DeletePassportByPassportID(tenantCtx, passportID)
-		_ = s.pgRepo.DeletePassportByBatchNumber(tenantCtx, passportID)
-	}
-
-	if s.redisRepo != nil {
-		_ = s.redisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
+	if s.nexusEngine != nil {
+		_ = s.nexusEngine.DeletePassportByPassportID(tenantCtx, passportID)
+		_ = s.nexusEngine.DeletePassportByBatchNumber(tenantCtx, passportID)
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -1695,434 +1672,12 @@ type ActivityDataInput struct {
 	} `json:"scope_3_upstream,omitempty"`
 }
 
-type PassportMetadata struct {
-	PassportID        string `json:"passport_id"`
-	UniqueQRCode      string `json:"unique_qr_code"`
-	CryptographicHash string `json:"cryptographic_hash"`
-	IssuanceDate      string `json:"issuance_date"`
-	Status            string `json:"status"`
+func buildRichPassportResponse(p *nexus.CarbonPassportModel) nexus.RichDigitalCarbonPassportResponse {
+	return nexus.BuildRichPassportResponse(p)
 }
 
-type FacilitySummary struct {
-	Name            string `json:"name"`
-	Location        string `json:"location"`
-	CountryOfOrigin string `json:"country_of_origin"`
-}
 
-type BatchSizeSummary struct {
-	Quantity float64 `json:"quantity"`
-	Unit     string  `json:"unit"`
-}
 
-type ProductSummary struct {
-	Commodity            string           `json:"commodity"`
-	ProductName          string           `json:"product_name"`
-	BatchNumber          string           `json:"batch_number"`
-	ProducerOrganization string           `json:"producer_organization"`
-	Facility             FacilitySummary  `json:"facility"`
-	ProductionDate       string           `json:"production_date"`
-	BatchSize            BatchSizeSummary `json:"batch_size"`
-}
-
-type ValuePercentage struct {
-	ValueKgCO2e float64 `json:"value_kg_co2e"`
-	Percentage  float64 `json:"percentage"`
-}
-
-type ScopeBreakdown struct {
-	Scope1Direct         ValuePercentage `json:"scope_1_direct"`
-	Scope2IndirectEnergy ValuePercentage `json:"scope_2_indirect_energy"`
-	Scope3ValueChain     ValuePercentage `json:"scope_3_value_chain"`
-}
-
-type IntensityPerUnit struct {
-	Value float64 `json:"value"`
-	Unit  string  `json:"unit"`
-}
-
-type SourceBreakdown struct {
-	RawMaterials       ValuePercentage `json:"raw_materials"`
-	Electricity        ValuePercentage `json:"electricity"`
-	LogisticsTransport ValuePercentage `json:"logistics_transport"`
-	OnSiteFuel         ValuePercentage `json:"on_site_fuel"`
-	Packaging          ValuePercentage `json:"packaging"`
-}
-
-type CarbonFootprintSummary struct {
-	TotalBatchFootprintKgCO2e float64          `json:"total_batch_footprint_kg_co2e"`
-	IntensityPerUnit          IntensityPerUnit `json:"intensity_per_unit"`
-	ScopeBreakdown            ScopeBreakdown   `json:"scope_breakdown"`
-	SourceBreakdown           SourceBreakdown  `json:"source_breakdown"`
-}
-
-type DataQualityScore struct {
-	PrimaryDataPercent   float64 `json:"primary_data_percent"`
-	SecondaryDataPercent float64 `json:"secondary_data_percent"`
-	OverallQuality       string  `json:"overall_quality"`
-}
-
-type VerificationDetails struct {
-	VerifierName              string   `json:"verifier_name"`
-	VerificationDate          string   `json:"verification_date"`
-	VerifierComments          string   `json:"verifier_comments"`
-	EvidenceDocumentsAttached []string `json:"evidence_documents_attached"`
-}
-
-type MethodologyAndAudit struct {
-	StandardAligned        string              `json:"standard_aligned"`
-	SystemBoundary         string              `json:"system_boundary"`
-	EmissionFactorDatabase string              `json:"emission_factor_database"`
-	CalculationVersion     string              `json:"calculation_version"`
-	DataQualityScore       DataQualityScore    `json:"data_quality_score"`
-	VerificationDetails    VerificationDetails `json:"verification_details"`
-}
-
-type ComplianceExports struct {
-	CBAMReady              bool     `json:"cbam_ready"`
-	TargetExportMarket     string   `json:"target_export_market"`
-	ExportFormatsAvailable []string `json:"export_formats_available"`
-}
-
-type RichDigitalCarbonPassportResponse struct {
-	PassportMetadata    PassportMetadata       `json:"passport_metadata"`
-	ProductSummary      ProductSummary          `json:"product_summary"`
-	CarbonFootprint     CarbonFootprintSummary  `json:"carbon_footprint"`
-	MethodologyAndAudit MethodologyAndAudit   `json:"methodology_and_audit"`
-	ComplianceExports   ComplianceExports       `json:"compliance_exports"`
-}
-
-func buildRichPassportResponse(p *repository.CarbonPassportModel) RichDigitalCarbonPassportResponse {
-	var calcMap map[string]interface{}
-	if len(p.CalculationDetails) > 0 {
-		_ = json.Unmarshal(p.CalculationDetails, &calcMap)
-	}
-
-	var batchData map[string]interface{}
-	if bd, ok := calcMap["batch_data"].(map[string]interface{}); ok {
-		batchData = bd
-	}
-
-	var activityData map[string]interface{}
-	if ad, ok := calcMap["activity_data"].(map[string]interface{}); ok {
-		activityData = ad
-	}
-
-	var methodAudit map[string]interface{}
-	if ma, ok := calcMap["methodology_and_audit"].(map[string]interface{}); ok {
-		methodAudit = ma
-	}
-
-	passportID := p.PassportID
-	if passportID == "" {
-		passportID = "pas_" + uuid.New().String()
-	}
-
-	issuanceDate := p.IssuedAt.Format(time.RFC3339)
-	if p.IssuedAt.IsZero() {
-		issuanceDate = time.Now().Format(time.RFC3339)
-	}
-
-	status := "VERIFIED"
-	if p.VerificationStatus != "" {
-		status = p.VerificationStatus
-	}
-
-	commodity := p.CommodityType
-	if bdComm, ok := batchData["commodity"].(string); ok && bdComm != "" {
-		commodity = bdComm
-	}
-
-	productName := commodity
-	if bdName, ok := batchData["product_name"].(string); ok && bdName != "" {
-		productName = bdName
-	}
-
-	batchNum := p.BatchNumber
-	if bdBatch, ok := batchData["batch_id"].(string); ok && bdBatch != "" {
-		batchNum = bdBatch
-	}
-
-	producerOrg := p.TenantID
-	if bdOrg, ok := batchData["producer_organization"].(string); ok && bdOrg != "" {
-		producerOrg = bdOrg
-	}
-
-	facilityName := p.FacilityID
-	if bdFacName, ok := batchData["facility_name"].(string); ok && bdFacName != "" {
-		facilityName = bdFacName
-	}
-
-	facilityLoc := ""
-	if bdFacLoc, ok := batchData["facility_location"].(string); ok && bdFacLoc != "" {
-		facilityLoc = bdFacLoc
-	}
-
-	countryOfOrigin := ""
-	if bdCountry, ok := batchData["country_of_origin"].(string); ok && bdCountry != "" {
-		countryOfOrigin = bdCountry
-	} else if facilityLoc != "" {
-		parts := strings.Split(facilityLoc, ",")
-		countryOfOrigin = strings.TrimSpace(parts[len(parts)-1])
-	}
-
-	prodDate := p.IssuedAt.Format("2006-01-02")
-	if bdProdDate, ok := batchData["production_date"].(string); ok && bdProdDate != "" {
-		if strings.Contains(bdProdDate, "T") {
-			prodDate = strings.Split(bdProdDate, "T")[0]
-		} else {
-			prodDate = bdProdDate
-		}
-	}
-
-	batchQty := 1.0
-	if bdQty, ok := batchData["batch_size_quantity"].(float64); ok && bdQty > 0 {
-		batchQty = bdQty
-	}
-
-	batchUnit := "kg"
-	if bdUnit, ok := batchData["unit_of_measure"].(string); ok && bdUnit != "" {
-		batchUnit = bdUnit
-	}
-
-	exportMkt := ""
-	if bdExp, ok := batchData["export_market"].(string); ok && bdExp != "" {
-		exportMkt = bdExp
-	}
-
-	// Dynamic calculation of scopes & component sources
-	var fuelVal, elecVal, rawMatVal, pkgVal, logVal float64
-
-	// 1. Scope 1 / Fuel
-	if s1Direct, ok := activityData["scope_1_direct"].(map[string]interface{}); ok {
-		if val, ok := s1Direct["value_kg_co2e"].(float64); ok && val > 0 {
-			fuelVal = val
-		} else if liters, ok := s1Direct["fuel_consumed_liters"].(float64); ok && liters > 0 {
-			// Diesel / Fuel factor ~ 2.68 kg CO2e / liter
-			fuelVal = math.Round(liters*2.68*100) / 100
-		}
-	}
-	if fuelVal == 0 {
-		fuelVal = p.Scope1KgCO2e
-	}
-
-	// 2. Scope 2 / Electricity
-	if s2Indirect, ok := activityData["scope_2_indirect"].(map[string]interface{}); ok {
-		if val, ok := s2Indirect["value_kg_co2e"].(float64); ok && val > 0 {
-			elecVal = val
-		} else if kwh, ok := s2Indirect["electricity_consumed_kwh"].(float64); ok && kwh > 0 {
-			// Grid electricity factor ~ 0.45 kg CO2e / kWh
-			elecVal = math.Round(kwh*0.45*100) / 100
-		}
-	}
-	if elecVal == 0 {
-		elecVal = p.Scope2KgCO2e
-	}
-
-	// 3. Scope 3 Breakdown
-	if s3Upstream, ok := activityData["scope_3_upstream"].(map[string]interface{}); ok {
-		if val, ok := s3Upstream["value_kg_co2e"].(float64); ok && val > 0 {
-			// If pre-computed scope 3 total is provided, assign default sub-distribution
-			rawMatVal = math.Round(val*0.53*100) / 100
-			logVal = math.Round(val*0.30*100) / 100
-			pkgVal = math.Round(val*0.17*100) / 100
-		} else {
-			// Compute Raw Materials
-			if bom, ok := s3Upstream["bill_of_materials"].([]interface{}); ok {
-				for _, item := range bom {
-					if itemMap, ok := item.(map[string]interface{}); ok {
-						qty, _ := itemMap["quantity"].(float64)
-						// Cocoa beans / material factor calculation
-						rawMatVal += qty * 0.175
-					}
-				}
-				rawMatVal = math.Round(rawMatVal*100) / 100
-			}
-
-			// Compute Packaging
-			if pkg, ok := s3Upstream["packaging"].(map[string]interface{}); ok {
-				qty, _ := pkg["quantity"].(float64)
-				// Packaging factor ~ 1.875 kg CO2e / bag
-				pkgVal = math.Round(qty*1.875*100) / 100
-			}
-
-			// Compute Logistics
-			if log, ok := s3Upstream["logistics"].(map[string]interface{}); ok {
-				if dist, ok := log["distance_km"].(float64); ok && dist > 0 {
-					logVal = math.Round(dist*0.12*100) / 100
-				} else {
-					logVal = 120.0 // route logistics estimation
-				}
-			}
-		}
-	}
-
-	s1 := fuelVal
-	s2 := elecVal
-	s3 := rawMatVal + pkgVal + logVal
-	if s3 == 0 {
-		s3 = p.Scope3KgCO2e
-		if s3 > 0 {
-			rawMatVal = math.Round(s3*0.53*100) / 100
-			logVal = math.Round(s3*0.30*100) / 100
-			pkgVal = math.Round(s3*0.17*100) / 100
-		}
-	}
-
-	total := s1 + s2 + s3
-	if total == 0 && p.TotalFootprintKg > 0 {
-		total = p.TotalFootprintKg
-	}
-
-	// Dynamic Percentages Calculation
-	var s1Pct, s2Pct, s3Pct float64
-	var rawMatPct, elecPct, logPct, fuelPct, pkgPct float64
-
-	if total > 0 {
-		s1Pct = math.Round((s1/total)*100*100) / 100
-		s2Pct = math.Round((s2/total)*100*100) / 100
-		s3Pct = math.Round((s3/total)*100*100) / 100
-
-		rawMatPct = math.Round((rawMatVal/total)*100*100) / 100
-		elecPct = math.Round((elecVal/total)*100*100) / 100
-		logPct = math.Round((logVal/total)*100*100) / 100
-		fuelPct = math.Round((fuelVal/total)*100*100) / 100
-		pkgPct = math.Round((pkgVal/total)*100*100) / 100
-	}
-
-	intensityVal := 0.0
-	if batchQty > 0 {
-		intensityVal = math.Round((total/batchQty)*100) / 100
-	}
-
-	// Methodology & Audit details
-	stdAligned := "GHG Protocol (Product Life Cycle Accounting)"
-	sysBoundary := "Cradle-to-Gate"
-	efDB := fmt.Sprintf("DEFRA %d (%s factors)", time.Now().Year(), countryOfOrigin)
-	calcVer := "v1.2.0"
-	verifierName := "Independent Third-Party Verification"
-	verifierComments := "Verified against energy meter telemetry logs, fuel invoices, and supply chain manifests."
-	evidenceDocs := []string{}
-
-	if methodAudit != nil {
-		if std, ok := methodAudit["standard_aligned"].(string); ok && std != "" {
-			stdAligned = std
-		}
-		if sys, ok := methodAudit["system_boundary"].(string); ok && sys != "" {
-			sysBoundary = sys
-		}
-		if ef, ok := methodAudit["emission_factor_database"].(string); ok && ef != "" {
-			efDB = ef
-		}
-		if ver, ok := methodAudit["calculation_version"].(string); ok && ver != "" {
-			calcVer = ver
-		}
-		if vDetails, ok := methodAudit["verification_details"].(map[string]interface{}); ok {
-			if vName, ok := vDetails["verifier_name"].(string); ok && vName != "" {
-				verifierName = vName
-			}
-			if vComments, ok := vDetails["verifier_comments"].(string); ok && vComments != "" {
-				verifierComments = vComments
-			}
-			if docs, ok := vDetails["evidence_documents_attached"].([]interface{}); ok {
-				for _, d := range docs {
-					if docStr, ok := d.(string); ok {
-						evidenceDocs = append(evidenceDocs, docStr)
-					}
-				}
-			}
-		}
-	}
-
-	if len(evidenceDocs) == 0 {
-		// Extract telemetry data sources dynamically from activity_data
-		if s1Map, ok := activityData["scope_1_direct"].(map[string]interface{}); ok {
-			if src, ok := s1Map["data_source"].(string); ok && src != "" {
-				evidenceDocs = append(evidenceDocs, src+"_log.pdf")
-			}
-		}
-		if s2Map, ok := activityData["scope_2_indirect"].(map[string]interface{}); ok {
-			if src, ok := s2Map["data_source"].(string); ok && src != "" {
-				evidenceDocs = append(evidenceDocs, src+"_log.pdf")
-			}
-		}
-	}
-
-	return RichDigitalCarbonPassportResponse{
-		PassportMetadata: PassportMetadata{
-			PassportID:        passportID,
-			UniqueQRCode:      "https://verify.saurient.com/passport/" + passportID,
-			CryptographicHash: p.DataHash,
-			IssuanceDate:      issuanceDate,
-			Status:            status,
-		},
-		ProductSummary: ProductSummary{
-			Commodity:            commodity,
-			ProductName:          productName,
-			BatchNumber:          batchNum,
-			ProducerOrganization: producerOrg,
-			Facility: FacilitySummary{
-				Name:            facilityName,
-				Location:        facilityLoc,
-				CountryOfOrigin: countryOfOrigin,
-			},
-			ProductionDate: prodDate,
-			BatchSize: BatchSizeSummary{
-				Quantity: batchQty,
-				Unit:     batchUnit,
-			},
-		},
-		CarbonFootprint: CarbonFootprintSummary{
-			TotalBatchFootprintKgCO2e: math.Round(total*100) / 100,
-			IntensityPerUnit: IntensityPerUnit{
-				Value: intensityVal,
-				Unit:  fmt.Sprintf("kg CO2e per %s", batchUnit),
-			},
-			ScopeBreakdown: ScopeBreakdown{
-				Scope1Direct: ValuePercentage{
-					ValueKgCO2e: math.Round(s1*100) / 100,
-					Percentage:  s1Pct,
-				},
-				Scope2IndirectEnergy: ValuePercentage{
-					ValueKgCO2e: math.Round(s2*100) / 100,
-					Percentage:  s2Pct,
-				},
-				Scope3ValueChain: ValuePercentage{
-					ValueKgCO2e: math.Round(s3*100) / 100,
-					Percentage:  s3Pct,
-				},
-			},
-			SourceBreakdown: SourceBreakdown{
-				RawMaterials:       ValuePercentage{ValueKgCO2e: rawMatVal, Percentage: rawMatPct},
-				Electricity:        ValuePercentage{ValueKgCO2e: elecVal, Percentage: elecPct},
-				LogisticsTransport: ValuePercentage{ValueKgCO2e: logVal, Percentage: logPct},
-				OnSiteFuel:         ValuePercentage{ValueKgCO2e: fuelVal, Percentage: fuelPct},
-				Packaging:          ValuePercentage{ValueKgCO2e: pkgVal, Percentage: pkgPct},
-			},
-		},
-		MethodologyAndAudit: MethodologyAndAudit{
-			StandardAligned:        stdAligned,
-			SystemBoundary:         sysBoundary,
-			EmissionFactorDatabase: efDB,
-			CalculationVersion:     calcVer,
-			DataQualityScore: DataQualityScore{
-				PrimaryDataPercent:   70.0,
-				SecondaryDataPercent: 30.0,
-				OverallQuality:       "98%",
-			},
-			VerificationDetails: VerificationDetails{
-				VerifierName:              verifierName,
-				VerificationDate:          p.IssuedAt.Format(time.RFC3339),
-				VerifierComments:          verifierComments,
-				EvidenceDocumentsAttached: evidenceDocs,
-			},
-		},
-		ComplianceExports: ComplianceExports{
-			CBAMReady:              true,
-			TargetExportMarket:     exportMkt,
-			ExportFormatsAvailable: []string{"JSON", "XML", "PDF_Certificate"},
-		},
-	}
-}
 
 func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -2203,7 +1758,7 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 	hashBytes := sha256.Sum256([]byte(dataStr))
 	dataHashStr := hex.EncodeToString(hashBytes[:])
 
-	passportModel := &repository.CarbonPassportModel{
+	passportModel := &nexus.CarbonPassportModel{
 		PassportID:         passportID,
 		TenantID:           req.TenantID,
 		FacilityID:         req.FacilityID,
@@ -2219,7 +1774,7 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 		IssuedAt:           time.Now(),
 	}
 
-	auditModel := &repository.PassportAuditTrailModel{
+	auditModel := &nexus.PassportAuditTrailModel{
 		PassportID:    passportID,
 		ActionType:    "Created",
 		PreviousHash:  "",
@@ -2230,19 +1785,16 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 	// Create Product CR in Kubernetes (best-effort, triggers reconciler pipeline)
 	s.createProductCRFromPassport(ctx, &req, passportID)
 
-	if s.pgRepo != nil {
+	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
-		if err := s.pgRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
-			http.Error(w, `{"error":"failed to persist passport to database"}`, http.StatusInternalServerError)
-			return
-		}
+		_ = s.nexusEngine.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
 	}
 
-	richResp := repository.BuildRichPassportResponse(passportModel)
+	richResp := nexus.BuildRichPassportResponse(passportModel)
 
-	if s.redisRepo != nil {
+	if s.nexusEngine != nil {
 		cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportModel.PassportID)
-		_ = s.redisRepo.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
+		_ = s.nexusEngine.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -2299,16 +1851,16 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 	hashBytes := sha256.Sum256([]byte(dataStr))
 	dataHashStr := hex.EncodeToString(hashBytes[:])
 
-	// Fetch the previous DataHash from Postgres for the audit trail.
+	// Fetch the previous DataHash for the audit trail.
 	previousHash := ""
-	if s.pgRepo != nil {
+	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
-		if prev, err := s.pgRepo.GetPassportByID(tenantCtx, passportID); err == nil && prev != nil {
+		if prev, err := s.nexusEngine.GetPassportByID(tenantCtx, passportID); err == nil && prev != nil {
 			previousHash = prev.DataHash
 		}
 	}
 
-	passportModel := &repository.CarbonPassportModel{
+	passportModel := &nexus.CarbonPassportModel{
 		PassportID:         passportID,
 		TenantID:           req.TenantID,
 		FacilityID:         req.FacilityID,
@@ -2324,7 +1876,7 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 		IssuedAt:           time.Now(),
 	}
 
-	auditModel := &repository.PassportAuditTrailModel{
+	auditModel := &nexus.PassportAuditTrailModel{
 		PassportID:    passportID,
 		ActionType:    "Updated",
 		PreviousHash:  previousHash,
@@ -2332,19 +1884,16 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 		ChangePayload: rawBytes,
 	}
 
-	if s.pgRepo != nil {
+	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
-		if err := s.pgRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
-			http.Error(w, `{"error":"failed to update passport in database"}`, http.StatusInternalServerError)
-			return
-		}
+		_ = s.nexusEngine.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel)
 	}
 
-	richResp := repository.BuildRichPassportResponse(passportModel)
+	richResp := nexus.BuildRichPassportResponse(passportModel)
 
-	if s.redisRepo != nil {
+	if s.nexusEngine != nil {
 		cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportID)
-		_ = s.redisRepo.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
+		_ = s.nexusEngine.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -2363,7 +1912,7 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 		tenantID = r.URL.Query().Get("tenant_id")
 	}
 	if tenantID == "" {
-		tenantID = "org_saurient_demo"
+		tenantID = "tenant-default"
 	}
 
 	if passportID == "" {
@@ -2371,10 +1920,9 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if s.redisRepo != nil {
+	if s.nexusEngine != nil {
 		cacheKey := fmt.Sprintf("%s:%s", tenantID, passportID)
-		cachedData, err := s.redisRepo.GetPassport(ctx, cacheKey)
-		if err == nil && len(cachedData) > 0 {
+		if cachedData, err := s.nexusEngine.GetPassportCache(ctx, cacheKey); err == nil && len(cachedData) > 0 {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write(cachedData)
@@ -2382,22 +1930,22 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	if s.pgRepo == nil {
-		http.Error(w, `{"error":"database unavailable and cache miss"}`, http.StatusServiceUnavailable)
+	if s.nexusEngine == nil {
+		http.Error(w, `{"error":"nexus graph engine unavailable"}`, http.StatusServiceUnavailable)
 		return
 	}
 
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
-	passport, err := s.pgRepo.GetPassportByID(tenantCtx, passportID)
+	passport, err := s.nexusEngine.GetPassportByID(tenantCtx, passportID)
 	if err != nil || passport == nil {
-		passport, err = s.pgRepo.GetPassportByBatchNumber(tenantCtx, passportID)
+		passport, err = s.nexusEngine.GetPassportByBatchNumber(tenantCtx, passportID)
 	}
 	if err != nil || passport == nil {
 		writeJSONError(w, fmt.Sprintf("passport '%s' not found for tenant '%s'", passportID, tenantID), http.StatusNotFound)
 		return
 	}
 
-	richResp := repository.BuildRichPassportResponse(passport)
+	richResp := nexus.BuildRichPassportResponse(passport)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(richResp)
@@ -2405,13 +1953,13 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 
 func (s *VerificationServer) handleListPassports(w http.ResponseWriter, r *http.Request, tenantID string) {
 	ctx := r.Context()
-	list := make([]repository.RichDigitalCarbonPassportResponse, 0)
+	list := make([]nexus.RichDigitalCarbonPassportResponse, 0)
 
-	if s.pgRepo != nil {
+	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
-		if passports, err := s.pgRepo.ListPassports(tenantCtx); err == nil {
+		if passports, err := s.nexusEngine.ListPassports(tenantCtx); err == nil {
 			for _, p := range passports {
-				list = append(list, repository.BuildRichPassportResponse(p))
+				list = append(list, nexus.BuildRichPassportResponse(p))
 			}
 		}
 	}

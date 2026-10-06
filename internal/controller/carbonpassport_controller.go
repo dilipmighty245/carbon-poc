@@ -16,20 +16,23 @@ import (
 
 	saurientv1alpha1 "saurient-platform/api/v1alpha1"
 	"saurient-platform/internal/engine"
-	"saurient-platform/internal/repository"
+	"saurient-platform/internal/nexus"
 	"saurient-platform/internal/tenant"
 )
 
 type CarbonPassportReconciler struct {
 	client.Client
-	Scheme     *runtime.Scheme
-	CELEngine  *engine.CELEngine
-	PostgresRepo *repository.PostgresRepository
-	RedisRepo    *repository.RedisRepository
+	Scheme      *runtime.Scheme
+	CELEngine   *engine.CELEngine
+	NexusEngine *nexus.NexusGraphEngine
 }
 
 func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+
+	if r.NexusEngine == nil {
+		r.NexusEngine = nexus.GetNexusEngine()
+	}
 
 	// Fetch CarbonPassport CR
 	var passport saurientv1alpha1.CarbonPassport
@@ -39,26 +42,18 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	const passportFinalizer = "saurient.io/passport-finalizer"
 
-	// Cleanup database and Redis if CarbonPassport CR is being deleted
+	// Cleanup graph nodes for deleted CarbonPassport CR
 	if !passport.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(&passport, passportFinalizer) {
-			logger.Info("Cleaning up database and cache for deleted CarbonPassport CR", "name", passport.Name, "batchID", passport.Spec.BatchID)
+			logger.Info("Cleaning up Nexus graph state for deleted CarbonPassport CR", "name", passport.Name, "batchID", passport.Spec.BatchID)
 			tenantCtx := tenant.WithTenant(ctx, passport.Spec.TenantID)
-			if r.PostgresRepo != nil {
-				if passport.Status.PassportID != "" {
-					_ = r.PostgresRepo.DeletePassportByPassportID(tenantCtx, passport.Status.PassportID)
-				}
-				if passport.Spec.BatchID != "" {
-					_ = r.PostgresRepo.DeletePassportByBatchNumber(tenantCtx, passport.Spec.BatchID)
-				}
+			if passport.Status.PassportID != "" {
+				_ = r.NexusEngine.DeletePassportByPassportID(tenantCtx, passport.Status.PassportID)
+				_ = r.NexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", passport.Spec.TenantID, passport.Status.PassportID))
 			}
-			if r.RedisRepo != nil {
-				if passport.Status.PassportID != "" {
-					_ = r.RedisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", passport.Spec.TenantID, passport.Status.PassportID))
-				}
-				if passport.Spec.BatchID != "" {
-					_ = r.RedisRepo.DeletePassport(ctx, fmt.Sprintf("%s:%s", passport.Spec.TenantID, passport.Spec.BatchID))
-				}
+			if passport.Spec.BatchID != "" {
+				_ = r.NexusEngine.DeletePassportByBatchNumber(tenantCtx, passport.Spec.BatchID)
+				_ = r.NexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", passport.Spec.TenantID, passport.Spec.BatchID))
 			}
 
 			controllerutil.RemoveFinalizer(&passport, passportFinalizer)
@@ -80,7 +75,6 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// Evaluate CEL calculation early to check if update is required
 	tenantCtx := tenant.WithTenant(ctx, passport.Spec.TenantID)
 
-	// Unmarshal calculation details JSON (activity snapshot stored in Spec)
 	var activityData map[string]interface{}
 	if passport.Spec.CalculationDetails != "" {
 		if err := json.Unmarshal([]byte(passport.Spec.CalculationDetails), &activityData); err != nil {
@@ -128,7 +122,6 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	// Fallback rulebooks if no custom rulebook CR was found
 	if !foundRulebook {
 		if passport.Spec.CommodityType == "Cement" {
 			rulebook.Scope1Formula = "(fuel_liters * fuel_ef) + (limestone_tons * calcination_ef)"
@@ -143,7 +136,6 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			rulebook.FunctionalUnit = "kg CO2e per kg"
 			rulebook.BatchQuantity = 1000.0
 		} else {
-			// Generic robust fallback for any commodity
 			rulebook.Scope1Formula = "scope_1_kg_co2e"
 			rulebook.Scope2Formula = "scope_2_kg_co2e"
 			rulebook.Scope3Formula = "scope_3_kg_co2e"
@@ -152,7 +144,6 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	// Execute CEL calculation
 	result, err := r.CELEngine.Evaluate(tenantCtx, rulebook, activityData)
 	if err != nil {
 		logger.Error(err, "CEL engine evaluation failed", "name", passport.Name)
@@ -161,16 +152,14 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, fmt.Errorf("CEL calculation error: %w", err)
 	}
 
-	// Skip reconciliation if already processed and data hash has not changed
 	if (passport.Status.Phase == "Calculated" || passport.Status.Phase == "Verified") && passport.Spec.DataHash == result.DataHash {
 		return ctrl.Result{}, nil
 	}
 
 	logger.Info("Reconciling CarbonPassport CR", "name", passport.Name, "namespace", passport.Namespace, "tenantID", passport.Spec.TenantID, "existingPassportID", passport.Status.PassportID)
 
-	// Prepare Postgres models
 	calcDetailsJSON, _ := json.Marshal(result.VariableSnapshot)
-	passportModel := &repository.CarbonPassportModel{
+	passportModel := &nexus.CarbonPassportModel{
 		PassportID:         passport.Status.PassportID,
 		TenantID:           passport.Spec.TenantID,
 		FacilityID:         passport.Spec.FacilityID,
@@ -180,6 +169,7 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		Scope1KgCO2e:       result.Scope1Kg,
 		Scope2KgCO2e:       result.Scope2Kg,
 		Scope3KgCO2e:       result.Scope3Kg,
+		TotalFootprintKg:   result.TotalFootprintKg,
 		CalculationDetails: calcDetailsJSON,
 		DataHash:           result.DataHash,
 	}
@@ -189,7 +179,7 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		actionType = "Updated"
 	}
 
-	auditModel := &repository.PassportAuditTrailModel{
+	auditModel := &nexus.PassportAuditTrailModel{
 		PassportID:    passport.Status.PassportID,
 		ActionType:    actionType,
 		PreviousHash:  passport.Spec.DataHash,
@@ -197,46 +187,25 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		ChangePayload: calcDetailsJSON,
 	}
 
-	// Persist to Postgres using RLS transaction wrapper
-	if r.PostgresRepo != nil {
-		if passport.Status.PassportID == "" {
-			// Check if a passport for this batch already exists in Postgres for this tenant to prevent duplicates
-			if existing, err := r.PostgresRepo.GetPassportByBatchNumber(tenantCtx, passport.Spec.BatchID); err == nil && existing != nil {
-				passportModel.PassportID = existing.PassportID
-				auditModel.PassportID = existing.PassportID
-				if err := r.PostgresRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
-					logger.Error(err, "Failed to update existing passport in Postgres database", "name", passport.Name)
-					return ctrl.Result{}, fmt.Errorf("postgres update error: %w", err)
-				}
-			} else {
-				passportModel.PassportID = uuid.New().String()
-				auditModel.PassportID = passportModel.PassportID
-				if err := r.PostgresRepo.SavePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
-					logger.Error(err, "Failed to save passport to Postgres database", "name", passport.Name)
-					return ctrl.Result{}, fmt.Errorf("postgres persistence error: %w", err)
-				}
-			}
+	if passport.Status.PassportID == "" {
+		if existing, err := r.NexusEngine.GetPassportByBatchNumber(tenantCtx, passport.Spec.BatchID); err == nil && existing != nil {
+			passportModel.PassportID = existing.PassportID
+			auditModel.PassportID = existing.PassportID
+			_ = r.NexusEngine.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel)
 		} else {
-			if err := r.PostgresRepo.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel); err != nil {
-				logger.Error(err, "Failed to update passport in Postgres database", "name", passport.Name)
-				return ctrl.Result{}, fmt.Errorf("postgres update error: %w", err)
-			}
+			passportModel.PassportID = uuid.New().String()
+			auditModel.PassportID = passportModel.PassportID
+			_ = r.NexusEngine.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
 		}
 	} else {
-		if passportModel.PassportID == "" {
-			passportModel.PassportID = uuid.New().String()
-		}
-		passportModel.TotalFootprintKg = result.TotalFootprintKg
+		_ = r.NexusEngine.UpdatePassportAndAudit(tenantCtx, passportModel, auditModel)
 	}
 
-	// Cache rich digital carbon passport in Redis using tenant-scoped key format
-	richResp := repository.BuildRichPassportResponse(passportModel)
+	richResp := nexus.BuildRichPassportResponse(passportModel)
 	richBytes, _ := json.Marshal(richResp)
 
-	if r.RedisRepo != nil {
-		cacheKey := fmt.Sprintf("%s:%s", passport.Spec.TenantID, passportModel.PassportID)
-		_ = r.RedisRepo.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
-	}
+	cacheKey := fmt.Sprintf("%s:%s", passport.Spec.TenantID, passportModel.PassportID)
+	_ = r.NexusEngine.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
 
 	if passport.Spec.PassportDataRaw != string(richBytes) {
 		passport.Spec.PassportDataRaw = string(richBytes)
@@ -245,7 +214,6 @@ func (r *CarbonPassportReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	// Update CR Status
 	passport.Status.Phase = "Calculated"
 	passport.Status.PassportID = passportModel.PassportID
 	passport.Status.CryptographicHash = result.DataHash

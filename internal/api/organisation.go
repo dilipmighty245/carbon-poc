@@ -9,16 +9,19 @@ import (
 
 	"github.com/google/uuid"
 
-	"saurient-platform/internal/repository"
+	"saurient-platform/internal/nexus"
 	"saurient-platform/internal/tenant"
 )
 
 type OrganisationHandler struct {
-	repo *repository.PostgresRepository
+	engine *nexus.NexusGraphEngine
 }
 
-func NewOrganisationHandler(repo *repository.PostgresRepository) *OrganisationHandler {
-	return &OrganisationHandler{repo: repo}
+func NewOrganisationHandler(engine *nexus.NexusGraphEngine) *OrganisationHandler {
+	if engine == nil {
+		engine = nexus.GetNexusEngine()
+	}
+	return &OrganisationHandler{engine: engine}
 }
 
 func getTenantID(r *http.Request) string {
@@ -27,7 +30,7 @@ func getTenantID(r *http.Request) string {
 		tenantID = r.URL.Query().Get("tenant_id")
 	}
 	if tenantID == "" {
-		tenantID = "org_saurient_demo"
+		tenantID = "tenant-default"
 	}
 	return tenantID
 }
@@ -66,9 +69,9 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	User     *repository.OrganisationUserModel `json:"user"`
-	TenantID string                            `json:"tenant_id"`
-	Token    string                            `json:"token"`
+	User     *nexus.OrganisationUserModel `json:"user"`
+	TenantID string                       `json:"tenant_id"`
+	Token    string                       `json:"token"`
 }
 
 func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Request) {
@@ -92,9 +95,9 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 	tenantID := getTenantID(r)
 	ctx := tenant.WithTenant(r.Context(), tenantID)
 
-	var loggedInUser *repository.OrganisationUserModel
-	if h.repo != nil {
-		users, err := h.repo.ListOrganisationUsers(ctx)
+	var loggedInUser *nexus.OrganisationUserModel
+	if h.engine != nil {
+		users, err := h.engine.ListOrganisationUsers(ctx)
 		if err == nil {
 			for _, u := range users {
 				if strings.EqualFold(u.Email, req.Email) {
@@ -105,7 +108,7 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	// Fallback for demo logins if not found in database or repo unavailable
+	// Fallback for demo logins if not found
 	if loggedInUser == nil {
 		role := "Sustainability Manager"
 		if strings.Contains(strings.ToLower(req.Email), "admin") {
@@ -122,7 +125,7 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 			name = strings.Title(strings.ReplaceAll(parts[0], ".", " "))
 		}
 
-		loggedInUser = &repository.OrganisationUserModel{
+		loggedInUser = &nexus.OrganisationUserModel{
 			ID:            "usr-" + uuid.New().String()[:8],
 			TenantID:      tenantID,
 			Name:          name,
@@ -157,17 +160,12 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 
 	switch r.Method {
 	case http.MethodGet:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		p, err := h.repo.GetTenantProfile(ctx)
+		p, err := h.engine.GetTenantProfile(ctx)
 		if err != nil || p == nil {
-			// Return default profile structure for current tenant
-			p = &repository.TenantProfileModel{
+			p = &nexus.TenantProfileModel{
 				TenantID:               tenantID,
-				LegalName:              "Saurient Industrial Group B.V.",
-				TradingName:            "Saurient Carbon Solutions",
+				LegalName:              "Sattric Industrial Group B.V.",
+				TradingName:            "Sattric Carbon Solutions",
 				OrganisationID:         "ORG-SAUR-2026-EU",
 				RegistrationNumber:     "NL884920193B01",
 				CountryOfIncorporation: "Netherlands",
@@ -176,7 +174,7 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 				Industry:               "Aluminium & Industrial Materials",
 				NaceCode:               "C24.42 - Aluminium production",
 				PrimaryProducts:        "Primary Aluminium Ingots, Low-Carbon Billets",
-				Website:                "https://saurient.io",
+				Website:                "https://sattric.io",
 				TaxID:                  "NL884920193B01",
 				LEI:                    "724500123456789ABCDE",
 				Status:                 "ACTIVE",
@@ -186,16 +184,12 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 		_ = json.NewEncoder(w).Encode(p)
 
 	case http.MethodPut, http.MethodPost:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
 		rawBytes, err := io.ReadAll(r.Body)
 		if err != nil {
 			writeJSONError(w, "failed to read body", http.StatusBadRequest)
 			return
 		}
-		var p repository.TenantProfileModel
+		var p nexus.TenantProfileModel
 		_ = json.Unmarshal(rawBytes, &p)
 		var m map[string]interface{}
 		_ = json.Unmarshal(rawBytes, &m)
@@ -220,19 +214,9 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 				p.TaxID = val
 			}
 		}
-		if p.Headquarters == "" {
-			if val, ok := m["hq_address"].(string); ok {
-				p.Headquarters = val
-			}
-		}
-		if p.Industry == "" {
-			if val, ok := m["primary_industry"].(string); ok {
-				p.Industry = val
-			}
-		}
 
 		p.TenantID = tenantID
-		if err := h.repo.SaveTenantProfile(ctx, &p); err != nil {
+		if err := h.engine.SaveTenantProfile(ctx, &p); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to save profile: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -260,27 +244,19 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 
 	switch r.Method {
 	case http.MethodGet:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		facilities, err := h.repo.ListFacilities(ctx)
+		facilities, err := h.engine.ListFacilities(ctx)
 		if err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to list facilities: %v", err), http.StatusInternalServerError)
 			return
 		}
 		if facilities == nil {
-			facilities = []*repository.FacilityModel{}
+			facilities = []*nexus.FacilityModel{}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(facilities)
 
 	case http.MethodPost, http.MethodPut:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		var f repository.FacilityModel
+		var f nexus.FacilityModel
 		if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
 			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
@@ -295,7 +271,7 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 		if f.Status == "" {
 			f.Status = "ACTIVE"
 		}
-		if err := h.repo.SaveFacility(ctx, &f); err != nil {
+		if err := h.engine.SaveFacility(ctx, &f); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to save facility: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -303,10 +279,6 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 		_ = json.NewEncoder(w).Encode(f)
 
 	case http.MethodDelete:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
 		id := pathID
 		if id == "" {
 			id = r.URL.Query().Get("id")
@@ -315,7 +287,7 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 			writeJSONError(w, "facility ID is required", http.StatusBadRequest)
 			return
 		}
-		if err := h.repo.DeleteFacility(ctx, id); err != nil {
+		if err := h.engine.DeleteFacility(ctx, id); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to delete facility: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -343,27 +315,19 @@ func (h *OrganisationHandler) HandleProcesses(w http.ResponseWriter, r *http.Req
 
 	switch r.Method {
 	case http.MethodGet:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		processes, err := h.repo.ListProcesses(ctx)
+		processes, err := h.engine.ListProcesses(ctx)
 		if err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to list processes: %v", err), http.StatusInternalServerError)
 			return
 		}
 		if processes == nil {
-			processes = []*repository.ProcessModel{}
+			processes = []*nexus.ProcessModel{}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(processes)
 
 	case http.MethodPost, http.MethodPut:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		var p repository.ProcessModel
+		var p nexus.ProcessModel
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
@@ -378,7 +342,7 @@ func (h *OrganisationHandler) HandleProcesses(w http.ResponseWriter, r *http.Req
 		if p.Status == "" {
 			p.Status = "ACTIVE"
 		}
-		if err := h.repo.SaveProcess(ctx, &p); err != nil {
+		if err := h.engine.SaveProcess(ctx, &p); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to save process: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -386,10 +350,6 @@ func (h *OrganisationHandler) HandleProcesses(w http.ResponseWriter, r *http.Req
 		_ = json.NewEncoder(w).Encode(p)
 
 	case http.MethodDelete:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
 		id := pathID
 		if id == "" {
 			id = r.URL.Query().Get("id")
@@ -398,7 +358,7 @@ func (h *OrganisationHandler) HandleProcesses(w http.ResponseWriter, r *http.Req
 			writeJSONError(w, "process ID is required", http.StatusBadRequest)
 			return
 		}
-		if err := h.repo.DeleteProcess(ctx, id); err != nil {
+		if err := h.engine.DeleteProcess(ctx, id); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to delete process: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -423,27 +383,19 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 
 	switch r.Method {
 	case http.MethodGet:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		users, err := h.repo.ListOrganisationUsers(ctx)
+		users, err := h.engine.ListOrganisationUsers(ctx)
 		if err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to list users: %v", err), http.StatusInternalServerError)
 			return
 		}
 		if users == nil {
-			users = []*repository.OrganisationUserModel{}
+			users = []*nexus.OrganisationUserModel{}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(users)
 
 	case http.MethodPost, http.MethodPut:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		var u repository.OrganisationUserModel
+		var u nexus.OrganisationUserModel
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
@@ -453,12 +405,9 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 			u.ID = "usr-" + uuid.New().String()[:8]
 		}
 		if u.Status == "" {
-			u.Status = "Active"
+			u.Status = "ACTIVE"
 		}
-		if u.LastLogin == "" {
-			u.LastLogin = "Invited"
-		}
-		if err := h.repo.SaveOrganisationUser(ctx, &u); err != nil {
+		if err := h.engine.SaveOrganisationUser(ctx, &u); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to save user: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -470,12 +419,7 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// 5b. Update User Role (PUT /api/v1/organisation/users/role)
-type UpdateRoleRequest struct {
-	UserID string `json:"user_id"`
-	Role   string `json:"role"`
-}
-
+// HandleUpdateUserRole (POST /api/v1/organisation/users/role)
 func (h *OrganisationHandler) HandleUpdateUserRole(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 	if r.Method == http.MethodOptions {
@@ -483,7 +427,7 @@ func (h *OrganisationHandler) HandleUpdateUserRole(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if r.Method != http.MethodPut && r.Method != http.MethodPost {
+	if r.Method != http.MethodPost && r.Method != http.MethodPut {
 		writeJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -491,33 +435,27 @@ func (h *OrganisationHandler) HandleUpdateUserRole(w http.ResponseWriter, r *htt
 	tenantID := getTenantID(r)
 	ctx := tenant.WithTenant(r.Context(), tenantID)
 
-	var req UpdateRoleRequest
+	var req struct {
+		UserID  string `json:"userId"`
+		NewRole string `json:"newRole"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
-	if req.UserID == "" || req.Role == "" {
-		writeJSONError(w, "user_id and role are required", http.StatusBadRequest)
+	if req.UserID == "" || req.NewRole == "" {
+		writeJSONError(w, "userId and newRole are required", http.StatusBadRequest)
 		return
 	}
 
-	if h.repo == nil {
-		writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-		return
-	}
-
-	if err := h.repo.UpdateUserRole(ctx, req.UserID, req.Role); err != nil {
-		writeJSONError(w, fmt.Sprintf("failed to update user role: %v", err), http.StatusInternalServerError)
+	if err := h.engine.UpdateUserRole(ctx, req.UserID, req.NewRole); err != nil {
+		writeJSONError(w, fmt.Sprintf("failed to update role: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]string{
-		"message": "user role updated successfully",
-		"user_id": req.UserID,
-		"role":    req.Role,
-	})
+	_ = json.NewEncoder(w).Encode(map[string]string{"message": "role updated successfully", "userId": req.UserID, "role": req.NewRole})
 }
 
 // 6. Reporting Periods Handlers (GET, POST, PUT)
@@ -533,57 +471,28 @@ func (h *OrganisationHandler) HandleReportingPeriods(w http.ResponseWriter, r *h
 
 	switch r.Method {
 	case http.MethodGet:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		periods, err := h.repo.ListReportingPeriods(ctx)
+		periods, err := h.engine.ListReportingPeriods(ctx)
 		if err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to list reporting periods: %v", err), http.StatusInternalServerError)
 			return
 		}
 		if periods == nil {
-			periods = []*repository.ReportingPeriodModel{}
+			periods = []*nexus.ReportingPeriodModel{}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(periods)
 
 	case http.MethodPost, http.MethodPut:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
+		var p nexus.ReportingPeriodModel
+		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
 		}
-		rawBytes, err := io.ReadAll(r.Body)
-		if err != nil {
-			writeJSONError(w, "failed to read body", http.StatusBadRequest)
-			return
-		}
-		var p repository.ReportingPeriodModel
-		_ = json.Unmarshal(rawBytes, &p)
-		var m map[string]interface{}
-		_ = json.Unmarshal(rawBytes, &m)
-
-		if p.Name == "" {
-			if val, ok := m["period_name"].(string); ok {
-				p.Name = val
-			}
-		}
-		if p.StartDate == "" {
-			if val, ok := m["start_date"].(string); ok {
-				p.StartDate = val
-			}
-		}
-		if p.EndDate == "" {
-			if val, ok := m["end_date"].(string); ok {
-				p.EndDate = val
-			}
-		}
-
 		p.TenantID = tenantID
 		if p.ID == "" {
-			p.ID = "rep-" + uuid.New().String()[:8]
+			p.ID = "period-" + uuid.New().String()[:8]
 		}
-		if err := h.repo.SaveReportingPeriod(ctx, &p); err != nil {
+		if err := h.engine.SaveReportingPeriod(ctx, &p); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to save reporting period: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -595,7 +504,7 @@ func (h *OrganisationHandler) HandleReportingPeriods(w http.ResponseWriter, r *h
 	}
 }
 
-// 7. Localisation Handlers (GET, PUT, POST)
+// 7. Localisation Config Handlers (GET, PUT, POST)
 func (h *OrganisationHandler) HandleLocalisation(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 	if r.Method == http.MethodOptions {
@@ -608,37 +517,29 @@ func (h *OrganisationHandler) HandleLocalisation(w http.ResponseWriter, r *http.
 
 	switch r.Method {
 	case http.MethodGet:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		loc, err := h.repo.GetLocalisation(ctx)
+		loc, err := h.engine.GetLocalisation(ctx)
 		if err != nil || loc == nil {
-			loc = &repository.LocalisationModel{
+			loc = &nexus.LocalisationModel{
 				TenantID:   tenantID,
 				Country:    "Netherlands",
-				Currency:   "EUR (€)",
-				Timezone:   "CET (UTC+1)",
-				Language:   "English",
-				Units:      json.RawMessage(`{"mass":"kg","energy":"kWh","distance":"km"}`),
-				Regulatory: json.RawMessage(`{"cbamEnabled":true,"csrdEnabled":true}`),
+				Currency:   "EUR",
+				Timezone:   "Europe/Amsterdam",
+				Language:   "en",
+				Units:      json.RawMessage(`{"mass":"kg","energy":"kWh","carbon":"kgCO2e"}`),
+				Regulatory: json.RawMessage(`{"cbamReporting":true,"iso14067":true}`),
 			}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(loc)
 
 	case http.MethodPut, http.MethodPost:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		var loc repository.LocalisationModel
+		var loc nexus.LocalisationModel
 		if err := json.NewDecoder(r.Body).Decode(&loc); err != nil {
 			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
 		}
 		loc.TenantID = tenantID
-		if err := h.repo.SaveLocalisation(ctx, &loc); err != nil {
+		if err := h.engine.SaveLocalisation(ctx, &loc); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to save localisation: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -650,7 +551,7 @@ func (h *OrganisationHandler) HandleLocalisation(w http.ResponseWriter, r *http.
 	}
 }
 
-// 8. Approvals Handlers (GET, POST, PUT)
+// 8. Approvals (SoD) Handlers (GET, POST, PUT)
 func (h *OrganisationHandler) HandleApprovals(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 	if r.Method == http.MethodOptions {
@@ -663,66 +564,31 @@ func (h *OrganisationHandler) HandleApprovals(w http.ResponseWriter, r *http.Req
 
 	switch r.Method {
 	case http.MethodGet:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		approvals, err := h.repo.ListApprovals(ctx)
+		approvals, err := h.engine.ListApprovals(ctx)
 		if err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to list approvals: %v", err), http.StatusInternalServerError)
 			return
 		}
 		if approvals == nil {
-			approvals = []*repository.ApprovalModel{}
+			approvals = []*nexus.ApprovalModel{}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(approvals)
 
 	case http.MethodPost, http.MethodPut:
-		if h.repo == nil {
-			writeJSONError(w, "database unavailable", http.StatusServiceUnavailable)
+		var a nexus.ApprovalModel
+		if err := json.NewDecoder(r.Body).Decode(&a); err != nil {
+			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
 		}
-		rawBytes, err := io.ReadAll(r.Body)
-		if err != nil {
-			writeJSONError(w, "failed to read body", http.StatusBadRequest)
-			return
-		}
-		var a repository.ApprovalModel
-		_ = json.Unmarshal(rawBytes, &a)
-		var m map[string]interface{}
-		_ = json.Unmarshal(rawBytes, &m)
-
-		if a.Title == "" {
-			if val, ok := m["action"].(string); ok {
-				a.Title = val
-			}
-		}
-		if a.Type == "" {
-			if val, ok := m["entity_type"].(string); ok {
-				a.Type = val
-			}
-		}
-		if a.Facility == "" {
-			if val, ok := m["entity_id"].(string); ok {
-				a.Facility = val
-			}
-		}
-		if len(a.SubmittedBy) == 0 {
-			if reqBy, ok := m["requested_by"].(string); ok && reqBy != "" {
-				b, _ := json.Marshal(map[string]string{"email": reqBy, "name": reqBy})
-				a.SubmittedBy = b
-			}
-		}
-
 		a.TenantID = tenantID
 		if a.ID == "" {
-			a.ID = "appr-" + uuid.New().String()[:8]
+			a.ID = "app-" + uuid.New().String()[:8]
 		}
 		if a.Status == "" {
 			a.Status = "PENDING"
 		}
-		if err := h.repo.SaveApproval(ctx, &a); err != nil {
+		if err := h.engine.SaveApproval(ctx, &a); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to save approval: %v", err), http.StatusInternalServerError)
 			return
 		}

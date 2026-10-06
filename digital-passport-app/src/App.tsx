@@ -19,6 +19,7 @@ import { CBAMView } from './components/views/CBAMView';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { ParisAlignmentView } from './components/views/ParisAlignmentView';
 import { AdminView } from './components/views/AdminView';
+import { TraceCarbonView } from './components/views/TraceCarbonView';
 
 export function App() {
   return (
@@ -46,6 +47,9 @@ export function App() {
         <Route path="/passport" element={<Shell><DigitalPassportOutput /></Shell>} />
         <Route path="/passport/:tab" element={<Shell><DigitalPassportOutput /></Shell>} />
         <Route path="/passport/:tab/:passportId" element={<Shell><DigitalPassportOutput /></Shell>} />
+
+        {/* Trace Carbon Lineage View */}
+        <Route path="/trace" element={<Shell><TraceCarbonView /></Shell>} />
 
         {/* Modules & Reports */}
         <Route path="/organisation" element={<Shell><OrganisationView /></Shell>} />

@@ -405,3 +405,72 @@ export async function saveOrgApproval(approval: any, tenantId = DEFAULT_TENANT_I
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
+
+export interface LineageNodeData {
+  node_id: string;
+  node_type: string;
+  reference_id: string;
+  label: string;
+  properties: Record<string, any>;
+  created_at?: string;
+}
+
+export interface LineageEdgeData {
+  edge_id: string;
+  parent_node_id: string;
+  child_node_id: string;
+  edge_type: string;
+}
+
+export interface LineageDAGData {
+  passport_id: string;
+  nodes: LineageNodeData[];
+  edges: LineageEdgeData[];
+}
+
+export interface InputCorrectionReq {
+  input_node_id: string;
+  new_value: number;
+  unit: string;
+  reason: string;
+  user_ref: string;
+}
+
+export interface InputCorrectionRes {
+  correction_id: string;
+  input_node_id: string;
+  old_value: number;
+  new_value: number;
+  original_calc_version: string;
+  original_intensity_kg_co2e: number;
+  new_calc_version: string;
+  new_intensity_kg_co2e: number;
+  original_passport_id: string;
+  original_passport_frozen: boolean;
+  original_passport_hash: string;
+  new_draft_passport_id: string;
+  affected_nodes: LineageNodeData[];
+  timestamp: string;
+}
+
+export async function getLineageDAG(passportId = 'PASS-2026-981-v1.0', tenantId = DEFAULT_TENANT_ID): Promise<LineageDAGData> {
+  const res = await fetch(`${API_BASE_URL}/lineage/trace/${passportId}`, {
+    headers: { 'X-Tenant-ID': tenantId },
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+
+export async function correctSupplierInput(req: InputCorrectionReq, tenantId = DEFAULT_TENANT_ID): Promise<InputCorrectionRes> {
+  const res = await fetch(`${API_BASE_URL}/lineage/correct-input`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return await res.json();
+}
+

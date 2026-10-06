@@ -7,10 +7,13 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
 	github.com/redis/go-redis/v9 v9.22.0
+	github.com/xmen4xp/graph-framework-for-microservices/nexus v0.0.0-00000000000000-000000000000
 	k8s.io/apimachinery v0.37.0
 	k8s.io/client-go v0.37.0
 	sigs.k8s.io/controller-runtime v0.25.1
 )
+
+replace github.com/xmen4xp/graph-framework-for-microservices/nexus => ../graph-framework-for-microservices/nexus
 
 require (
 	cel.dev/expr v0.25.1 // indirect
