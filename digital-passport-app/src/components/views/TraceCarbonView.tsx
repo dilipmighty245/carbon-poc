@@ -15,11 +15,18 @@ import {
   GitBranch,
   ShieldCheck,
   Search,
-  FileCheck
+  FileCheck,
+  Link2,
+  FileText,
+  Database,
+  Layers,
+  ArrowUpRight
 } from 'lucide-react';
 import { 
   getLineageDAG, 
-  correctSupplierInput, 
+  correctSupplierInput
+} from '../../api/client';
+import type {
   LineageDAGData, 
   InputCorrectionRes 
 } from '../../api/client';
@@ -341,6 +348,155 @@ export const TraceCarbonView: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* EXPLICIT CROSS-HIERARCHY RECORD CONNECTIONS CARD */}
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Link2 className="w-4 h-4 text-emerald-600" />
+                  Explicit Cross-Hierarchy Record Connections
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Direct record pointers linking Issued Passport ➔ Calculation Version ➔ Production Batch ➔ Telemetry Meters ➔ Supplier Inputs ➔ Emission Factors ➔ Evidence Package
+                </p>
+              </div>
+              <span className="text-[10px] bg-emerald-100 text-emerald-900 font-extrabold px-2.5 py-1 rounded-md border border-emerald-300 uppercase tracking-wider">
+                Full Provenance Chain
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {/* Passport -> Calculation & Batch Explicit Connection Card */}
+              <div className="bg-slate-900 text-white p-4 rounded-xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs font-black text-white">PASSPORT RECORD: PASS-2026-981-v1.0</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-mono px-2 py-0.5 rounded border border-emerald-500/30">
+                    FROZEN IMMUTABLE
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700/80">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">1. Connects To Calculation</span>
+                    <p className="font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
+                      CALC-2026-981-V1
+                      <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">1.850 kgCO2e/kg (v1.0)</p>
+                  </div>
+
+                  <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700/80">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">2. Connects To Batch</span>
+                    <p className="font-bold text-indigo-300 mt-0.5 flex items-center gap-1">
+                      ST-2026-00981
+                      <ArrowUpRight className="w-3 h-3 text-indigo-300" />
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">10,000 kg Steel Coil</p>
+                  </div>
+
+                  <div className="bg-slate-800/80 p-2.5 rounded-lg border border-slate-700/80">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">3. Connects To Verification</span>
+                    <p className="font-bold text-blue-300 mt-0.5 flex items-center gap-1">
+                      ACV-2026-088
+                      <ArrowUpRight className="w-3 h-3 text-blue-300" />
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">TUV Rheinland India</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Calculation -> Inputs, Factors, Evidence Explicit Connection Card */}
+              <div className="bg-emerald-950/20 p-4 rounded-xl border border-emerald-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="w-4 h-4 text-emerald-700" />
+                    <span className="text-xs font-black text-emerald-950">CALCULATION RECORD: CALC-2026-981-V1</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded">
+                    CEL ENGINE v1.0
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                  {/* Connected Meters */}
+                  <div className="bg-white p-2.5 rounded-lg border border-emerald-200 shadow-2xs">
+                    <span className="text-[10px] font-extrabold text-amber-800 uppercase flex items-center gap-1">
+                      <Flame className="w-3 h-3 text-amber-600" />
+                      Meter Readings
+                    </span>
+                    <p className="font-bold text-slate-900 text-[11px] mt-1">MTR-S1-001 (Diesel)</p>
+                    <p className="font-bold text-slate-900 text-[11px]">MTR-S2-001 (Grid)</p>
+                    <p className="text-[9px] text-slate-500 mt-1 font-mono">Telemetry verified</p>
+                  </div>
+
+                  {/* Connected Supplier Inputs */}
+                  <div className="bg-white p-2.5 rounded-lg border border-emerald-200 shadow-2xs">
+                    <span className="text-[10px] font-extrabold text-purple-800 uppercase flex items-center gap-1">
+                      <Truck className="w-3 h-3 text-purple-600" />
+                      Supplier Inputs
+                    </span>
+                    <p className="font-bold text-slate-900 text-[11px] mt-1">SUP-DEC-409</p>
+                    <p className="text-[10px] text-slate-600">Apex Steel (0.650 kgCO2e/kg)</p>
+                    <p className="text-[9px] text-slate-500 mt-1 font-mono">Scope 3 Declaration</p>
+                  </div>
+
+                  {/* Connected Emission Factors */}
+                  <div className="bg-white p-2.5 rounded-lg border border-emerald-200 shadow-2xs">
+                    <span className="text-[10px] font-extrabold text-blue-800 uppercase flex items-center gap-1">
+                      <Database className="w-3 h-3 text-blue-600" />
+                      Emission Factors Used
+                    </span>
+                    <p className="font-bold text-slate-900 text-[11px] mt-1">EF-DEFRA-2026</p>
+                    <p className="text-[10px] text-slate-600">Diesel 2.68 kg/L • Grid 0.71 kg/kWh</p>
+                    <p className="text-[9px] text-slate-500 mt-1 font-mono">DEFRA / CEA 2026 DB</p>
+                  </div>
+
+                  {/* Connected Evidence Documents */}
+                  <div className="bg-white p-2.5 rounded-lg border border-emerald-200 shadow-2xs">
+                    <span className="text-[10px] font-extrabold text-teal-800 uppercase flex items-center gap-1">
+                      <FileText className="w-3 h-3 text-teal-600" />
+                      Evidence Package Used
+                    </span>
+                    <p className="font-bold text-slate-900 text-[11px] mt-1">EVD-00176</p>
+                    <p className="text-[10px] text-slate-600">Audited Invoices & Scraps Cert</p>
+                    <p className="text-[9px] text-slate-500 mt-1 font-mono">TUV Rheinland Audit</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Factors and Evidence Explicit Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="bg-blue-50/70 p-3 rounded-lg border border-blue-200 flex items-start gap-3">
+                  <div className="p-2 bg-blue-100 text-blue-800 rounded-lg">
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Emission Factor Standard: EF-DEFRA-2026</p>
+                    <p className="text-[10px] text-slate-600 mt-0.5">
+                      Explicitly connects DEFRA 2026 v1.2 & Central Electricity Authority (CEA) grid intensity factors directly to Calculation <code className="text-blue-900 font-mono font-bold">CALC-2026-981-V1</code>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-teal-50/70 p-3 rounded-lg border border-teal-200 flex items-start gap-3">
+                  <div className="p-2 bg-teal-100 text-teal-800 rounded-lg">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">Evidence Document Package: EVD-00176</p>
+                    <p className="text-[10px] text-slate-600 mt-0.5">
+                      Explicitly connects <code className="text-teal-900 font-mono font-bold">Fuel_Invoice_Jan2026.pdf</code>, <code className="text-teal-900 font-mono font-bold">CEA_Grid_Cert_2026.pdf</code>, and <code className="text-teal-900 font-mono font-bold">Apex_Scrap_Audit_EVD.pdf</code> directly to telemetry meters and calculation v1.0.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
 
