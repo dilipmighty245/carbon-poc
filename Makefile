@@ -2,16 +2,18 @@
 
 ETCD_CONTAINER ?= saurient-etcd
 ETCD_IMAGE ?= quay.io/coreos/etcd:v3.5.10
-CONTROLLER_IMG ?= saurient-controller:dev
 API_IMG ?= saurient-api:dev
 
-.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed clean check-prereqs etcd-start etcd-stop
+.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed clean check-prereqs etcd-start etcd-stop datamodel-build
 
 all: test build
 
+datamodel-build:
+	@echo "==> Compiling Nexus datamodel into build/ (CRDs, clientset, nexus-client)..."
+	@./scripts/build_datamodel.sh
+
 build:
-	@echo "==> Building Go binaries..."
-	go build -v -o bin/controller ./cmd/controller
+	@echo "==> Building Go binary..."
 	go build -v -o bin/api ./cmd/api
 
 test:
@@ -19,9 +21,8 @@ test:
 	go test -v ./...
 
 test-e2e-no-mocks: check-prereqs clean etcd-start build
-	@echo "==> Starting backend API Gateway & Controller Manager background servers [NO MOCK DATA]..."
+	@echo "==> Starting backend API Gateway background server [NO MOCK DATA]..."
 	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
-	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
 	@echo "==> Starting UI Frontend (digital-passport-app) dev server..."
 	@cd digital-passport-app && npm run dev -- --host 127.0.0.1 --port 5173 > ../ui.log 2>&1 & echo $$! > ../.ui.pid
 	@echo "==> Polling until API (http://localhost:8080) and UI (http://localhost:5173) are active..."
@@ -40,9 +41,8 @@ test-e2e-no-mocks: check-prereqs clean etcd-start build
 e2e-no-mocks: test-e2e-no-mocks
 
 test-e2e: check-prereqs clean etcd-start build
-	@echo "==> Starting backend API Gateway & Controller Manager background servers..."
+	@echo "==> Starting backend API Gateway background server..."
 	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
-	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
 	@echo "==> Starting UI Frontend (digital-passport-app) dev server..."
 	@cd digital-passport-app && npm run dev -- --host 127.0.0.1 --port 5173 > ../ui.log 2>&1 & echo $$! > ../.ui.pid
 	@echo "==> Polling until API (http://localhost:8080) and UI (http://localhost:5173) are active..."
@@ -85,10 +85,9 @@ etcd-stop:
 
 dev-setup-nomock: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
-	@echo "Starting Backend Services (API Gateway & Controller Manager) [NO MOCK DATA]..."
+	@echo "Starting Backend Services (API Gateway) [NO MOCK DATA]..."
 	@echo "=========================================================================="
 	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
-	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
 	@echo "==> Waiting for API Gateway (http://localhost:8080) to be ready..."
 	@for i in $$(seq 1 15); do \
 		if curl -s http://localhost:8080/healthz >/dev/null 2>&1; then \
@@ -102,7 +101,6 @@ dev-setup-nomock: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
 	@echo "etcd Endpoint:                 http://localhost:2379"
 	@echo "API Gateway Endpoint:          http://localhost:8080/api/v1"
-	@echo "Controller Manager Binary:     ./bin/controller"
 	@echo "=========================================================================="
 	@echo "==> Starting Digital Passport App (React / Vite)..."
 	cd digital-passport-app && npm run dev
@@ -112,7 +110,6 @@ dev-setup-seed: check-prereqs clean etcd-start build
 	@echo "Starting Backend Services with Demo Seeding Enabled..."
 	@echo "=========================================================================="
 	@SEED_DEMO_DATA=true ./bin/api > api.log 2>&1 & echo $$! > .api.pid
-	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
 	@echo "==> Waiting for API Gateway (http://localhost:8080) to be ready..."
 	@for i in $$(seq 1 15); do \
 		if curl -s http://localhost:8080/healthz >/dev/null 2>&1; then \
@@ -130,10 +127,9 @@ dev-setup-seed: check-prereqs clean etcd-start build
 
 dev-setup: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
-	@echo "Starting Backend Services (API Gateway & Controller Manager) [CLEAN UNSEEDED]..."
+	@echo "Starting Backend Services (API Gateway) [CLEAN UNSEEDED]..."
 	@echo "=========================================================================="
 	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
-	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
 	@echo "==> Waiting for API Gateway (http://localhost:8080) to be ready..."
 	@for i in $$(seq 1 15); do \
 		if curl -s http://localhost:8080/healthz >/dev/null 2>&1; then \
@@ -147,22 +143,19 @@ dev-setup: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
 	@echo "etcd Endpoint:                 http://localhost:2379"
 	@echo "API Gateway Endpoint:          http://localhost:8080/api/v1"
-	@echo "Controller Manager Binary:     ./bin/controller"
 	@echo "=========================================================================="
 	@echo "==> Starting Digital Passport App (React / Vite)..."
 	cd digital-passport-app && npm run dev
 
 clean: etcd-stop
-	@echo "==> Stopping UI frontend server, backend API Gateway, controller, and etcd..."
+	@echo "==> Stopping UI frontend server, backend API Gateway, and etcd..."
 	-@if [ -f .api.pid ]; then kill -9 $$(cat .api.pid) >/dev/null 2>&1 || true; rm -f .api.pid; fi
-	-@if [ -f .controller.pid ]; then kill -9 $$(cat .controller.pid) >/dev/null 2>&1 || true; rm -f .controller.pid; fi
 	-@if [ -f .ui.pid ]; then kill -9 $$(cat .ui.pid) >/dev/null 2>&1 || true; rm -f .ui.pid; fi
 	-@pkill -f "./bin/api" >/dev/null 2>&1 || true
-	-@pkill -f "./bin/controller" >/dev/null 2>&1 || true
 	-@pkill -f "vite" >/dev/null 2>&1 || true
 	-@lsof -ti:8080 | xargs kill -9 >/dev/null 2>&1 || true
 	-@lsof -ti:5173 | xargs kill -9 >/dev/null 2>&1 || true
 	@echo "==> Cleaning up build artifacts and temporary log files..."
 	rm -rf bin/
-	rm -f api.log controller.log ui.log digital-passport-app/yarn.lock yarn.lock
+	rm -f api.log ui.log digital-passport-app/yarn.lock yarn.lock
 	@echo "Clean completed."

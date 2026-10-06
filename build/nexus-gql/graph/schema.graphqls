@@ -1,0 +1,269 @@
+scalar Map
+type Query {
+    root: root_Root
+}
+
+type root_Root {
+    Id: ID
+	ParentLabels: Map
+
+    Config: config_Config!
+    Inventory: inventory_Inventory!
+    Runtime: runtime_Runtime!
+}
+
+type config_Config {
+    Id: ID
+	ParentLabels: Map
+
+    Rulebooks(Id: ID): [config_Rulebook!]
+    CbamBenchmarks(Id: ID): [config_CbamBenchmark!]
+    StoryboardScenes(Id: ID): [config_StoryboardScene!]
+}
+
+type config_Rulebook {
+    Id: ID
+	ParentLabels: Map
+
+    RulebookID: String
+    CommodityType: String
+    Version: String
+    AccountingMode: String
+    Standard: String
+    RulesRaw: String
+    Scope1Formula: String
+    Scope2Formula: String
+    Scope3Formula: String
+    FunctionalUnit: String
+    BatchQuantity: Float
+    BoundaryType: String
+    AllocationMethod: String
+}
+
+type config_CbamBenchmark {
+    Id: ID
+	ParentLabels: Map
+
+    CnCode: String
+    CommodityName: String
+    BfBofBenchmark: Float
+    DriEafBenchmark: Float
+    ScrapEafBenchmark: Float
+    DefaultFallback: Float
+    RegulationRef: String
+}
+
+type config_StoryboardScene {
+    Id: ID
+	ParentLabels: Map
+
+    SceneNumber: Int
+    Title: String
+    ScreenRoute: String
+    PresenterNarration: String
+    PrimaryAction: String
+    TargetModule: String
+}
+
+type inventory_Inventory {
+    Id: ID
+	ParentLabels: Map
+
+    Agencies(Id: ID): [inventory_ACVAgency!]
+    Tenants(Id: ID): [inventory_Tenant!]
+    Suppliers(Id: ID): [inventory_Supplier!]
+}
+
+type inventory_ACVAgency {
+    Id: ID
+	ParentLabels: Map
+
+    AgencyID: String
+    LegalName: String
+    AccreditationBody: String
+    AccreditationNumber: String
+    AccreditationStatus: String
+    AccreditationExpiry: String
+}
+
+type inventory_Tenant {
+    Id: ID
+	ParentLabels: Map
+
+    Facilities(Id: ID): [inventory_Facility!]
+    Products(Id: ID): [inventory_Product!]
+    TenantID: String
+    LegalName: String
+    Country: String
+    Industry: String
+}
+
+type inventory_Facility {
+    Id: ID
+	ParentLabels: Map
+
+    Meters(Id: ID): [inventory_Meter!]
+    FacilityID: String
+    Name: String
+    Location: String
+    CountryCode: String
+}
+
+type inventory_Meter {
+    Id: ID
+	ParentLabels: Map
+
+    MeterID: String
+    MeterType: String
+    Manufacturer: String
+}
+
+type inventory_Product {
+    Id: ID
+	ParentLabels: Map
+
+    LogisticsLegs(Id: ID): [inventory_LogisticsLeg!]
+    ProductID: String
+    ProductName: String
+    CommodityType: String
+    BatchID: String
+    CnCode: String
+    HsCode: String
+    Unit: String
+    TenantID: String
+    FacilityID: String
+    ActivityDataRaw: String
+    RulebookRef: String
+    Phase: String
+    PassportID: String
+    TotalFootprintKg: Float
+    DataHash: String
+    LastUpdated: String
+}
+
+type inventory_LogisticsLeg {
+    Id: ID
+	ParentLabels: Map
+
+    LegSequence: Int
+    Mode: String
+    Origin: String
+    Destination: String
+    DistanceKm: Float
+    CarrierName: String
+    TransportEmissionsKg: Float
+}
+
+type inventory_Supplier {
+    Id: ID
+	ParentLabels: Map
+
+    Declarations(Id: ID): [inventory_Declaration!]
+    SupplierID: String
+    LegalName: String
+    Country: String
+    Tier: String
+}
+
+type inventory_Declaration {
+    Id: ID
+	ParentLabels: Map
+
+    DeclarationID: String
+    MaterialName: String
+    ClaimedPcfIntensity: Float
+    Unit: String
+    DataClassification: String
+}
+
+type runtime_Runtime {
+    Id: ID
+	ParentLabels: Map
+
+    TelemetryReadings(Id: ID): [runtime_TelemetryReading!]
+    Engagements(Id: ID): [runtime_ACVEngagement!]
+    Passports(Id: ID): [runtime_CarbonPassport!]
+}
+
+type runtime_TelemetryReading {
+    Id: ID
+	ParentLabels: Map
+
+    MeterRef: inventory_Meter!
+    Value: Float
+    Unit: String
+    ReadingType: String
+    IngestedAt: String
+}
+
+type runtime_ACVEngagement {
+    Id: ID
+	ParentLabels: Map
+
+    EngagementID: String
+    AgencyID: String
+    Status: String
+    AcceptedBy: String
+    SignedBy: String
+    Opinion: String
+}
+
+type runtime_CarbonPassport {
+    Id: ID
+	ParentLabels: Map
+
+    ProductRef: inventory_Product!
+    EngagementRef: runtime_ACVEngagement!
+    RulebookRef: config_Rulebook!
+    AuditRecords(Id: ID): [runtime_AuditRecord!]
+    PassportID: String
+    TenantID: String
+    FacilityID: String
+    BatchID: String
+    CommodityType: String
+    TotalFootprintKg: Float
+    Scope1Kg: Float
+    Scope2Kg: Float
+    Scope3Kg: Float
+    IntensityPerUnit: Float
+    VerificationStatus: String
+    CalculationDetails: String
+    PassportDataRaw: String
+    DataHash: String
+    Frozen: Boolean
+    FrozenAt: String
+    IssuedAt: String
+    Version: String
+}
+
+type runtime_AuditRecord {
+    Id: ID
+	ParentLabels: Map
+
+    ActionType: String
+    PreviousHash: String
+    CurrentHash: String
+    Timestamp: String
+    UserRef: String
+}
+
+type NexusGraphqlResponse {
+  Code: Int
+  Message: String
+  Data: String
+  Last: String
+  TotalRecords: Int
+}
+
+type TimeSeriesData {
+  Code: Int
+  Message: String
+  Data: String
+  Last: String
+  TotalRecords: Int
+}
+
+directive @jsonencoded(file: String, gofile: String, name: String) on FIELD_DEFINITION
+directive @relation(name: String, parameters: String, softlink: String, uuidkey: String) on FIELD_DEFINITION
+directive @timeseriesAPI(file: String!, handler: String!) on FIELD_DEFINITION
+directive @protobuf(file: String!, name: String!) on FIELD_DEFINITION

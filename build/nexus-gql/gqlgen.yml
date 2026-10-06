@@ -1,0 +1,96 @@
+# Where are all the schema files located? globs are supported eg  src/**/*.graphqls
+schema:
+  - graph/*.graphqls
+
+# Where should the generated server code go?
+exec:
+  filename: graph/generated/generated.go
+  package: generated
+
+# Where should any generated models go?
+model:
+  filename: graph/model/models_gen.go
+  package: model
+
+# Where should the resolver implementations go?
+resolver:
+  layout: follow-schema
+  dir: graph
+  package: graph
+
+models:
+  ID:
+    model:
+      - github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql.ID
+      - github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql.Int
+      - github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql.Int64
+      - github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql.Int32
+  Int:
+    model:
+      - github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql.Int
+      - github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql.Int64
+      - github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql.Int32
+  root_Root:
+    fields:
+      Config:
+        resolver: true
+      Inventory:
+        resolver: true
+      Runtime:
+        resolver: true
+  config_Config:
+    fields:
+      Rulebooks:
+        resolver: true
+      CbamBenchmarks:
+        resolver: true
+      StoryboardScenes:
+        resolver: true
+  inventory_Inventory:
+    fields:
+      Agencies:
+        resolver: true
+      Tenants:
+        resolver: true
+      Suppliers:
+        resolver: true
+  inventory_Tenant:
+    fields:
+      Facilities:
+        resolver: true
+      Products:
+        resolver: true
+  inventory_Facility:
+    fields:
+      Meters:
+        resolver: true
+  inventory_Product:
+    fields:
+      LogisticsLegs:
+        resolver: true
+  inventory_Supplier:
+    fields:
+      Declarations:
+        resolver: true
+  runtime_Runtime:
+    fields:
+      TelemetryReadings:
+        resolver: true
+      Engagements:
+        resolver: true
+      Passports:
+        resolver: true
+  runtime_TelemetryReading:
+    fields:
+      MeterRef:
+        resolver: true
+  runtime_CarbonPassport:
+    fields:
+      ProductRef:
+        resolver: true
+      EngagementRef:
+        resolver: true
+      RulebookRef:
+        resolver: true
+      AuditRecords:
+        resolver: true

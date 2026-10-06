@@ -1,0 +1,207 @@
+
+
+type Root_Root @nexus(group:"root.saurient.io",version:"v1",kind:"Root",resource:"roots",name:"Root",crdName:"roots.root.saurient.io",singleton:"true"){
+    id: ID
+    config: Config_Config
+    inventory: Inventory_Inventory
+    runtime: Runtime_Runtime
+}
+
+type Config_Config @nexus(group:"config.saurient.io",version:"v1",kind:"Config",resource:"configs",name:"Config",crdName:"configs.config.saurient.io",singleton:"true"){
+    id: ID
+    rulebooks(id: ID): [Config_Rulebook!]
+    cbamBenchmarks(id: ID): [Config_CbamBenchmark!]
+    storyboardScenes(id: ID): [Config_StoryboardScene!]
+}
+
+type Config_Rulebook @nexus(group:"config.saurient.io",version:"v1",kind:"Rulebook",resource:"rulebooks",name:"Rulebook",crdName:"rulebooks.config.saurient.io",singleton:"false"){
+    id: ID
+    rulebookID: String
+    commodityType: String
+    version: String
+    accountingMode: String
+    standard: String
+    rulesRaw: String
+    scope1Formula: String
+    scope2Formula: String
+    scope3Formula: String
+    functionalUnit: String
+    batchQuantity: Float
+    boundaryType: String
+    allocationMethod: String
+}
+
+type Config_CbamBenchmark @nexus(group:"config.saurient.io",version:"v1",kind:"CbamBenchmark",resource:"cbambenchmarks",name:"CbamBenchmark",crdName:"cbambenchmarks.config.saurient.io",singleton:"false"){
+    id: ID
+    cnCode: String
+    commodityName: String
+    bfBofBenchmark: Float
+    driEafBenchmark: Float
+    scrapEafBenchmark: Float
+    defaultFallback: Float
+    regulationRef: String
+}
+
+type Config_StoryboardScene @nexus(group:"config.saurient.io",version:"v1",kind:"StoryboardScene",resource:"storyboardscenes",name:"StoryboardScene",crdName:"storyboardscenes.config.saurient.io",singleton:"false"){
+    id: ID
+    sceneNumber: Int
+    title: String
+    screenRoute: String
+    presenterNarration: String
+    primaryAction: String
+    targetModule: String
+}
+
+type Inventory_Inventory @nexus(group:"inventory.saurient.io",version:"v1",kind:"Inventory",resource:"inventories",name:"Inventory",crdName:"inventories.inventory.saurient.io",singleton:"true"){
+    id: ID
+    agencies(id: ID): [Inventory_ACVAgency!]
+    tenants(id: ID): [Inventory_Tenant!]
+    suppliers(id: ID): [Inventory_Supplier!]
+}
+
+type Inventory_ACVAgency @nexus(group:"inventory.saurient.io",version:"v1",kind:"ACVAgency",resource:"acvagencies",name:"ACVAgency",crdName:"acvagencies.inventory.saurient.io",singleton:"false"){
+    id: ID
+    agencyID: String
+    legalName: String
+    accreditationBody: String
+    accreditationNumber: String
+    accreditationStatus: String
+    accreditationExpiry: String
+}
+
+type Inventory_Tenant @nexus(group:"inventory.saurient.io",version:"v1",kind:"Tenant",resource:"tenants",name:"Tenant",crdName:"tenants.inventory.saurient.io",singleton:"false"){
+    id: ID
+    facilities(id: ID): [Inventory_Facility!]
+    products(id: ID): [Inventory_Product!]
+    tenantID: String
+    legalName: String
+    country: String
+    industry: String
+}
+
+type Inventory_Facility @nexus(group:"inventory.saurient.io",version:"v1",kind:"Facility",resource:"facilities",name:"Facility",crdName:"facilities.inventory.saurient.io",singleton:"false"){
+    id: ID
+    meters(id: ID): [Inventory_Meter!]
+    facilityID: String
+    name: String
+    location: String
+    countryCode: String
+}
+
+type Inventory_Meter @nexus(group:"inventory.saurient.io",version:"v1",kind:"Meter",resource:"meters",name:"Meter",crdName:"meters.inventory.saurient.io",singleton:"false"){
+    id: ID
+    meterID: String
+    meterType: String
+    manufacturer: String
+}
+
+type Inventory_Product @nexus(group:"inventory.saurient.io",version:"v1",kind:"Product",resource:"products",name:"Product",crdName:"products.inventory.saurient.io",singleton:"false"){
+    id: ID
+    logisticsLegs(id: ID): [Inventory_LogisticsLeg!]
+    productID: String
+    productName: String
+    commodityType: String
+    batchID: String
+    cnCode: String
+    hsCode: String
+    unit: String
+    tenantID: String
+    facilityID: String
+    activityDataRaw: String
+    rulebookRef: String
+    phase: String
+    passportID: String
+    totalFootprintKg: Float
+    dataHash: String
+    lastUpdated: String
+}
+
+type Inventory_LogisticsLeg @nexus(group:"inventory.saurient.io",version:"v1",kind:"LogisticsLeg",resource:"logisticslegs",name:"LogisticsLeg",crdName:"logisticslegs.inventory.saurient.io",singleton:"false"){
+    id: ID
+    legSequence: Int
+    mode: String
+    origin: String
+    destination: String
+    distanceKm: Float
+    carrierName: String
+    transportEmissionsKg: Float
+}
+
+type Inventory_Supplier @nexus(group:"inventory.saurient.io",version:"v1",kind:"Supplier",resource:"suppliers",name:"Supplier",crdName:"suppliers.inventory.saurient.io",singleton:"false"){
+    id: ID
+    declarations(id: ID): [Inventory_Declaration!]
+    supplierID: String
+    legalName: String
+    country: String
+    tier: String
+}
+
+type Inventory_Declaration @nexus(group:"inventory.saurient.io",version:"v1",kind:"Declaration",resource:"declarations",name:"Declaration",crdName:"declarations.inventory.saurient.io",singleton:"false"){
+    id: ID
+    declarationID: String
+    materialName: String
+    claimedPcfIntensity: Float
+    unit: String
+    dataClassification: String
+}
+
+type Runtime_Runtime @nexus(group:"runtime.saurient.io",version:"v1",kind:"Runtime",resource:"runtimes",name:"Runtime",crdName:"runtimes.runtime.saurient.io",singleton:"true"){
+    id: ID
+    telemetryReadings(id: ID): [Runtime_TelemetryReading!]
+    engagements(id: ID): [Runtime_ACVEngagement!]
+    passports(id: ID): [Runtime_CarbonPassport!]
+}
+
+type Runtime_TelemetryReading @nexus(group:"runtime.saurient.io",version:"v1",kind:"TelemetryReading",resource:"telemetryreadings",name:"TelemetryReading",crdName:"telemetryreadings.runtime.saurient.io",singleton:"false"){
+    id: ID
+    meterRef: Inventory_Meter @relation(softlink: "true")
+    value: Float
+    unit: String
+    readingType: String
+    ingestedAt: String
+}
+
+type Runtime_ACVEngagement @nexus(group:"runtime.saurient.io",version:"v1",kind:"ACVEngagement",resource:"acvengagements",name:"ACVEngagement",crdName:"acvengagements.runtime.saurient.io",singleton:"false"){
+    id: ID
+    engagementID: String
+    agencyID: String
+    status: String
+    acceptedBy: String
+    signedBy: String
+    opinion: String
+}
+
+type Runtime_CarbonPassport @nexus(group:"runtime.saurient.io",version:"v1",kind:"CarbonPassport",resource:"carbonpassports",name:"CarbonPassport",crdName:"carbonpassports.runtime.saurient.io",singleton:"false"){
+    id: ID
+    productRef: Inventory_Product @relation(softlink: "true")
+    engagementRef: Runtime_ACVEngagement @relation(softlink: "true")
+    rulebookRef: Config_Rulebook @relation(softlink: "true")
+    auditRecords(id: ID): [Runtime_AuditRecord!]
+    passportID: String
+    tenantID: String
+    facilityID: String
+    batchID: String
+    commodityType: String
+    totalFootprintKg: Float
+    scope1Kg: Float
+    scope2Kg: Float
+    scope3Kg: Float
+    intensityPerUnit: Float
+    verificationStatus: String
+    calculationDetails: String
+    passportDataRaw: String
+    dataHash: String
+    frozen: Boolean
+    frozenAt: String
+    issuedAt: String
+    version: String
+}
+
+type Runtime_AuditRecord @nexus(group:"runtime.saurient.io",version:"v1",kind:"AuditRecord",resource:"auditrecords",name:"AuditRecord",crdName:"auditrecords.runtime.saurient.io",singleton:"false"){
+    id: ID
+    actionType: String
+    previousHash: String
+    currentHash: String
+    timestamp: String
+    userRef: String
+}

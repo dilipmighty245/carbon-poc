@@ -1,0 +1,1 @@
+API_NAMES="config.saurient.io:v1 inventory.saurient.io:v1 root.saurient.io:v1 runtime.saurient.io:v1 "
