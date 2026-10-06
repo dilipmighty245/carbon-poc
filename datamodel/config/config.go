@@ -15,8 +15,12 @@ type Config struct {
 type Rulebook struct {
 	nexus.Node
 
+	RulebookID       string  `json:"rulebookId,omitempty" mapstructure:"rulebookId,omitempty"`
 	CommodityType    string  `json:"commodityType,omitempty" mapstructure:"commodityType,omitempty"`
 	Version          string  `json:"version,omitempty" mapstructure:"version,omitempty"`
+	AccountingMode   string  `json:"accountingMode,omitempty" mapstructure:"accountingMode,omitempty"`
+	Standard         string  `json:"standard,omitempty" mapstructure:"standard,omitempty"`
+	RulesRaw         string  `json:"rulesRaw,omitempty" mapstructure:"rulesRaw,omitempty"`
 	Scope1Formula    string  `json:"scope1Formula,omitempty" mapstructure:"scope1Formula,omitempty"`
 	Scope2Formula    string  `json:"scope2Formula,omitempty" mapstructure:"scope2Formula,omitempty"`
 	Scope3Formula    string  `json:"scope3Formula,omitempty" mapstructure:"scope3Formula,omitempty"`

@@ -77,6 +77,8 @@ find "${BUILD_DIR}" -type f -name "*.go" -exec sed -i '' -e "s|nexustempmodule/|
 # Fix Go 1.24+ non-constant format string vet rule in generated client
 if [ -f "${BUILD_DIR}/nexus-client/client.go" ]; then
   sed -i '' -e 's|fmt.Sprintf("parent found (event loop is stalled) " + nc.DisplayName())|fmt.Sprintf("parent found (event loop is stalled) %s", nc.DisplayName())|g' "${BUILD_DIR}/nexus-client/client.go"
+  sed -i '' -e 's|logger\.Fatalf("\[Get\([a-zA-Z]*\)ByName\] Getting version of Object: %s failed with error %v"|logger.Debugf("[Get\1ByName] Getting version of Object: %s failed with error %v"|g' "${BUILD_DIR}/nexus-client/client.go"
+  sed -i '' -e 's|logger\.Fatalf("\[Get\([a-zA-Z]*\)ByName\] Getting version of Object: %s in write cache failed with error %v"|logger.Debugf("[Get\1ByName] Getting version of Object: %s in write cache failed with error %v"|g' "${BUILD_DIR}/nexus-client/client.go"
 fi
 
 echo "==> [6/6] Verifying Go compilation of generated nexus-client..."

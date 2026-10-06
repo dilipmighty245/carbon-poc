@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"strings"
 	"sync"
@@ -66,6 +67,11 @@ type NexusGraphEngine struct {
 	nodes  map[string]LineageNode
 	edges  map[string]LineageEdge
 	dagMap map[string]*LineageDAG
+
+	eventMu            sync.RWMutex
+	productSubscribers []chan ProductEvent
+
+	etcdStore *EtcdStore
 }
 
 var (
@@ -77,13 +83,52 @@ var (
 func GetNexusEngine() *NexusGraphEngine {
 	once.Do(func() {
 		globalEngine = &NexusGraphEngine{
-			nodes:  make(map[string]LineageNode),
-			edges:  make(map[string]LineageEdge),
-			dagMap: make(map[string]*LineageDAG),
+			nodes:              make(map[string]LineageNode),
+			edges:              make(map[string]LineageEdge),
+			dagMap:             make(map[string]*LineageDAG),
+			productSubscribers: make([]chan ProductEvent, 0),
+			etcdStore:          GetEtcdStore(),
 		}
 		globalEngine.seedDefaultGraphTopology()
+		if globalEngine.etcdStore != nil && globalEngine.etcdStore.IsAvailable() {
+			if err := globalEngine.etcdStore.LoadAllIntoStore(context.Background(), getStore()); err != nil {
+				log.Printf("[Nexus etcd] Preloading data from etcd into store error: %v", err)
+			}
+		}
 	})
 	return globalEngine
+}
+
+func (e *NexusGraphEngine) getEtcdStore() *EtcdStore {
+	if e == nil {
+		return nil
+	}
+	if e.etcdStore == nil {
+		e.etcdStore = GetEtcdStore()
+	}
+	return e.etcdStore
+}
+
+// SubscribeProductEvents registers a subscriber channel for product events.
+func (e *NexusGraphEngine) SubscribeProductEvents() <-chan ProductEvent {
+	e.eventMu.Lock()
+	defer e.eventMu.Unlock()
+	ch := make(chan ProductEvent, 256)
+	e.productSubscribers = append(e.productSubscribers, ch)
+	return ch
+}
+
+// PublishProductEvent broadcasts a product event to all registered reconciler subscribers.
+func (e *NexusGraphEngine) PublishProductEvent(evt ProductEvent) {
+	e.eventMu.RLock()
+	defer e.eventMu.RUnlock()
+	for _, ch := range e.productSubscribers {
+		select {
+		case ch <- evt:
+		default:
+			// Non-blocking drop or buffer overrun safeguard
+		}
+	}
 }
 
 func (e *NexusGraphEngine) seedDefaultGraphTopology() {

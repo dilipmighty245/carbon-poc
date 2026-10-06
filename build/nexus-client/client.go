@@ -487,7 +487,7 @@ func (group *RootSaurientV1) GetRootByName(ctx context.Context, hashedName strin
 			resultCache, _ := item.(*baserootsaurientiov1.Root)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetRootByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetRootByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -495,7 +495,7 @@ func (group *RootSaurientV1) GetRootByName(ctx context.Context, hashedName strin
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baserootsaurientiov1.Root).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetRootByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetRootByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -1555,7 +1555,7 @@ func (group *ConfigSaurientV1) GetConfigByName(ctx context.Context, hashedName s
 			resultCache, _ := item.(*baseconfigsaurientiov1.Config)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetConfigByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetConfigByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -1563,7 +1563,7 @@ func (group *ConfigSaurientV1) GetConfigByName(ctx context.Context, hashedName s
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseconfigsaurientiov1.Config).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetConfigByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetConfigByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -2934,7 +2934,7 @@ func (group *ConfigSaurientV1) GetRulebookByName(ctx context.Context, hashedName
 			resultCache, _ := item.(*baseconfigsaurientiov1.Rulebook)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetRulebookByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetRulebookByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -2942,7 +2942,7 @@ func (group *ConfigSaurientV1) GetRulebookByName(ctx context.Context, hashedName
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseconfigsaurientiov1.Rulebook).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetRulebookByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetRulebookByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -4014,7 +4014,7 @@ func (group *ConfigSaurientV1) GetCbamBenchmarkByName(ctx context.Context, hashe
 			resultCache, _ := item.(*baseconfigsaurientiov1.CbamBenchmark)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetCbamBenchmarkByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetCbamBenchmarkByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -4022,7 +4022,7 @@ func (group *ConfigSaurientV1) GetCbamBenchmarkByName(ctx context.Context, hashe
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseconfigsaurientiov1.CbamBenchmark).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetCbamBenchmarkByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetCbamBenchmarkByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -4968,7 +4968,7 @@ func (group *ConfigSaurientV1) GetStoryboardSceneByName(ctx context.Context, has
 			resultCache, _ := item.(*baseconfigsaurientiov1.StoryboardScene)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetStoryboardSceneByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetStoryboardSceneByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -4976,7 +4976,7 @@ func (group *ConfigSaurientV1) GetStoryboardSceneByName(ctx context.Context, has
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseconfigsaurientiov1.StoryboardScene).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetStoryboardSceneByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetStoryboardSceneByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -5901,7 +5901,7 @@ func (group *InventorySaurientV1) GetInventoryByName(ctx context.Context, hashed
 			resultCache, _ := item.(*baseinventorysaurientiov1.Inventory)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetInventoryByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetInventoryByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -5909,7 +5909,7 @@ func (group *InventorySaurientV1) GetInventoryByName(ctx context.Context, hashed
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.Inventory).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetInventoryByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetInventoryByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -7280,7 +7280,7 @@ func (group *InventorySaurientV1) GetACVAgencyByName(ctx context.Context, hashed
 			resultCache, _ := item.(*baseinventorysaurientiov1.ACVAgency)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetACVAgencyByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetACVAgencyByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -7288,7 +7288,7 @@ func (group *InventorySaurientV1) GetACVAgencyByName(ctx context.Context, hashed
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.ACVAgency).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetACVAgencyByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetACVAgencyByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -8213,7 +8213,7 @@ func (group *InventorySaurientV1) GetTenantByName(ctx context.Context, hashedNam
 			resultCache, _ := item.(*baseinventorysaurientiov1.Tenant)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetTenantByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetTenantByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -8221,7 +8221,7 @@ func (group *InventorySaurientV1) GetTenantByName(ctx context.Context, hashedNam
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.Tenant).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetTenantByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetTenantByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -9481,7 +9481,7 @@ func (group *InventorySaurientV1) GetFacilityByName(ctx context.Context, hashedN
 			resultCache, _ := item.(*baseinventorysaurientiov1.Facility)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetFacilityByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetFacilityByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -9489,7 +9489,7 @@ func (group *InventorySaurientV1) GetFacilityByName(ctx context.Context, hashedN
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.Facility).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetFacilityByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetFacilityByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -10561,7 +10561,7 @@ func (group *InventorySaurientV1) GetMeterByName(ctx context.Context, hashedName
 			resultCache, _ := item.(*baseinventorysaurientiov1.Meter)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetMeterByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetMeterByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -10569,7 +10569,7 @@ func (group *InventorySaurientV1) GetMeterByName(ctx context.Context, hashedName
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.Meter).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetMeterByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetMeterByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -11431,7 +11431,7 @@ func (group *InventorySaurientV1) GetProductByName(ctx context.Context, hashedNa
 			resultCache, _ := item.(*baseinventorysaurientiov1.Product)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetProductByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetProductByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -11439,7 +11439,7 @@ func (group *InventorySaurientV1) GetProductByName(ctx context.Context, hashedNa
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.Product).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetProductByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetProductByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -12763,7 +12763,7 @@ func (group *InventorySaurientV1) GetLogisticsLegByName(ctx context.Context, has
 			resultCache, _ := item.(*baseinventorysaurientiov1.LogisticsLeg)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetLogisticsLegByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetLogisticsLegByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -12771,7 +12771,7 @@ func (group *InventorySaurientV1) GetLogisticsLegByName(ctx context.Context, has
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.LogisticsLeg).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetLogisticsLegByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetLogisticsLegByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -13717,7 +13717,7 @@ func (group *InventorySaurientV1) GetSupplierByName(ctx context.Context, hashedN
 			resultCache, _ := item.(*baseinventorysaurientiov1.Supplier)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetSupplierByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetSupplierByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -13725,7 +13725,7 @@ func (group *InventorySaurientV1) GetSupplierByName(ctx context.Context, hashedN
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.Supplier).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetSupplierByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetSupplierByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -14797,7 +14797,7 @@ func (group *InventorySaurientV1) GetDeclarationByName(ctx context.Context, hash
 			resultCache, _ := item.(*baseinventorysaurientiov1.Declaration)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetDeclarationByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetDeclarationByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -14805,7 +14805,7 @@ func (group *InventorySaurientV1) GetDeclarationByName(ctx context.Context, hash
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.Declaration).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetDeclarationByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetDeclarationByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -15709,7 +15709,7 @@ func (group *RuntimeSaurientV1) GetRuntimeByName(ctx context.Context, hashedName
 			resultCache, _ := item.(*baseruntimesaurientiov1.Runtime)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetRuntimeByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetRuntimeByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -15717,7 +15717,7 @@ func (group *RuntimeSaurientV1) GetRuntimeByName(ctx context.Context, hashedName
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseruntimesaurientiov1.Runtime).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetRuntimeByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetRuntimeByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -17088,7 +17088,7 @@ func (group *RuntimeSaurientV1) GetTelemetryReadingByName(ctx context.Context, h
 			resultCache, _ := item.(*baseruntimesaurientiov1.TelemetryReading)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetTelemetryReadingByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetTelemetryReadingByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -17096,7 +17096,7 @@ func (group *RuntimeSaurientV1) GetTelemetryReadingByName(ctx context.Context, h
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseruntimesaurientiov1.TelemetryReading).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetTelemetryReadingByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetTelemetryReadingByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -18042,7 +18042,7 @@ func (group *RuntimeSaurientV1) GetACVEngagementByName(ctx context.Context, hash
 			resultCache, _ := item.(*baseruntimesaurientiov1.ACVEngagement)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetACVEngagementByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetACVEngagementByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -18050,7 +18050,7 @@ func (group *RuntimeSaurientV1) GetACVEngagementByName(ctx context.Context, hash
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseruntimesaurientiov1.ACVEngagement).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetACVEngagementByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetACVEngagementByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -18975,7 +18975,7 @@ func (group *RuntimeSaurientV1) GetCarbonPassportByName(ctx context.Context, has
 			resultCache, _ := item.(*baseruntimesaurientiov1.CarbonPassport)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetCarbonPassportByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetCarbonPassportByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -18983,7 +18983,7 @@ func (group *RuntimeSaurientV1) GetCarbonPassportByName(ctx context.Context, has
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseruntimesaurientiov1.CarbonPassport).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetCarbonPassportByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetCarbonPassportByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 
@@ -20535,7 +20535,7 @@ func (group *RuntimeSaurientV1) GetAuditRecordByName(ctx context.Context, hashed
 			resultCache, _ := item.(*baseruntimesaurientiov1.AuditRecord)
 			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
 			if subsCacheVersionErr != nil {
-				logger.Fatalf("[GetAuditRecordByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+				logger.Debugf("[GetAuditRecordByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
 			}
 
 			writeCacheVersion := 0
@@ -20543,7 +20543,7 @@ func (group *RuntimeSaurientV1) GetAuditRecordByName(ctx context.Context, hashed
 			if inWrCache {
 				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseruntimesaurientiov1.AuditRecord).ResourceVersion)
 				if writeCacheVersionErr != nil {
-					logger.Fatalf("[GetAuditRecordByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+					logger.Debugf("[GetAuditRecordByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
 				}
 			}
 

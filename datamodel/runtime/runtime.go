@@ -40,12 +40,18 @@ type CarbonPassport struct {
 	nexus.Node
 
 	PassportID         string  `json:"passportID,omitempty" mapstructure:"passportID,omitempty"`
+	TenantID           string  `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty"`
+	FacilityID         string  `json:"facilityID,omitempty" mapstructure:"facilityID,omitempty"`
+	BatchID            string  `json:"batchID,omitempty" mapstructure:"batchID,omitempty"`
+	CommodityType      string  `json:"commodityType,omitempty" mapstructure:"commodityType,omitempty"`
 	TotalFootprintKg   float64 `json:"totalFootprintKg,omitempty" mapstructure:"totalFootprintKg,omitempty"`
 	Scope1Kg           float64 `json:"scope1Kg,omitempty" mapstructure:"scope1Kg,omitempty"`
 	Scope2Kg           float64 `json:"scope2Kg,omitempty" mapstructure:"scope2Kg,omitempty"`
 	Scope3Kg           float64 `json:"scope3Kg,omitempty" mapstructure:"scope3Kg,omitempty"`
 	IntensityPerUnit   float64 `json:"intensityPerUnit,omitempty" mapstructure:"intensityPerUnit,omitempty"`
 	VerificationStatus string  `json:"verificationStatus,omitempty" mapstructure:"verificationStatus,omitempty"`
+	CalculationDetails string  `json:"calculationDetails,omitempty" mapstructure:"calculationDetails,omitempty"`
+	PassportDataRaw    string  `json:"passportDataRaw,omitempty" mapstructure:"passportDataRaw,omitempty"`
 	DataHash           string  `json:"dataHash,omitempty" mapstructure:"dataHash,omitempty"`
 	Frozen             bool    `json:"frozen,omitempty" mapstructure:"frozen,omitempty"`
 	FrozenAt           string  `json:"frozenAt,omitempty" mapstructure:"frozenAt,omitempty"`

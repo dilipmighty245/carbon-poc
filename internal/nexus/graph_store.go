@@ -40,6 +40,61 @@ type PassportAuditTrailModel struct {
 	ChangePayload json.RawMessage `json:"change_payload"`
 }
 
+// Product Models
+type ProductModel struct {
+	Name             string    `json:"name"`
+	Namespace        string    `json:"namespace"`
+	TenantID         string    `json:"tenant_id"`
+	FacilityID       string    `json:"facility_id"`
+	BatchID          string    `json:"batch_id"`
+	ProductName      string    `json:"product_name"`
+	CommodityType    string    `json:"commodity_type"`
+	ActivityDataRaw  string    `json:"activity_data_raw"`
+	RulebookRefName  string    `json:"rulebook_ref_name"`
+	Phase            string    `json:"phase"`
+	PassportID       string    `json:"passport_id"`
+	TotalFootprintKg float64   `json:"total_footprint_kg"`
+	DataHash         string    `json:"data_hash"`
+	CreatedAt        time.Time `json:"created_at"`
+	LastUpdated      time.Time `json:"last_updated"`
+}
+
+// Product Event Types for Reconciler
+type ProductEventType string
+
+const (
+	ProductEventCreated ProductEventType = "CREATED"
+	ProductEventUpdated ProductEventType = "UPDATED"
+	ProductEventDeleted ProductEventType = "DELETED"
+)
+
+// ProductEvent encapsulates an asynchronous state change notification for a Product node.
+type ProductEvent struct {
+	Type      ProductEventType `json:"type"`
+	TenantID  string           `json:"tenant_id"`
+	ProductID string           `json:"product_id"`
+	Product   *ProductModel    `json:"product,omitempty"`
+}
+
+// Rulebook Models
+type RulebookModel struct {
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	Namespace      string    `json:"namespace"`
+	Label          string    `json:"label"`
+	CommodityType  string    `json:"commodity_type"`
+	Version        string    `json:"version,omitempty"`
+	AccountingMode string    `json:"accounting_mode,omitempty"`
+	Standard       string    `json:"standard,omitempty"`
+	FunctionalUnit string    `json:"functional_unit,omitempty"`
+	BatchQuantity  float64   `json:"batch_quantity,omitempty"`
+	RulesRaw       string    `json:"rules_raw,omitempty"`
+	Scope1Formula  string    `json:"scope_1_formula,omitempty"`
+	Scope2Formula  string    `json:"scope_2_formula,omitempty"`
+	Scope3Formula  string    `json:"scope_3_formula,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
 // Organisation Models
 type TenantProfileModel struct {
 	TenantID               string          `json:"tenant_id"`
@@ -252,6 +307,8 @@ type PublicPassportSummaryModel struct {
 type GraphStore struct {
 	storeMu          sync.RWMutex
 	passports        map[string]*CarbonPassportModel
+	products         map[string]*ProductModel
+	rulebooks        map[string]*RulebookModel
 	auditTrails      map[string][]*PassportAuditTrailModel
 	tenantProfiles   map[string]*TenantProfileModel
 	facilities       map[string][]*FacilityModel
@@ -279,6 +336,8 @@ func getStore() *GraphStore {
 	storeOnce.Do(func() {
 		globalGraphStore = &GraphStore{
 			passports:        make(map[string]*CarbonPassportModel),
+			products:         make(map[string]*ProductModel),
+			rulebooks:        make(map[string]*RulebookModel),
 			auditTrails:      make(map[string][]*PassportAuditTrailModel),
 			tenantProfiles:   make(map[string]*TenantProfileModel),
 			facilities:       make(map[string][]*FacilityModel),
@@ -563,6 +622,14 @@ func (e *NexusGraphEngine) SavePassportAndAudit(ctx context.Context, p *CarbonPa
 	}
 	e.mu.Unlock()
 
+	// Persist to etcd backing store
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.SavePassport(ctx, p)
+		if audit != nil {
+			_ = etcd.SaveAuditTrail(ctx, p.TenantID, audit)
+		}
+	}
+
 	return nil
 }
 
@@ -615,12 +682,21 @@ func (e *NexusGraphEngine) DeletePassportByPassportID(ctx context.Context, passp
 	s.storeMu.Lock()
 	defer s.storeMu.Unlock()
 
+	var tenantID string
+	if p, ok := s.passports[passportID]; ok {
+		tenantID = p.TenantID
+	}
+
 	delete(s.passports, passportID)
 	delete(s.auditTrails, passportID)
 
 	e.mu.Lock()
 	delete(e.nodes, passportID)
 	e.mu.Unlock()
+
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.DeletePassport(ctx, tenantID, passportID)
+	}
 
 	return nil
 }
@@ -632,16 +708,186 @@ func (e *NexusGraphEngine) DeletePassportByBatchNumber(ctx context.Context, batc
 
 	for id, p := range s.passports {
 		if p.BatchNumber == batchNumber {
+			tenantID := p.TenantID
 			delete(s.passports, id)
 			delete(s.auditTrails, id)
 
 			e.mu.Lock()
 			delete(e.nodes, id)
 			e.mu.Unlock()
+
+			if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+				_ = etcd.DeletePassport(ctx, tenantID, id)
+			}
 			break
 		}
 	}
 	return nil
+}
+
+// --- Product Operations ---
+
+func (e *NexusGraphEngine) SaveProduct(ctx context.Context, p *ProductModel) error {
+	s := getStore()
+	s.storeMu.Lock()
+	defer s.storeMu.Unlock()
+
+	tenantID, _ := tenant.GetTenant(ctx)
+	if tenantID != "" && p.TenantID == "" {
+		p.TenantID = tenantID
+	}
+	if p.CreatedAt.IsZero() {
+		p.CreatedAt = time.Now()
+	}
+	p.LastUpdated = time.Now()
+
+	s.products[p.Name] = p
+	if p.BatchID != "" {
+		s.products[p.BatchID] = p
+	}
+
+	// Also index in Nexus graph topology node map
+	e.mu.Lock()
+	e.nodes[p.BatchID] = LineageNode{
+		NodeID:      p.BatchID,
+		NodeType:    "BATCH",
+		ReferenceID: p.BatchID,
+		Label:       fmt.Sprintf("Batch %s (%s)", p.BatchID, p.CommodityType),
+		Properties: map[string]interface{}{
+			"tenant_id":        p.TenantID,
+			"facility_id":      p.FacilityID,
+			"product_name":     p.ProductName,
+			"commodity_type":   p.CommodityType,
+			"phase":            p.Phase,
+			"passport_id":      p.PassportID,
+			"total_footprint":  p.TotalFootprintKg,
+			"data_hash":        p.DataHash,
+		},
+		CreatedAt: p.CreatedAt,
+	}
+	e.mu.Unlock()
+
+	// Persist to etcd backing store
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.SaveProduct(ctx, p)
+	}
+
+	return nil
+}
+
+func (e *NexusGraphEngine) GetProduct(ctx context.Context, identifier string) (*ProductModel, error) {
+	s := getStore()
+	s.storeMu.RLock()
+	defer s.storeMu.RUnlock()
+
+	if p, ok := s.products[identifier]; ok {
+		return p, nil
+	}
+	for _, prod := range s.products {
+		if prod.Name == identifier || prod.BatchID == identifier {
+			return prod, nil
+		}
+	}
+	return nil, fmt.Errorf("product not found: %s", identifier)
+}
+
+func (e *NexusGraphEngine) ListProducts(ctx context.Context, tenantID string) ([]*ProductModel, error) {
+	s := getStore()
+	s.storeMu.RLock()
+	defer s.storeMu.RUnlock()
+
+	seen := make(map[string]bool)
+	var result []*ProductModel
+	for _, p := range s.products {
+		if seen[p.BatchID] {
+			continue
+		}
+		if tenantID == "" || p.TenantID == tenantID || tenantID == "all" {
+			seen[p.BatchID] = true
+			result = append(result, p)
+		}
+	}
+	return result, nil
+}
+
+func (e *NexusGraphEngine) DeleteProduct(ctx context.Context, identifier string) error {
+	s := getStore()
+	s.storeMu.Lock()
+	defer s.storeMu.Unlock()
+
+	var batchID string
+	var tenantID string
+	if p, ok := s.products[identifier]; ok {
+		batchID = p.BatchID
+		tenantID = p.TenantID
+		delete(s.products, p.Name)
+		delete(s.products, p.BatchID)
+	} else {
+		delete(s.products, identifier)
+		batchID = identifier
+	}
+
+	if batchID != "" {
+		e.mu.Lock()
+		delete(e.nodes, batchID)
+		e.mu.Unlock()
+
+		if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+			_ = etcd.DeleteProduct(ctx, tenantID, batchID)
+		}
+	}
+
+	return nil
+}
+
+// --- Rulebook Operations ---
+
+func (e *NexusGraphEngine) SaveRulebook(ctx context.Context, r *RulebookModel) error {
+	s := getStore()
+	s.storeMu.Lock()
+	defer s.storeMu.Unlock()
+
+	if r.CreatedAt.IsZero() {
+		r.CreatedAt = time.Now()
+	}
+	s.rulebooks[r.Name] = r
+	if r.ID != "" {
+		s.rulebooks[r.ID] = r
+	}
+
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.SaveRulebook(ctx, r)
+	}
+
+	return nil
+}
+
+func (e *NexusGraphEngine) GetRulebook(ctx context.Context, name string) (*RulebookModel, error) {
+	s := getStore()
+	s.storeMu.RLock()
+	defer s.storeMu.RUnlock()
+
+	if r, ok := s.rulebooks[name]; ok {
+		return r, nil
+	}
+	return nil, fmt.Errorf("rulebook not found: %s", name)
+}
+
+func (e *NexusGraphEngine) ListRulebooks(ctx context.Context) ([]*RulebookModel, error) {
+	s := getStore()
+	s.storeMu.RLock()
+	defer s.storeMu.RUnlock()
+
+	seen := make(map[string]bool)
+	var result []*RulebookModel
+	for _, r := range s.rulebooks {
+		if seen[r.Name] {
+			continue
+		}
+		seen[r.Name] = true
+		result = append(result, r)
+	}
+	return result, nil
 }
 
 // --- Redis Replacement In-Memory Cache Operations ---
@@ -716,6 +962,11 @@ func (e *NexusGraphEngine) SaveTenantProfile(ctx context.Context, p *TenantProfi
 	}
 
 	s.tenantProfiles[p.TenantID] = p
+
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.SaveTenantProfile(ctx, p)
+	}
+
 	return nil
 }
 
@@ -760,6 +1011,11 @@ func (e *NexusGraphEngine) SaveFacility(ctx context.Context, f *FacilityModel) e
 	if !found {
 		s.facilities[f.TenantID] = append(facs, f)
 	}
+
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.SaveFacility(ctx, f)
+	}
+
 	return nil
 }
 
@@ -781,6 +1037,11 @@ func (e *NexusGraphEngine) DeleteFacility(ctx context.Context, facilityID string
 		}
 	}
 	s.facilities[tID] = updated
+
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.Delete(ctx, KeyFacility(tID, facilityID))
+	}
+
 	return nil
 }
 
@@ -825,6 +1086,11 @@ func (e *NexusGraphEngine) SaveProcess(ctx context.Context, p *ProcessModel) err
 	if !found {
 		s.processes[p.TenantID] = append(procs, p)
 	}
+
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.SaveProcess(ctx, p)
+	}
+
 	return nil
 }
 
@@ -846,6 +1112,11 @@ func (e *NexusGraphEngine) DeleteProcess(ctx context.Context, processID string) 
 		}
 	}
 	s.processes[tID] = updated
+
+	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
+		_ = etcd.Delete(ctx, KeyProcess(tID, processID))
+	}
+
 	return nil
 }
 

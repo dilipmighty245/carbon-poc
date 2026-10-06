@@ -55,14 +55,23 @@ type Meter struct {
 type Product struct {
 	nexus.Node
 
-	ProductID     string       `json:"productID,omitempty" mapstructure:"productID,omitempty"`
-	ProductName   string       `json:"productName,omitempty" mapstructure:"productName,omitempty"`
-	CommodityType string       `json:"commodityType,omitempty" mapstructure:"commodityType,omitempty"`
-	BatchID       string       `json:"batchID,omitempty" mapstructure:"batchID,omitempty"`
-	CnCode        string       `json:"cnCode,omitempty" mapstructure:"cnCode,omitempty"`
-	HsCode        string       `json:"hsCode,omitempty" mapstructure:"hsCode,omitempty"`
-	Unit          string       `json:"unit,omitempty" mapstructure:"unit,omitempty"`
-	LogisticsLegs LogisticsLeg `nexus:"children"`
+	ProductID        string       `json:"productID,omitempty" mapstructure:"productID,omitempty"`
+	ProductName      string       `json:"productName,omitempty" mapstructure:"productName,omitempty"`
+	CommodityType    string       `json:"commodityType,omitempty" mapstructure:"commodityType,omitempty"`
+	BatchID          string       `json:"batchID,omitempty" mapstructure:"batchID,omitempty"`
+	CnCode           string       `json:"cnCode,omitempty" mapstructure:"cnCode,omitempty"`
+	HsCode           string       `json:"hsCode,omitempty" mapstructure:"hsCode,omitempty"`
+	Unit             string       `json:"unit,omitempty" mapstructure:"unit,omitempty"`
+	TenantID         string       `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty"`
+	FacilityID       string       `json:"facilityID,omitempty" mapstructure:"facilityID,omitempty"`
+	ActivityDataRaw  string       `json:"activityDataRaw,omitempty" mapstructure:"activityDataRaw,omitempty"`
+	RulebookRef      string       `json:"rulebookRef,omitempty" mapstructure:"rulebookRef,omitempty"`
+	Phase            string       `json:"phase,omitempty" mapstructure:"phase,omitempty"`
+	PassportID       string       `json:"passportID,omitempty" mapstructure:"passportID,omitempty"`
+	TotalFootprintKg float64      `json:"totalFootprintKg,omitempty" mapstructure:"totalFootprintKg,omitempty"`
+	DataHash         string       `json:"dataHash,omitempty" mapstructure:"dataHash,omitempty"`
+	LastUpdated      string       `json:"lastUpdated,omitempty" mapstructure:"lastUpdated,omitempty"`
+	LogisticsLegs    LogisticsLeg `nexus:"children"`
 }
 
 type LogisticsLeg struct {
