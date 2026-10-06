@@ -43,7 +43,8 @@ export const DigitalPassportOutput: React.FC = () => {
     loadData();
   }, [tenantId]);
 
-  const activeTabId = tab.toLowerCase();
+  const validTabs = ['registry', 'readiness', 'preview', 'sign-issue', 'detail', 'passport-detail', 'qr', 'sharing', 'versions'];
+  const activeTabId = validTabs.includes(tab.toLowerCase()) ? tab.toLowerCase() : 'registry';
 
   const handleTabChange = (newTabId: string) => {
     navigate(`/passport/${newTabId}`);

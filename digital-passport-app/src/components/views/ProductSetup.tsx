@@ -246,11 +246,9 @@ export const ProductSetup: React.FC = () => {
 
       setSuccessMsg(`Product batch successfully registered and verified (ID: ${resp.name})`);
 
-      if (resp.passport_id) {
-        setTimeout(() => {
-          navigate(`/passport/${resp.passport_id}`);
-        }, 1500);
-      }
+      setTimeout(() => {
+        navigate('/passport');
+      }, 1500);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Failed to create product batch');

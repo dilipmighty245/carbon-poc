@@ -5,7 +5,7 @@ ETCD_IMAGE ?= quay.io/coreos/etcd:v3.5.10
 CONTROLLER_IMG ?= saurient-controller:dev
 API_IMG ?= saurient-api:dev
 
-.PHONY: all build test test-e2e e2e dev-setup clean check-prereqs etcd-start etcd-stop
+.PHONY: all build test test-e2e e2e dev-setup dev-setup-nomock clean check-prereqs etcd-start etcd-stop
 
 all: test build
 
@@ -62,16 +62,32 @@ etcd-stop:
 	@echo "==> Stopping local etcd container..."
 	-docker rm -f $(ETCD_CONTAINER) >/dev/null 2>&1
 
-dev-setup: check-prereqs etcd-start build
+dev-setup-nomock: dev-setup
+
+dev-setup: check-prereqs clean etcd-start build
+	@echo "=========================================================================="
+	@echo "Starting Backend Services (API Gateway & Controller Manager)..."
+	@echo "=========================================================================="
+	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
+	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
+	@echo "==> Waiting for API Gateway (http://localhost:8080) to be ready..."
+	@for i in $$(seq 1 15); do \
+		if curl -s http://localhost:8080/healthz >/dev/null 2>&1; then \
+			echo "   [OK] API Gateway is live!"; \
+			break; \
+		fi; \
+		sleep 1; \
+	done
+	@echo "==> Seeding live non-mock data via API Gateway HTTP endpoints..."
+	@node scripts/seed_live_data.mjs
 	@echo "=========================================================================="
 	@echo "Saurient Carbon Passport Platform local dev environment is UP & READY!"
 	@echo "=========================================================================="
 	@echo "etcd Endpoint:                 http://localhost:2379"
-	@echo "API Gateway Binary:            ./bin/api"
+	@echo "API Gateway Endpoint:          http://localhost:8080/api/v1"
 	@echo "Controller Manager Binary:     ./bin/controller"
-	@echo "Nexus Graph Engine:            Embedded In-Memory & etcd Key-Value Store"
 	@echo "=========================================================================="
-	@echo "==> Building & Starting Digital Passport App (React / Vite)..."
+	@echo "==> Starting Digital Passport App (React / Vite)..."
 	cd digital-passport-app && npm run dev
 
 clean: etcd-stop
