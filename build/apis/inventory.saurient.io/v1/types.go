@@ -160,6 +160,7 @@ type TenantSpec struct {
 	Industry      string           `json:"industry,omitempty" mapstructure:"industry,omitempty" yaml:"industry,omitempty"`
 	FacilitiesGvk map[string]Child `json:"facilitiesGvk,omitempty" yaml:"facilitiesGvk,omitempty" nexus:"children"`
 	ProductsGvk   map[string]Child `json:"productsGvk,omitempty" yaml:"productsGvk,omitempty" nexus:"children"`
+	UsersGvk      map[string]Child `json:"usersGvk,omitempty" yaml:"usersGvk,omitempty" nexus:"children"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -167,6 +168,53 @@ type TenantList struct {
 	metav1.TypeMeta `json:",inline" yaml:",inline"`
 	metav1.ListMeta `json:"metadata" yaml:"metadata"`
 	Items           []Tenant `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type User struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              UserSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            UserNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type UserNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *User) CRDName() string {
+	return "users.inventory.saurient.io"
+}
+
+func (c *User) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type UserSpec struct {
+	UserID        string `json:"userID,omitempty" mapstructure:"userID,omitempty" yaml:"userID,omitempty"`
+	TenantID      string `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty" yaml:"tenantID,omitempty"`
+	Name          string `json:"name,omitempty" mapstructure:"name,omitempty" yaml:"name,omitempty"`
+	Email         string `json:"email,omitempty" mapstructure:"email,omitempty" yaml:"email,omitempty"`
+	Role          string `json:"role,omitempty" mapstructure:"role,omitempty" yaml:"role,omitempty"`
+	FacilityScope string `json:"facilityScope,omitempty" mapstructure:"facilityScope,omitempty" yaml:"facilityScope,omitempty"`
+	LastLogin     string `json:"lastLogin,omitempty" mapstructure:"lastLogin,omitempty" yaml:"lastLogin,omitempty"`
+	Status        string `json:"status,omitempty" mapstructure:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type UserList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []User `json:"items" yaml:"items"`
 }
 
 // +genclient

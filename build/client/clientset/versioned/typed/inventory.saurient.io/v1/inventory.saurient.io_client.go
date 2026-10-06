@@ -23,6 +23,7 @@ type InventorySaurientV1Interface interface {
 	ProductsGetter
 	SuppliersGetter
 	TenantsGetter
+	UsersGetter
 }
 
 // InventorySaurientV1Client is used to interact with features provided by the inventory.saurient.io group.
@@ -64,6 +65,10 @@ func (c *InventorySaurientV1Client) Suppliers() SupplierInterface {
 
 func (c *InventorySaurientV1Client) Tenants() TenantInterface {
 	return newTenants(c)
+}
+
+func (c *InventorySaurientV1Client) Users() UserInterface {
+	return newUsers(c)
 }
 
 // NewForConfig creates a new InventorySaurientV1Client for the given config.

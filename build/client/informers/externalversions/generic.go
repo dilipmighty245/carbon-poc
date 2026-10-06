@@ -70,6 +70,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Suppliers().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("tenants"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Tenants().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("users"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Users().Informer()}, nil
 
 		// Group=root.saurient.io, Version=v1
 	case rootsaurientiov1.SchemeGroupVersion.WithResource("roots"):

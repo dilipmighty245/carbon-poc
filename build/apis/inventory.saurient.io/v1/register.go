@@ -43,6 +43,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ACVAgencyList{},
 		&Tenant{},
 		&TenantList{},
+		&User{},
+		&UserList{},
 		&Facility{},
 		&FacilityList{},
 		&Meter{},

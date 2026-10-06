@@ -73,10 +73,23 @@ type Inventory_Tenant @nexus(group:"inventory.saurient.io",version:"v1",kind:"Te
     id: ID
     facilities(id: ID): [Inventory_Facility!]
     products(id: ID): [Inventory_Product!]
+    users(id: ID): [Inventory_User!]
     tenantID: String
     legalName: String
     country: String
     industry: String
+}
+
+type Inventory_User @nexus(group:"inventory.saurient.io",version:"v1",kind:"User",resource:"users",name:"User",crdName:"users.inventory.saurient.io",singleton:"false"){
+    id: ID
+    userID: String
+    tenantID: String
+    name: String
+    email: String
+    role: String
+    facilityScope: String
+    lastLogin: String
+    status: String
 }
 
 type Inventory_Facility @nexus(group:"inventory.saurient.io",version:"v1",kind:"Facility",resource:"facilities",name:"Facility",crdName:"facilities.inventory.saurient.io",singleton:"false"){

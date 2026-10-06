@@ -41,6 +41,7 @@ func GetCRDParentsMap() map[string][]string {
 		"suppliers.inventory.saurient.io":       {"roots.root.saurient.io", "inventories.inventory.saurient.io"},
 		"telemetryreadings.runtime.saurient.io": {"roots.root.saurient.io", "runtimes.runtime.saurient.io"},
 		"tenants.inventory.saurient.io":         {"roots.root.saurient.io", "inventories.inventory.saurient.io"},
+		"users.inventory.saurient.io":           {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
 	}
 }
 
@@ -174,6 +175,13 @@ func GetObjectByCRDName(dmClient *datamodel.Clientset, crdName, name string) int
 	}
 	if crdName == "tenants.inventory.saurient.io" {
 		obj, err := dmClient.InventorySaurientV1().Tenants().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
+	if crdName == "users.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().Users().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return nil
 		}

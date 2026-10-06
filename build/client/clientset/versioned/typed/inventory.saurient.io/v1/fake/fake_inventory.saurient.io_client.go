@@ -51,6 +51,10 @@ func (c *FakeInventorySaurientV1) Tenants() v1.TenantInterface {
 	return &FakeTenants{c}
 }
 
+func (c *FakeInventorySaurientV1) Users() v1.UserInterface {
+	return &FakeUsers{c}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeInventorySaurientV1) RESTClient() rest.Interface {

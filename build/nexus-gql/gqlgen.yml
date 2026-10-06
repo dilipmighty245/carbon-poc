@@ -60,6 +60,8 @@ models:
         resolver: true
       Products:
         resolver: true
+      Users:
+        resolver: true
   inventory_Facility:
     fields:
       Meters:

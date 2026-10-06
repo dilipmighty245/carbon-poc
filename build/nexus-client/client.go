@@ -191,6 +191,19 @@ func (c *Clientset) SubscribeAll() {
 
 	}
 
+	key = "users.inventory.saurient.io"
+	if _, ok := subscriptionMap.Load(key); !ok {
+		informer := informerinventorysaurientiov1.NewUserInformer(c.baseClient, informerResyncPeriod*time.Second, cache.Indexers{})
+		subscribe(key, informer)
+
+		chainer := userInventorySaurientV1Chainer{
+			client: c,
+		}
+		chainer.RegisterAddCallback(chainer.addCallback)
+		chainer.RegisterDeleteCallback(chainer.deleteCallback)
+
+	}
+
 	key = "facilities.inventory.saurient.io"
 	if _, ok := subscriptionMap.Load(key); !ok {
 		informer := informerinventorysaurientiov1.NewFacilityInformer(c.baseClient, informerResyncPeriod*time.Second, cache.Indexers{})
@@ -8371,6 +8384,14 @@ func (group *InventorySaurientV1) DeleteTenantByName(ctx context.Context, hashed
 		RemoveChild("tenants.inventory.saurient.io", hashedName, "products.inventory.saurient.io", child)
 	}
 
+	for _, child := range GetChildren("tenants.inventory.saurient.io", hashedName, "users.inventory.saurient.io") {
+		err := group.client.Inventory().DeleteUserByName(ctx, child)
+		if err != nil && errors.IsNotFound(err) == false {
+			return err
+		}
+		RemoveChild("tenants.inventory.saurient.io", hashedName, "users.inventory.saurient.io", child)
+	}
+
 	retryCount = 0
 	for {
 		err = group.client.baseClient.
@@ -8441,6 +8462,7 @@ func (group *InventorySaurientV1) CreateTenantByName(ctx context.Context,
 
 	objToCreate.Spec.FacilitiesGvk = nil
 	objToCreate.Spec.ProductsGvk = nil
+	objToCreate.Spec.UsersGvk = nil
 
 	var (
 		retryCount int
@@ -9018,6 +9040,137 @@ func (obj *InventoryTenant) DeleteProducts(ctx context.Context, displayName stri
 	return
 }
 
+type InventoryTenantUsers struct {
+	client *Clientset
+	Users  []baseinventorysaurientiov1.Child
+}
+
+func (n *InventoryTenantUsers) Next(ctx context.Context) (*InventoryUser, error) {
+	for index, child := range n.Users {
+		logger.Debugf("[InventoryTenantUsers Next] Get next Users with name %s", child.Name)
+		obj, err := n.client.Inventory().GetUserByName(ctx, child.Name)
+		if err == nil {
+			if index == len(n.Users)-1 {
+				n.Users = nil
+			} else {
+				n.Users = n.Users[index+1:]
+			}
+			return obj, nil
+		} else if errors.IsNotFound(err) {
+			continue
+		} else {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+// GetAllUsersIter returns an iterator for all children of given type
+func (obj *InventoryTenant) GetAllUsersIter(ctx context.Context) (
+	result InventoryTenantUsers) {
+	result.client = obj.client
+	for _, v := range GetChildren("tenants.inventory.saurient.io", obj.Name, "users.inventory.saurient.io") {
+		result.Users = append(result.Users, baseinventorysaurientiov1.Child{
+			Group: "inventory.saurient.io",
+			Kind:  "User",
+			Name:  v,
+		})
+	}
+	return
+}
+
+// GetAllUsers returns all children of a given type
+func (obj *InventoryTenant) GetAllUsers(ctx context.Context) (
+	result []*InventoryUser, err error) {
+	for _, v := range GetChildren("tenants.inventory.saurient.io", obj.Name, "users.inventory.saurient.io") {
+		logger.Debugf("[InventoryTenant GetAllUsers] Get next Users with name %s", v)
+		l, err := obj.client.Inventory().GetUserByName(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, l)
+	}
+	return
+}
+
+// GetUsers returns child which has given displayName
+func (obj *InventoryTenant) GetUsers(ctx context.Context,
+	displayName string) (result *InventoryUser, err error) {
+
+	parentLabels := make(map[string]string)
+	for k, v := range obj.Labels {
+		parentLabels[k] = v
+	}
+	parentLabels["tenants.inventory.saurient.io"] = obj.DisplayName()
+	childHashName := helper.GetHashedName("users.inventory.saurient.io", parentLabels, displayName)
+	logger.Debugf("[GetUsers] in InventoryTenant with name %s, displayName %s, parentLabels %#v", childHashName, displayName, parentLabels)
+	if IsChildExists("tenants.inventory.saurient.io", obj.Name, "users.inventory.saurient.io", childHashName) == false {
+		logger.Debugf("[GetUsers] ChildNotFound Users with name %s, displayName %s ", childHashName, displayName)
+		return nil, NewChildNotFound(obj.DisplayName(), "Inventory.Tenant", "Users", displayName)
+	}
+
+	logger.Debugf("[GetUsers] invoke GetUserByName name %s, displayName %s", childHashName, displayName)
+	result, err = obj.client.Inventory().GetUserByName(ctx, childHashName)
+	return
+}
+
+// AddUsers calculates hashed name of the child to create based on objToCreate.Name
+// and parents names and creates it. objToCreate.Name is changed to the hashed name. Original name is preserved in
+// nexus/display_name label and can be obtained using DisplayName() method.
+func (obj *InventoryTenant) AddUsers(ctx context.Context,
+	objToCreate *baseinventorysaurientiov1.User) (result *InventoryUser, err error) {
+	logger.Debugf("[AddUsers] Received objToAdd: %s", objToCreate.GetName())
+	if objToCreate.Labels == nil {
+		objToCreate.Labels = map[string]string{}
+	}
+	for _, v := range helper.GetCRDParentsMap()["tenants.inventory.saurient.io"] {
+		objToCreate.Labels[v] = obj.Labels[v]
+	}
+	objToCreate.Labels["tenants.inventory.saurient.io"] = obj.DisplayName()
+	if objToCreate.Labels[common.IsNameHashedLabel] != "true" {
+		objToCreate.Labels[common.DisplayNameLabel] = objToCreate.GetName()
+		objToCreate.Labels[common.IsNameHashedLabel] = "true"
+		hashedName := helper.GetHashedName(objToCreate.CRDName(), objToCreate.Labels, objToCreate.GetName())
+		objToCreate.Name = hashedName
+	}
+	result, err = obj.client.Inventory().CreateUserByName(ctx, objToCreate)
+	logger.Debugf("[AddUsers] User created successfully: %s", objToCreate.GetName())
+	updatedObj, getErr := obj.client.Inventory().GetTenantByName(ctx, obj.GetName())
+	if getErr == nil {
+		obj.Tenant = updatedObj.Tenant
+	}
+	logger.Debugf("[AddUsers] Executed Successfully: %s", objToCreate.GetName())
+	return
+}
+
+// DeleteUsers calculates hashed name of the child to delete based on displayName
+// and parents names and deletes it.
+
+func (obj *InventoryTenant) DeleteUsers(ctx context.Context, displayName string) (err error) {
+	logger.Debugf("[ DeleteUsers] Received for User object: %s to delete", displayName)
+
+	parentLabels := make(map[string]string)
+	for k, v := range obj.Labels {
+		parentLabels[k] = v
+	}
+	parentLabels["tenants.inventory.saurient.io"] = obj.DisplayName()
+	childHashName := helper.GetHashedName("users.inventory.saurient.io", parentLabels, displayName)
+	if IsChildExists("tenants.inventory.saurient.io", obj.Name, "users.inventory.saurient.io", childHashName) == false {
+		return NewChildNotFound(obj.DisplayName(), "Inventory.Tenant", "Users", displayName)
+	}
+
+	err = obj.client.Inventory().DeleteUserByName(ctx, childHashName)
+	if err != nil {
+		return err
+	}
+	logger.Debugf("[ DeleteUsers] User object: %s deleted successfully", displayName)
+	updatedObj, err := obj.client.Inventory().GetTenantByName(ctx, obj.GetName())
+	if err == nil {
+		obj.Tenant = updatedObj.Tenant
+	}
+	return
+}
+
 type tenantInventorySaurientV1Chainer struct {
 	client       *Clientset
 	name         string
@@ -9454,6 +9607,1029 @@ func (c *tenantInventorySaurientV1Chainer) DeleteProducts(ctx context.Context, n
 	c.parentLabels[common.IsNameHashedLabel] = "true"
 	hashedName := helper.GetHashedName("products.inventory.saurient.io", c.parentLabels, name)
 	return c.client.Inventory().DeleteProductByName(ctx, hashedName)
+}
+
+func (c *tenantInventorySaurientV1Chainer) Users(name string) *userInventorySaurientV1Chainer {
+	parentLabels := c.parentLabels
+	parentLabels["users.inventory.saurient.io"] = name
+	return &userInventorySaurientV1Chainer{
+		client:       c.client,
+		name:         name,
+		parentLabels: parentLabels,
+	}
+}
+
+// GetUsers calculates hashed name of the object based on displayName and it's parents and returns the object
+func (c *tenantInventorySaurientV1Chainer) GetUsers(ctx context.Context, displayName string) (result *InventoryUser, err error) {
+	hashedName := helper.GetHashedName("users.inventory.saurient.io", c.parentLabels, displayName)
+	logger.Debugf("[GetUsers] using chainer for name %s, displayName %s, labels %#v", hashedName, displayName, c.parentLabels)
+	return c.client.Inventory().GetUserByName(ctx, hashedName)
+}
+
+// AddUsers calculates hashed name of the child to create based on objToCreate.Name
+// and parents names and creates it. objToCreate.Name is changed to the hashed name. Original name is preserved in
+// nexus/display_name label and can be obtained using DisplayName() method.
+func (c *tenantInventorySaurientV1Chainer) AddUsers(ctx context.Context,
+	objToCreate *baseinventorysaurientiov1.User) (result *InventoryUser, err error) {
+	if objToCreate.Labels == nil {
+		objToCreate.Labels = map[string]string{}
+	}
+	for k, v := range c.parentLabels {
+		objToCreate.Labels[k] = v
+	}
+	if objToCreate.Labels[common.IsNameHashedLabel] != "true" {
+		objToCreate.Labels[common.DisplayNameLabel] = objToCreate.GetName()
+		objToCreate.Labels[common.IsNameHashedLabel] = "true"
+		hashedName := helper.GetHashedName("users.inventory.saurient.io", c.parentLabels, objToCreate.GetName())
+		objToCreate.Name = hashedName
+	}
+	return c.client.Inventory().CreateUserByName(ctx, objToCreate)
+}
+
+// DeleteUsers calculates hashed name of the child to delete based on displayName
+// and parents names and deletes it.
+func (c *tenantInventorySaurientV1Chainer) DeleteUsers(ctx context.Context, name string) (err error) {
+	if c.parentLabels == nil {
+		c.parentLabels = map[string]string{}
+	}
+	c.parentLabels[common.IsNameHashedLabel] = "true"
+	hashedName := helper.GetHashedName("users.inventory.saurient.io", c.parentLabels, name)
+	return c.client.Inventory().DeleteUserByName(ctx, hashedName)
+}
+
+func (group *InventorySaurientV1) GetUserChildrenMap() map[string]baseinventorysaurientiov1.Child {
+	return map[string]baseinventorysaurientiov1.Child{}
+}
+
+func (group *InventorySaurientV1) GetUserChild(grp, kind, name string) baseinventorysaurientiov1.Child {
+	return baseinventorysaurientiov1.Child{
+		Group: grp,
+		Kind:  kind,
+		Name:  name,
+	}
+}
+
+// GetUserByName returns object stored in the database under the hashedName which is a hash of display
+// name and parents names. Use it when you know hashed name of object.
+func (group *InventorySaurientV1) GetUserByName(ctx context.Context, hashedName string) (*InventoryUser, error) {
+	key := "users.inventory.saurient.io"
+	if s, ok := subscriptionMap.Load(key); ok {
+		// Check if the object is in write cache.
+		resWrCache, inWrCache := s.(subscription).WriteCacheObjects.Load(hashedName)
+		item, exists, _ := s.(subscription).informer.GetStore().GetByKey(hashedName)
+		if exists {
+			logger.Debugf("[GetUserByName] Object: %s exists in cache", hashedName)
+			resultCache, _ := item.(*baseinventorysaurientiov1.User)
+			subsCacheVersion, subsCacheVersionErr := strconv.Atoi(resultCache.ResourceVersion)
+			if subsCacheVersionErr != nil {
+				logger.Debugf("[GetUserByName] Getting version of Object: %s failed with error %v", hashedName, subsCacheVersionErr)
+			}
+
+			writeCacheVersion := 0
+			var writeCacheVersionErr error
+			if inWrCache {
+				writeCacheVersion, writeCacheVersionErr = strconv.Atoi(resWrCache.(*baseinventorysaurientiov1.User).ResourceVersion)
+				if writeCacheVersionErr != nil {
+					logger.Debugf("[GetUserByName] Getting version of Object: %s in write cache failed with error %v", hashedName, writeCacheVersionErr)
+				}
+			}
+
+			if !inWrCache || subsCacheVersion >= writeCacheVersion {
+				if inWrCache {
+					s.(subscription).WriteCacheObjects.Delete(hashedName)
+				}
+				return &InventoryUser{
+					client: group.client,
+					User:   resultCache,
+				}, nil
+			}
+		}
+		if inWrCache {
+			return &InventoryUser{
+				client: group.client,
+				User:   resWrCache.(*baseinventorysaurientiov1.User),
+			}, nil
+		}
+	}
+
+	retryCount := 0
+	for {
+		result, err := group.client.baseClient.
+			InventorySaurientV1().
+			Users().Get(ctx, hashedName, metav1.GetOptions{})
+		if err == nil {
+			return &InventoryUser{
+				client: group.client,
+				User:   result,
+			}, nil
+		} else if errors.IsNotFound(err) {
+			logger.Debugf("[GetUserByName]: object %v not found", hashedName)
+			return nil, err
+		} else {
+			if errors.IsTimeout(err) || customerrors.Is(err, context.DeadlineExceeded) {
+				logger.Debugf("[Retry count: (%d) obj: %s ] %+v", retryCount, hashedName, err)
+				if retryCount == maxRetryCount {
+					logger.Errorf("Max retry exceed on Get Users: %s", hashedName)
+					return nil, err
+				}
+				retryCount += 1
+				time.Sleep(sleepTime * time.Second)
+			} else if customerrors.Is(err, context.Canceled) {
+				logger.Errorf("[GetUserByName]: %+v", err)
+				return nil, context.Canceled
+			} else {
+				logger.Errorf("[GetUserByName]: %+v", err)
+				return nil, err
+			}
+		}
+	}
+}
+
+// ForceReadUserByName read object directly from the database under the hashedName which is a hash of display
+// name and parents names. Use it when you know hashed name of object.
+func (group *InventorySaurientV1) ForceReadUserByName(ctx context.Context, hashedName string) (*InventoryUser, error) {
+	logger.Debugf("[ForceReadUserByName] Received object :%s to read from DB", hashedName)
+	retryCount := 0
+	for {
+		result, err := group.client.baseClient.
+			InventorySaurientV1().
+			Users().Get(ctx, hashedName, metav1.GetOptions{})
+		if err != nil {
+			logger.Errorf("[ForceReadUserByName] Failed to Get Users: %+v", err)
+			if errors.IsTimeout(err) || customerrors.Is(err, context.DeadlineExceeded) {
+				logger.Errorf("[Retry Count: %d ] %+v", retryCount, err)
+				if retryCount == maxRetryCount {
+					logger.Errorf("Max Retry exceed on Get Users: %s", hashedName)
+					return nil, err
+				}
+				retryCount += 1
+				time.Sleep(sleepTime * time.Second)
+			} else if customerrors.Is(err, context.Canceled) {
+				logger.Errorf("[ForceReadUserByName]: %+v", err)
+				return nil, context.Canceled
+			} else {
+				logger.Errorf("[ForceReadUserByName]: %+v", err)
+				return nil, err
+			}
+		} else {
+			logger.Debugf("[ForceReadUserByName] Executed Successfully :%s", hashedName)
+			return &InventoryUser{
+				client: group.client,
+				User:   result,
+			}, nil
+		}
+	}
+}
+
+// DeleteUserByName deletes object stored in the database under the hashedName which is a hash of
+// display name and parents names. Use it when you know hashed name of object.
+func (group *InventorySaurientV1) DeleteUserByName(ctx context.Context, hashedName string) (err error) {
+	logger.Debugf("[DeleteUserByName] Received objectToDelete: %s", hashedName)
+	var (
+		retryCount int
+		result     *baseinventorysaurientiov1.User
+	)
+
+	retryCount = 0
+	for {
+		result, err = group.client.baseClient.
+			InventorySaurientV1().
+			Users().Get(ctx, hashedName, metav1.GetOptions{})
+		if err != nil {
+			logger.Errorf("[DeleteUserByName] Failed to get Users: %+v", err)
+			if errors.IsTimeout(err) || customerrors.Is(err, context.DeadlineExceeded) {
+				logger.Debugf("[Retry count: (%d) obj: %s ] %+v", retryCount, hashedName, err)
+				if retryCount == maxRetryCount {
+					logger.Errorf("Max retry exceed on get Users: %s", hashedName)
+					return err
+				}
+				retryCount += 1
+				time.Sleep(sleepTime * time.Second)
+			} else if customerrors.Is(err, context.Canceled) {
+				logger.Errorf("[DeleteUserByName] context canceled: %s", hashedName)
+				return context.Canceled
+			} else if errors.IsNotFound(err) {
+				logger.Errorf("[DeleteUserByName] Object: %s not found", hashedName)
+				break
+			} else {
+				logger.Errorf("[DeleteUserByName] Object: %s unexpected error: %+v", hashedName, err)
+				return err
+			}
+		} else {
+			break
+		}
+	}
+
+	if result == nil {
+		return err
+	}
+
+	retryCount = 0
+	for {
+		err = group.client.baseClient.
+			InventorySaurientV1().
+			Users().Delete(ctx, hashedName, metav1.DeleteOptions{})
+		if err != nil {
+			logger.Errorf("[DeleteUserByName] failed to delete Users: %+v", err)
+			if errors.IsTimeout(err) || customerrors.Is(err, context.DeadlineExceeded) {
+				logger.Debugf("[Retry count: (%d) obj: %s ] %+v", retryCount, hashedName, err)
+				if retryCount == maxRetryCount {
+					logger.Errorf("Max retry exceed on delete Users: %s", hashedName)
+					return err
+				}
+				retryCount += 1
+				time.Sleep(sleepTime * time.Second)
+			} else if customerrors.Is(err, context.Canceled) {
+				logger.Errorf("[DeleteUserByName]: context canceled: %s", hashedName)
+				return context.Canceled
+			} else if errors.IsNotFound(err) {
+				logger.Errorf("[DeleteUserByName] Object: %s not found", hashedName)
+				break
+			} else {
+				logger.Errorf("[DeleteUserByName] Object: %s unexpected error: %+v", hashedName, err)
+				return err
+			}
+		} else {
+			if s, ok := subscriptionMap.Load("users.inventory.saurient.io"); ok {
+				s.(subscription).WriteCacheObjects.Delete(hashedName)
+			}
+			break
+		}
+	}
+	// Get Parent Node and check if gvk present before patch
+
+	logger.Debugf("[DeleteUserByName] Get parent details for object: %s", hashedName)
+	// var patch Patch
+	parents := result.GetLabels()
+	if parents == nil {
+		parents = make(map[string]string)
+	}
+	parentName, ok := parents["tenants.inventory.saurient.io"]
+	if !ok {
+		parentName = helper.DefaultKey
+	}
+	if result.GetLabels() != nil {
+		if parents[common.IsNameHashedLabel] == "true" {
+			parentName = helper.GetHashedName("tenants.inventory.saurient.io", parents, parentName)
+		}
+	} else {
+		parentName = helper.GetHashedName("tenants.inventory.saurient.io", parents, parentName)
+	}
+	RemoveChild("tenants.inventory.saurient.io", parentName, "users.inventory.saurient.io", hashedName)
+
+	return nil
+}
+
+// CreateUserByName creates object in the database without hashing the name.
+// Use it directly ONLY when objToCreate.Name is hashed name of the object.
+func (group *InventorySaurientV1) CreateUserByName(ctx context.Context,
+	objToCreate *baseinventorysaurientiov1.User) (*InventoryUser, error) {
+	logger.Debugf("[CreateUserByName] Received objToCreate: %s", objToCreate.GetName())
+	if objToCreate.GetLabels() == nil {
+		objToCreate.Labels = make(map[string]string)
+	}
+	if _, ok := objToCreate.Labels[common.DisplayNameLabel]; !ok {
+		objToCreate.Labels[common.DisplayNameLabel] = objToCreate.GetName()
+	}
+
+	var (
+		retryCount int
+		result     *baseinventorysaurientiov1.User
+		err        error
+	)
+	retryCount = 0
+	for {
+		result, err = group.client.baseClient.
+			InventorySaurientV1().
+			Users().Create(ctx, objToCreate, metav1.CreateOptions{})
+		if err != nil {
+			logger.Errorf("[CreateUserByName] Failed to create User: %s, error: %+v", objToCreate.GetName(), err)
+			if errors.IsTimeout(err) || customerrors.Is(err, context.DeadlineExceeded) {
+				logger.Debugf("[Retry count: (%d) obj: %s ] %+v", retryCount, objToCreate.GetName(), err)
+				if retryCount == maxRetryCount {
+					logger.Errorf("Max retry exceed on create User: %s", objToCreate.GetName())
+					return nil, err
+				}
+				retryCount += 1
+				time.Sleep(sleepTime * time.Second)
+			} else if customerrors.Is(err, context.Canceled) {
+				logger.Errorf("[CreateUserByName] context canceled while creating User: %s", objToCreate.GetName())
+				return nil, context.Canceled
+			} else if errors.IsAlreadyExists(err) {
+				logger.Debugf("[CreateUserByName] User: %s already exists, error: %+v", objToCreate.GetName(), err)
+				result, err = group.client.baseClient.InventorySaurientV1().Users().Get(ctx, objToCreate.GetName(), metav1.GetOptions{})
+				if err != nil {
+					logger.Fatalf("[CreateUserByName] Unable to Get User %s after it was flagged as already exists, error: %+v", objToCreate.GetName(), err)
+				}
+				break
+			} else {
+				logger.Errorf("[CreateUserByName] found unexpected error while creating User: %s, error: %+v", objToCreate.GetName(), err)
+				return nil, err
+			}
+		} else {
+			logger.Debugf("[CreateUserByName] User: %s created successfully", objToCreate.GetName())
+			if s, ok := subscriptionMap.Load("users.inventory.saurient.io"); ok {
+				logger.Debugf("[CreateUserByName] User: %s stored in wr-cache", objToCreate.GetName())
+				s.(subscription).WriteCacheObjects.Store(objToCreate.GetName(), result)
+			}
+			break
+		}
+	}
+
+	parentName, ok := objToCreate.GetLabels()["tenants.inventory.saurient.io"]
+	if !ok {
+		parentName = helper.DefaultKey
+	}
+	parentHashedName := helper.GetHashedName("tenants.inventory.saurient.io", objToCreate.GetLabels(), parentName)
+
+	AddChild("tenants.inventory.saurient.io", parentHashedName, "users.inventory.saurient.io", objToCreate.Name)
+
+	logger.Debugf("[CreateUserByName] Executed Successfully: %s", objToCreate.GetName())
+	return &InventoryUser{
+		client: group.client,
+		User:   result,
+	}, nil
+}
+
+// UpdateUserByName updates object stored in the database under the hashedName which is a hash of
+// display name and parents names.
+func (group *InventorySaurientV1) UpdateUserByName(ctx context.Context,
+	objToUpdate *baseinventorysaurientiov1.User) (*InventoryUser, error) {
+	logger.Debugf("[UpdateUserByName] Received objToUpdate: %s", objToUpdate.GetName())
+
+	var patch Patch
+
+	if objToUpdate.Annotations != nil || objToUpdate.Labels != nil {
+		current, err := group.client.Inventory().GetUserByName(ctx, objToUpdate.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		if objToUpdate.Annotations != nil {
+			if current.Annotations[ownershipAnnotation] != "" {
+				objToUpdate.Annotations[ownershipAnnotation] = current.Annotations[ownershipAnnotation]
+			}
+			patch = append(patch, PatchOp{
+				Op:    "replace",
+				Path:  "/metadata/annotations",
+				Value: objToUpdate.Annotations,
+			})
+		}
+
+		if objToUpdate.Labels != nil {
+			parentsList := helper.GetCRDParentsMap()["users.inventory.saurient.io"]
+			for _, k := range parentsList {
+				objToUpdate.Labels[k] = current.Labels[k]
+			}
+			objToUpdate.Labels[common.IsNameHashedLabel] = current.Labels[common.IsNameHashedLabel]
+			objToUpdate.Labels[common.DisplayNameLabel] = current.Labels[common.DisplayNameLabel]
+			patch = append(patch, PatchOp{
+				Op:    "replace",
+				Path:  "/metadata/labels",
+				Value: objToUpdate.Labels,
+			})
+		}
+		patch = append(patch, PatchOp{
+			Op:    "replace",
+			Path:  "/metadata/finalizers",
+			Value: objToUpdate.Finalizers,
+		})
+	}
+
+	var rt reflect.Type
+
+	rt = reflect.TypeOf(objToUpdate.Spec.UserID)
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array || rt.Kind() == reflect.Map {
+		if !reflect.ValueOf(objToUpdate.Spec.UserID).IsNil() {
+			patchValueUserID := objToUpdate.Spec.UserID
+			patchOpUserID := PatchOp{
+				Op:    "replace",
+				Path:  "/spec/userID",
+				Value: patchValueUserID,
+			}
+			patch = append(patch, patchOpUserID)
+		}
+	} else {
+		patchValueUserID := objToUpdate.Spec.UserID
+		patchOpUserID := PatchOp{
+			Op:    "replace",
+			Path:  "/spec/userID",
+			Value: patchValueUserID,
+		}
+		patch = append(patch, patchOpUserID)
+	}
+
+	rt = reflect.TypeOf(objToUpdate.Spec.TenantID)
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array || rt.Kind() == reflect.Map {
+		if !reflect.ValueOf(objToUpdate.Spec.TenantID).IsNil() {
+			patchValueTenantID := objToUpdate.Spec.TenantID
+			patchOpTenantID := PatchOp{
+				Op:    "replace",
+				Path:  "/spec/tenantID",
+				Value: patchValueTenantID,
+			}
+			patch = append(patch, patchOpTenantID)
+		}
+	} else {
+		patchValueTenantID := objToUpdate.Spec.TenantID
+		patchOpTenantID := PatchOp{
+			Op:    "replace",
+			Path:  "/spec/tenantID",
+			Value: patchValueTenantID,
+		}
+		patch = append(patch, patchOpTenantID)
+	}
+
+	rt = reflect.TypeOf(objToUpdate.Spec.Name)
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array || rt.Kind() == reflect.Map {
+		if !reflect.ValueOf(objToUpdate.Spec.Name).IsNil() {
+			patchValueName := objToUpdate.Spec.Name
+			patchOpName := PatchOp{
+				Op:    "replace",
+				Path:  "/spec/name",
+				Value: patchValueName,
+			}
+			patch = append(patch, patchOpName)
+		}
+	} else {
+		patchValueName := objToUpdate.Spec.Name
+		patchOpName := PatchOp{
+			Op:    "replace",
+			Path:  "/spec/name",
+			Value: patchValueName,
+		}
+		patch = append(patch, patchOpName)
+	}
+
+	rt = reflect.TypeOf(objToUpdate.Spec.Email)
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array || rt.Kind() == reflect.Map {
+		if !reflect.ValueOf(objToUpdate.Spec.Email).IsNil() {
+			patchValueEmail := objToUpdate.Spec.Email
+			patchOpEmail := PatchOp{
+				Op:    "replace",
+				Path:  "/spec/email",
+				Value: patchValueEmail,
+			}
+			patch = append(patch, patchOpEmail)
+		}
+	} else {
+		patchValueEmail := objToUpdate.Spec.Email
+		patchOpEmail := PatchOp{
+			Op:    "replace",
+			Path:  "/spec/email",
+			Value: patchValueEmail,
+		}
+		patch = append(patch, patchOpEmail)
+	}
+
+	rt = reflect.TypeOf(objToUpdate.Spec.Role)
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array || rt.Kind() == reflect.Map {
+		if !reflect.ValueOf(objToUpdate.Spec.Role).IsNil() {
+			patchValueRole := objToUpdate.Spec.Role
+			patchOpRole := PatchOp{
+				Op:    "replace",
+				Path:  "/spec/role",
+				Value: patchValueRole,
+			}
+			patch = append(patch, patchOpRole)
+		}
+	} else {
+		patchValueRole := objToUpdate.Spec.Role
+		patchOpRole := PatchOp{
+			Op:    "replace",
+			Path:  "/spec/role",
+			Value: patchValueRole,
+		}
+		patch = append(patch, patchOpRole)
+	}
+
+	rt = reflect.TypeOf(objToUpdate.Spec.FacilityScope)
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array || rt.Kind() == reflect.Map {
+		if !reflect.ValueOf(objToUpdate.Spec.FacilityScope).IsNil() {
+			patchValueFacilityScope := objToUpdate.Spec.FacilityScope
+			patchOpFacilityScope := PatchOp{
+				Op:    "replace",
+				Path:  "/spec/facilityScope",
+				Value: patchValueFacilityScope,
+			}
+			patch = append(patch, patchOpFacilityScope)
+		}
+	} else {
+		patchValueFacilityScope := objToUpdate.Spec.FacilityScope
+		patchOpFacilityScope := PatchOp{
+			Op:    "replace",
+			Path:  "/spec/facilityScope",
+			Value: patchValueFacilityScope,
+		}
+		patch = append(patch, patchOpFacilityScope)
+	}
+
+	rt = reflect.TypeOf(objToUpdate.Spec.LastLogin)
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array || rt.Kind() == reflect.Map {
+		if !reflect.ValueOf(objToUpdate.Spec.LastLogin).IsNil() {
+			patchValueLastLogin := objToUpdate.Spec.LastLogin
+			patchOpLastLogin := PatchOp{
+				Op:    "replace",
+				Path:  "/spec/lastLogin",
+				Value: patchValueLastLogin,
+			}
+			patch = append(patch, patchOpLastLogin)
+		}
+	} else {
+		patchValueLastLogin := objToUpdate.Spec.LastLogin
+		patchOpLastLogin := PatchOp{
+			Op:    "replace",
+			Path:  "/spec/lastLogin",
+			Value: patchValueLastLogin,
+		}
+		patch = append(patch, patchOpLastLogin)
+	}
+
+	rt = reflect.TypeOf(objToUpdate.Spec.Status)
+	if rt.Kind() == reflect.Slice || rt.Kind() == reflect.Array || rt.Kind() == reflect.Map {
+		if !reflect.ValueOf(objToUpdate.Spec.Status).IsNil() {
+			patchValueStatus := objToUpdate.Spec.Status
+			patchOpStatus := PatchOp{
+				Op:    "replace",
+				Path:  "/spec/status",
+				Value: patchValueStatus,
+			}
+			patch = append(patch, patchOpStatus)
+		}
+	} else {
+		patchValueStatus := objToUpdate.Spec.Status
+		patchOpStatus := PatchOp{
+			Op:    "replace",
+			Path:  "/spec/status",
+			Value: patchValueStatus,
+		}
+		patch = append(patch, patchOpStatus)
+	}
+
+	marshaled, err := patch.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		result *baseinventorysaurientiov1.User
+	)
+	newCtx := context.TODO()
+	retryCount := 0
+	for {
+		result, err = group.client.baseClient.
+			InventorySaurientV1().
+			Users().Patch(newCtx, objToUpdate.GetName(), types.JSONPatchType, marshaled, metav1.PatchOptions{}, "")
+		if err != nil {
+			logger.Errorf("[UpdateUserByName] Failed to patch User %s with error: %+v", objToUpdate.GetName(), err)
+			if errors.IsTimeout(err) || customerrors.Is(err, context.DeadlineExceeded) {
+				logger.Debugf("[Retry count: (%d) obj: %s ] %+v", retryCount, objToUpdate.GetName(), err)
+				if retryCount == maxRetryCount {
+					logger.Errorf("Max retry exceed on patching: %s", objToUpdate.GetName())
+					logger.Debugf("Trigger User Delete: %s", objToUpdate.GetName())
+					delErr := group.DeleteUserByName(newCtx, objToUpdate.GetName())
+					if delErr != nil {
+						logger.Debugf("Error occur while deleting User: %s", objToUpdate.GetName())
+						return nil, delErr
+					}
+					logger.Debugf("User deleted: %s", objToUpdate.GetName())
+					return nil, err
+				}
+				retryCount += 1
+				time.Sleep(sleepTime * time.Second)
+			} else if customerrors.Is(err, context.Canceled) {
+				logger.Errorf("[UpdateUserByName]: context canceled: %s", objToUpdate.GetName())
+				return nil, context.Canceled
+			} else {
+				logger.Errorf("[UpdateUserByName] Object: %s unexpected error: %+v", objToUpdate.GetName(), err)
+				logger.Debugf("Trigger User Delete: %s", objToUpdate.GetName())
+				delErr := group.DeleteUserByName(newCtx, objToUpdate.GetName())
+				if delErr != nil {
+					logger.Debugf("Error occur while deleting User: %+v", objToUpdate.GetName())
+					return nil, delErr
+				}
+				logger.Debugf("User Deleted: %s", objToUpdate.GetName())
+				return nil, err
+			}
+		} else {
+			logger.Debugf("[UpdateUserByName] Patch User Success :%s", objToUpdate.GetName())
+			if s, ok := subscriptionMap.Load("users.inventory.saurient.io"); ok {
+				logger.Debugf("[UpdateUserByName] %s stored in wr-cache", objToUpdate.GetName())
+				s.(subscription).WriteCacheObjects.Store(objToUpdate.GetName(), result)
+			}
+			break
+		}
+	}
+	logger.Debugf("[UpdateUserByName] Executed Successfully %s", objToUpdate.GetName())
+	return &InventoryUser{
+		client: group.client,
+		User:   result,
+	}, nil
+}
+
+// ListUsers returns slice of all existing objects of this type. Selectors can be provided in opts parameter.
+func (group *InventorySaurientV1) ListUsers(ctx context.Context,
+	opts metav1.ListOptions) (result []*InventoryUser, err error) {
+	key := "users.inventory.saurient.io"
+	if s, ok := subscriptionMap.Load(key); ok {
+		items := s.(subscription).informer.GetStore().List()
+		result = make([]*InventoryUser, len(items))
+		for k, v := range items {
+			item, _ := v.(*baseinventorysaurientiov1.User)
+			result[k] = &InventoryUser{
+				client: group.client,
+				User:   item,
+			}
+		}
+	} else {
+		list, err := group.client.baseClient.InventorySaurientV1().
+			Users().List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		result = make([]*InventoryUser, len(list.Items))
+		for k, v := range list.Items {
+			item := v
+			result[k] = &InventoryUser{
+				client: group.client,
+				User:   &item,
+			}
+		}
+	}
+	return
+}
+
+type InventoryUser struct {
+	client *Clientset
+	*baseinventorysaurientiov1.User
+}
+
+// Delete removes obj and all it's children from the database.
+func (obj *InventoryUser) Delete(ctx context.Context) error {
+	err := obj.client.Inventory().DeleteUserByName(ctx, obj.GetName())
+	if err != nil {
+		return err
+	}
+	obj.User = nil
+	return nil
+}
+
+// Update updates spec of object in database. Children and Link can not be updated using this function.
+func (obj *InventoryUser) Update(ctx context.Context) error {
+	result, err := obj.client.Inventory().UpdateUserByName(ctx, obj.User)
+	if err != nil {
+		return err
+	}
+	obj.User = result.User
+	return nil
+}
+
+func (obj *InventoryUser) GetParent(ctx context.Context) (result *InventoryTenant, err error) {
+	hashedName := helper.GetHashedName("tenants.inventory.saurient.io", obj.Labels, obj.Labels["tenants.inventory.saurient.io"])
+	logger.Debugf("[GetParent] Get parent of InventoryUser name %s [labels %#v] of parent type tenants.inventory.saurient.io and name %s", obj.Name, obj.Labels, hashedName)
+	return obj.client.Inventory().GetTenantByName(ctx, hashedName)
+}
+
+type userInventorySaurientV1Chainer struct {
+	client       *Clientset
+	name         string
+	parentLabels map[string]string
+}
+
+func (c *userInventorySaurientV1Chainer) Subscribe() {
+	key := "users.inventory.saurient.io"
+	if _, ok := subscriptionMap.Load(key); !ok {
+		informer := informerinventorysaurientiov1.NewUserInformer(c.client.baseClient, informerResyncPeriod*time.Second, cache.Indexers{})
+		subscribe(key, informer)
+
+		c.RegisterAddCallback(c.addCallback)
+		c.RegisterDeleteCallback(c.deleteCallback)
+
+	}
+}
+
+func (c *userInventorySaurientV1Chainer) Unsubscribe() {
+	key := "users.inventory.saurient.io"
+	if s, ok := subscriptionMap.Load(key); ok {
+		close(s.(subscription).stop)
+		subscriptionMap.Delete(key)
+	}
+}
+
+func (c *userInventorySaurientV1Chainer) IsSubscribed() bool {
+	key := "users.inventory.saurient.io"
+	_, ok := subscriptionMap.Load(key)
+	return ok
+}
+
+func (c *userInventorySaurientV1Chainer) addCallback(obj *InventoryUser) {
+	parentDisplayName := helper.DefaultKey
+	if value, ok := obj.Labels["tenants.inventory.saurient.io"]; ok {
+		parentDisplayName = value
+	}
+	parentHashName := helper.GetHashedName("tenants.inventory.saurient.io", obj.Labels, parentDisplayName)
+	logger.Debugf("[addCallback] received for users.inventory.saurient.io name %s displayName %s parent tenants.inventory.saurient.io name %s parentDisplayName %s", obj.Name, obj.DisplayName(), parentHashName, parentDisplayName)
+
+	AddChild("tenants.inventory.saurient.io", parentHashName, "users.inventory.saurient.io", obj.Name)
+}
+
+func (c *userInventorySaurientV1Chainer) deleteCallback(obj *InventoryUser) {
+	parentDisplayName := helper.DefaultKey
+	if value, ok := obj.Labels["tenants.inventory.saurient.io"]; ok {
+		parentDisplayName = value
+	}
+	parentHashName := helper.GetHashedName("tenants.inventory.saurient.io", obj.Labels, parentDisplayName)
+	logger.Debugf("[deleteCallback] received for users.inventory.saurient.io name %s displayName %s parent tenants.inventory.saurient.io name %s parentDisplayName %s", obj.Name, obj.DisplayName(), parentHashName, parentDisplayName)
+
+	RemoveChild("tenants.inventory.saurient.io", parentHashName, "users.inventory.saurient.io", obj.Name)
+}
+
+func (c *userInventorySaurientV1Chainer) RegisterEventHandler(addCB func(obj *InventoryUser), updateCB func(oldObj, newObj *InventoryUser), deleteCB func(obj *InventoryUser)) (cache.ResourceEventHandlerRegistration, error) {
+	fmt.Println("RegisterEventHandler for InventoryUser")
+	var (
+		registrationId cache.ResourceEventHandlerRegistration
+		err            error
+		informer       cache.SharedIndexInformer
+	)
+	key := "users.inventory.saurient.io"
+	if s, ok := subscriptionMap.Load(key); ok {
+		fmt.Println("Informer exists for InventoryUser")
+		sub := s.(subscription)
+		informer = sub.informer
+	} else {
+		fmt.Println("Informer doesn't exists for InventoryUser, so creating a new one")
+		informer = informerinventorysaurientiov1.NewUserInformer(c.client.baseClient, informerResyncPeriod*time.Second, cache.Indexers{})
+		subscribe(key, informer)
+
+		c.RegisterAddCallback(c.addCallback)
+		c.RegisterDeleteCallback(c.deleteCallback)
+
+	}
+	registrationId, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			nc := &InventoryUser{
+				client: c.client,
+				User:   obj.(*baseinventorysaurientiov1.User),
+			}
+			logger.Debugf("[RegisterEventHandler AddFunc] Got Add event for users.inventory.saurient.io name %s", nc.User.Name)
+
+			var parent *InventoryTenant
+			for i := 0; i < 600; i++ {
+				// Check if parent exists
+				p, err := nc.GetParent(context.TODO())
+				if err != nil || p == nil {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				parent = p
+				break
+			}
+			if parent == nil {
+				hashedName := helper.GetHashedName("tenants.inventory.saurient.io", nc.Labels, nc.Labels["tenants.inventory.saurient.io"])
+				parent, err = c.client.Inventory().ForceReadTenantByName(context.TODO(), hashedName)
+				if err != nil {
+					if errors.IsNotFound(err) {
+						return
+					}
+					panic("error occurred while fetching parent " + err.Error())
+				}
+				panic(fmt.Sprintf("parent found (event loop is stalled) %s", nc.DisplayName()))
+			}
+			if !IsChildExists("tenants.inventory.saurient.io", parent.Name, "users.inventory.saurient.io", nc.Name) {
+				AddChild("tenants.inventory.saurient.io", parent.Name, "users.inventory.saurient.io", nc.Name)
+			}
+
+			addCB(nc)
+		},
+
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			oldData := &InventoryUser{
+				client: c.client,
+				User:   oldObj.(*baseinventorysaurientiov1.User),
+			}
+			newData := &InventoryUser{
+				client: c.client,
+				User:   newObj.(*baseinventorysaurientiov1.User),
+			}
+			logger.Debugf("[RegisterEventHandler UpdateFunc] Got Update event for users.inventory.saurient.io name %s old version %s new version %s", oldData.User.Name, oldData.ResourceVersion, newData.ResourceVersion)
+			updateCB(oldData, newData)
+		},
+
+		DeleteFunc: func(obj interface{}) {
+			nc := &InventoryUser{
+				client: c.client,
+				User:   obj.(*baseinventorysaurientiov1.User),
+			}
+			logger.Debugf("[RegisterEventHandler DeleteFunc] Got Delete event for users.inventory.saurient.io name %s", nc.User.Name)
+
+			var parent *InventoryTenant
+			for i := 0; i < 600; i++ {
+				// Check if parent exists
+				p, err := nc.GetParent(context.TODO())
+				if errors.IsNotFound(err) {
+					break
+				} else if err != nil || p == nil {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				parent = p
+				break
+			}
+			if parent == nil {
+				hashedName := helper.GetHashedName("tenants.inventory.saurient.io", nc.Labels, nc.Labels["tenants.inventory.saurient.io"])
+				parent, err = c.client.Inventory().ForceReadTenantByName(context.TODO(), hashedName)
+				if err != nil {
+					if errors.IsNotFound(err) {
+						return
+					}
+					panic("error occurred while fetching parent " + err.Error())
+				}
+				panic(fmt.Sprintf("parent found (event loop is stalled) %s", nc.DisplayName()))
+			}
+
+			if IsChildExists("tenants.inventory.saurient.io", parent.Name, "users.inventory.saurient.io", nc.Name) {
+				RemoveChild("tenants.inventory.saurient.io", parent.Name, "users.inventory.saurient.io", nc.Name)
+			}
+
+			deleteCB(nc)
+		},
+	})
+	return registrationId, err
+}
+
+func (c *userInventorySaurientV1Chainer) RegisterAddCallback(cbfn func(obj *InventoryUser)) (cache.ResourceEventHandlerRegistration, error) {
+	logger.Debugf("[RegisterAddCallback] Received for InventoryUser")
+	var (
+		registrationId cache.ResourceEventHandlerRegistration
+		err            error
+		informer       cache.SharedIndexInformer
+	)
+
+	key := "users.inventory.saurient.io"
+	if s, ok := subscriptionMap.Load(key); ok {
+		fmt.Println("Informer exists for InventoryUser")
+		sub := s.(subscription)
+		informer = sub.informer
+	} else {
+		fmt.Println("Informer doesn't exists for InventoryUser, so creating a new one")
+		informer = informerinventorysaurientiov1.NewUserInformer(c.client.baseClient, informerResyncPeriod*time.Second, cache.Indexers{})
+		subscribe(key, informer)
+
+		c.RegisterAddCallback(c.addCallback)
+		c.RegisterDeleteCallback(c.deleteCallback)
+
+	}
+
+	registrationId, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			nc := &InventoryUser{
+				client: c.client,
+				User:   obj.(*baseinventorysaurientiov1.User),
+			}
+			logger.Debugf("[RegisterAddCallback] Got Add event for users.inventory.saurient.io name %s", nc.User.Name)
+
+			var parent *InventoryTenant
+			for i := 0; i < 600; i++ {
+				// Check if parent exists
+				p, err := nc.GetParent(context.TODO())
+				if err != nil || p == nil {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				parent = p
+				break
+			}
+			if parent == nil {
+				hashedName := helper.GetHashedName("tenants.inventory.saurient.io", nc.Labels, nc.Labels["tenants.inventory.saurient.io"])
+				parent, err = c.client.Inventory().ForceReadTenantByName(context.TODO(), hashedName)
+				if err != nil {
+					if errors.IsNotFound(err) {
+						return
+					}
+
+					panic("error occurred while fetching parent " + err.Error())
+				}
+				panic(fmt.Sprintf("parent found (event loop is stalled) %s", nc.DisplayName()))
+			}
+
+			if !IsChildExists("tenants.inventory.saurient.io", parent.Name, "users.inventory.saurient.io", nc.Name) {
+				AddChild("tenants.inventory.saurient.io", parent.Name, "users.inventory.saurient.io", nc.Name)
+			}
+
+			cbfn(nc)
+		},
+	})
+
+	return registrationId, err
+}
+
+func (c *userInventorySaurientV1Chainer) RegisterUpdateCallback(cbfn func(oldObj, newObj *InventoryUser)) (cache.ResourceEventHandlerRegistration, error) {
+	logger.Debugf("[RegisterUpdateCallback] Received for InventoryUser")
+	var (
+		registrationId cache.ResourceEventHandlerRegistration
+		err            error
+		informer       cache.SharedIndexInformer
+	)
+
+	key := "users.inventory.saurient.io"
+	if s, ok := subscriptionMap.Load(key); ok {
+		fmt.Println("Informer exists for InventoryUser")
+		sub := s.(subscription)
+		informer = sub.informer
+	} else {
+		fmt.Println("Informer doesn't exists for InventoryUser, so creating a new one")
+		informer = informerinventorysaurientiov1.NewUserInformer(c.client.baseClient, informerResyncPeriod*time.Second, cache.Indexers{})
+		subscribe(key, informer)
+
+		c.RegisterAddCallback(c.addCallback)
+		c.RegisterDeleteCallback(c.deleteCallback)
+
+	}
+
+	registrationId, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			oldData := &InventoryUser{
+				client: c.client,
+				User:   oldObj.(*baseinventorysaurientiov1.User),
+			}
+			newData := &InventoryUser{
+				client: c.client,
+				User:   newObj.(*baseinventorysaurientiov1.User),
+			}
+			logger.Debugf("[RegisterUpdateCallback] Got Update event for users.inventory.saurient.io name %s old version %s new version %s", oldData.User.Name, oldData.ResourceVersion, newData.ResourceVersion)
+			cbfn(oldData, newData)
+		},
+	})
+
+	return registrationId, err
+}
+
+func (c *userInventorySaurientV1Chainer) RegisterDeleteCallback(cbfn func(obj *InventoryUser)) (cache.ResourceEventHandlerRegistration, error) {
+	logger.Debugf("[RegisterDeleteCallback] Received for InventoryUser")
+	var (
+		registrationId cache.ResourceEventHandlerRegistration
+		err            error
+		informer       cache.SharedIndexInformer
+	)
+
+	key := "users.inventory.saurient.io"
+	if s, ok := subscriptionMap.Load(key); ok {
+		fmt.Println("Informer exists for InventoryUser")
+		sub := s.(subscription)
+		informer = sub.informer
+	} else {
+		fmt.Println("Informer doesn't exists for InventoryUser, so creating a new one")
+		informer = informerinventorysaurientiov1.NewUserInformer(c.client.baseClient, informerResyncPeriod*time.Second, cache.Indexers{})
+		subscribe(key, informer)
+
+		c.RegisterAddCallback(c.addCallback)
+		c.RegisterDeleteCallback(c.deleteCallback)
+
+	}
+
+	registrationId, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		DeleteFunc: func(obj interface{}) {
+			nc := &InventoryUser{
+				client: c.client,
+				User:   obj.(*baseinventorysaurientiov1.User),
+			}
+			logger.Debugf("[RegisterDeleteCallback] Got Delete event for users.inventory.saurient.io name %s", nc.User.Name)
+
+			var parent *InventoryTenant
+			for i := 0; i < 600; i++ {
+				// Check if parent exists
+				p, err := nc.GetParent(context.TODO())
+				if errors.IsNotFound(err) {
+					break
+				} else if err != nil || p == nil {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				parent = p
+				break
+			}
+
+			if parent == nil {
+				hashedName := helper.GetHashedName("tenants.inventory.saurient.io", nc.Labels, nc.Labels["tenants.inventory.saurient.io"])
+				parent, err = c.client.Inventory().ForceReadTenantByName(context.TODO(), hashedName)
+				if err != nil {
+					if errors.IsNotFound(err) {
+						return
+					}
+
+					panic("error occurred while fetching parent " + err.Error())
+				}
+				panic(fmt.Sprintf("parent found (event loop is stalled) %s", nc.DisplayName()))
+			}
+			if IsChildExists("tenants.inventory.saurient.io", parent.Name, "users.inventory.saurient.io", nc.Name) {
+				RemoveChild("tenants.inventory.saurient.io", parent.Name, "users.inventory.saurient.io", nc.Name)
+			}
+
+			cbfn(nc)
+		},
+	})
+
+	return registrationId, err
 }
 
 func (group *InventorySaurientV1) GetFacilityChildrenMap() map[string]baseinventorysaurientiov1.Child {

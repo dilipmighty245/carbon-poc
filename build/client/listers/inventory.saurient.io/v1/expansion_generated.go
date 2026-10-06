@@ -39,3 +39,7 @@ type SupplierListerExpansion interface{}
 // TenantListerExpansion allows custom methods to be added to
 // TenantLister.
 type TenantListerExpansion interface{}
+
+// UserListerExpansion allows custom methods to be added to
+// UserLister.
+type UserListerExpansion interface{}

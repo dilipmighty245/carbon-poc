@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -464,7 +465,160 @@ func ListRulebookNodes(ctx context.Context, client *nexus_client.Clientset) ([]*
 	return cfg.GetAllRulebooks(ctx)
 }
 
-// CarbonPassportModelFromNode converts a Nexus RuntimeCarbonPassport node into CarbonPassportModel.
+// CreateUserNode adds or updates a User node under the specified Tenant in the Nexus graph.
+func CreateUserNode(ctx context.Context, client *nexus_client.Clientset, tenantID string, spec inventoryv1.UserSpec) (*nexus_client.InventoryUser, error) {
+	tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceName := spec.UserID
+	if resourceName == "" {
+		resourceName = spec.Email
+	}
+
+	userNode, err := tenantNode.AddUsers(ctx, &inventoryv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resourceName,
+		},
+		Spec: spec,
+	})
+	if err != nil && nexus_client.IsAlreadyExists(err) {
+		// Update existing user
+		existing, getErr := tenantNode.GetUsers(ctx, resourceName)
+		if getErr == nil && existing != nil {
+			existing.Spec = spec
+			if updErr := existing.Update(ctx); updErr == nil {
+				return existing, nil
+			}
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to add User node %s under Tenant %s: %w", resourceName, tenantID, err)
+	}
+	return userNode, nil
+}
+
+// GetUserNode retrieves a User node under a Tenant by user ID.
+func GetUserNode(ctx context.Context, client *nexus_client.Clientset, tenantID, userID string) (*nexus_client.InventoryUser, error) {
+	tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	return tenantNode.GetUsers(ctx, userID)
+}
+
+// GetUserNodeByEmail searches for a User node under a Tenant by email.
+func GetUserNodeByEmail(ctx context.Context, client *nexus_client.Clientset, tenantID, email string) (*nexus_client.InventoryUser, error) {
+	users, err := ListUserNodes(ctx, client, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range users {
+		if u != nil && strings.EqualFold(u.Spec.Email, email) {
+			return u, nil
+		}
+	}
+	return nil, fmt.Errorf("user with email %s not found under tenant %s", email, tenantID)
+}
+
+// ListUserNodes returns all User nodes for a specific tenant, or across all tenants if tenantID is empty.
+func ListUserNodes(ctx context.Context, client *nexus_client.Clientset, tenantID string) ([]*nexus_client.InventoryUser, error) {
+	root, err := EnsureGraphRoots(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+
+	inv, err := root.GetInventory(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Inventory branch: %w", err)
+	}
+
+	var results []*nexus_client.InventoryUser
+	if tenantID != "" {
+		tenantNode, err := inv.GetTenants(ctx, tenantID)
+		if err != nil {
+			if nexus_client.IsChildNotFound(err) {
+				return results, nil
+			}
+			return nil, err
+		}
+		usrs, err := tenantNode.GetAllUsers(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return usrs, nil
+	}
+
+	tenants, err := inv.GetAllTenants(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range tenants {
+		if t != nil {
+			usrs, err := t.GetAllUsers(ctx)
+			if err == nil {
+				results = append(results, usrs...)
+			}
+		}
+	}
+	return results, nil
+}
+
+// UpdateUserRoleNode updates the role on an existing User node under a Tenant.
+func UpdateUserRoleNode(ctx context.Context, client *nexus_client.Clientset, tenantID, userID, newRole string) error {
+	uNode, err := GetUserNode(ctx, client, tenantID, userID)
+	if err != nil || uNode == nil {
+		// Fallback search by ID across all tenant users
+		allUsers, listErr := ListUserNodes(ctx, client, tenantID)
+		if listErr == nil {
+			for _, u := range allUsers {
+				if u != nil && (u.Spec.UserID == userID || u.DisplayName() == userID) {
+					uNode = u
+					break
+				}
+			}
+		}
+	}
+	if uNode == nil {
+		return fmt.Errorf("user %s not found under tenant %s", userID, tenantID)
+	}
+
+	uNode.Spec.Role = newRole
+	return uNode.Update(ctx)
+}
+
+// DeleteUserNode removes a User node under a Tenant.
+func DeleteUserNode(ctx context.Context, client *nexus_client.Clientset, tenantID, userID string) error {
+	tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+	if err != nil {
+		return err
+	}
+	return tenantNode.DeleteUsers(ctx, userID)
+}
+
+// UserModelFromNode converts a Nexus InventoryUser node to OrganisationUserModel.
+func UserModelFromNode(uNode *nexus_client.InventoryUser) *OrganisationUserModel {
+	if uNode == nil {
+		return nil
+	}
+	spec := uNode.Spec
+	id := spec.UserID
+	if id == "" {
+		id = uNode.DisplayName()
+	}
+	return &OrganisationUserModel{
+		ID:            id,
+		TenantID:      spec.TenantID,
+		Name:          spec.Name,
+		Email:         spec.Email,
+		Role:          spec.Role,
+		FacilityScope: spec.FacilityScope,
+		LastLogin:     spec.LastLogin,
+		Status:        spec.Status,
+		CreatedAt:     time.Now(),
+	}
+}
 func CarbonPassportModelFromNode(pNode *nexus_client.RuntimeCarbonPassport) *CarbonPassportModel {
 	if pNode == nil {
 		return nil

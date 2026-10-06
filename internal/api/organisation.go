@@ -6,22 +6,36 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
+	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
+	nexus_client "saurient-platform/build/nexus-client"
 	"saurient-platform/internal/nexus"
 	"saurient-platform/internal/tenant"
 )
 
 type OrganisationHandler struct {
+	client *nexus_client.Clientset
 	engine *nexus.NexusGraphEngine
 }
 
 func NewOrganisationHandler(engine *nexus.NexusGraphEngine) *OrganisationHandler {
+	return NewOrganisationHandlerWithClient(nil, engine)
+}
+
+func NewOrganisationHandlerWithClient(client *nexus_client.Clientset, engine *nexus.NexusGraphEngine) *OrganisationHandler {
+	if client == nil {
+		client = nexus.GetNexusClient()
+	}
 	if engine == nil {
 		engine = nexus.GetNexusEngine()
 	}
-	return &OrganisationHandler{engine: engine}
+	return &OrganisationHandler{
+		client: client,
+		engine: engine,
+	}
 }
 
 func getTenantID(r *http.Request) string {
@@ -96,7 +110,16 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 	ctx := tenant.WithTenant(r.Context(), tenantID)
 
 	var loggedInUser *nexus.OrganisationUserModel
-	if h.engine != nil {
+
+	// 1. Check Nexus graph node first
+	if h.client != nil {
+		if uNode, err := nexus.GetUserNodeByEmail(ctx, h.client, tenantID, req.Email); err == nil && uNode != nil {
+			loggedInUser = nexus.UserModelFromNode(uNode)
+		}
+	}
+
+	// 2. Fallback to nexusEngine if available
+	if loggedInUser == nil && h.engine != nil {
 		users, err := h.engine.ListOrganisationUsers(ctx)
 		if err == nil {
 			for _, u := range users {
@@ -108,7 +131,7 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	// Fallback for demo logins if not found
+	// 3. Fallback for demo logins if not found: dynamically generate and persist as first-class Nexus node
 	if loggedInUser == nil {
 		role := "Sustainability Manager"
 		if strings.Contains(strings.ToLower(req.Email), "admin") {
@@ -125,16 +148,55 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 			name = strings.Title(strings.ReplaceAll(parts[0], ".", " "))
 		}
 
-		loggedInUser = &nexus.OrganisationUserModel{
-			ID:            "usr-" + uuid.New().String()[:8],
-			TenantID:      tenantID,
-			Name:          name,
-			Email:         req.Email,
-			Role:          role,
-			FacilityScope: "All Facilities",
-			LastLogin:     "Just now",
-			Status:        "Active",
+		userID := "usr-" + uuid.New().String()[:8]
+		lastLogin := time.Now().UTC().Format(time.RFC3339)
+
+		// Persist as first-class declarative Nexus User Node
+		if h.client != nil {
+			userSpec := inventoryv1.UserSpec{
+				UserID:        userID,
+				TenantID:      tenantID,
+				Name:          name,
+				Email:         req.Email,
+				Role:          role,
+				FacilityScope: "All Facilities",
+				LastLogin:     lastLogin,
+				Status:        "Active",
+			}
+			if uNode, err := nexus.CreateUserNode(ctx, h.client, tenantID, userSpec); err == nil && uNode != nil {
+				loggedInUser = nexus.UserModelFromNode(uNode)
+			}
 		}
+
+		if loggedInUser == nil {
+			loggedInUser = &nexus.OrganisationUserModel{
+				ID:            userID,
+				TenantID:      tenantID,
+				Name:          name,
+				Email:         req.Email,
+				Role:          role,
+				FacilityScope: "All Facilities",
+				LastLogin:     lastLogin,
+				Status:        "Active",
+			}
+			if h.engine != nil {
+				_ = h.engine.SaveOrganisationUser(ctx, loggedInUser)
+			}
+		}
+	} else if h.client != nil {
+		// Update LastLogin timestamp
+		loggedInUser.LastLogin = time.Now().UTC().Format(time.RFC3339)
+		userSpec := inventoryv1.UserSpec{
+			UserID:        loggedInUser.ID,
+			TenantID:      loggedInUser.TenantID,
+			Name:          loggedInUser.Name,
+			Email:         loggedInUser.Email,
+			Role:          loggedInUser.Role,
+			FacilityScope: loggedInUser.FacilityScope,
+			LastLogin:     loggedInUser.LastLogin,
+			Status:        loggedInUser.Status,
+		}
+		_, _ = nexus.CreateUserNode(ctx, h.client, tenantID, userSpec)
 	}
 
 	resp := LoginResponse{
@@ -368,14 +430,35 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 
 	switch r.Method {
 	case http.MethodGet:
-		users, err := h.engine.ListOrganisationUsers(ctx)
-		if err != nil {
-			writeJSONError(w, fmt.Sprintf("failed to list users: %v", err), http.StatusInternalServerError)
-			return
+		users := make([]*nexus.OrganisationUserModel, 0)
+		seen := make(map[string]bool)
+
+		if h.client != nil {
+			if uNodes, err := nexus.ListUserNodes(ctx, h.client, tenantID); err == nil {
+				for _, uNode := range uNodes {
+					if uNode == nil || uNode.User == nil {
+						continue
+					}
+					uModel := nexus.UserModelFromNode(uNode)
+					if uModel != nil && !seen[uModel.ID] {
+						seen[uModel.ID] = true
+						users = append(users, uModel)
+					}
+				}
+			}
 		}
-		if users == nil {
-			users = []*nexus.OrganisationUserModel{}
+
+		if h.engine != nil {
+			if engineUsers, err := h.engine.ListOrganisationUsers(ctx); err == nil {
+				for _, u := range engineUsers {
+					if u != nil && !seen[u.ID] {
+						seen[u.ID] = true
+						users = append(users, u)
+					}
+				}
+			}
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(users)
 
@@ -392,10 +475,28 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 		if u.Status == "" {
 			u.Status = "ACTIVE"
 		}
-		if err := h.engine.SaveOrganisationUser(ctx, &u); err != nil {
-			writeJSONError(w, fmt.Sprintf("failed to save user: %v", err), http.StatusInternalServerError)
-			return
+
+		if h.client != nil {
+			spec := inventoryv1.UserSpec{
+				UserID:        u.ID,
+				TenantID:      tenantID,
+				Name:          u.Name,
+				Email:         u.Email,
+				Role:          u.Role,
+				FacilityScope: u.FacilityScope,
+				LastLogin:     u.LastLogin,
+				Status:        u.Status,
+			}
+			if _, err := nexus.CreateUserNode(ctx, h.client, tenantID, spec); err != nil {
+				writeJSONError(w, fmt.Sprintf("failed to save user node in nexus: %v", err), http.StatusInternalServerError)
+				return
+			}
 		}
+
+		if h.engine != nil {
+			_ = h.engine.SaveOrganisationUser(ctx, &u)
+		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(u)
 
@@ -434,8 +535,20 @@ func (h *OrganisationHandler) HandleUpdateUserRole(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err := h.engine.UpdateUserRole(ctx, req.UserID, req.NewRole); err != nil {
-		writeJSONError(w, fmt.Sprintf("failed to update role: %v", err), http.StatusInternalServerError)
+	var updateErr error
+	if h.client != nil {
+		updateErr = nexus.UpdateUserRoleNode(ctx, h.client, tenantID, req.UserID, req.NewRole)
+	}
+
+	if h.engine != nil {
+		engineErr := h.engine.UpdateUserRole(ctx, req.UserID, req.NewRole)
+		if updateErr != nil && engineErr == nil {
+			updateErr = nil
+		}
+	}
+
+	if updateErr != nil {
+		writeJSONError(w, fmt.Sprintf("failed to update role: %v", updateErr), http.StatusInternalServerError)
 		return
 	}
 

@@ -92,10 +92,25 @@ type inventory_Tenant {
 
     Facilities(Id: ID): [inventory_Facility!]
     Products(Id: ID): [inventory_Product!]
+    Users(Id: ID): [inventory_User!]
     TenantID: String
     LegalName: String
     Country: String
     Industry: String
+}
+
+type inventory_User {
+    Id: ID
+	ParentLabels: Map
+
+    UserID: String
+    TenantID: String
+    Name: String
+    Email: String
+    Role: String
+    FacilityScope: String
+    LastLogin: String
+    Status: String
 }
 
 type inventory_Facility {

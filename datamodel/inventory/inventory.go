@@ -32,6 +32,20 @@ type Tenant struct {
 	Industry   string     `json:"industry,omitempty" mapstructure:"industry,omitempty"`
 	Facilities Facility   `nexus:"children"`
 	Products   Product    `nexus:"children"`
+	Users      User       `nexus:"children"`
+}
+
+type User struct {
+	nexus.Node
+
+	UserID        string `json:"userID,omitempty" mapstructure:"userID,omitempty"`
+	TenantID      string `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty"`
+	Name          string `json:"name,omitempty" mapstructure:"name,omitempty"`
+	Email         string `json:"email,omitempty" mapstructure:"email,omitempty"`
+	Role          string `json:"role,omitempty" mapstructure:"role,omitempty"`
+	FacilityScope string `json:"facilityScope,omitempty" mapstructure:"facilityScope,omitempty"`
+	LastLogin     string `json:"lastLogin,omitempty" mapstructure:"lastLogin,omitempty"`
+	Status        string `json:"status,omitempty" mapstructure:"status,omitempty"`
 }
 
 type Facility struct {

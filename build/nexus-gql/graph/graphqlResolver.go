@@ -944,6 +944,105 @@ vLastUpdated := string(vProduct.Spec.LastUpdated)
 
 //////////////////////////////////////
 // CHILDREN RESOLVER
+// FieldName: Users Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantUsersResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryUser, error) {
+	log.Debugf("[getInventoryTenantUsersResolver]Parent Object %+v", obj)
+	var vInventoryUserList []*model.InventoryUser
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantUsersResolver]Id %q", *id)
+		vUser, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetUsers(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantUsersResolver]Error getting Users node %q : %s", *id, err)
+            return vInventoryUserList, nil
+        }
+		dn := vUser.DisplayName()
+parentLabels := map[string]interface{}{"users.inventory.saurient.io":dn}
+vUserID := string(vUser.Spec.UserID)
+vTenantID := string(vUser.Spec.TenantID)
+vName := string(vUser.Spec.Name)
+vEmail := string(vUser.Spec.Email)
+vRole := string(vUser.Spec.Role)
+vFacilityScope := string(vUser.Spec.FacilityScope)
+vLastLogin := string(vUser.Spec.LastLogin)
+vStatus := string(vUser.Spec.Status)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryUser {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	UserID: &vUserID,
+	TenantID: &vTenantID,
+	Name: &vName,
+	Email: &vEmail,
+	Role: &vRole,
+	FacilityScope: &vFacilityScope,
+	LastLogin: &vLastLogin,
+	Status: &vStatus,
+	}
+		vInventoryUserList = append(vInventoryUserList, ret)
+
+		log.Debugf("[getInventoryTenantUsersResolver]Output Users objects %v", vInventoryUserList)
+
+		return vInventoryUserList, nil
+	}
+
+	log.Debug("[getInventoryTenantUsersResolver]Id is empty, process all Userss")
+
+	vUserParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantUsersResolver]Error getting parent node %s", err)
+        return vInventoryUserList, nil
+    }
+	vUserAllObj, err := vUserParent.GetAllUsers(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantUsersResolver]Error getting Users objects %s", err)
+        return vInventoryUserList, nil
+    }
+	for _, i := range vUserAllObj {
+		vUser, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetUsers(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantUsersResolver]Error getting Users node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vUser.DisplayName()
+parentLabels := map[string]interface{}{"users.inventory.saurient.io":dn}
+vUserID := string(vUser.Spec.UserID)
+vTenantID := string(vUser.Spec.TenantID)
+vName := string(vUser.Spec.Name)
+vEmail := string(vUser.Spec.Email)
+vRole := string(vUser.Spec.Role)
+vFacilityScope := string(vUser.Spec.FacilityScope)
+vLastLogin := string(vUser.Spec.LastLogin)
+vStatus := string(vUser.Spec.Status)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryUser {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	UserID: &vUserID,
+	TenantID: &vTenantID,
+	Name: &vName,
+	Email: &vEmail,
+	Role: &vRole,
+	FacilityScope: &vFacilityScope,
+	LastLogin: &vLastLogin,
+	Status: &vStatus,
+	}
+		vInventoryUserList = append(vInventoryUserList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantUsersResolver]Output Users objects %v", vInventoryUserList)
+
+	return vInventoryUserList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
 // FieldName: Meters Node: Facility PKG: Inventory
 //////////////////////////////////////
 func getInventoryFacilityMetersResolver(obj *model.InventoryFacility, id *string) ([]*model.InventoryMeter, error) {

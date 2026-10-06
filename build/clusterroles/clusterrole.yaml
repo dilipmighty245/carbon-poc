@@ -5,17 +5,17 @@ kind: ClusterRole
 metadata:
   name: saurient.io-read-role
 rules:
-  - apiGroups: ["root.saurient.io"]
-    resources: ["roots", "roots/status"]
-    verbs: ["get", "list", "watch"]
   - apiGroups: ["config.saurient.io"]
     resources: ["configs", "configs/status", "rulebooks", "rulebooks/status", "cbambenchmarks", "cbambenchmarks/status", "storyboardscenes", "storyboardscenes/status"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["inventory.saurient.io"]
-    resources: ["inventories", "inventories/status", "acvagencies", "acvagencies/status", "tenants", "tenants/status", "facilities", "facilities/status", "meters", "meters/status", "products", "products/status", "logisticslegs", "logisticslegs/status", "suppliers", "suppliers/status", "declarations", "declarations/status"]
+    resources: ["inventories", "inventories/status", "acvagencies", "acvagencies/status", "tenants", "tenants/status", "users", "users/status", "facilities", "facilities/status", "meters", "meters/status", "products", "products/status", "logisticslegs", "logisticslegs/status", "suppliers", "suppliers/status", "declarations", "declarations/status"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["runtime.saurient.io"]
     resources: ["runtimes", "runtimes/status", "telemetryreadings", "telemetryreadings/status", "acvengagements", "acvengagements/status", "carbonpassports", "carbonpassports/status", "auditrecords", "auditrecords/status"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["root.saurient.io"]
+    resources: ["roots", "roots/status"]
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -23,15 +23,15 @@ kind: ClusterRole
 metadata:
   name: saurient.io-write-role
 rules:
-  - apiGroups: ["root.saurient.io"]
-    resources: ["roots", "roots/status"]
-    verbs: ["create", "update", "patch", "delete"]
   - apiGroups: ["config.saurient.io"]
     resources: ["configs", "configs/status", "rulebooks", "rulebooks/status", "cbambenchmarks", "cbambenchmarks/status", "storyboardscenes", "storyboardscenes/status"]
     verbs: ["create", "update", "patch", "delete"]
   - apiGroups: ["inventory.saurient.io"]
-    resources: ["inventories", "inventories/status", "acvagencies", "acvagencies/status", "tenants", "tenants/status", "facilities", "facilities/status", "meters", "meters/status", "products", "products/status", "logisticslegs", "logisticslegs/status", "suppliers", "suppliers/status", "declarations", "declarations/status"]
+    resources: ["inventories", "inventories/status", "acvagencies", "acvagencies/status", "tenants", "tenants/status", "users", "users/status", "facilities", "facilities/status", "meters", "meters/status", "products", "products/status", "logisticslegs", "logisticslegs/status", "suppliers", "suppliers/status", "declarations", "declarations/status"]
     verbs: ["create", "update", "patch", "delete"]
   - apiGroups: ["runtime.saurient.io"]
     resources: ["runtimes", "runtimes/status", "telemetryreadings", "telemetryreadings/status", "acvengagements", "acvengagements/status", "carbonpassports", "carbonpassports/status", "auditrecords", "auditrecords/status"]
+    verbs: ["create", "update", "patch", "delete"]
+  - apiGroups: ["root.saurient.io"]
+    resources: ["roots", "roots/status"]
     verbs: ["create", "update", "patch", "delete"]

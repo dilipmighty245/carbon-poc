@@ -21,3 +21,5 @@ type ProductExpansion interface{}
 type SupplierExpansion interface{}
 
 type TenantExpansion interface{}
+
+type UserExpansion interface{}

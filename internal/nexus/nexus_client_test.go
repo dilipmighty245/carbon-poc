@@ -89,4 +89,65 @@ func TestNexusClient_GraphRootsAndProductNode(t *testing.T) {
 	if err := productNode.Update(ctx); err != nil {
 		t.Fatalf("failed to update product node: %v", err)
 	}
+
+	// 6. Test User Node CRUD under Tenant
+	userSpec := inventoryv1.UserSpec{
+		UserID:        "USR-TEST-001",
+		TenantID:      tenantID,
+		Name:          "Amara Okafor",
+		Email:         "a.okafor@ecoglobal.com",
+		Role:          "Admin",
+		FacilityScope: "All Facilities",
+		LastLogin:     "2026-10-06T12:00:00Z",
+		Status:        "Active",
+	}
+
+	uNode, err := CreateUserNode(ctx, client, tenantID, userSpec)
+	if err != nil {
+		t.Fatalf("CreateUserNode failed: %v", err)
+	}
+	if uNode == nil {
+		t.Fatal("expected non-nil user node")
+	}
+
+	// Read by ID
+	fetchedUser, err := GetUserNode(ctx, client, tenantID, "USR-TEST-001")
+	if err != nil || fetchedUser == nil {
+		t.Fatalf("GetUserNode failed: %v", err)
+	}
+	if fetchedUser.Spec.Email != "a.okafor@ecoglobal.com" {
+		t.Errorf("expected email a.okafor@ecoglobal.com, got %s", fetchedUser.Spec.Email)
+	}
+
+	// Read by Email
+	emailUser, err := GetUserNodeByEmail(ctx, client, tenantID, "a.okafor@ecoglobal.com")
+	if err != nil || emailUser == nil {
+		t.Fatalf("GetUserNodeByEmail failed: %v", err)
+	}
+
+	// List
+	userList, err := ListUserNodes(ctx, client, tenantID)
+	if err != nil || len(userList) == 0 {
+		t.Fatalf("ListUserNodes failed: %v, count: %d", err, len(userList))
+	}
+
+	// Update Role
+	if err := UpdateUserRoleNode(ctx, client, tenantID, "USR-TEST-001", "Sustainability Lead"); err != nil {
+		t.Fatalf("UpdateUserRoleNode failed: %v", err)
+	}
+	updatedUser, _ := GetUserNode(ctx, client, tenantID, "USR-TEST-001")
+	if updatedUser.Spec.Role != "Sustainability Lead" {
+		t.Errorf("expected role Sustainability Lead, got %s", updatedUser.Spec.Role)
+	}
+
+	// Model conversion
+	uModel := UserModelFromNode(updatedUser)
+	if uModel == nil || uModel.Name != "Amara Okafor" {
+		t.Fatalf("UserModelFromNode failed: %+v", uModel)
+	}
+
+	// Delete
+	if err := DeleteUserNode(ctx, client, tenantID, "USR-TEST-001"); err != nil {
+		t.Fatalf("DeleteUserNode failed: %v", err)
+	}
 }

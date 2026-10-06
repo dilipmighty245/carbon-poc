@@ -28,6 +28,8 @@ type Interface interface {
 	Suppliers() SupplierInformer
 	// Tenants returns a TenantInformer.
 	Tenants() TenantInformer
+	// Users returns a UserInformer.
+	Users() UserInformer
 }
 
 type version struct {
@@ -84,4 +86,9 @@ func (v *version) Suppliers() SupplierInformer {
 // Tenants returns a TenantInformer.
 func (v *version) Tenants() TenantInformer {
 	return &tenantInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// Users returns a UserInformer.
+func (v *version) Users() UserInformer {
+	return &userInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

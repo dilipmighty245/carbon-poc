@@ -529,7 +529,7 @@ func main() {
 	http.HandleFunc("/api/v1/passports/", server.handlePassports)
 
 	// 8. Organisation & Internal Workspace REST API
-	orgHandler := api.NewOrganisationHandler(server.nexusEngine)
+	orgHandler := api.NewOrganisationHandlerWithClient(nClient, server.nexusEngine)
 	orgHandler.RegisterRoutes(http.DefaultServeMux)
 
 	// 9. ACV Verification & Nexus Lineage REST API

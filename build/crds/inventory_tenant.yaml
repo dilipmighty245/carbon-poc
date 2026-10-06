@@ -7,7 +7,7 @@ metadata:
   name: tenants.inventory.saurient.io
   annotations:
     nexus: |
-      {"name":"inventory.Tenant","hierarchy":["roots.root.saurient.io","inventories.inventory.saurient.io"],"children":{"facilities.inventory.saurient.io":{"fieldName":"Facilities","fieldNameGvk":"facilitiesGvk","goFieldNameGvk":"FacilitiesGvk","isNamed":true},"products.inventory.saurient.io":{"fieldName":"Products","fieldNameGvk":"productsGvk","goFieldNameGvk":"ProductsGvk","isNamed":true}},"is_singleton":false,"nexus-rest-api-gen":{"uris":null}}
+      {"name":"inventory.Tenant","hierarchy":["roots.root.saurient.io","inventories.inventory.saurient.io"],"children":{"facilities.inventory.saurient.io":{"fieldName":"Facilities","fieldNameGvk":"facilitiesGvk","goFieldNameGvk":"FacilitiesGvk","isNamed":true},"products.inventory.saurient.io":{"fieldName":"Products","fieldNameGvk":"productsGvk","goFieldNameGvk":"ProductsGvk","isNamed":true},"users.inventory.saurient.io":{"fieldName":"Users","fieldNameGvk":"usersGvk","goFieldNameGvk":"UsersGvk","isNamed":true}},"is_singleton":false,"nexus-rest-api-gen":{"uris":null}}
 spec:
   conversion:
     strategy: None
