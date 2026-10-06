@@ -10,7 +10,7 @@ interface PassportVersionsTabProps {
 export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passports }) => {
   const [searchParams] = useSearchParams();
   const passportId = searchParams.get('id');
-  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId) || passports[0];
+  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId || p.product_summary?.batch_number === passportId) || (passports.length > 0 && !passportId ? passports[0] : null);
 
   if (!passport) {
     return (
@@ -18,7 +18,9 @@ export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passpo
         <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
           <History className="w-6 h-6" />
         </div>
-        <h2 className="text-lg font-bold text-slate-900 mb-1">No Version History Available</h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">
+          {passportId ? `Passport not found for the ID: ${passportId}` : 'No Version History Available'}
+        </h2>
         <p className="text-xs text-slate-500">No carbon passports exist to display audit history.</p>
       </div>
     );
@@ -60,7 +62,7 @@ export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passpo
         <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
           <span className="font-bold text-slate-500">Target Product:</span>
           <span className="font-bold text-slate-900">
-            {passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil'} ({passport?.passport_metadata?.passport_id || passportId || 'PASS-2026-375-v1.0'})
+            {passport?.product_summary?.product_name || 'Carbon Passport'} ({passport?.passport_metadata?.passport_id || passportId || 'N/A'})
           </span>
         </div>
 

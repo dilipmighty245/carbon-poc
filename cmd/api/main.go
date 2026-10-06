@@ -29,6 +29,7 @@ import (
 
 	saurientv1alpha1 "saurient-platform/api/v1alpha1"
 	"saurient-platform/internal/api"
+	"saurient-platform/internal/engine"
 	"saurient-platform/internal/nexus"
 	"saurient-platform/internal/tenant"
 	nexusdsl "saurient-platform/pkg/nexus"
@@ -977,12 +978,23 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 		}
 		activityMap["activity_data"] = req.ActivityData
 	}
+	bMap, ok := activityMap["batch_data"].(map[string]interface{})
+	if !ok || bMap == nil {
+		bMap = make(map[string]interface{})
+	}
 	if req.BatchData != nil {
 		bBytes, _ := json.Marshal(req.BatchData)
-		var bMap map[string]interface{}
 		_ = json.Unmarshal(bBytes, &bMap)
-		activityMap["batch_data"] = bMap
 	}
+	if req.ProductName != "" {
+		bMap["product_name"] = req.ProductName
+		activityMap["product_name"] = req.ProductName
+	}
+	if req.CommodityType != "" {
+		bMap["commodity"] = req.CommodityType
+		activityMap["commodity"] = req.CommodityType
+	}
+	activityMap["batch_data"] = bMap
 	if req.TelemetryContext != nil {
 		activityMap["telemetry_context"] = req.TelemetryContext
 	}
@@ -1035,6 +1047,8 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 			}
 		}
 	}
+
+	nexus.PrepareActivityMapAliases(activityMap)
 
 	if len(activityMap) > 0 {
 		rawBytes, _ := json.Marshal(activityMap)
@@ -1103,9 +1117,49 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 	passportID := uuid.New().String()
 	tenantCtx := tenant.WithTenant(ctx, req.TenantID)
 
+	rb := resolveRulebookForProduct(rulebookName, req.CommodityType, s.customRules)
+	celEng := engine.NewCELEngine()
+	calcRes, calcErr := celEng.Evaluate(tenantCtx, rb, activityMap)
+
+	var scope1Val, scope2Val, scope3Val, totalFootprintVal float64
+	var dataHash string
+	verificationStatus := "Calculated"
+	if calcErr == nil && calcRes != nil {
+		scope1Val = calcRes.Scope1Kg
+		scope2Val = calcRes.Scope2Kg
+		scope3Val = calcRes.Scope3Kg
+		totalFootprintVal = calcRes.TotalFootprintKg
+		dataHash = calcRes.DataHash
+		if calcRes.VariableSnapshot != nil {
+			activityMap["variable_snapshot"] = calcRes.VariableSnapshot
+		}
+		if calcRes.RuleResults != nil {
+			activityMap["rule_results"] = calcRes.RuleResults
+		}
+	} else if calcErr != nil {
+		log.Printf("CEL evaluation error during product creation: %v", calcErr)
+	}
+
 	if s.nexusEngine != nil {
 		if existing, err := s.nexusEngine.GetPassportByBatchNumber(tenantCtx, req.BatchID); err == nil && existing != nil {
 			passportID = existing.PassportID
+			existing.Scope1KgCO2e = scope1Val
+			existing.Scope2KgCO2e = scope2Val
+			existing.Scope3KgCO2e = scope3Val
+			existing.TotalFootprintKg = totalFootprintVal
+			existing.VerificationStatus = verificationStatus
+			calcDetailsJSON, _ := json.Marshal(activityMap)
+			existing.CalculationDetails = calcDetailsJSON
+			existing.DataHash = dataHash
+			auditModel := &nexus.PassportAuditTrailModel{
+				PassportID:    passportID,
+				ActionType:    "Calculated",
+				ChangePayload: calcDetailsJSON,
+			}
+			_ = s.nexusEngine.SavePassportAndAudit(tenantCtx, existing, auditModel)
+			richPassportObj := nexus.BuildRichPassportResponse(existing)
+			cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportID)
+			_ = s.nexusEngine.CachePassport(tenantCtx, cacheKey, richPassportObj, 24*time.Hour)
 		} else {
 			calcDetailsJSON, _ := json.Marshal(activityMap)
 			passportModel := &nexus.CarbonPassportModel{
@@ -1114,15 +1168,24 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 				FacilityID:         req.FacilityID,
 				BatchNumber:        req.BatchID,
 				CommodityType:      req.CommodityType,
-				VerificationStatus: "Pending",
+				VerificationStatus: verificationStatus,
+				Scope1KgCO2e:       scope1Val,
+				Scope2KgCO2e:       scope2Val,
+				Scope3KgCO2e:       scope3Val,
+				TotalFootprintKg:   totalFootprintVal,
 				CalculationDetails: calcDetailsJSON,
+				DataHash:           dataHash,
+				IssuedAt:           time.Now(),
 			}
 			auditModel := &nexus.PassportAuditTrailModel{
 				PassportID:    passportID,
-				ActionType:    "Pending",
+				ActionType:    "Calculated",
 				ChangePayload: calcDetailsJSON,
 			}
 			_ = s.nexusEngine.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
+			richPassportObj := nexus.BuildRichPassportResponse(passportModel)
+			cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportID)
+			_ = s.nexusEngine.CachePassport(tenantCtx, cacheKey, richPassportObj, 24*time.Hour)
 		}
 	}
 
@@ -1227,6 +1290,57 @@ type RulebookItemResponse struct {
 	FunctionalUnit string                            `json:"functional_unit,omitempty"`
 	BatchQuantity  float64                           `json:"batch_quantity,omitempty"`
 	Rules          []saurientv1alpha1.RuleDefinition `json:"rules,omitempty"`
+}
+
+func resolveRulebookForProduct(rulebookName, commodityType string, customRules map[string]RulebookItemResponse) engine.CalculationRulebook {
+	if customRules != nil {
+		if cr, ok := customRules[rulebookName]; ok {
+			rb := engine.CalculationRulebook{
+				CommodityType:  cr.CommodityType,
+				AccountingMode: engine.AccountingMode(cr.AccountingMode),
+				FunctionalUnit: cr.FunctionalUnit,
+				BatchQuantity:  float64(cr.BatchQuantity),
+			}
+			for _, r := range cr.Rules {
+				switch r.Scope {
+				case saurientv1alpha1.Scope1:
+					rb.Scope1Formula = r.Formula
+				case saurientv1alpha1.Scope2:
+					rb.Scope2Formula = r.Formula
+				case saurientv1alpha1.Scope3:
+					rb.Scope3Formula = r.Formula
+				}
+			}
+			if rb.Scope1Formula != "" || rb.Scope2Formula != "" || rb.Scope3Formula != "" {
+				return rb
+			}
+		}
+	}
+
+	defaults := getDefaultRulebooks()
+	if def, ok := defaults[rulebookName]; ok {
+		rb := engine.CalculationRulebook{
+			CommodityType:  def.CommodityType,
+			AccountingMode: engine.AccountingMode(def.AccountingMode),
+			FunctionalUnit: def.FunctionalUnit,
+			BatchQuantity:  float64(def.BatchQuantity),
+		}
+		for _, r := range def.Rules {
+			switch r.Scope {
+			case saurientv1alpha1.Scope1:
+				rb.Scope1Formula = r.Formula
+			case saurientv1alpha1.Scope2:
+				rb.Scope2Formula = r.Formula
+			case saurientv1alpha1.Scope3:
+				rb.Scope3Formula = r.Formula
+			}
+		}
+		if rb.Scope1Formula != "" || rb.Scope2Formula != "" || rb.Scope3Formula != "" {
+			return rb
+		}
+	}
+
+	return nexus.ResolveRulebookForCommodity(commodityType)
 }
 
 func getDefaultRulebooks() map[string]RulebookItemResponse {
@@ -1941,7 +2055,7 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 		passport, err = s.nexusEngine.GetPassportByBatchNumber(tenantCtx, passportID)
 	}
 	if err != nil || passport == nil {
-		writeJSONError(w, fmt.Sprintf("passport '%s' not found for tenant '%s'", passportID, tenantID), http.StatusNotFound)
+		writeJSONError(w, fmt.Sprintf("Passport not found for the ID: %s", passportID), http.StatusNotFound)
 		return
 	}
 

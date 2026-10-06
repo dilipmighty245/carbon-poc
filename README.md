@@ -110,7 +110,7 @@ make clean
 The repository includes a modern React web application in `digital-passport-app/`.
 
 - **Registry View**: `http://localhost:5173/passport`
-- **Passport Detail**: `http://localhost:5173/passport/detail/PASS-2026-375-v1.0`
+- **Passport Detail**: `http://localhost:5173/passport/detail/PASS-2026-981-v1.0`
 - **Product Setup**: `http://localhost:5173/setup`
 - **Government Dashboard**: `http://localhost:5173/government`
 

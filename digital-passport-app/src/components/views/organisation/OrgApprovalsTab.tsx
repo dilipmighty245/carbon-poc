@@ -98,7 +98,7 @@ export const initialApprovals: ApprovalRequest[] = [
 ];
 
 export const OrgApprovalsTab: React.FC = () => {
-  const [approvalsList, setApprovalsList] = useState<ApprovalRequest[]>(initialApprovals);
+  const [approvalsList, setApprovalsList] = useState<ApprovalRequest[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [selectedRequest, setSelectedRequest] = useState<ApprovalRequest | null>(null);
   const [reviewComment, setReviewComment] = useState('');
@@ -107,7 +107,7 @@ export const OrgApprovalsTab: React.FC = () => {
   useEffect(() => {
     getOrgApprovals()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setApprovalsList(data);
         }
       })

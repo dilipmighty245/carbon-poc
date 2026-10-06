@@ -107,11 +107,30 @@ dev-setup-nomock: check-prereqs clean etcd-start build
 	@echo "==> Starting Digital Passport App (React / Vite)..."
 	cd digital-passport-app && npm run dev
 
-dev-setup-seed: dev-setup
+dev-setup-seed: check-prereqs clean etcd-start build
+	@echo "=========================================================================="
+	@echo "Starting Backend Services with Demo Seeding Enabled..."
+	@echo "=========================================================================="
+	@SEED_DEMO_DATA=true ./bin/api > api.log 2>&1 & echo $$! > .api.pid
+	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
+	@echo "==> Waiting for API Gateway (http://localhost:8080) to be ready..."
+	@for i in $$(seq 1 15); do \
+		if curl -s http://localhost:8080/healthz >/dev/null 2>&1; then \
+			echo "   [OK] API Gateway is live!"; \
+			break; \
+		fi; \
+		sleep 1; \
+	done
+	@echo "==> Seeding live demo data via API Gateway HTTP endpoints..."
+	@SEED_DEMO_DATA=true node scripts/seed_live_data.mjs
+	@echo "=========================================================================="
+	@echo "Saurient Carbon Passport Platform (Demo Seeded) is UP & READY!"
+	@echo "=========================================================================="
+	cd digital-passport-app && npm run dev
 
 dev-setup: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
-	@echo "Starting Backend Services (API Gateway & Controller Manager)..."
+	@echo "Starting Backend Services (API Gateway & Controller Manager) [CLEAN UNSEEDED]..."
 	@echo "=========================================================================="
 	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
 	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
@@ -123,8 +142,6 @@ dev-setup: check-prereqs clean etcd-start build
 		fi; \
 		sleep 1; \
 	done
-	@echo "==> Seeding live non-mock data via API Gateway HTTP endpoints..."
-	@node scripts/seed_live_data.mjs
 	@echo "=========================================================================="
 	@echo "Saurient Carbon Passport Platform local dev environment is UP & READY!"
 	@echo "=========================================================================="

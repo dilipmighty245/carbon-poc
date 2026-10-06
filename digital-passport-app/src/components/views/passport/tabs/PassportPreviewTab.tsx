@@ -26,7 +26,9 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
         <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
           <FileText className="w-6 h-6" />
         </div>
-        <h2 className="text-lg font-bold text-slate-900 mb-1">No Passport Preview Available</h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">
+          {passportId ? `Passport not found for the ID: ${passportId}` : 'No Passport Preview Available'}
+        </h2>
         <p className="text-xs text-slate-500 mb-6">No passport was found to generate certificate preview.</p>
         <button
           onClick={() => navigate('/passport')}
@@ -45,7 +47,13 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
 
   const prod = {
     product_name: passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil',
-    producer_organization: passport?.product_summary?.producer_organization || 'Saurient Demo Steel Industries Ltd',
+    producer_organization: passport?.product_summary?.producer_organization || (() => {
+      const regCompStr = localStorage.getItem('saurient_registered_company');
+      if (regCompStr) {
+        try { return JSON.parse(regCompStr).legalName; } catch (e) {}
+      }
+      return 'Saurient Carbon Passport';
+    })(),
     batch_number: passport?.product_summary?.batch_number || 'ST-2026-00981',
     quantity: passport?.product_summary?.batch_size?.quantity ?? (passport?.product_summary as any)?.quantity ?? 10000,
     unit: passport?.product_summary?.batch_size?.unit ?? (passport?.product_summary as any)?.unit ?? 'kg',
@@ -86,7 +94,11 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
             <span>Print PDF</span>
           </button>
           <button
-            onClick={() => navigate(`/passport/sign-issue/${passport?.passport_metadata?.passport_id || 'pas-st-2026-00981'}`)}
+            onClick={() => {
+              const targetId = passport?.passport_metadata?.passport_id;
+              if (targetId) navigate(`/passport/sign-issue?id=${targetId}`);
+              else navigate('/passport/sign-issue');
+            }}
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
           >
             <span>Proceed to Sign & Issue</span>
@@ -124,7 +136,7 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
           <div className="text-right space-y-1">
             <span className="text-[10px] font-mono text-slate-400 block">PASSPORT ID</span>
             <span className="text-xs font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 block">
-              {passport?.passport_metadata?.passport_id || 'pas-st-2026-00981'}
+              {passport?.passport_metadata?.passport_id || 'N/A'}
             </span>
           </div>
         </div>

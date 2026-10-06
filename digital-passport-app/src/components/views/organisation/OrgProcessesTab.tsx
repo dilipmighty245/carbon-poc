@@ -168,7 +168,7 @@ export const initialProcesses: ProcessItem[] = [
 ];
 
 export const OrgProcessesTab: React.FC = () => {
-  const [processesList, setProcessesList] = useState<ProcessItem[]>(initialProcesses);
+  const [processesList, setProcessesList] = useState<ProcessItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacilityFilter, setSelectedFacilityFilter] = useState<string>('all');
   const [selectedProcess, setSelectedProcess] = useState<ProcessItem | null>(null);
@@ -177,7 +177,7 @@ export const OrgProcessesTab: React.FC = () => {
   useEffect(() => {
     getOrgProcesses()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setProcessesList(data);
         }
       })

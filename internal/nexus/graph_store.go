@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -294,7 +295,9 @@ func getStore() *GraphStore {
 			signoffs:         make(map[string][]*ReviewSignoffModel),
 			cacheMap:         make(map[string][]byte),
 		}
-		globalGraphStore.seedDefaultData()
+		if os.Getenv("SEED_DEMO_DATA") == "true" {
+			globalGraphStore.seedDefaultData()
+		}
 	})
 	return globalGraphStore
 }
@@ -503,7 +506,7 @@ func (s *GraphStore) seedDefaultData() {
 		Scope2KgCO2e:       10082.0,
 		Scope3KgCO2e:       1852.0,
 		TotalFootprintKg:   18500.0,
-		CalculationDetails: json.RawMessage(`{"intensity_per_kg":1.85,"cel_rulebook":"RULE-CBAM-STEEL-2026","lineage_dag_root":"NODE_ORG_9001"}`),
+		CalculationDetails: json.RawMessage(`{"intensity_per_kg":1.85,"cel_rulebook":"RULE-CBAM-STEEL-2026","lineage_dag_root":"NODE_ORG_9001","batch_data":{"product_name":"Hot-Rolled Steel Coil","commodity":"Steel","batch_id":"ST-2026-00981","batch_size_quantity":10000,"facility_name":"Bellary Integrated Steel Plant","facility_location":"Karnataka, India"}}`),
 		IssuedAt:           time.Now().Add(-1 * 24 * time.Hour),
 		DataHash:           "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 	}

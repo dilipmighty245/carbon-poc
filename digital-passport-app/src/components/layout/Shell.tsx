@@ -92,11 +92,21 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           {/* Footer Demo Info */}
           <div className="p-4 border-t border-slate-800/80">
             <div className="mb-2">
-              <span className="inline-block px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-900 bg-white rounded-md shadow-xs">
-                DEMO
+              <span className="inline-block px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-900 bg-emerald-400 rounded-md shadow-xs">
+                PASSPORT WORKSPACE
               </span>
             </div>
-            <p className="text-xs font-bold text-white truncate">Saurient Demo Manufacturing Ltd.</p>
+            {(() => {
+              const regStr = localStorage.getItem('saurient_registered_company');
+              let compName = 'Saurient Carbon Passport';
+              if (regStr) {
+                try {
+                  const c = JSON.parse(regStr);
+                  if (c.legalName) compName = c.legalName;
+                } catch (e) {}
+              }
+              return <p className="text-xs font-bold text-white truncate">{compName}</p>;
+            })()}
             <p className="text-[10px] text-slate-400 mt-0.5">Company Operator • FY 2026</p>
           </div>
         </aside>

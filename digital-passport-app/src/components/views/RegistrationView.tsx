@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Upload, User, Building, MapPin, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save } from 'lucide-react';
+import { CheckCircle2, Upload, User, Building, MapPin, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle } from 'lucide-react';
 import { saveOrgProfile } from '../../api/client';
 import type { OrgProfileData } from './organisation/OrgProfileTab';
 
@@ -21,59 +21,61 @@ export const RegistrationView: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Controlled form state for registration wizard
   const [formData, setFormData] = useState({
     // Account Owner
-    ownerName: 'Marcus Vance',
-    ownerEmail: 'marcus.vance@saurient.io',
-    ownerPhone: '+44 20 7946 0912',
-    ownerRole: 'Chief Sustainability Officer & VP Supply Chain',
-    ownerPassword: 'password123',
-    confirmPassword: 'password123',
+    ownerName: '',
+    ownerEmail: '',
+    ownerPhone: '',
+    ownerRole: 'Chief Sustainability Officer',
+    ownerPassword: '',
+    confirmPassword: '',
     // Legal Identity
-    legalName: 'Saurient Demo Steel Industries Ltd.',
-    tradingName: 'Saurient Steel Global',
-    registrationNumber: 'GB-REG-2024-9981',
-    incorporationDate: '2010-06-15',
-    legalForm: 'Public Limited Company (PLC)',
-    countryOfRegistration: 'United Kingdom',
+    legalName: '',
+    tradingName: '',
+    registrationNumber: '',
+    incorporationDate: '',
+    legalForm: 'Private Limited Company (Ltd)',
+    countryOfRegistration: '',
     // Addresses & Tax
-    addressLine1: 'Steelworks Way, Docklands Industrial Zone',
-    addressLine2: 'Port of Rotterdam / London Terminal',
-    city: 'London',
-    region: 'Greater London',
-    postalCode: 'E14 5AB',
-    country: 'United Kingdom',
-    taxResidency: 'United Kingdom',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    region: '',
+    postalCode: '',
+    country: '',
+    taxResidency: '',
     reportingCurrency: 'EUR (€)',
-    taxId: 'GB-TAX-99812-ST',
-    vatNumber: 'GB-VAT-2400882-ST',
-    leiNumber: '5493001KJTIIGC8Y1R12',
+    taxId: '',
+    vatNumber: '',
+    leiNumber: '',
     // Trade & Customs
-    eoriNumber: 'GB987654321000',
-    hsTariffCode: '7208 39 00 — Flat-rolled products of iron/steel (Hot-Rolled Coil)',
-    departurePorts: 'Port of Rotterdam, Port of London commercial hub',
+    eoriNumber: '',
+    hsTariffCode: '',
+    departurePorts: '',
     targetMarkets: 'European Union (CBAM Zone)',
     // Industry & Operations
-    primarySector: 'Iron & Steel Manufacturing (CBAM Covered Sector)',
-    annualProduction: '250,000 Metric Tonnes / Year',
-    facilitiesCount: '2 Facilities (Blast Furnace Mill & Rolling Line)',
-    gridSupplier: 'National Grid UK / European Power Exchange',
-    renewableShare: '42% Direct PPA Wind & Solar',
-    auditStatus: 'Certified (Meridian Assurance Ltd)',
+    primarySector: '',
+    annualProduction: '',
+    facilitiesCount: '',
+    gridSupplier: '',
+    renewableShare: '',
+    auditStatus: 'Pending Verification',
     // Contacts
-    sustainabilityLead: 'Dr. Lena Hoffmann (l.hoffmann@saurient-carbon.com)',
-    complianceOfficer: 'Marcus Vance (m.vance@saurientsteel.com)',
-    financeDirector: 'Helena Schmidt (h.schmidt@saurientsteel.com)',
+    sustainabilityLead: '',
+    complianceOfficer: '',
+    financeDirector: '',
     // Boundary
     consolidationApproach: 'Operational Control',
-    baseYear: '2024',
+    baseYear: '2026',
     defaultUnits: 'tCO₂e (metric tonnes)',
-    ghgStandard: 'EU CBAM Regulation 2023/1773 & ISO 14067 Product Footprint',
+    ghgStandard: 'EU CBAM Regulation & ISO 14067 Product Footprint',
   });
 
   const handleChange = (field: string, value: string) => {
+    setErrorMsg(null);
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
       if (field === 'ownerName') {
@@ -81,6 +83,89 @@ export const RegistrationView: React.FC = () => {
       }
       return updated;
     });
+  };
+
+  const validateStep = (stepIndex: number): boolean => {
+    setErrorMsg(null);
+
+    if (stepIndex === 0) {
+      if (!formData.ownerName || !formData.ownerName.trim()) {
+        setErrorMsg('Primary Account Owner Name is required in Step 1 (Account Owner).');
+        return false;
+      }
+      if (!formData.ownerEmail || !formData.ownerEmail.trim()) {
+        setErrorMsg('Corporate Work Email is required in Step 1 (Account Owner).');
+        return false;
+      }
+      if (!formData.ownerPassword) {
+        setErrorMsg('Account Password is required in Step 1 (Account Owner).');
+        return false;
+      }
+      if (!formData.confirmPassword) {
+        setErrorMsg('Please confirm your account password in Step 1 (Account Owner).');
+        return false;
+      }
+      if (formData.ownerPassword !== formData.confirmPassword) {
+        setErrorMsg('Account Password and Confirm Password do not match.');
+        return false;
+      }
+    }
+
+    if (stepIndex === 1) {
+      if (!formData.legalName || !formData.legalName.trim()) {
+        setErrorMsg('Legal Entity Name is required in Step 2 (Legal Identity).');
+        return false;
+      }
+      if (!formData.registrationNumber || !formData.registrationNumber.trim()) {
+        setErrorMsg('Company Registration Number is required in Step 2 (Legal Identity).');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const validateAllPriorSteps = (targetStep: number): boolean => {
+    if (!formData.ownerName || !formData.ownerName.trim()) {
+      setActiveStep(0);
+      setErrorMsg('Primary Account Owner Name is required in Step 1 (Account Owner).');
+      return false;
+    }
+    if (!formData.ownerEmail || !formData.ownerEmail.trim()) {
+      setActiveStep(0);
+      setErrorMsg('Corporate Work Email is required in Step 1 (Account Owner).');
+      return false;
+    }
+    if (!formData.ownerPassword) {
+      setActiveStep(0);
+      setErrorMsg('Account Password is required in Step 1 (Account Owner).');
+      return false;
+    }
+    if (!formData.confirmPassword) {
+      setActiveStep(0);
+      setErrorMsg('Please confirm your account password in Step 1 (Account Owner).');
+      return false;
+    }
+    if (formData.ownerPassword !== formData.confirmPassword) {
+      setActiveStep(0);
+      setErrorMsg('Account Password and Confirm Password do not match.');
+      return false;
+    }
+
+    if (targetStep > 1) {
+      if (!formData.legalName || !formData.legalName.trim()) {
+        setActiveStep(1);
+        setErrorMsg('Legal Entity Name is required in Step 2 (Legal Identity).');
+        return false;
+      }
+      if (!formData.registrationNumber || !formData.registrationNumber.trim()) {
+        setActiveStep(1);
+        setErrorMsg('Company Registration Number is required in Step 2 (Legal Identity).');
+        return false;
+      }
+    }
+
+    return true;
   };
 
   // Dynamic step statuses - only completed steps get green check marks
@@ -114,6 +199,11 @@ export const RegistrationView: React.FC = () => {
   const [addressTab, setAddressTab] = useState<'registered' | 'operating' | 'billing' | 'tax'>('registered');
 
   const handleStepClick = (index: number) => {
+    if (index > activeStep) {
+      if (!validateStep(activeStep)) return;
+      if (!validateAllPriorSteps(index)) return;
+    }
+    setErrorMsg(null);
     setActiveStep(index);
     if (stepStatuses[index] === 'Not started') {
       const updated = [...stepStatuses];
@@ -123,6 +213,9 @@ export const RegistrationView: React.FC = () => {
   };
 
   const handleSubmitRegistration = async () => {
+    if (!validateAllPriorSteps(10)) return;
+
+    setErrorMsg(null);
     setIsSubmitting(true);
     const generatedEmail = generateSaurientEmail(formData.ownerName);
 
@@ -197,6 +290,10 @@ export const RegistrationView: React.FC = () => {
   };
 
   const handleContinue = async () => {
+    if (!validateStep(activeStep)) return;
+    if (!validateAllPriorSteps(activeStep + 1)) return;
+
+    setErrorMsg(null);
     const updated = [...stepStatuses];
     updated[activeStep] = 'Complete';
 
@@ -321,6 +418,13 @@ export const RegistrationView: React.FC = () => {
 
           {/* DYNAMIC FORM CARD FOR STEP 1 TO 10 */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-6">
+            {errorMsg && (
+              <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-in fade-in">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             {/* STEP 1: ACCOUNT OWNER */}
             {activeStep === 0 && (
               <div className="space-y-5">
@@ -667,15 +771,33 @@ export const RegistrationView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Sustainability Lead *</label>
-                    <input type="text" defaultValue="Dr. Lena Hoffmann (l.hoffmann@saurient-carbon.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input 
+                      type="text" 
+                      value={formData.sustainabilityLead} 
+                      onChange={(e) => handleChange('sustainabilityLead', e.target.value)}
+                      placeholder="e.g. Dr. Jane Doe (jane.doe@saurient.io)"
+                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" 
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Compliance Officer *</label>
-                    <input type="text" defaultValue="Marcus Vance (m.vance@saurientsteel.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input 
+                      type="text" 
+                      value={formData.complianceOfficer} 
+                      onChange={(e) => handleChange('complianceOfficer', e.target.value)}
+                      placeholder="e.g. Marcus Vance (m.vance@saurient.io)"
+                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" 
+                    />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Customs & Logistics Contact *</label>
-                    <input type="text" defaultValue="Helena Schmidt (h.schmidt@saurientsteel.com)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input 
+                      type="text" 
+                      value={formData.financeDirector} 
+                      onChange={(e) => handleChange('financeDirector', e.target.value)}
+                      placeholder="e.g. Helena Schmidt (h.schmidt@saurient.io)"
+                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" 
+                    />
                   </div>
                 </div>
               </div>

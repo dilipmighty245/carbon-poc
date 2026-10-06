@@ -89,7 +89,12 @@ export const PassportRegistryTab: React.FC<PassportRegistryTabProps> = ({ passpo
             const passId = p.passport_metadata?.passport_id || `pas-st-2026-00${idx}`;
             const commodityName = p.product_summary?.commodity || 'Steel';
             const prodName = p.product_summary?.product_name || 'Hot-Rolled Steel Coil';
-            const producerOrg = p.product_summary?.producer_organization || 'Saurient Demo Steel Industries Ltd';
+            const regCompStr = localStorage.getItem('saurient_registered_company');
+            let regOrg = '';
+            if (regCompStr) {
+              try { regOrg = JSON.parse(regCompStr).legalName; } catch (e) {}
+            }
+            const producerOrg = p.product_summary?.producer_organization || regOrg || 'Saurient Carbon Passport';
             const batchNum = p.product_summary?.batch_number || 'ST-2026-00981';
             const countryOrigin = p.product_summary?.facility?.country_of_origin || 'India';
             const intensityVal = p.carbon_footprint?.intensity_per_unit?.value || (

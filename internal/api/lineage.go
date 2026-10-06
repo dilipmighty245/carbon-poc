@@ -44,7 +44,7 @@ func (h *LineageHandler) HandleTraceLineage(w http.ResponseWriter, r *http.Reque
 
 	dag, err := h.engine.GetLineageDAG(r.Context(), passportID)
 	if err != nil {
-		writeJSONError(w, err.Error(), http.StatusInternalServerError)
+		writeJSONError(w, err.Error(), http.StatusNotFound)
 		return
 	}
 

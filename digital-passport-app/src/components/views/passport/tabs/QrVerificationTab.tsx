@@ -10,7 +10,7 @@ interface QrVerificationTabProps {
 export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports }) => {
   const [searchParams] = useSearchParams();
   const passportId = searchParams.get('id');
-  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId) || passports[0];
+  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId || p.product_summary?.batch_number === passportId) || (passports.length > 0 && !passportId ? passports[0] : null);
 
   if (!passport) {
     return (
@@ -18,7 +18,9 @@ export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports 
         <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
           <QrCode className="w-6 h-6" />
         </div>
-        <h2 className="text-lg font-bold text-slate-900 mb-1">No Passport QR Code Available</h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">
+          {passportId ? `Passport not found for the ID: ${passportId}` : 'No Passport QR Code Available'}
+        </h2>
         <p className="text-xs text-slate-500">No carbon passports exist to generate QR verification code.</p>
       </div>
     );

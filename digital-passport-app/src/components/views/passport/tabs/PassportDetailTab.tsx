@@ -25,7 +25,9 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports 
         <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
           <FileText className="w-6 h-6" />
         </div>
-        <h2 className="text-lg font-bold text-slate-900 mb-1">Carbon Passport Not Found</h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">
+          {passportId ? `Passport not found for the ID: ${passportId}` : 'Carbon Passport Not Found'}
+        </h2>
         <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto">
           No issued carbon passport was found matching {passportId ? <code className="font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{passportId}</code> : 'your query'}. Passports are issued upon completion of MRV verification.
         </p>

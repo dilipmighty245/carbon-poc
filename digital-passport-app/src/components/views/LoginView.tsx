@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, AlertTriangle, Building, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowRight, AlertTriangle, Building, CheckCircle2, ShieldAlert, PlusCircle, LogIn } from 'lucide-react';
 import { loginUser } from '../../api/client';
 
 export const LoginView: React.FC = () => {
@@ -14,7 +14,7 @@ export const LoginView: React.FC = () => {
       const stored = localStorage.getItem('saurient_registered_company');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed && parsed.ownerEmail) return parsed;
+        if (parsed && parsed.ownerEmail && parsed.legalName) return parsed;
       }
     } catch {
       // ignore
@@ -24,27 +24,30 @@ export const LoginView: React.FC = () => {
 
   const isRegistered = Boolean(registeredCompany?.ownerEmail || (localStorage.getItem('saurient_company_registered') === 'true' && justRegistered));
 
+  // Multi-tenant Org Selection Mode: 'existing' (log into registered org) or 'new' (create new org)
+  const [orgMode, setOrgMode] = useState<'existing' | 'new'>(isRegistered ? 'existing' : 'new');
+
   const [showRegModal, setShowRegModal] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [role, setRole] = useState('Company Operator');
-  const [email, setEmail] = useState(registeredCompany?.ownerEmail || '');
-  const [password, setPassword] = useState(registeredCompany?.ownerPassword || '');
+  const [email, setEmail] = useState(registeredCompany?.ownerEmail || 'operator@saurient.io');
+  const [password, setPassword] = useState(registeredCompany?.ownerPassword || 'password123');
 
   const roles = [
     { 
       title: 'Company Operator', 
-      email: registeredCompany?.ownerEmail || (isRegistered ? 'operator@saurient.io' : 'Registration required'),
-      password: registeredCompany?.ownerPassword || (isRegistered ? 'password123' : '') 
+      email: registeredCompany?.ownerEmail || 'operator@saurient.io',
+      password: registeredCompany?.ownerPassword || 'password123' 
     },
     { 
       title: 'Verifier', 
-      email: isRegistered ? 'verifier@saurient.io' : 'Registration required', 
-      password: isRegistered ? 'verifier123' : '' 
+      email: 'verifier@saurient.io', 
+      password: 'verifier123' 
     },
     { 
       title: 'Passport Officer', 
-      email: isRegistered ? 'officer@saurient.io' : 'Registration required', 
-      password: isRegistered ? 'officer123' : '' 
+      email: 'officer@saurient.io', 
+      password: 'officer123' 
     },
     { 
       title: 'Public Viewer', 
@@ -56,11 +59,11 @@ export const LoginView: React.FC = () => {
   const handleSelectRole = (r: { title: string; email: string; password?: string }) => {
     setRole(r.title);
     setLoginError(null);
-    if (!isRegistered && r.title !== 'Public Viewer') {
+    if (orgMode === 'new' && r.title !== 'Public Viewer') {
       setShowRegModal(true);
       return;
     }
-    if (r.email !== 'No login required' && r.email !== 'Registration required') {
+    if (r.email !== 'No login required') {
       setEmail(r.email);
       setPassword(r.password || '');
     } else {
@@ -73,12 +76,12 @@ export const LoginView: React.FC = () => {
     e.preventDefault();
     setLoginError(null);
 
-    if (!isRegistered) {
+    if (orgMode === 'new') {
       setShowRegModal(true);
       return;
     }
 
-    if (!email || !password) {
+    if (role !== 'Public Viewer' && (!email || !password)) {
       setLoginError('Please enter your work email and password.');
       return;
     }
@@ -134,8 +137,40 @@ export const LoginView: React.FC = () => {
 
       {/* Right Login Card */}
       <div className="w-full max-w-md bg-white text-slate-900 rounded-3xl p-8 shadow-2xl mt-8 md:mt-0">
+        {/* Multi-Tenant Action Toggle */}
+        <div className="mb-6 p-1 bg-slate-100 rounded-2xl flex items-center border border-slate-200">
+          <button
+            type="button"
+            onClick={() => {
+              setOrgMode('existing');
+              setLoginError(null);
+            }}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              orgMode === 'existing'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            <LogIn className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Sign in Existing Org User</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/registration')}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              orgMode === 'new'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-amber-600" />
+            <span>Register Organization</span>
+          </button>
+        </div>
+
         {/* Registration Status Banner */}
-        {isRegistered ? (
+        {isRegistered && (
           <div className="mb-6 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
             <div className="flex items-center gap-2 text-emerald-900">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -147,22 +182,6 @@ export const LoginView: React.FC = () => {
             <span className="text-[9px] font-extrabold uppercase bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full">
               {justRegistered ? 'JUST REGISTERED' : 'REGISTERED'}
             </span>
-          </div>
-        ) : (
-          <div className="mb-6 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center gap-2 text-amber-900">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold">Company Registration Required</p>
-                <p className="text-[10px] text-amber-700">No registered organisation found</p>
-              </div>
-            </div>
-            <Link
-              to="/registration"
-              className="text-[10px] font-extrabold uppercase bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded-lg transition-colors"
-            >
-              Register
-            </Link>
           </div>
         )}
 
@@ -202,13 +221,10 @@ export const LoginView: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Password</label>
-              <span className="text-[10px] text-emerald-600 font-semibold">
-                {isRegistered ? 'Registered password loaded' : 'Registration required'}
-              </span>
             </div>
             <input
               type="password"
-              placeholder={isRegistered ? 'Enter password' : 'Register company to create password'}
+              placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"
@@ -231,13 +247,7 @@ export const LoginView: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-xs text-slate-500 space-y-1">
-          <p>
-            New organization?{' '}
-            <Link to="/registration" className="text-emerald-600 font-semibold hover:underline">
-              Register company & users
-            </Link>
-          </p>
+        <div className="mt-6 text-center text-xs text-slate-500">
           <p className="text-sky-600 font-semibold hover:underline cursor-pointer" onClick={() => navigate('/passport')}>
             Public passport verification
           </p>

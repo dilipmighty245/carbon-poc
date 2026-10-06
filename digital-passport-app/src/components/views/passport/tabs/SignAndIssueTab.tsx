@@ -12,7 +12,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
   const navigate = useNavigate();
   const passportId = searchParams.get('id');
 
-  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId) || passports[0];
+  const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId || p.product_summary?.batch_number === passportId) || (passports.length > 0 && !passportId ? passports[0] : null);
 
   if (!passport) {
     return (
@@ -20,7 +20,9 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
         <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
           <Lock className="w-6 h-6" />
         </div>
-        <h2 className="text-lg font-bold text-slate-900 mb-1">No Passport Available to Issue</h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">
+          {passportId ? `Passport not found for the ID: ${passportId}` : 'No Passport Available to Issue'}
+        </h2>
         <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto">
           No carbon passport is ready for signing and issuance. Please create a product batch and complete MRV verification first.
         </p>
@@ -87,19 +89,27 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
             <div>
               <h3 className="text-base font-bold text-emerald-950">Passport Successfully Signed & Published!</h3>
               <p className="text-xs text-emerald-800 mt-1">
-                Digital Carbon Passport ID <span className="font-mono font-bold">{passport?.passport_metadata?.passport_id || passportId || 'PASS-2026-375-v1.0'}</span> is live on the registry.
+                Digital Carbon Passport ID <span className="font-mono font-bold">{passport?.passport_metadata?.passport_id || passportId || 'N/A'}</span> is live on the registry.
               </p>
             </div>
 
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
-                onClick={() => navigate(`/passport/detail/${passport?.passport_metadata?.passport_id || passportId || 'PASS-2026-375-v1.0'}`)}
+                onClick={() => {
+                  const targetId = passport?.passport_metadata?.passport_id || passportId;
+                  if (targetId) navigate(`/passport/detail/${targetId}`);
+                  else navigate('/passport/registry');
+                }}
                 className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl transition-colors"
               >
                 View Passport Details
               </button>
               <button
-                onClick={() => navigate(`/passport/qr?id=${passport?.passport_metadata?.passport_id || passportId || 'PASS-2026-375-v1.0'}`)}
+                onClick={() => {
+                  const targetId = passport?.passport_metadata?.passport_id || passportId;
+                  if (targetId) navigate(`/passport/qr?id=${targetId}`);
+                  else navigate('/passport/registry');
+                }}
                 className="px-4 py-2 bg-white text-emerald-900 border border-emerald-300 font-bold text-xs rounded-xl hover:bg-emerald-100 transition-colors"
               >
                 Get Verification QR

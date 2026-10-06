@@ -50,7 +50,13 @@ export const ParisAlignmentView: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">
-            <span>Saurient Demo Manufacturing</span>
+            <span>{(() => {
+              const regCompStr = localStorage.getItem('saurient_registered_company');
+              if (regCompStr) {
+                try { return JSON.parse(regCompStr).legalName; } catch (e) {}
+              }
+              return 'Saurient Registered Company';
+            })()}</span>
             <span className="text-slate-400 text-[10px]">▾</span>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-700 shadow-xs flex items-center gap-1.5">

@@ -94,7 +94,7 @@ export const lifecycleSteps = [
 ];
 
 export const OrgReportingPeriodsTab: React.FC = () => {
-  const [periods, setPeriods] = useState<ReportingPeriodItem[]>(initialPeriods);
+  const [periods, setPeriods] = useState<ReportingPeriodItem[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<ReportingPeriodItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -102,7 +102,7 @@ export const OrgReportingPeriodsTab: React.FC = () => {
   useEffect(() => {
     getOrgReportingPeriods()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setPeriods(data);
         }
       })

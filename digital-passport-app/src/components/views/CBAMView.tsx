@@ -15,6 +15,16 @@ import { CostAnalysisView } from './cbam/CostAnalysisView';
 import { DataPackGeneratorView } from './cbam/DataPackGeneratorView';
 import { RegistryTransferView } from './cbam/RegistryTransferView';
 
+const getCompanyOperator = () => {
+  const regCompStr = localStorage.getItem('saurient_registered_company');
+  if (regCompStr) {
+    try {
+      return JSON.parse(regCompStr).legalName;
+    } catch (e) {}
+  }
+  return 'Saurient Registered Facility';
+};
+
 export const CBAMView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<CBAMSubTab>('Overview');
   const [isBlockerDrawerOpen, setIsBlockerDrawerOpen] = useState(false);
@@ -34,7 +44,7 @@ export const CBAMView: React.FC = () => {
       countryOfOrigin: 'Ghana',
       countryOfProduction: 'Ghana',
       installationName: 'Tema Processing Plant',
-      installationOperator: 'Saurient Demo Manufacturing Ltd.',
+      installationOperator: getCompanyOperator(),
       status: 'DATA_PENDING',
       directEmissionsIntensity: 0.642,
       indirectEmissionsIntensity: 0.421,
@@ -85,7 +95,7 @@ export const CBAMView: React.FC = () => {
       countryOfOrigin: 'Ghana',
       countryOfProduction: 'Ghana',
       installationName: 'Tema Processing Plant',
-      installationOperator: 'Saurient Demo Manufacturing Ltd.',
+      installationOperator: getCompanyOperator(),
       status: 'OUT_OF_SCOPE',
       directEmissionsIntensity: 0.42,
       indirectEmissionsIntensity: 0.18,

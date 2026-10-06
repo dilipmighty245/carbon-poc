@@ -182,23 +182,84 @@ export const auditTrailData = [
   },
 ];
 
+const getInitialProfile = (): OrgProfileData => {
+  const stored = localStorage.getItem('saurient_registered_company');
+  if (stored) {
+    try {
+      const c = JSON.parse(stored);
+      return {
+        legalName: c.legalName || 'Saurient Registered Company',
+        tradingName: c.tradingName || c.legalName || 'Saurient Registered Company',
+        organisationId: 'ORG-REG-2026-001',
+        registrationNumber: c.registrationNumber || 'REG-2026-001',
+        countryOfIncorporation: c.countryOfRegistration || c.country || 'Global',
+        registeredAddress: `${c.addressLine1 || ''} ${c.city || ''} ${c.country || ''}`.trim() || 'Registered Address',
+        headquarters: `${c.city || ''}, ${c.country || ''}`.trim() || 'Headquarters',
+        industry: c.primarySector || 'Manufacturing & Industrial',
+        naceCode: c.hsTariffCode || 'C 24.10 · Industry Sector',
+        primaryProducts: c.primaryProducts || 'Industrial Products',
+        website: 'https://www.saurient.io',
+        taxId: c.taxId || 'TAX-ID-2026',
+        lei: c.leiNumber || 'LEI-2026-001',
+        primaryContact: {
+          name: c.ownerName || 'Account Administrator',
+          title: c.ownerRole || 'Chief Executive Officer',
+          email: c.ownerEmail || 'admin@saurient.io',
+          phone: c.ownerPhone || '+1 (555) 019-2834',
+        },
+        sustainabilityContact: {
+          name: c.sustainabilityLead ? c.sustainabilityLead.split(' (')[0] : (c.ownerName || 'Sustainability Lead'),
+          title: 'Head of Sustainability',
+          email: c.ownerEmail || 'sustainability@saurient.io',
+          phone: c.ownerPhone || '+1 (555) 019-2834',
+        },
+        boundary: {
+          consolidationApproach: c.consolidationApproach || 'Operational Control',
+          baseYear: c.baseYear || '2026',
+          reportingCurrency: c.reportingCurrency || 'EUR (€)',
+          defaultUnits: c.defaultUnits || 'tCO₂e (metric tonnes)',
+          ghgStandard: c.ghgStandard || 'ISO 14067 / EU CBAM Regulation',
+          reportingPeriod: 'Calendar Year (Jan – Dec)',
+        },
+        status: 'Active',
+        verification: {
+          provider: c.auditStatus || 'Pending Verification',
+          accreditorId: 'ISO 14065 & ISO/IEC 17029',
+          standard: 'ISO 14064-3 / ISO 14067',
+          assuranceLevel: 'Reasonable Assurance',
+          certificateHash: '',
+          verifiedDate: '',
+          expiryDate: '',
+        },
+      };
+    } catch (e) {
+      console.warn('Failed to parse registered company in profile:', e);
+    }
+  }
+  return initialOrgProfile;
+};
+
 export const OrgProfileTab: React.FC = () => {
-  const [profile, setProfile] = useState<OrgProfileData>(initialOrgProfile);
+  const [profile, setProfile] = useState<OrgProfileData>(getInitialProfile());
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [draftProfile, setDraftProfile] = useState<OrgProfileData>(initialOrgProfile);
+  const [draftProfile, setDraftProfile] = useState<OrgProfileData>(getInitialProfile());
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
+    const initP = getInitialProfile();
+    setProfile(initP);
+    setDraftProfile(initP);
+
     getOrgProfile()
       .then((data) => {
         if (data && data.legalName) {
           const merged: OrgProfileData = {
-            ...initialOrgProfile,
+            ...initP,
             ...data,
-            primaryContact: { ...initialOrgProfile.primaryContact, ...(data.primaryContact || {}) },
-            sustainabilityContact: { ...initialOrgProfile.sustainabilityContact, ...(data.sustainabilityContact || {}) },
-            boundary: { ...initialOrgProfile.boundary, ...(data.boundary || {}) },
-            verification: { ...initialOrgProfile.verification, ...(data.verification || {}) },
+            primaryContact: { ...initP.primaryContact, ...(data.primaryContact || {}) },
+            sustainabilityContact: { ...initP.sustainabilityContact, ...(data.sustainabilityContact || {}) },
+            boundary: { ...initP.boundary, ...(data.boundary || {}) },
+            verification: { ...initP.verification, ...(data.verification || {}) },
           };
           setProfile(merged);
           setDraftProfile(merged);

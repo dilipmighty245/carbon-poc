@@ -6,6 +6,7 @@ import (
 )
 
 func TestNexusEngine_GetLineageDAG(t *testing.T) {
+	getStore().seedDefaultData()
 	engine := GetNexusEngine()
 	ctx := context.Background()
 
@@ -28,6 +29,7 @@ func TestNexusEngine_GetLineageDAG(t *testing.T) {
 }
 
 func TestNexusEngine_CorrectSupplierInput_Immutability(t *testing.T) {
+	getStore().seedDefaultData()
 	engine := GetNexusEngine()
 	ctx := context.Background()
 

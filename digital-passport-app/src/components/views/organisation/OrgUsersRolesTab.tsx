@@ -89,8 +89,31 @@ export const permissionsMatrix = [
   { key: 'export', label: 'Export Dossiers', allowedRoles: ['Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Verifier', 'Auditor'] },
 ];
 
+const getInitialUsers = (): UserMember[] => {
+  const stored = localStorage.getItem('saurient_registered_company');
+  if (stored) {
+    try {
+      const c = JSON.parse(stored);
+      return [
+        {
+          id: 'USR-REG-001',
+          name: c.ownerName || 'Account Admin',
+          email: c.ownerEmail || 'admin@saurient.io',
+          role: c.ownerRole || 'Organisation Admin',
+          facilityScope: 'All Facilities',
+          lastLogin: 'Active Now',
+          status: 'Active',
+        },
+      ];
+    } catch (e) {
+      console.warn('Failed to parse registered user:', e);
+    }
+  }
+  return [];
+};
+
 export const OrgUsersRolesTab: React.FC = () => {
-  const [users, setUsers] = useState<UserMember[]>(initialUsers);
+  const [users, setUsers] = useState<UserMember[]>(getInitialUsers());
   const [activeTab, setActiveTab] = useState<'users' | 'matrix'>('users');
   const [actingRole, setActingRole] = useState<string>('Organisation Admin');
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,10 +121,17 @@ export const OrgUsersRolesTab: React.FC = () => {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   useEffect(() => {
+    const initUsers = getInitialUsers();
+    setUsers(initUsers);
+
     getOrgUsers()
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setUsers(data);
+        } else if (initUsers.length > 0) {
+          setUsers(initUsers);
+        } else if (Array.isArray(data)) {
+          setUsers([]);
         }
       })
       .catch((err) => console.warn('Failed to fetch users from backend:', err));

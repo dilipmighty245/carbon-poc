@@ -65,21 +65,35 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
             </span>
             <h3 className="text-lg font-bold text-white mt-1">{p?.product_summary?.product_name || 'Hot-Rolled Steel Coil'}</h3>
             <p className="text-xs text-slate-300">
-              Batch ID: {p?.product_summary?.batch_number || 'ST-2026-00981'} | Producer: {p?.product_summary?.producer_organization || 'Saurient Demo Steel Industries Ltd'}
+              Batch ID: {p?.product_summary?.batch_number || 'ST-2026-00981'} | Producer: {(() => {
+                const regCompStr = localStorage.getItem('saurient_registered_company');
+                if (regCompStr) {
+                  try { return JSON.parse(regCompStr).legalName; } catch (e) {}
+                }
+                return p?.product_summary?.producer_organization || 'Saurient Carbon Passport';
+              })()}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
           <button
-            onClick={() => navigate(`/passport/preview?id=${p?.passport_metadata?.passport_id || 'PASS-2026-375-v1.0'}`)}
+            onClick={() => {
+              const targetId = p?.passport_metadata?.passport_id;
+              if (targetId) navigate(`/passport/preview?id=${targetId}`);
+              else navigate('/passport/preview');
+            }}
             className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-colors"
           >
             Preview Passport
           </button>
           <button
             disabled={overallScore < 100}
-            onClick={() => navigate(`/passport/sign-issue?id=${p?.passport_metadata?.passport_id || 'PASS-2026-375-v1.0'}`)}
+            onClick={() => {
+              const targetId = p?.passport_metadata?.passport_id;
+              if (targetId) navigate(`/passport/sign-issue?id=${targetId}`);
+              else navigate('/passport/sign-issue');
+            }}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-sm"
           >
             <span>Proceed to Sign & Issue</span>

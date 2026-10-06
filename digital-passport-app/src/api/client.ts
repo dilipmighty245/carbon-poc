@@ -76,30 +76,6 @@ export async function createRulebook(req: RulebookCreateRequest, tenantId = DEFA
   return await res.json();
 }
 
-function getLocalCustomPassports(): RichDigitalPassport[] {
-  try {
-    const raw = localStorage.getItem('saurient_custom_passports');
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalCustomPassport(passport: RichDigitalPassport) {
-  try {
-    const list = getLocalCustomPassports();
-    const existingIdx = list.findIndex(p => p.passport_metadata.passport_id === passport.passport_metadata.passport_id);
-    if (existingIdx >= 0) {
-      list[existingIdx] = passport;
-    } else {
-      list.unshift(passport);
-    }
-    localStorage.setItem('saurient_custom_passports', JSON.stringify(list));
-  } catch (err) {
-    console.error('Failed to save local custom passport', err);
-  }
-}
-
 export async function createProduct(req: ProductCreateRequest): Promise<ProductCreateResponse> {
   let resp: ProductCreateResponse;
   try {
@@ -115,6 +91,7 @@ export async function createProduct(req: ProductCreateRequest): Promise<ProductC
       throw new Error(`HTTP error ${res.status}`);
     }
     resp = await res.json();
+    return resp;
   } catch (err) {
     console.warn("Backend API unavailable for createProduct, falling back to local creation:", err);
     const generatedId = `PASS-2026-${Math.floor(100 + Math.random() * 900)}-v1.0`;
@@ -130,75 +107,13 @@ export async function createProduct(req: ProductCreateRequest): Promise<ProductC
       created_at: new Date().toISOString(),
       passport_id: generatedId,
     };
+    return resp;
   }
-
-  const passportId = resp.passport_id || `PASS-2026-${Math.floor(100 + Math.random() * 900)}-v1.0`;
-  resp.passport_id = passportId;
-
-  const newPassport: RichDigitalPassport = {
-    passport_metadata: {
-      passport_id: passportId,
-      unique_qr_code: `QR-${passportId}`,
-      cryptographic_hash: `0x${Math.random().toString(16).substring(2, 10)}${Math.random().toString(16).substring(2, 10)}`,
-      issuance_date: new Date().toISOString().split('T')[0],
-      status: 'ISSUED',
-    },
-    product_summary: {
-      commodity: req.commodity_type || 'Steel',
-      product_name: req.product_name || 'Hot Rolled Steel Coil',
-      batch_number: req.batch_id || 'BATCH-001',
-      producer_organization: 'Saurient Global Steel Corp',
-      facility: {
-        name: req.batch_data?.facility_name || 'Duisburg Main Works',
-        location: req.batch_data?.facility_location || 'Duisburg, Germany',
-        country_of_origin: 'Germany',
-      },
-      production_date: new Date().toISOString().split('T')[0],
-      batch_size: {
-        quantity: req.batch_data?.batch_size_quantity || 1000,
-        unit: req.batch_data?.unit_of_measure || 'tonnes',
-      },
-    },
-    carbon_footprint: {
-      total_batch_footprint_kg_co2e: 1850000,
-      intensity_per_unit: {
-        value: 1.85,
-        unit: 'tCO2e/tonne',
-      },
-      breakdown_by_scope: {
-        scope1_direct_emissions: 1.25,
-        scope2_indirect_electricity: 0.35,
-        scope3_upstream_inputs: 0.25,
-      },
-      compliance_benchmarks: {
-        eu_cbam_benchmark: 1.90,
-        industry_average: 2.10,
-        is_compliant: true,
-      },
-    },
-    verification_and_assurance: {
-      verification_status: 'VERIFIED',
-      verifier_name: 'TÜV Rheinland Energy GmbH',
-      assurance_level: 'REASONABLE',
-      verification_date: new Date().toISOString().split('T')[0],
-      certificate_reference: `CERT-EU-CBAM-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-    },
-    governance_and_provenance: {
-      rulebook_applied: req.rulebook_ref?.name || 'eu-cbam-iron-steel-v2026.1',
-      calculation_methodology: 'GHG Protocol / EU CBAM Regulation 2023/956',
-      data_quality_rating: 'TIER 3 (High Precision / Metered)',
-    },
-  };
-
-  saveLocalCustomPassport(newPassport);
-
-  return resp;
 }
 
 export async function getAllPassportsWithMeta(tenantId = DEFAULT_TENANT_ID): Promise<ApiFetchResult<RichDigitalPassport[]>> {
   const endpoint = `${API_BASE_URL}/passports`;
   const startTime = performance.now();
-  const localPassports = getLocalCustomPassports();
 
   try {
     const res = await fetch(endpoint, {
@@ -211,16 +126,9 @@ export async function getAllPassportsWithMeta(tenantId = DEFAULT_TENANT_ID): Pro
     if (res.ok) {
       const data = await res.json();
       const passportsList = Array.isArray(data) ? data : [];
-      
-      const combined = [...localPassports];
-      for (const p of passportsList) {
-        if (!combined.some(cp => cp.passport_metadata.passport_id === p.passport_metadata.passport_id)) {
-          combined.push(p);
-        }
-      }
 
       return {
-        data: combined,
+        data: passportsList,
         isLive: true,
         endpoint,
         status: res.status,
@@ -228,7 +136,7 @@ export async function getAllPassportsWithMeta(tenantId = DEFAULT_TENANT_ID): Pro
       };
     } else {
       return {
-        data: localPassports,
+        data: [],
         isLive: false,
         endpoint,
         status: res.status,
@@ -239,7 +147,7 @@ export async function getAllPassportsWithMeta(tenantId = DEFAULT_TENANT_ID): Pro
   } catch (err: any) {
     const responseTimeMs = Math.round(performance.now() - startTime);
     return {
-      data: localPassports,
+      data: [],
       isLive: false,
       endpoint,
       status: 0,
@@ -571,7 +479,10 @@ export async function getLineageDAG(passportId = 'PASS-2026-981-v1.0', tenantId 
   const res = await fetch(`${API_BASE_URL}/lineage/trace/${passportId}`, {
     headers: { 'X-Tenant-ID': tenantId },
   });
-  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.error || `Passport not found for the ID: ${passportId}`);
+  }
   return await res.json();
 }
 

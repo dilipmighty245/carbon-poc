@@ -218,7 +218,7 @@ export const initialFacilities: Facility[] = [
 ];
 
 export const OrgFacilitiesTab: React.FC = () => {
-  const [facilitiesList, setFacilitiesList] = useState<Facility[]>(initialFacilities);
+  const [facilitiesList, setFacilitiesList] = useState<Facility[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
