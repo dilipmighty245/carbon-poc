@@ -26,7 +26,6 @@ interface ShellProps {
 export const Shell: React.FC<ShellProps> = ({ children }) => {
   const navItems = [
     { to: '/dashboard', label: 'Home', icon: Home, end: true },
-    { to: '/products/new', label: 'Product Creation', icon: PlusCircle },
     { to: '/organisation', label: 'Organisation', icon: Building2 },
     { to: '/data', label: 'Data', icon: Database },
     { to: '/carbon-accounting', label: 'Carbon Accounting', icon: BarChart3 },
