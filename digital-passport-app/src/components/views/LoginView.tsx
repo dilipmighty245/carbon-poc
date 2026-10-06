@@ -21,19 +21,27 @@ export const LoginView: React.FC = () => {
   const [showRegModal, setShowRegModal] = useState(false);
   const [role, setRole] = useState('Company Operator');
   const [email, setEmail] = useState(registeredCompany?.ownerEmail || 'operator@saurient.demo');
-  const [password, setPassword] = useState('••••••••••••');
+  const [password, setPassword] = useState(registeredCompany?.ownerPassword || 'password123');
 
   const roles = [
-    { title: 'Company Operator', email: registeredCompany?.ownerEmail || 'operator@saurient.demo' },
-    { title: 'Verifier', email: 'verifier@saurient.demo' },
-    { title: 'Passport Officer', email: 'officer@saurient.demo' },
-    { title: 'Public Viewer', email: 'No login required' },
+    { 
+      title: 'Company Operator', 
+      email: registeredCompany?.ownerEmail || 'operator@saurient.demo',
+      password: registeredCompany?.ownerPassword || 'password123' 
+    },
+    { title: 'Verifier', email: 'verifier@saurient.demo', password: 'verifier123' },
+    { title: 'Passport Officer', email: 'officer@saurient.demo', password: 'officer123' },
+    { title: 'Public Viewer', email: 'No login required', password: '' },
   ];
 
-  const handleSelectRole = (r: { title: string; email: string }) => {
+  const handleSelectRole = (r: { title: string; email: string; password?: string }) => {
     setRole(r.title);
     if (r.email !== 'No login required') {
       setEmail(r.email);
+      setPassword(r.password || 'password123');
+    } else {
+      setEmail('');
+      setPassword('');
     }
   };
 
@@ -169,9 +177,15 @@ export const LoginView: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Password</label>
+              <span className="text-[10px] text-emerald-600 font-semibold">
+                {registeredCompany?.ownerPassword ? 'Registered password loaded' : 'Demo password: password123'}
+              </span>
+            </div>
             <input
               type="password"
+              placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"

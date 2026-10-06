@@ -18,6 +18,8 @@ export const RegistrationView: React.FC = () => {
     ownerEmail: 'm.vance@saurientsteel.com',
     ownerPhone: '+44 20 7946 0912',
     ownerRole: 'Chief Sustainability Officer & VP Supply Chain',
+    ownerPassword: 'password123',
+    confirmPassword: 'password123',
     // Legal Identity
     legalName: 'Saurient Demo Steel Industries Ltd.',
     tradingName: 'Saurient Steel Global',
@@ -163,6 +165,7 @@ export const RegistrationView: React.FC = () => {
       tradingName: formData.tradingName,
       ownerName: formData.ownerName,
       ownerEmail: formData.ownerEmail,
+      ownerPassword: formData.ownerPassword || 'password123',
       ownerRole: formData.ownerRole,
       country: formData.country,
       taxId: formData.taxId,
@@ -343,6 +346,26 @@ export const RegistrationView: React.FC = () => {
                       type="text"
                       value={formData.ownerRole}
                       onChange={(e) => handleChange('ownerRole', e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Password *</label>
+                    <input
+                      type="password"
+                      placeholder="Enter account password"
+                      value={formData.ownerPassword}
+                      onChange={(e) => handleChange('ownerPassword', e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Confirm Password *</label>
+                    <input
+                      type="password"
+                      placeholder="Confirm account password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleChange('confirmPassword', e.target.value)}
                       className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50"
                     />
                   </div>
