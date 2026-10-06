@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SimpleWordsCard } from '../common/SimpleWordsCard';
-import { createProduct, createRulebook, getAllRules, DEFAULT_TENANT_ID } from '../../api/client';
+import { createProduct, createRulebook, getAllRules, getOrgFacilities, DEFAULT_TENANT_ID } from '../../api/client';
 import type { RuleDefinition } from '../../types';
 import { Building, Factory, Leaf, Package, FileText, CheckCircle2, AlertCircle, Radio, ShieldCheck, Sliders, Check, Plus, X, BookPlus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -30,6 +30,57 @@ export const ProductSetup: React.FC = () => {
     { id: 'cement-rulebook-2026', label: 'cement-rulebook-2026 (GHG Protocol)', standard: 'GHG Protocol Heavy Industry', commodity: 'Construction' },
     { id: 'default-rulebook', label: 'default-rulebook (Standard Scope 1-3)', standard: 'Standard Scope 1-3 GHG', commodity: 'General' },
   ]);
+
+  // Dynamic Organisation Facilities State
+  const [facilitiesList, setFacilitiesList] = useState<{ id: string; name: string; location?: string }[]>([]);
+  const [loadingFacilities, setLoadingFacilities] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    getOrgFacilities()
+      .then((data) => {
+        if (!isMounted) return;
+        if (Array.isArray(data) && data.length > 0) {
+          const list = data.map((f: any) => ({
+            id: f.id || f.name,
+            name: f.name || 'Unnamed Facility',
+            location: f.address || f.country || 'Primary Facility Site',
+          }));
+          setFacilitiesList(list);
+          if (list[0]?.name) setFacility(list[0].name);
+        } else {
+          // Fallback defaults from organisation facilities if API returns empty array
+          const defaultList = [
+            { id: 'FAC-GH-001', name: 'Tema Processing Plant', location: 'Tema, Ghana' },
+            { id: 'FAC-GH-002', name: 'Kumasi Milling Unit', location: 'Kumasi, Ghana' },
+            { id: 'FAC-GH-003', name: 'Takoradi Export Hub', location: 'Takoradi, Ghana' },
+            { id: 'FAC-IN-042', name: 'Bellary Integrated Steel Plant', location: 'Karnataka, India' },
+          ];
+          setFacilitiesList(defaultList);
+          setFacility(defaultList[0].name);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch facilities for logged in org, using fallback defaults:', err);
+        const defaultList = [
+          { id: 'FAC-GH-001', name: 'Tema Processing Plant', location: 'Tema, Ghana' },
+          { id: 'FAC-GH-002', name: 'Kumasi Milling Unit', location: 'Kumasi, Ghana' },
+          { id: 'FAC-GH-003', name: 'Takoradi Export Hub', location: 'Takoradi, Ghana' },
+          { id: 'FAC-IN-042', name: 'Bellary Integrated Steel Plant', location: 'Karnataka, India' },
+        ];
+        if (isMounted) {
+          setFacilitiesList(defaultList);
+          setFacility(defaultList[0].name);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoadingFacilities(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -216,10 +267,12 @@ export const ProductSetup: React.FC = () => {
     setSuccessMsg('');
     setErrorMsg('');
 
+    const selectedFac = facilitiesList.find((f) => f.name === facility) || facilitiesList[0];
+
     try {
       const resp = await createProduct({
         tenant_id: DEFAULT_TENANT_ID,
-        facility_id: facility,
+        facility_id: selectedFac?.id || facility,
         batch_id: batchId,
         product_name: productName,
         commodity_type: commodity,
@@ -232,7 +285,7 @@ export const ProductSetup: React.FC = () => {
           commodity,
           batch_id: batchId,
           facility_name: facility,
-          facility_location: 'Tema, Greater Accra, Ghana',
+          facility_location: selectedFac?.location || 'Primary Facility Site',
           batch_size_quantity: Number(batchQuantity),
           unit_of_measure: unitOfMeasure,
           export_market: exportMarket,
@@ -406,15 +459,22 @@ export const ProductSetup: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Plant / Facility *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Plant / Facility *
+                  {loadingFacilities && <span className="ml-2 text-slate-400 font-normal">(Fetching org facilities...)</span>}
+                </label>
                 <select
                   value={facility}
                   onChange={(e) => setFacility(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  disabled={loadingFacilities}
+                  required
                 >
-                  <option value="Tema Processing Plant">Tema Processing Plant</option>
-                  <option value="Kumasi Milling Unit">Kumasi Milling Unit</option>
-                  <option value="Takoradi Export Hub">Takoradi Export Hub</option>
+                  {facilitiesList.map((f) => (
+                    <option key={f.id || f.name} value={f.name}>
+                      {f.name} {f.location ? `(${f.location})` : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
 

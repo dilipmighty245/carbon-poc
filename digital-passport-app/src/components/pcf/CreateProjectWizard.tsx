@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { toast } from '../../utils/toast';
+import { getOrgFacilities } from '../../api/client';
 
 const STEPS = [
   'Organisation', 'Facility', 'Product', 'Batch', 'Reporting Period',
@@ -26,6 +27,19 @@ interface CreateProjectWizardProps {
 export function CreateProjectWizard({ open, onOpenChange }: CreateProjectWizardProps) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(DEFAULTS);
+  const [facilityOptions, setFacilityOptions] = useState<string[]>(['Tema Processing Plant', 'Kumasi Milling Unit', 'Takoradi Export Hub', 'Bellary Integrated Steel Plant']);
+
+  useEffect(() => {
+    getOrgFacilities()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const names = data.map((f: any) => f.name || 'Unnamed Facility');
+          setFacilityOptions(names);
+          if (names[0]) setForm((prev) => ({ ...prev, facility: names[0] }));
+        }
+      })
+      .catch((err) => console.warn('Failed to fetch facilities for wizard:', err));
+  }, []);
 
   if (!open) return null;
 
@@ -96,7 +110,7 @@ export function CreateProjectWizard({ open, onOpenChange }: CreateProjectWizardP
           )}
           {step === 1 && (
             <Field label="Select Facility">
-              <Sel k="facility" options={['Tema Processing Plant', 'Kumasi Facility']} />
+              <Sel k="facility" options={facilityOptions} />
             </Field>
           )}
           {step === 2 && (

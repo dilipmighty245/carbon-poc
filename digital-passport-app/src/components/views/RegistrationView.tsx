@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Upload, User, Building, MapPin, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Upload, User, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle } from 'lucide-react';
 import { saveOrgProfile } from '../../api/client';
 import type { OrgProfileData } from './organisation/OrgProfileTab';
 
@@ -22,6 +22,7 @@ export const RegistrationView: React.FC = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isAutosaved, setIsAutosaved] = useState(false);
 
   // Controlled form state for registration wizard
   const [formData, setFormData] = useState({
@@ -51,9 +52,11 @@ export const RegistrationView: React.FC = () => {
     taxId: '',
     vatNumber: '',
     leiNumber: '',
+    fiscalYearStart: '01 January',
+    docClassification: 'Confidential',
     // Trade & Customs
     eoriNumber: '',
-    hsTariffCode: '',
+    hsTariffCode: '7208 39 00 — Flat-rolled products of iron/steel (Hot-Rolled Coil)',
     departurePorts: '',
     targetMarkets: 'European Union (CBAM Zone)',
     // Industry & Operations
@@ -63,6 +66,11 @@ export const RegistrationView: React.FC = () => {
     gridSupplier: '',
     renewableShare: '',
     auditStatus: 'Pending Verification',
+    // ERP & Telemetry
+    primaryErp: 'SAP S/4HANA Cloud',
+    iotMeters: '24 Digital Telemetry Meters (Modbus TCP)',
+    dataCoverage: '88% Verified Sensor Telemetry',
+    apiGateway: 'REST API / MQTT Connected',
     // Contacts
     sustainabilityLead: '',
     complianceOfficer: '',
@@ -74,13 +82,42 @@ export const RegistrationView: React.FC = () => {
     ghgStandard: 'EU CBAM Regulation & ISO 14067 Product Footprint',
   });
 
+  // Restore saved draft on initial page mount if exists
+  useEffect(() => {
+    const savedDraftStr = localStorage.getItem('saurient_registration_draft');
+    if (savedDraftStr) {
+      try {
+        const parsed = JSON.parse(savedDraftStr);
+        if (parsed.formData && (parsed.formData.ownerName || parsed.formData.legalName)) {
+          setFormData((prev) => ({ ...prev, ...parsed.formData }));
+          setIsAutosaved(true);
+        }
+        if (typeof parsed.activeStep === 'number') {
+          setActiveStep(parsed.activeStep);
+        }
+        if (Array.isArray(parsed.stepStatuses)) {
+          setStepStatuses(parsed.stepStatuses);
+        }
+      } catch (err) {
+        console.warn('Failed to restore registration draft:', err);
+      }
+    }
+  }, []);
+
   const handleChange = (field: string, value: string) => {
     setErrorMsg(null);
+    setIsAutosaved(true);
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
       if (field === 'ownerName') {
         updated.ownerEmail = generateSaurientEmail(value);
       }
+      localStorage.setItem('saurient_registration_draft', JSON.stringify({
+        formData: updated,
+        activeStep,
+        stepStatuses,
+        updatedAt: new Date().toISOString()
+      }));
       return updated;
     });
   };
@@ -221,16 +258,16 @@ export const RegistrationView: React.FC = () => {
 
     const profilePayload: OrgProfileData = {
       legalName: formData.legalName,
-      tradingName: formData.tradingName,
+      tradingName: formData.tradingName || formData.legalName,
       organisationId: `ORG-CP-${formData.registrationNumber || '2026-001'}`,
       registrationNumber: formData.registrationNumber,
-      countryOfIncorporation: formData.countryOfRegistration,
-      registeredAddress: `${formData.addressLine1}${formData.addressLine2 ? ', ' + formData.addressLine2 : ''}, ${formData.city}, ${formData.region}, ${formData.country}`,
-      headquarters: `${formData.city}, ${formData.country}`,
-      industry: formData.primarySector,
-      naceCode: 'C 10.82 · Combined Nomenclature Annex I',
+      countryOfIncorporation: formData.countryOfRegistration || formData.country,
+      registeredAddress: [formData.addressLine1, formData.addressLine2, formData.city, formData.region, formData.country].filter(Boolean).join(', '),
+      headquarters: [formData.city, formData.country].filter(Boolean).join(', '),
+      industry: formData.primarySector || 'Manufacturing',
+      naceCode: 'C 24.10 · Industry Sector',
       primaryProducts: formData.hsTariffCode,
-      website: `https://www.${(formData.tradingName || 'saurient').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+      website: `https://www.${(formData.tradingName || formData.legalName || 'saurient').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
       taxId: formData.taxId,
       lei: formData.leiNumber,
       primaryContact: {
@@ -240,10 +277,10 @@ export const RegistrationView: React.FC = () => {
         phone: formData.ownerPhone,
       },
       sustainabilityContact: {
-        name: 'Dr. Lena Hoffmann',
+        name: formData.sustainabilityLead || formData.ownerName,
         title: 'Head of Sustainability & Compliance',
-        email: 'lena.hoffmann@saurient.io',
-        phone: '+233 24 498 7654',
+        email: generatedEmail,
+        phone: formData.ownerPhone,
       },
       boundary: {
         consolidationApproach: formData.consolidationApproach,
@@ -255,7 +292,7 @@ export const RegistrationView: React.FC = () => {
       },
       status: 'Verified (Registered)',
       verification: {
-        provider: 'Bureau Veritas Assurance UK Ltd. / SGS Ghana',
+        provider: 'Bureau Veritas Assurance UK Ltd.',
         accreditorId: 'UKAS 0009 · ISO 14065 & ISO/IEC 17029',
         standard: 'ISAE 3410 / ISO 14064-3',
         assuranceLevel: 'Reasonable Assurance',
@@ -271,22 +308,29 @@ export const RegistrationView: React.FC = () => {
       console.warn('Backend save profile failed, updating local state:', err);
     }
 
+    localStorage.removeItem('saurient_registration_draft');
     localStorage.setItem('saurient_company_registered', 'true');
     localStorage.setItem('saurient_registered_company', JSON.stringify({
-      legalName: formData.legalName,
-      tradingName: formData.tradingName,
-      ownerName: formData.ownerName,
+      ...formData,
       ownerEmail: generatedEmail,
       ownerPassword: formData.ownerPassword || 'password123',
-      ownerRole: formData.ownerRole,
-      country: formData.country,
-      taxId: formData.taxId,
       registrationDate: new Date().toISOString(),
     }));
 
     setIsSubmitting(false);
     setSubmitSuccess(true);
     setShowSuccessModal(true);
+  };
+
+  const handleSaveDraft = () => {
+    localStorage.setItem('saurient_registration_draft', JSON.stringify({
+      formData,
+      activeStep,
+      stepStatuses,
+      updatedAt: new Date().toISOString(),
+    }));
+    setIsAutosaved(true);
+    navigate('/dashboard');
   };
 
   const handleContinue = async () => {
@@ -340,9 +384,16 @@ export const RegistrationView: React.FC = () => {
 
         <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
           <p className="text-[11px] text-slate-400 font-mono">Application SAU-REG-260941</p>
-          <div className="flex items-center justify-between text-[10px] text-emerald-400 font-bold">
-            <span>AUTOSAVED</span>
-            <span>{completionPercentage}% DONE</span>
+          <div className="flex items-center justify-between text-[10px] font-bold">
+            {isAutosaved ? (
+              <span className="text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                AUTOSAVED
+              </span>
+            ) : (
+              <span className="text-slate-400">DRAFT READY</span>
+            )}
+            <span className="text-emerald-400">{completionPercentage}% DONE</span>
           </div>
         </div>
 
@@ -609,51 +660,51 @@ export const RegistrationView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Address Line 1 *</label>
-                    <input type="text" defaultValue="14 Independence Avenue" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.addressLine1} onChange={(e) => handleChange('addressLine1', e.target.value)} placeholder="e.g. 14 Independence Avenue" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Address Line 2</label>
-                    <input type="text" defaultValue="Industrial Area" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.addressLine2} onChange={(e) => handleChange('addressLine2', e.target.value)} placeholder="e.g. Industrial Area" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">City *</label>
-                    <input type="text" defaultValue="Tema" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.city} onChange={(e) => handleChange('city', e.target.value)} placeholder="e.g. Tema" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Region *</label>
-                    <input type="text" defaultValue="Greater Accra" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.region} onChange={(e) => handleChange('region', e.target.value)} placeholder="e.g. Greater Accra" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Postal Code *</label>
-                    <input type="text" defaultValue="GT-020-4821" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.postalCode} onChange={(e) => handleChange('postalCode', e.target.value)} placeholder="e.g. GT-020-4821" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Country *</label>
-                    <input type="text" defaultValue="Ghana" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.country} onChange={(e) => handleChange('country', e.target.value)} placeholder="e.g. Ghana" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tax Residency *</label>
-                    <input type="text" defaultValue="Ghana" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.taxResidency} onChange={(e) => handleChange('taxResidency', e.target.value)} placeholder="e.g. Ghana" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Reporting Currency *</label>
-                    <input type="text" defaultValue="GHS — Ghanaian Cedi" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.reportingCurrency} onChange={(e) => handleChange('reportingCurrency', e.target.value)} placeholder="e.g. EUR (€)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tax Identification Number *</label>
-                    <input type="text" defaultValue="C0012345678" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
+                    <input type="text" value={formData.taxId} onChange={(e) => handleChange('taxId', e.target.value)} placeholder="e.g. C0012345678" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">VAT / GST Number</label>
-                    <input type="text" defaultValue="VAT-GH-2400882" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
+                    <input type="text" value={formData.vatNumber} onChange={(e) => handleChange('vatNumber', e.target.value)} placeholder="e.g. VAT-GH-2400882" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Fiscal Year Start *</label>
-                    <input type="text" defaultValue="01 January" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.fiscalYearStart} onChange={(e) => handleChange('fiscalYearStart', e.target.value)} placeholder="e.g. 01 January" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Document Classification</label>
-                    <input type="text" defaultValue="Confidential" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.docClassification} onChange={(e) => handleChange('docClassification', e.target.value)} placeholder="e.g. Confidential" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                 </div>
 
@@ -676,19 +727,19 @@ export const RegistrationView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">EORI Number (EU Customs) *</label>
-                    <input type="text" defaultValue="GB123456789000" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
+                    <input type="text" value={formData.eoriNumber} onChange={(e) => handleChange('eoriNumber', e.target.value)} placeholder="e.g. GB123456789000" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Primary HS Code Tariff Chapter *</label>
-                    <input type="text" defaultValue="7208 39 00 — Flat-rolled products of iron/steel (Hot-Rolled Coil)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.hsTariffCode} onChange={(e) => handleChange('hsTariffCode', e.target.value)} placeholder="e.g. 7208 39 00 — Flat-rolled products of iron/steel" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Primary Export Departure Ports *</label>
-                    <input type="text" defaultValue="Tema Sea Port, Takoradi Commercial Hub" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.departurePorts} onChange={(e) => handleChange('departurePorts', e.target.value)} placeholder="e.g. Tema Sea Port, Takoradi Commercial Hub" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Destination Target Markets *</label>
-                    <input type="text" defaultValue="European Union (CBAM Zone), North America" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.targetMarkets} onChange={(e) => handleChange('targetMarkets', e.target.value)} placeholder="e.g. European Union (CBAM Zone)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                 </div>
               </div>
@@ -705,27 +756,27 @@ export const RegistrationView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Primary Sector *</label>
-                    <input type="text" defaultValue="Cocoa Processing & Export" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.primarySector} onChange={(e) => handleChange('primarySector', e.target.value)} placeholder="e.g. Steel & Heavy Industry Manufacturing" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Annual Production Volume *</label>
-                    <input type="text" defaultValue="45,000 Metric Tons / Year" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.annualProduction} onChange={(e) => handleChange('annualProduction', e.target.value)} placeholder="e.g. 45,000 Metric Tons / Year" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Active Processing Facilities *</label>
-                    <input type="text" defaultValue="3 Plants (Tema, Kumasi, Takoradi)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.facilitiesCount} onChange={(e) => handleChange('facilitiesCount', e.target.value)} placeholder="e.g. 3 Plants" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Primary Grid Electricity Supplier</label>
-                    <input type="text" defaultValue="Electricity Company of Ghana (ECG)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.gridSupplier} onChange={(e) => handleChange('gridSupplier', e.target.value)} placeholder="e.g. National Electricity Grid" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Renewable Energy PPA Share</label>
-                    <input type="text" defaultValue="35% Solar Rooftop Installation" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.renewableShare} onChange={(e) => handleChange('renewableShare', e.target.value)} placeholder="e.g. 35% Solar Rooftop" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">ISO 14064 / 14067 Audit Status</label>
-                    <input type="text" defaultValue="Certified (TÜV Rheinland)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.auditStatus} onChange={(e) => handleChange('auditStatus', e.target.value)} placeholder="e.g. Certified (TÜV Rheinland)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                 </div>
               </div>
@@ -742,19 +793,19 @@ export const RegistrationView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Primary ERP System *</label>
-                    <input type="text" defaultValue="SAP S/4HANA Cloud" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.primaryErp} onChange={(e) => handleChange('primaryErp', e.target.value)} placeholder="e.g. SAP S/4HANA Cloud" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">IoT Energy Meters Operational</label>
-                    <input type="text" defaultValue="24 Digital Telemetry Meters (Modbus TCP)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.iotMeters} onChange={(e) => handleChange('iotMeters', e.target.value)} placeholder="e.g. 24 Digital Telemetry Meters" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Primary Data Coverage *</label>
-                    <input type="text" defaultValue="88% Verified Sensor Telemetry" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.dataCoverage} onChange={(e) => handleChange('dataCoverage', e.target.value)} placeholder="e.g. 88% Verified Sensor Telemetry" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">API Integration Gateway</label>
-                    <input type="text" defaultValue="REST API / MQTT Connected" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
+                    <input type="text" value={formData.apiGateway} onChange={(e) => handleChange('apiGateway', e.target.value)} placeholder="e.g. REST API / MQTT Connected" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                 </div>
               </div>
@@ -877,21 +928,25 @@ export const RegistrationView: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                     <span className="font-bold text-slate-900 block">Organization Summary</span>
-                    <p className="text-slate-600"><strong className="text-slate-900">Entity:</strong> Ghana Cocoa Processing Corp Ltd.</p>
-                    <p className="text-slate-600"><strong className="text-slate-900">Reg No:</strong> CS1029482024 (Ghana)</p>
-                    <p className="text-slate-600"><strong className="text-slate-900">EORI:</strong> GB123456789000</p>
-                    <p className="text-slate-600"><strong className="text-slate-900">Facility Hub:</strong> Tema Industrial Area</p>
+                    <p className="text-slate-600"><strong className="text-slate-900">Entity:</strong> {formData.legalName || formData.tradingName || 'Not specified'}</p>
+                    <p className="text-slate-600"><strong className="text-slate-900">Reg No:</strong> {formData.registrationNumber ? `${formData.registrationNumber}${formData.countryOfRegistration ? ` (${formData.countryOfRegistration})` : ''}` : 'Not specified'}</p>
+                    <p className="text-slate-600"><strong className="text-slate-900">EORI:</strong> {formData.eoriNumber || 'Not specified'}</p>
+                    <p className="text-slate-600"><strong className="text-slate-900">Facility Hub:</strong> {[formData.addressLine1, formData.city, formData.region, formData.country].filter(Boolean).join(', ') || 'Not specified'}</p>
                   </div>
 
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                     <span className="font-bold text-slate-900 block">System Verification Readiness</span>
                     <p className="text-emerald-700 flex items-center gap-1.5 font-semibold">
                       <Check className="w-4 h-4 text-emerald-600" />
-                      Legal identity verified
+                      Legal identity verified ({formData.legalName || 'Pending'})
                     </p>
                     <p className="text-emerald-700 flex items-center gap-1.5 font-semibold">
                       <Check className="w-4 h-4 text-emerald-600" />
-                      Tax profile & EORI active
+                      Account Owner: {formData.ownerName || 'Not specified'} ({formData.ownerEmail || generateSaurientEmail(formData.ownerName)})
+                    </p>
+                    <p className="text-emerald-700 flex items-center gap-1.5 font-semibold">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      Tax profile & EORI active ({formData.eoriNumber || formData.taxId || 'Active'})
                     </p>
                     <p className="text-emerald-700 flex items-center gap-1.5 font-semibold">
                       <Check className="w-4 h-4 text-emerald-600" />
@@ -912,10 +967,17 @@ export const RegistrationView: React.FC = () => {
               </div>
             )}
 
-            <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Registration data is autosaved. System credentials are collected later in the Integration Hub.</span>
-            </div>
+            {isAutosaved ? (
+              <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Registration draft is autosaved. System credentials are collected later in the Integration Hub.</span>
+              </div>
+            ) : (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>Registration progress will autosave as you enter details. System credentials are collected later in the Integration Hub.</span>
+              </div>
+            )}
           </div>
 
           {/* Navigation Action Buttons */}
@@ -933,7 +995,7 @@ export const RegistrationView: React.FC = () => {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => navigate('/dashboard')}
+                onClick={handleSaveDraft}
                 disabled={isSubmitting}
                 className="px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1 disabled:opacity-50"
               >
@@ -980,30 +1042,12 @@ export const RegistrationView: React.FC = () => {
               </span>
               <h3 className="text-xl font-black text-slate-900 mt-2">Organisation Registered!</h3>
               <p className="text-xs text-slate-500 mt-1">
-                <strong className="text-slate-800">{formData.legalName}</strong> has been registered on the Saurient platform.
+                <strong className="text-slate-800">{formData.legalName || formData.tradingName || 'Organisation'}</strong> has been registered on the Saurient platform.
               </p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2.5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Generated Sign-In Credentials</p>
-              
-              <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60">
-                <span className="text-slate-500 font-medium">Work Email:</span>
-                <code className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  {generateSaurientEmail(formData.ownerName)}
-                </code>
-              </div>
-
-              <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60">
-                <span className="text-slate-500 font-medium">Password:</span>
-                <code className="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                  {formData.ownerPassword || 'password123'}
-                </code>
-              </div>
-            </div>
-
             <p className="text-xs text-slate-500 leading-relaxed">
-              Please log in again with your credentials generated from your first name and last name.
+              Your organization profile and administrative account are set up. Please proceed to login with your registered credentials.
             </p>
 
             <button
