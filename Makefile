@@ -1,10 +1,11 @@
 # Saurient Carbon Passport Platform Makefile
 
-CLUSTER_NAME ?= saurient-dev
+ETCD_CONTAINER ?= saurient-etcd
+ETCD_IMAGE ?= quay.io/coreos/etcd:v3.5.10
 CONTROLLER_IMG ?= saurient-controller:dev
 API_IMG ?= saurient-api:dev
 
-.PHONY: all build test dev-setup clean check-prereqs
+.PHONY: all build test dev-setup clean check-prereqs etcd-start etcd-stop
 
 all: test build
 
@@ -19,60 +20,38 @@ test:
 
 check-prereqs:
 	@echo "==> Checking required CLI tools..."
-	@command -v kind >/dev/null 2>&1 || { echo "Error: 'kind' is not installed."; exit 1; }
-	@command -v kubectl >/dev/null 2>&1 || { echo "Error: 'kubectl' is not installed."; exit 1; }
 	@command -v docker >/dev/null 2>&1 || { echo "Error: 'docker' is not installed."; exit 1; }
-	@echo "Prerequisites verified: kind, kubectl, docker."
+	@command -v go >/dev/null 2>&1 || { echo "Error: 'go' is not installed."; exit 1; }
+	@command -v node >/dev/null 2>&1 || { echo "Error: 'node' is not installed."; exit 1; }
+	@echo "Prerequisites verified: docker, go, node."
 
-dev-setup: check-prereqs
-	@echo "==> Setting up local Kind cluster: $(CLUSTER_NAME)..."
-	-kind delete cluster --name $(CLUSTER_NAME)
-	kind create cluster --config deploy/kind-config.yaml --name $(CLUSTER_NAME)
+etcd-start:
+	@echo "==> Starting local etcd container ($(ETCD_CONTAINER))..."
+	-docker rm -f $(ETCD_CONTAINER) >/dev/null 2>&1
+	docker run -d --name $(ETCD_CONTAINER) \
+		-p 2379:2379 -p 2380:2380 \
+		-e ALLOW_NONE_AUTHENTICATION=yes \
+		$(ETCD_IMAGE) \
+		etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls 'http://0.0.0.0:2379'
+	@echo "==> etcd is running on localhost:2379"
 
-	@echo "==> Building Docker images..."
-	docker build -f deploy/Dockerfile.controller -t $(CONTROLLER_IMG) .
-	docker build -f deploy/Dockerfile.api -t $(API_IMG) .
+etcd-stop:
+	@echo "==> Stopping local etcd container..."
+	-docker rm -f $(ETCD_CONTAINER) >/dev/null 2>&1
 
-	@echo "==> Loading Docker images into Kind..."
-	kind load docker-image $(CONTROLLER_IMG) --name $(CLUSTER_NAME)
-	kind load docker-image $(API_IMG) --name $(CLUSTER_NAME)
-	docker save postgres:16-alpine | docker exec -i saurient-dev-control-plane ctr -n k8s.io images import -
-	docker save redis:7-alpine | docker exec -i saurient-dev-control-plane ctr -n k8s.io images import -
-
-	@echo "==> Deploying PostgreSQL and Redis..."
-	kubectl apply -f deploy/postgres-manifests.yaml
-	kubectl rollout status deployment/postgres -n saurient-system --timeout=120s
-	kubectl rollout status deployment/redis -n saurient-system --timeout=120s
-
-	@echo "==> Applying database schema migrations..."
-	@until kubectl exec -n saurient-system deploy/postgres -- pg_isready -U saurient >/dev/null 2>&1; do sleep 1; done
-	kubectl exec -n saurient-system deploy/postgres -i -- psql -U saurient -d saurient_db < migrations/001_init_schema.sql
-	kubectl exec -n saurient-system deploy/postgres -i -- psql -U saurient -d saurient_db < migrations/002_organisation_schema.sql
-
-	@echo "==> Deploying Custom Resource Definitions (CRDs)..."
-	kubectl apply -f deploy/crd-manifests.yaml
-	kubectl wait --for=condition=established --timeout=60s crd/carbonpassports.saurient.io crd/calculationrulebooks.saurient.io
-
-	@echo "==> Deploying Saurient Controller & API Gateway..."
-	kubectl apply -f deploy/app-manifests.yaml
-	kubectl rollout status deployment/saurient-controller -n saurient-system --timeout=120s
-	kubectl rollout status deployment/saurient-api -n saurient-system --timeout=120s
-
+dev-setup: check-prereqs etcd-start build
 	@echo "=========================================================================="
-	@echo "Saurient Carbon Passport Platform local dev cluster is UP & READY!"
+	@echo "Saurient Carbon Passport Platform local dev environment is UP & READY!"
 	@echo "=========================================================================="
-	@echo "React Frontend UI:             http://localhost:5173"
-	@echo "API Gateway Endpoint:          http://localhost:8080/healthz"
-	@echo "REST API Base URL:             http://localhost:8080/api/v1"
-	@echo "Swagger Interactive API Docs:  http://localhost:8080/swagger/"
-	@echo "GraphQL Playground:            http://localhost:8080/graphql/playground"
+	@echo "etcd Endpoint:                 http://localhost:2379"
+	@echo "API Gateway Binary:            ./bin/api"
+	@echo "Controller Manager Binary:     ./bin/controller"
+	@echo "Nexus Graph Engine:            Embedded In-Memory & etcd Key-Value Store"
 	@echo "=========================================================================="
-
 	@echo "==> Building & Starting Digital Passport App (React / Vite)..."
 	cd digital-passport-app && npm run dev
 
-clean:
-	@echo "==> Cleaning up Kind cluster and build artifacts..."
-	-kind delete cluster --name $(CLUSTER_NAME)
+clean: etcd-stop
+	@echo "==> Cleaning up build artifacts..."
 	rm -rf bin/
 	rm -f digital-passport-app/yarn.lock yarn.lock
