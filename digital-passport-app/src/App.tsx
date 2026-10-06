@@ -18,6 +18,7 @@ import { SuppliersView } from './components/views/SuppliersView';
 import { CBAMView } from './components/views/CBAMView';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { ParisAlignmentView } from './components/views/ParisAlignmentView';
+import { GovernmentView } from './components/views/GovernmentView';
 import { AdminView } from './components/views/AdminView';
 import { TraceCarbonView } from './components/views/TraceCarbonView';
 
@@ -34,7 +35,9 @@ export function App() {
         <Route path="/dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
         <Route path="/company-dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
         <Route path="/executive-dashboard" element={<Shell><ExecutiveDashboard /></Shell>} />
+        <Route path="/products" element={<Shell><ProductSetup /></Shell>} />
         <Route path="/products/new" element={<Shell><ProductSetup /></Shell>} />
+        <Route path="/product-setup" element={<Shell><ProductSetup /></Shell>} />
         
         {/* MRV Verification Routes */}
         <Route path="/mrv" element={<Shell><MRVWorkflow /></Shell>} />
@@ -66,6 +69,7 @@ export function App() {
 
         <Route path="/cbam" element={<Shell><CBAMView /></Shell>} />
         <Route path="/analytics" element={<Shell><AnalyticsView /></Shell>} />
+        <Route path="/government" element={<Shell><GovernmentView /></Shell>} />
         <Route path="/paris-alignment" element={<Shell><ParisAlignmentView /></Shell>} />
         <Route path="/admin" element={<Shell><AdminView /></Shell>} />
 

@@ -15,7 +15,8 @@ import {
   Landmark,
   Settings,
   Bell,
-  Network
+  Network,
+  PlusCircle
 } from 'lucide-react';
 
 interface ShellProps {
@@ -25,6 +26,7 @@ interface ShellProps {
 export const Shell: React.FC<ShellProps> = ({ children }) => {
   const navItems = [
     { to: '/dashboard', label: 'Home', icon: Home, end: true },
+    { to: '/products/new', label: 'Product Creation', icon: PlusCircle },
     { to: '/organisation', label: 'Organisation', icon: Building2 },
     { to: '/data', label: 'Data', icon: Database },
     { to: '/carbon-accounting', label: 'Carbon Accounting', icon: BarChart3 },
@@ -110,6 +112,14 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center gap-3">
+              <NavLink 
+                to="/products/new" 
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-xs"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Create Product Batch</span>
+              </NavLink>
+
               <a 
                 href="http://localhost:8080/swagger/" 
                 target="_blank" 

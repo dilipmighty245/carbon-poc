@@ -157,6 +157,18 @@ export const RegistrationView: React.FC = () => {
       console.warn('Backend save profile failed, updating local state:', err);
     }
 
+    localStorage.setItem('saurient_company_registered', 'true');
+    localStorage.setItem('saurient_registered_company', JSON.stringify({
+      legalName: formData.legalName,
+      tradingName: formData.tradingName,
+      ownerName: formData.ownerName,
+      ownerEmail: formData.ownerEmail,
+      ownerRole: formData.ownerRole,
+      country: formData.country,
+      taxId: formData.taxId,
+      registrationDate: new Date().toISOString(),
+    }));
+
     setIsSubmitting(false);
     setSubmitSuccess(true);
     setTimeout(() => {
