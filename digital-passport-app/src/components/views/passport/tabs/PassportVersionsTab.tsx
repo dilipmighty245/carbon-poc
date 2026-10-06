@@ -12,6 +12,18 @@ export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passpo
   const passportId = searchParams.get('id');
   const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId) || passports[0];
 
+  if (!passport) {
+    return (
+      <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto my-8">
+        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+          <History className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">No Version History Available</h2>
+        <p className="text-xs text-slate-500">No carbon passports exist to display audit history.</p>
+      </div>
+    );
+  }
+
   const versionHistory = [
     {
       version: 'v1.1 (Current Issued)',

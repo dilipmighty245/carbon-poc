@@ -14,6 +14,26 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
 
   const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId) || passports[0];
 
+  if (!passport) {
+    return (
+      <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto my-8">
+        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+          <Lock className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">No Passport Available to Issue</h2>
+        <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto">
+          No carbon passport is ready for signing and issuance. Please create a product batch and complete MRV verification first.
+        </p>
+        <button
+          onClick={() => navigate('/products/new')}
+          className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 font-bold text-xs rounded-xl transition"
+        >
+          Register Product Batch
+        </button>
+      </div>
+    );
+  }
+
   const [signingKey, setSigningKey] = useState('0xKEY-ORATOR-PROD-SECURE-ED25519-88492');
   const [authorizedSigner, setAuthorizedSigner] = useState('Dr. Elena Rostova (Chief Sustainability Officer)');
   const [isSigning, setIsSigning] = useState(false);

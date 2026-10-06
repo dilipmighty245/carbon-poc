@@ -4,18 +4,29 @@ import { CheckCircle2, Upload, User, Building, MapPin, Globe, Shield, Activity, 
 import { saveOrgProfile } from '../../api/client';
 import type { OrgProfileData } from './organisation/OrgProfileTab';
 
+export function generateSaurientEmail(fullName: string): string {
+  if (!fullName || !fullName.trim()) return 'user@saurient.io';
+  let clean = fullName.trim().replace(/^(dr\.|mr\.|mrs\.|ms\.|prof\.|dr|mr|mrs|ms|prof)\s+/i, '');
+  clean = clean.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'user@saurient.io';
+  if (parts.length === 1) return `${parts[0]}@saurient.io`;
+  return `${parts[0]}.${parts[parts.length - 1]}@saurient.io`;
+}
+
 export const RegistrationView: React.FC = () => {
   const navigate = useNavigate();
 
   const [activeStep, setActiveStep] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Controlled form state for registration wizard
   const [formData, setFormData] = useState({
     // Account Owner
     ownerName: 'Marcus Vance',
-    ownerEmail: 'm.vance@saurientsteel.com',
+    ownerEmail: 'marcus.vance@saurient.io',
     ownerPhone: '+44 20 7946 0912',
     ownerRole: 'Chief Sustainability Officer & VP Supply Chain',
     ownerPassword: 'password123',
@@ -63,7 +74,13 @@ export const RegistrationView: React.FC = () => {
   });
 
   const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'ownerName') {
+        updated.ownerEmail = generateSaurientEmail(value);
+      }
+      return updated;
+    });
   };
 
   // Dynamic step statuses - only completed steps get green check marks
@@ -107,6 +124,8 @@ export const RegistrationView: React.FC = () => {
 
   const handleSubmitRegistration = async () => {
     setIsSubmitting(true);
+    const generatedEmail = generateSaurientEmail(formData.ownerName);
+
     const profilePayload: OrgProfileData = {
       legalName: formData.legalName,
       tradingName: formData.tradingName,
@@ -124,13 +143,13 @@ export const RegistrationView: React.FC = () => {
       primaryContact: {
         name: formData.ownerName,
         title: formData.ownerRole,
-        email: formData.ownerEmail,
+        email: generatedEmail,
         phone: formData.ownerPhone,
       },
       sustainabilityContact: {
         name: 'Dr. Lena Hoffmann',
         title: 'Head of Sustainability & Compliance',
-        email: 'l.hoffmann@saurient-carbon.com',
+        email: 'lena.hoffmann@saurient.io',
         phone: '+233 24 498 7654',
       },
       boundary: {
@@ -164,7 +183,7 @@ export const RegistrationView: React.FC = () => {
       legalName: formData.legalName,
       tradingName: formData.tradingName,
       ownerName: formData.ownerName,
-      ownerEmail: formData.ownerEmail,
+      ownerEmail: generatedEmail,
       ownerPassword: formData.ownerPassword || 'password123',
       ownerRole: formData.ownerRole,
       country: formData.country,
@@ -174,9 +193,7 @@ export const RegistrationView: React.FC = () => {
 
     setIsSubmitting(false);
     setSubmitSuccess(true);
-    setTimeout(() => {
-      navigate('/organisation');
-    }, 1200);
+    setShowSuccessModal(true);
   };
 
   const handleContinue = async () => {
@@ -826,6 +843,57 @@ export const RegistrationView: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Registration Success Modal Popup */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white text-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5 text-center">
+            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+              <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+            </div>
+
+            <div>
+              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                REGISTRATION SUCCESSFUL
+              </span>
+              <h3 className="text-xl font-black text-slate-900 mt-2">Organisation Registered!</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                <strong className="text-slate-800">{formData.legalName}</strong> has been registered on the Saurient platform.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Generated Sign-In Credentials</p>
+              
+              <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60">
+                <span className="text-slate-500 font-medium">Work Email:</span>
+                <code className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  {generateSaurientEmail(formData.ownerName)}
+                </code>
+              </div>
+
+              <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60">
+                <span className="text-slate-500 font-medium">Password:</span>
+                <code className="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                  {formData.ownerPassword || 'password123'}
+                </code>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Please log in again with your credentials generated from your first name and last name.
+            </p>
+
+            <button
+              onClick={() => navigate('/login?registered=true')}
+              className="w-full py-3 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2"
+            >
+              <span>Proceed to Login</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

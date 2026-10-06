@@ -5,7 +5,7 @@ ETCD_IMAGE ?= quay.io/coreos/etcd:v3.5.10
 CONTROLLER_IMG ?= saurient-controller:dev
 API_IMG ?= saurient-api:dev
 
-.PHONY: all build test test-e2e e2e dev-setup dev-setup-nomock clean check-prereqs etcd-start etcd-stop
+.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed clean check-prereqs etcd-start etcd-stop
 
 all: test build
 
@@ -17,6 +17,27 @@ build:
 test:
 	@echo "==> Running unit tests..."
 	go test -v ./...
+
+test-e2e-no-mocks: check-prereqs clean etcd-start build
+	@echo "==> Starting backend API Gateway & Controller Manager background servers [NO MOCK DATA]..."
+	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
+	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
+	@echo "==> Starting UI Frontend (digital-passport-app) dev server..."
+	@cd digital-passport-app && npm run dev -- --host 127.0.0.1 --port 5173 > ../ui.log 2>&1 & echo $$! > ../.ui.pid
+	@echo "==> Polling until API (http://localhost:8080) and UI (http://localhost:5173) are active..."
+	@for i in $$(seq 1 30); do \
+		if curl -s http://localhost:8080/healthz >/dev/null 2>&1 && curl -s http://localhost:5173 >/dev/null 2>&1; then \
+			echo "   [OK] API Gateway (8080) & UI Frontend (5173) are ready!"; \
+			break; \
+		fi; \
+		sleep 1; \
+	done
+	@echo "==> Running Backend Go E2E Integration Test Suite..."
+	go test -v ./tests/...
+	@echo "==> Cleaning up background servers..."
+	@$(MAKE) clean
+
+e2e-no-mocks: test-e2e-no-mocks
 
 test-e2e: check-prereqs clean etcd-start build
 	@echo "==> Starting backend API Gateway & Controller Manager background servers..."
@@ -62,7 +83,31 @@ etcd-stop:
 	@echo "==> Stopping local etcd container..."
 	-docker rm -f $(ETCD_CONTAINER) >/dev/null 2>&1
 
-dev-setup-nomock: dev-setup
+dev-setup-nomock: check-prereqs clean etcd-start build
+	@echo "=========================================================================="
+	@echo "Starting Backend Services (API Gateway & Controller Manager) [NO MOCK DATA]..."
+	@echo "=========================================================================="
+	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
+	@./bin/controller > controller.log 2>&1 & echo $$! > .controller.pid
+	@echo "==> Waiting for API Gateway (http://localhost:8080) to be ready..."
+	@for i in $$(seq 1 15); do \
+		if curl -s http://localhost:8080/healthz >/dev/null 2>&1; then \
+			echo "   [OK] API Gateway is live!"; \
+			break; \
+		fi; \
+		sleep 1; \
+	done
+	@echo "=========================================================================="
+	@echo "Saurient Carbon Passport Platform local dev environment is UP & READY!"
+	@echo "=========================================================================="
+	@echo "etcd Endpoint:                 http://localhost:2379"
+	@echo "API Gateway Endpoint:          http://localhost:8080/api/v1"
+	@echo "Controller Manager Binary:     ./bin/controller"
+	@echo "=========================================================================="
+	@echo "==> Starting Digital Passport App (React / Vite)..."
+	cd digital-passport-app && npm run dev
+
+dev-setup-seed: dev-setup
 
 dev-setup: check-prereqs clean etcd-start build
 	@echo "=========================================================================="

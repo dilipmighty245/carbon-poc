@@ -16,6 +16,20 @@ export const PassportSharingTab: React.FC<PassportSharingTabProps> = ({ passport
   const [allowedEmails, setAllowedEmails] = useState('customs-clearance@eu.europa.eu, auditor@bureauveritas.com');
   const [isSaved, setIsSaved] = useState(false);
 
+  if (!passport) {
+    return (
+      <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto my-8">
+        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+          <Share2 className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">No Passport Available to Share</h2>
+        <p className="text-xs text-slate-500 mb-2">
+          No carbon passports match your current selection.
+        </p>
+      </div>
+    );
+  }
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaved(true);

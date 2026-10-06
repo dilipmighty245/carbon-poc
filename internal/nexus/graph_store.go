@@ -600,7 +600,7 @@ func (e *NexusGraphEngine) ListPassports(ctx context.Context) ([]*CarbonPassport
 	tenantID, _ := tenant.GetTenant(ctx)
 	var result []*CarbonPassportModel
 	for _, p := range s.passports {
-		if tenantID == "" || p.TenantID == tenantID || tenantID == "tenant-default" || p.TenantID == "tenant-default" {
+		if tenantID == "" || p.TenantID == tenantID {
 			result = append(result, p)
 		}
 	}
@@ -691,9 +691,6 @@ func (e *NexusGraphEngine) GetTenantProfile(ctx context.Context) (*TenantProfile
 
 	p, ok := s.tenantProfiles[tID]
 	if !ok {
-		if defaultProf, exists := s.tenantProfiles["tenant-default"]; exists {
-			return defaultProf, nil
-		}
 		return nil, fmt.Errorf("profile not found for tenant: %s", tID)
 	}
 	return p, nil
@@ -728,11 +725,7 @@ func (e *NexusGraphEngine) ListFacilities(ctx context.Context) ([]*FacilityModel
 	if tID == "" {
 		tID = "tenant-default"
 	}
-	facs := s.facilities[tID]
-	if len(facs) == 0 {
-		facs = s.facilities["tenant-default"]
-	}
-	return facs, nil
+	return s.facilities[tID], nil
 }
 
 func (e *NexusGraphEngine) SaveFacility(ctx context.Context, f *FacilityModel) error {
@@ -797,11 +790,7 @@ func (e *NexusGraphEngine) ListProcesses(ctx context.Context) ([]*ProcessModel, 
 	if tID == "" {
 		tID = "tenant-default"
 	}
-	procs := s.processes[tID]
-	if len(procs) == 0 {
-		procs = s.processes["tenant-default"]
-	}
-	return procs, nil
+	return s.processes[tID], nil
 }
 
 func (e *NexusGraphEngine) SaveProcess(ctx context.Context, p *ProcessModel) error {
@@ -866,11 +855,7 @@ func (e *NexusGraphEngine) ListOrganisationUsers(ctx context.Context) ([]*Organi
 	if tID == "" {
 		tID = "tenant-default"
 	}
-	usrs := s.users[tID]
-	if len(usrs) == 0 {
-		usrs = s.users["tenant-default"]
-	}
-	return usrs, nil
+	return s.users[tID], nil
 }
 
 func (e *NexusGraphEngine) SaveOrganisationUser(ctx context.Context, u *OrganisationUserModel) error {
@@ -932,11 +917,7 @@ func (e *NexusGraphEngine) ListReportingPeriods(ctx context.Context) ([]*Reporti
 	if tID == "" {
 		tID = "tenant-default"
 	}
-	periods := s.reportingPeriods[tID]
-	if len(periods) == 0 {
-		periods = s.reportingPeriods["tenant-default"]
-	}
-	return periods, nil
+	return s.reportingPeriods[tID], nil
 }
 
 func (e *NexusGraphEngine) SaveReportingPeriod(ctx context.Context, p *ReportingPeriodModel) error {
@@ -983,9 +964,6 @@ func (e *NexusGraphEngine) GetLocalisation(ctx context.Context) (*LocalisationMo
 
 	loc, ok := s.localisations[tID]
 	if !ok {
-		if defaultLoc, exists := s.localisations["tenant-default"]; exists {
-			return defaultLoc, nil
-		}
 		return nil, fmt.Errorf("localisation not found for tenant: %s", tID)
 	}
 	return loc, nil
@@ -1017,11 +995,7 @@ func (e *NexusGraphEngine) ListApprovals(ctx context.Context) ([]*ApprovalModel,
 	if tID == "" {
 		tID = "tenant-default"
 	}
-	apps := s.approvals[tID]
-	if len(apps) == 0 {
-		apps = s.approvals["tenant-default"]
-	}
-	return apps, nil
+	return s.approvals[tID], nil
 }
 
 func (e *NexusGraphEngine) SaveApproval(ctx context.Context, a *ApprovalModel) error {
@@ -1087,11 +1061,7 @@ func (e *NexusGraphEngine) ListAgencies(ctx context.Context) ([]*AgencyModel, er
 	if tID == "" {
 		tID = "tenant-default"
 	}
-	agencies := s.agencies[tID]
-	if len(agencies) == 0 {
-		agencies = s.agencies["tenant-default"]
-	}
-	return agencies, nil
+	return s.agencies[tID], nil
 }
 
 func (e *NexusGraphEngine) CreateEngagement(ctx context.Context, eng *VerificationEngagementModel) error {
@@ -1123,11 +1093,7 @@ func (e *NexusGraphEngine) ListEngagements(ctx context.Context) ([]*Verification
 	if tID == "" {
 		tID = "tenant-default"
 	}
-	engs := s.engagements[tID]
-	if len(engs) == 0 {
-		engs = s.engagements["tenant-default"]
-	}
-	return engs, nil
+	return s.engagements[tID], nil
 }
 
 func (e *NexusGraphEngine) AssignTeamMember(ctx context.Context, m *EngagementTeamMemberModel) error {

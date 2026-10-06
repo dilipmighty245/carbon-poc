@@ -17,75 +17,54 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports 
       p.product_summary?.batch_number === passportId
   );
 
-  const passport = foundPassport || passports[0] || ({
-    passport_metadata: {
-      passport_id: passportId || 'PASS-2026-375-v1.0',
-      unique_qr_code: `QR-${passportId || 'PASS-2026-375-v1.0'}`,
-      cryptographic_hash: '0x8849201f99c2d104a7b4c9e1f2d34890',
-      issuance_date: '2026-03-28',
-      status: 'VERIFIED',
-    },
-    product_summary: {
-      commodity: 'Steel',
-      product_name: 'Hot-Rolled Steel Coil',
-      batch_number: 'ST-2026-00981',
-      producer_organization: 'Saurient Demo Steel Industries Ltd',
-      facility: {
-        name: 'Duisburg Main Works',
-        location: 'Duisburg, Germany',
-        country_of_origin: 'Germany',
-      },
-      production_date: '2026-03-18',
-      batch_size: {
-        quantity: 10000,
-        unit: 'kg',
-      },
-    },
-    carbon_footprint: {
-      total_batch_footprint_kg_co2e: 16330,
-      intensity_per_unit: {
-        value: 1.633,
-        unit: 'kg CO2e/kg',
-      },
-      scope_breakdown: {
-        scope_1_direct: { value_kg_co2e: 1.25, percentage: 76.5 },
-        scope_2_indirect_energy: { value_kg_co2e: 0.25, percentage: 15.3 },
-        scope_3_value_chain: { value_kg_co2e: 0.133, percentage: 8.2 },
-      },
-      source_breakdown: {
-        raw_materials: { value_kg_co2e: 0.68, percentage: 41.6 },
-        electricity: { value_kg_co2e: 0.35, percentage: 21.4 },
-        logistics_transport: { value_kg_co2e: 0.20, percentage: 12.2 },
-        on_site_fuel: { value_kg_co2e: 0.30, percentage: 18.4 },
-        packaging: { value_kg_co2e: 0.10, percentage: 6.4 },
-      },
-    },
-    methodology_and_audit: {
-      calculation_rulebook: 'steel-rulebook-cbam-2026',
-      accounting_standard: 'GHG Protocol / EU CBAM Regulation (EU) 2023/956',
-      verification_body: 'TÜV Rheinland Energy GmbH',
-      assurance_level: 'Reasonable Assurance',
-      verification_id: 'CERT-EU-CBAM-2026-981',
-    },
-  } as RichDigitalPassport);
+  const passport = foundPassport || (passports.length > 0 && !passportId ? passports[0] : null);
+
+  if (!passport) {
+    return (
+      <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto my-8">
+        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+          <FileText className="w-6 h-6" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">Carbon Passport Not Found</h2>
+        <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto">
+          No issued carbon passport was found matching {passportId ? <code className="font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{passportId}</code> : 'your query'}. Passports are issued upon completion of MRV verification.
+        </p>
+        <div className="flex justify-center gap-3">
+          <button
+            onClick={() => navigate('/passport')}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
+          >
+            Passport Registry
+          </button>
+          <button
+            onClick={() => navigate('/products/new')}
+            className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 font-bold text-xs rounded-xl transition"
+          >
+            Register Product Batch
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const metadata = {
-    passport_id: passport?.passport_metadata?.passport_id || passportId || 'PASS-2026-375-v1.0',
-    status: passport?.passport_metadata?.status || 'VERIFIED',
-    issuance_date: passport?.passport_metadata?.issuance_date || '2026-03-28',
-    cryptographic_hash: passport?.passport_metadata?.cryptographic_hash || '0x8849201f99c2d104a7b4c9e1f2d34890',
+    passport_id: passport.passport_metadata?.passport_id || passportId || 'N/A',
+    status: passport.passport_metadata?.status || 'VERIFIED',
+    issuance_date: passport.passport_metadata?.issuance_date || 'N/A',
+    cryptographic_hash: passport.passport_metadata?.cryptographic_hash || 'N/A',
   };
 
   const prod = {
-    product_name: passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil',
-    commodity: passport?.product_summary?.commodity || 'Steel',
-    batch_number: passport?.product_summary?.batch_number || 'ST-2026-00981',
-    producer_organization: passport?.product_summary?.producer_organization || 'Saurient Demo Steel Industries Ltd',
-    quantity: passport?.product_summary?.batch_size?.quantity ?? (passport?.product_summary as any)?.quantity ?? 10000,
-    unit: passport?.product_summary?.batch_size?.unit ?? (passport?.product_summary as any)?.unit ?? 'kg',
-    facility_name: passport?.product_summary?.facility?.name || 'Duisburg Main Works',
-    country_of_origin: passport?.product_summary?.facility?.country_of_origin || 'Germany',
-    hs_code: (passport?.product_summary as any)?.hs_code || '7208 39 00',
+    product_name: passport.product_summary?.product_name || 'Unspecified Product',
+    commodity: passport.product_summary?.commodity || 'Steel',
+    batch_number: passport.product_summary?.batch_number || 'N/A',
+    producer_organization: passport.product_summary?.producer_organization || 'Unspecified Producer',
+    facility_name: passport.product_summary?.facility?.name || 'Unspecified Facility',
+    country_of_origin: passport.product_summary?.facility?.country_of_origin || passport.product_summary?.facility?.location || 'N/A',
+    production_date: passport.product_summary?.production_date || 'N/A',
+    quantity: passport.product_summary?.batch_size?.quantity ?? (passport.product_summary as any)?.quantity ?? 0,
+    unit: passport.product_summary?.batch_size?.unit ?? (passport.product_summary as any)?.unit ?? 'kg',
+    hs_code: (passport.product_summary as any)?.hs_code || '7208 39 00',
   };
 
   const footprint = {

@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
-import { Check, RefreshCw, Download, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, RefreshCw, Download, Search, Building2, Factory, Package, Zap, Calculator, ShieldCheck, Lock, ArrowRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export const CompanyDashboardView: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
   const tabs = ['Overview', 'Priority Tasks', 'Notifications', 'Recent Activity'];
+
+  const journeySteps = [
+    { num: 1, label: 'Organisation', icon: Building2, path: '/organisation' },
+    { num: 2, label: 'Facility', icon: Factory, path: '/organisation?tab=asset-tree' },
+    { num: 3, label: 'Product Batch', icon: Package, path: '/products/new' },
+    { num: 4, label: 'Inputs & Evidence', icon: Zap, path: '/data?tab=telemetry' },
+    { num: 5, label: 'Calculation v1.0', icon: Calculator, path: '/pcf?tab=inventory' },
+    { num: 6, label: 'Independent Verification', icon: ShieldCheck, path: '/mrv' },
+    { num: 7, label: 'Issued Passport', icon: Lock, path: '/passport' },
+  ];
 
   const kpis = [
     { title: 'Total CCF', val: '12,842 tCO₂e', subtitle: '↓ 8.4% vs baseline', color: 'text-emerald-600' },
@@ -103,13 +115,59 @@ export const CompanyDashboardView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2">
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Download</span>
+          <button
+            onClick={() => navigate('/trace')}
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
+          >
+            <Search className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Trace Carbon Number</span>
           </button>
           <button className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors">
             Primary action
           </button>
+        </div>
+      </div>
+
+      {/* PoC End-to-End Product Journey Card */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 p-5 rounded-2xl border border-slate-800 shadow-md text-white">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md border border-emerald-500/30 uppercase tracking-wider">
+                END-TO-END DEMO JOURNEY
+              </span>
+              <span className="text-slate-400 text-xs font-mono">7-STEP PROVENANCE PIPELINE</span>
+            </div>
+            <h2 className="text-base font-bold text-white tracking-tight">Complete Product Carbon Passport Journey</h2>
+          </div>
+          <button
+            onClick={() => navigate('/trace')}
+            className="text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
+          >
+            <span>Trace Carbon #PASS-2026-981-v1.0</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          {journeySteps.map((st) => {
+            const Icon = st.icon;
+            return (
+              <button
+                key={st.num}
+                onClick={() => navigate(st.path)}
+                className="flex flex-col items-center p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 transition text-center group cursor-pointer"
+              >
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition mb-1.5">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-400 group-hover:text-slate-300">STEP {st.num}</span>
+                <span className="text-[11px] font-bold text-slate-100 group-hover:text-white truncate w-full mt-0.5">
+                  {st.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

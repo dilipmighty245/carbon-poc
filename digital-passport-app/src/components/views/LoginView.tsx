@@ -1,44 +1,68 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, AlertTriangle, Building, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { loginUser } from '../../api/client';
 
 export const LoginView: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const justRegistered = searchParams.get('registered') === 'true';
 
-  // Registration Check
-  const [isRegistered, setIsRegistered] = useState<boolean>(
-    () => localStorage.getItem('saurient_company_registered') === 'true'
-  );
+  // Registration Check - strictly check for registered company data
   const [registeredCompany] = useState<any>(() => {
     try {
-      return JSON.parse(localStorage.getItem('saurient_registered_company') || '{}');
+      const stored = localStorage.getItem('saurient_registered_company');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.ownerEmail) return parsed;
+      }
     } catch {
-      return {};
+      // ignore
     }
+    return null;
   });
 
+  const isRegistered = Boolean(registeredCompany?.ownerEmail || (localStorage.getItem('saurient_company_registered') === 'true' && justRegistered));
+
   const [showRegModal, setShowRegModal] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [role, setRole] = useState('Company Operator');
-  const [email, setEmail] = useState(registeredCompany?.ownerEmail || 'operator@saurient.demo');
-  const [password, setPassword] = useState(registeredCompany?.ownerPassword || 'password123');
+  const [email, setEmail] = useState(registeredCompany?.ownerEmail || '');
+  const [password, setPassword] = useState(registeredCompany?.ownerPassword || '');
 
   const roles = [
     { 
       title: 'Company Operator', 
-      email: registeredCompany?.ownerEmail || 'operator@saurient.demo',
-      password: registeredCompany?.ownerPassword || 'password123' 
+      email: registeredCompany?.ownerEmail || (isRegistered ? 'operator@saurient.io' : 'Registration required'),
+      password: registeredCompany?.ownerPassword || (isRegistered ? 'password123' : '') 
     },
-    { title: 'Verifier', email: 'verifier@saurient.demo', password: 'verifier123' },
-    { title: 'Passport Officer', email: 'officer@saurient.demo', password: 'officer123' },
-    { title: 'Public Viewer', email: 'No login required', password: '' },
+    { 
+      title: 'Verifier', 
+      email: isRegistered ? 'verifier@saurient.io' : 'Registration required', 
+      password: isRegistered ? 'verifier123' : '' 
+    },
+    { 
+      title: 'Passport Officer', 
+      email: isRegistered ? 'officer@saurient.io' : 'Registration required', 
+      password: isRegistered ? 'officer123' : '' 
+    },
+    { 
+      title: 'Public Viewer', 
+      email: 'No login required', 
+      password: '' 
+    },
   ];
 
   const handleSelectRole = (r: { title: string; email: string; password?: string }) => {
     setRole(r.title);
-    if (r.email !== 'No login required') {
+    setLoginError(null);
+    if (!isRegistered && r.title !== 'Public Viewer') {
+      setShowRegModal(true);
+      return;
+    }
+    if (r.email !== 'No login required' && r.email !== 'Registration required') {
       setEmail(r.email);
-      setPassword(r.password || 'password123');
+      setPassword(r.password || '');
     } else {
       setEmail('');
       setPassword('');
@@ -47,24 +71,23 @@ export const LoginView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
 
     if (!isRegistered) {
       setShowRegModal(true);
       return;
     }
 
+    if (!email || !password) {
+      setLoginError('Please enter your work email and password.');
+      return;
+    }
+
     try {
       await loginUser(email, password);
     } catch (err) {
-      console.warn('Backend login check failed, proceeding in demo mode:', err);
+      console.warn('Backend login check failed, proceeding in session mode:', err);
     }
-    navigate('/dashboard');
-  };
-
-  const handleBypassRegistration = () => {
-    localStorage.setItem('saurient_company_registered', 'true');
-    setIsRegistered(true);
-    setShowRegModal(false);
     navigate('/dashboard');
   };
 
@@ -118,11 +141,11 @@ export const LoginView: React.FC = () => {
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <div>
                 <p className="text-xs font-bold">{registeredCompany?.legalName || 'Registered Organisation'}</p>
-                <p className="text-[10px] text-emerald-700">{registeredCompany?.ownerEmail || 'Company User Verified'}</p>
+                <p className="text-[10px] font-mono font-bold text-emerald-700">{registeredCompany?.ownerEmail || 'marcus.vance@saurient.io'}</p>
               </div>
             </div>
             <span className="text-[9px] font-extrabold uppercase bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full">
-              REGISTERED
+              {justRegistered ? 'JUST REGISTERED' : 'REGISTERED'}
             </span>
           </div>
         ) : (
@@ -180,17 +203,24 @@ export const LoginView: React.FC = () => {
             <div className="flex justify-between items-center mb-1">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Password</label>
               <span className="text-[10px] text-emerald-600 font-semibold">
-                {registeredCompany?.ownerPassword ? 'Registered password loaded' : 'Demo password: password123'}
+                {isRegistered ? 'Registered password loaded' : 'Registration required'}
               </span>
             </div>
             <input
               type="password"
-              placeholder="Enter password"
+              placeholder={isRegistered ? 'Enter password' : 'Register company to create password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"
             />
           </div>
+
+          {loginError && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{loginError}</span>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -246,10 +276,10 @@ export const LoginView: React.FC = () => {
               </button>
 
               <button
-                onClick={handleBypassRegistration}
+                onClick={() => setShowRegModal(false)}
                 className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
               >
-                Skip for Demo Mode
+                Cancel
               </button>
             </div>
           </div>

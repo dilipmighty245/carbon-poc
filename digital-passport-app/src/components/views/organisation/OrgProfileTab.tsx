@@ -191,7 +191,7 @@ export const OrgProfileTab: React.FC = () => {
   useEffect(() => {
     getOrgProfile()
       .then((data) => {
-        if (data && data.legalName && data.legalName !== 'Saurient Industrial Group B.V.') {
+        if (data && data.legalName) {
           const merged: OrgProfileData = {
             ...initialOrgProfile,
             ...data,

@@ -162,23 +162,8 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 	case http.MethodGet:
 		p, err := h.engine.GetTenantProfile(ctx)
 		if err != nil || p == nil {
-			p = &nexus.TenantProfileModel{
-				TenantID:               tenantID,
-				LegalName:              "Sattric Industrial Group B.V.",
-				TradingName:            "Sattric Carbon Solutions",
-				OrganisationID:         "ORG-SAUR-2026-EU",
-				RegistrationNumber:     "NL884920193B01",
-				CountryOfIncorporation: "Netherlands",
-				RegisteredAddress:      "Keizersgracht 421, 1016 EK Amsterdam",
-				Headquarters:           "Amsterdam, Netherlands",
-				Industry:               "Aluminium & Industrial Materials",
-				NaceCode:               "C24.42 - Aluminium production",
-				PrimaryProducts:        "Primary Aluminium Ingots, Low-Carbon Billets",
-				Website:                "https://sattric.io",
-				TaxID:                  "NL884920193B01",
-				LEI:                    "724500123456789ABCDE",
-				Status:                 "ACTIVE",
-			}
+			writeJSONError(w, fmt.Sprintf("profile not found for tenant: %s", tenantID), http.StatusNotFound)
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(p)

@@ -227,7 +227,7 @@ export const OrgFacilitiesTab: React.FC = () => {
   useEffect(() => {
     getOrgFacilities()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setFacilitiesList(data);
         }
       })

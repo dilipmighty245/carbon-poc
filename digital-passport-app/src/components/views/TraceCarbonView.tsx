@@ -35,6 +35,7 @@ export const TraceCarbonView: React.FC = () => {
   const [dag, setDag] = useState<LineageDAGData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchId, setSearchId] = useState<string>('PASS-2026-981-v1.0');
 
   // Correction Simulation State
   const [newValue, setNewValue] = useState<number>(0.720);
@@ -43,11 +44,12 @@ export const TraceCarbonView: React.FC = () => {
   const [correctionResult, setCorrectionResult] = useState<InputCorrectionRes | null>(null);
   const [activeStep, setActiveStep] = useState<number>(7);
 
-  const fetchLineage = async () => {
+  const fetchLineage = async (idToFetch?: string) => {
     setLoading(true);
     setError(null);
+    const targetId = idToFetch || searchId || 'PASS-2026-981-v1.0';
     try {
-      const res = await getLineageDAG('PASS-2026-981-v1.0');
+      const res = await getLineageDAG(targetId);
       setDag(res);
     } catch (err: any) {
       setError(err.message || 'Failed to load lineage graph');
@@ -57,7 +59,7 @@ export const TraceCarbonView: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchLineage();
+    fetchLineage('PASS-2026-981-v1.0');
   }, []);
 
   const handleSimulateCorrection = async (e: React.FormEvent) => {
@@ -93,30 +95,75 @@ export const TraceCarbonView: React.FC = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
       {/* Top Banner & Title */}
-      <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="bg-emerald-500/20 text-emerald-400 text-[11px] font-extrabold px-2.5 py-0.5 rounded-md border border-emerald-500/30 uppercase tracking-wider">
-              NEXUS LINEAGE DAG ENGINE
-            </span>
-            <span className="text-slate-400 text-xs font-mono">ID: PASS-2026-981-v1.0</span>
+      <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg border border-slate-800 flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-emerald-500/20 text-emerald-400 text-[11px] font-extrabold px-2.5 py-0.5 rounded-md border border-emerald-500/30 uppercase tracking-wider">
+                NEXUS LINEAGE DAG ENGINE
+              </span>
+              <span className="text-slate-400 text-xs font-mono">ID: {searchId}</span>
+            </div>
+            <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              Trace This Carbon Number
+              <Search className="w-5 h-5 text-emerald-400" />
+            </h1>
+            <p className="text-slate-400 text-xs mt-1 max-w-2xl">
+              Demonstrates complete lineage tracing from Organisation down to Issued Passport. Features live supplier input correction impact analysis while preserving original passport immutability.
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            Trace This Carbon Number
-            <Search className="w-5 h-5 text-emerald-400" />
-          </h1>
-          <p className="text-slate-400 text-xs mt-1 max-w-2xl">
-            Demonstrates complete lineage tracing from Organisation down to Issued Passport. Features live supplier input correction impact analysis while preserving original passport immutability.
-          </p>
+
+          <button
+            onClick={() => fetchLineage(searchId)}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-bold border border-slate-700 transition self-start md:self-auto"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Refresh Lineage Graph
+          </button>
         </div>
 
-        <button
-          onClick={fetchLineage}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-bold border border-slate-700 transition"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Lineage Graph
-        </button>
+        {/* Search Input Bar */}
+        <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') fetchLineage(searchId);
+              }}
+              placeholder="Enter Carbon Number, Passport ID, or Batch ID..."
+              className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-emerald-500 transition font-mono"
+            />
+          </div>
+          <button
+            onClick={() => fetchLineage(searchId)}
+            className="w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-2"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>Trace Number</span>
+          </button>
+          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+            <span className="text-[10px] uppercase font-bold text-slate-400 whitespace-nowrap">Presets:</span>
+            {['PASS-2026-981-v1.0', 'CP-GH-2026-0001', 'ST-2026-00981'].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => {
+                  setSearchId(preset);
+                  fetchLineage(preset);
+                }}
+                className={`text-[10px] font-mono px-2 py-1 rounded-md transition whitespace-nowrap ${
+                  searchId === preset
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    : 'bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700'
+                }`}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 7-Step Product Journey Breadcrumbs */}
