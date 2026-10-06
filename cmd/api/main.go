@@ -17,17 +17,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/graphql-go/graphql"
 
-	saurientv1alpha1 "saurient-platform/api/v1alpha1"
+	configv1 "saurient-platform/build/apis/config.saurient.io/v1"
+	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
+	runtimev1 "saurient-platform/build/apis/runtime.saurient.io/v1"
+	nexus_client "saurient-platform/build/nexus-client"
 	"saurient-platform/internal/api"
 	"saurient-platform/internal/engine"
 	"saurient-platform/internal/nexus"
@@ -36,11 +31,16 @@ import (
 )
 
 type VerificationServer struct {
+	nexusClient *nexus_client.Clientset
 	nexusEngine *nexus.NexusGraphEngine
-	k8sClient   client.Client
+	reconciler  *nexus.ProductReconciler
 	gqlSchema   graphql.Schema
 	rulesMutex  sync.RWMutex
 	customRules map[string]RulebookItemResponse
+}
+
+func (s *VerificationServer) getNexusClient() *nexus_client.Clientset {
+	return s.nexusClient
 }
 
 const openAPISpecJSON = `{
@@ -410,9 +410,31 @@ const graphiqlHTML = `<!DOCTYPE html>
 func main() {
 	port := getEnv("PORT", "8080")
 
+	// Ensure backing etcd server is running (either external cluster or embedded)
+	if _, err := nexus.EnsureEtcdServer(nil); err != nil {
+		log.Printf("Warning: failed to ensure etcd server: %v", err)
+	}
+	defer nexus.StopEmbeddedEtcd()
+
+	// Initialize Nexus typed client and ensure root graph anchor hierarchy
+	nClient := nexus.GetNexusClient()
+	if nClient == nil {
+		log.Fatalf("Fatal: Nexus client cannot be nil")
+	}
+	if _, err := nexus.EnsureGraphRoots(context.Background(), nClient); err != nil {
+		log.Printf("Warning: failed to ensure Nexus graph roots: %v", err)
+	}
+
 	server := &VerificationServer{
+		nexusClient: nClient,
 		nexusEngine: nexus.GetNexusEngine(),
 	}
+
+	// Initialize and start Nexus Product Reconciler background worker
+	celEng := engine.NewCELEngine()
+	reconciler := nexus.NewProductReconcilerWithClient(nClient, server.nexusEngine, celEng)
+	reconciler.Start(context.Background())
+	server.reconciler = reconciler
 
 	// Initialize Nexus GraphQL Schema Engine
 	gqlSchema, gqlErr := nexusdsl.BuildNexusGraphQLSchema(server)
@@ -421,25 +443,6 @@ func main() {
 	}
 	server.gqlSchema = gqlSchema
 	log.Println("API Gateway initialized Nexus GraphQL Schema & Graph Engine")
-
-	// Initialize Kubernetes client for Product CR management
-	k8sScheme := runtime.NewScheme()
-	_ = saurientv1alpha1.AddToScheme(k8sScheme)
-	k8sCfg, cfgErr := rest.InClusterConfig()
-	if cfgErr != nil {
-		kubeconfig := getEnv("KUBECONFIG", os.Getenv("HOME")+"/.kube/config")
-		k8sCfg, cfgErr = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	}
-	if cfgErr == nil {
-		if k8sClient, k8sErr := client.New(k8sCfg, client.Options{Scheme: k8sScheme}); k8sErr == nil {
-			server.k8sClient = k8sClient
-			log.Println("API Gateway connected to Kubernetes")
-		} else {
-			log.Printf("API Gateway starting with Kubernetes disconnected: %v", k8sErr)
-		}
-	} else {
-		log.Printf("API Gateway starting with Kubernetes disconnected: %v", cfgErr)
-	}
 
 	// 1. Healthz Probe Endpoint
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -554,12 +557,25 @@ func main() {
 }
 
 func (s *VerificationServer) GetPassportByID(ctx context.Context, passportID string) (interface{}, error) {
-	if s.nexusEngine == nil {
-		return nil, nil
+	nClient := s.getNexusClient()
+	var p *nexus.CarbonPassportModel
+	if nClient != nil {
+		if pNode, err := nexus.GetPassportNode(ctx, nClient, passportID); err == nil && pNode != nil {
+			p = nexus.CarbonPassportModelFromNode(pNode)
+		} else if pNode, err := nexus.GetPassportNodeByBatchID(ctx, nClient, passportID); err == nil && pNode != nil {
+			p = nexus.CarbonPassportModelFromNode(pNode)
+		}
 	}
-	p, err := s.nexusEngine.GetPassportByID(ctx, passportID)
-	if err != nil || p == nil {
-		return nil, err
+
+	if p == nil && s.nexusEngine != nil {
+		var err error
+		p, err = s.nexusEngine.GetPassportByID(ctx, passportID)
+		if err != nil || p == nil {
+			return nil, err
+		}
+	}
+	if p == nil {
+		return nil, fmt.Errorf("passport not found: %s", passportID)
 	}
 	return map[string]interface{}{
 		"passport_id":         p.PassportID,
@@ -891,18 +907,11 @@ func (s *VerificationServer) handleDeleteProduct(w http.ResponseWriter, r *http.
 		namespace = "default"
 	}
 
-	if s.k8sClient != nil {
-		resourceName := sanitiseK8sName(id)
-		var productCR saurientv1alpha1.Product
-		if err := s.k8sClient.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, &productCR); err == nil {
-			_ = s.k8sClient.Delete(ctx, &productCR)
-		} else if err := s.k8sClient.Get(ctx, types.NamespacedName{Name: id, Namespace: namespace}, &productCR); err == nil {
-			_ = s.k8sClient.Delete(ctx, &productCR)
-		}
-	}
-
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
+	_ = nexus.DeleteProductNode(ctx, s.getNexusClient(), tenantID, id)
+	_ = nexus.DeletePassportNode(ctx, s.getNexusClient(), id)
 	if s.nexusEngine != nil {
+		_ = s.nexusEngine.DeleteProduct(tenantCtx, id)
 		_ = s.nexusEngine.DeletePassportByBatchNumber(tenantCtx, id)
 		_ = s.nexusEngine.DeletePassportByPassportID(tenantCtx, id)
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, id))
@@ -1062,13 +1071,9 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 
 	namespace := "default"
 	rulebookName := "default-rulebook"
-	rulebookNS := namespace
 	if req.RulebookRef != nil {
 		if n, ok := req.RulebookRef["name"]; ok && n != "" {
 			rulebookName = n
-		}
-		if ns, ok := req.RulebookRef["namespace"]; ok && ns != "" {
-			rulebookNS = ns
 		}
 	}
 
@@ -1076,118 +1081,32 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 		req.ActivityDataRaw = "{}"
 	}
 
-	productCR := &saurientv1alpha1.Product{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "saurient.io/v1alpha1",
-			Kind:       "Product",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resourceName,
-			Namespace: namespace,
-			Labels: map[string]string{
-				"saurient.io/tenant-id":   req.TenantID,
-				"saurient.io/commodity":   sanitiseK8sLabel(req.CommodityType),
-			},
-		},
-		Spec: saurientv1alpha1.ProductSpec{
-			TenantID:        req.TenantID,
-			FacilityID:      req.FacilityID,
-			BatchID:         req.BatchID,
-			ProductName:     req.ProductName,
-			CommodityType:   req.CommodityType,
-			ActivityDataRaw: req.ActivityDataRaw,
-			RulebookRef: saurientv1alpha1.LocalObjectReference{
-				Name:      rulebookName,
-				Namespace: rulebookNS,
-			},
-		},
+	// Create true Product node in Nexus graph (Root -> Inventory -> Tenant -> Product)
+	nClient := s.getNexusClient()
+	prodSpec := inventoryv1.ProductSpec{
+		ProductID:       req.BatchID,
+		ProductName:     req.ProductName,
+		CommodityType:   req.CommodityType,
+		BatchID:         req.BatchID,
+		TenantID:        req.TenantID,
+		FacilityID:      req.FacilityID,
+		ActivityDataRaw: req.ActivityDataRaw,
+		RulebookRef:     rulebookName,
+		Phase:           "Pending",
+		LastUpdated:     time.Now().UTC().Format(time.RFC3339),
 	}
-
-	if s.k8sClient != nil {
-		if createErr := s.k8sClient.Create(ctx, productCR); createErr != nil {
-			log.Printf("Failed to create Product CR %s: %v", resourceName, createErr)
-			writeJSONError(w, fmt.Sprintf("failed to create Product CR: %v", createErr), http.StatusInternalServerError)
-			return
-		}
-		log.Printf("Product CR created: %s/%s", namespace, resourceName)
-	} else {
-		log.Printf("k8s client unavailable — Product CR %s/%s not persisted to cluster", namespace, resourceName)
+	productNode, err := nexus.CreateProductNode(ctx, nClient, req.TenantID, prodSpec)
+	if err != nil {
+		log.Printf("Failed to create Product node in Nexus graph: %v", err)
+		http.Error(w, `{"error":"failed to create product node in nexus"}`, http.StatusInternalServerError)
+		return
 	}
+	log.Printf("Product node created in Nexus graph under Tenant %s: %s (Phase: Pending)", req.TenantID, productNode.DisplayName())
 
-	passportID := uuid.New().String()
-	tenantCtx := tenant.WithTenant(ctx, req.TenantID)
-
-	rb := resolveRulebookForProduct(rulebookName, req.CommodityType, s.customRules)
-	celEng := engine.NewCELEngine()
-	calcRes, calcErr := celEng.Evaluate(tenantCtx, rb, activityMap)
-
-	var scope1Val, scope2Val, scope3Val, totalFootprintVal float64
-	var dataHash string
-	verificationStatus := "Calculated"
-	if calcErr == nil && calcRes != nil {
-		scope1Val = calcRes.Scope1Kg
-		scope2Val = calcRes.Scope2Kg
-		scope3Val = calcRes.Scope3Kg
-		totalFootprintVal = calcRes.TotalFootprintKg
-		dataHash = calcRes.DataHash
-		if calcRes.VariableSnapshot != nil {
-			activityMap["variable_snapshot"] = calcRes.VariableSnapshot
-		}
-		if calcRes.RuleResults != nil {
-			activityMap["rule_results"] = calcRes.RuleResults
-		}
-	} else if calcErr != nil {
-		log.Printf("CEL evaluation error during product creation: %v", calcErr)
-	}
-
-	if s.nexusEngine != nil {
-		if existing, err := s.nexusEngine.GetPassportByBatchNumber(tenantCtx, req.BatchID); err == nil && existing != nil {
-			passportID = existing.PassportID
-			existing.Scope1KgCO2e = scope1Val
-			existing.Scope2KgCO2e = scope2Val
-			existing.Scope3KgCO2e = scope3Val
-			existing.TotalFootprintKg = totalFootprintVal
-			existing.VerificationStatus = verificationStatus
-			calcDetailsJSON, _ := json.Marshal(activityMap)
-			existing.CalculationDetails = calcDetailsJSON
-			existing.DataHash = dataHash
-			auditModel := &nexus.PassportAuditTrailModel{
-				PassportID:    passportID,
-				ActionType:    "Calculated",
-				ChangePayload: calcDetailsJSON,
-			}
-			_ = s.nexusEngine.SavePassportAndAudit(tenantCtx, existing, auditModel)
-			richPassportObj := nexus.BuildRichPassportResponse(existing)
-			cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportID)
-			_ = s.nexusEngine.CachePassport(tenantCtx, cacheKey, richPassportObj, 24*time.Hour)
-		} else {
-			calcDetailsJSON, _ := json.Marshal(activityMap)
-			passportModel := &nexus.CarbonPassportModel{
-				PassportID:         passportID,
-				TenantID:           req.TenantID,
-				FacilityID:         req.FacilityID,
-				BatchNumber:        req.BatchID,
-				CommodityType:      req.CommodityType,
-				VerificationStatus: verificationStatus,
-				Scope1KgCO2e:       scope1Val,
-				Scope2KgCO2e:       scope2Val,
-				Scope3KgCO2e:       scope3Val,
-				TotalFootprintKg:   totalFootprintVal,
-				CalculationDetails: calcDetailsJSON,
-				DataHash:           dataHash,
-				IssuedAt:           time.Now(),
-			}
-			auditModel := &nexus.PassportAuditTrailModel{
-				PassportID:    passportID,
-				ActionType:    "Calculated",
-				ChangePayload: calcDetailsJSON,
-			}
-			_ = s.nexusEngine.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
-			richPassportObj := nexus.BuildRichPassportResponse(passportModel)
-			cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportID)
-			_ = s.nexusEngine.CachePassport(tenantCtx, cacheKey, richPassportObj, 24*time.Hour)
-		}
-	}
+	// Pure Nexus Informer Controller.
+	// Creating the Product node in the Nexus graph automatically triggers the typed Informer
+	// callback (ProcessProductAdd), and the background reconciler sweep loop guarantees
+	// eventual consistency without legacy manual goroutines or Go channel queues.
 
 	resp := ProductCreateResponse{
 		Name:          resourceName,
@@ -1199,7 +1118,6 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 		CommodityType: req.CommodityType,
 		Status:        "Pending",
 		CreatedAt:     time.Now().UTC().Format(time.RFC3339),
-		PassportID:    passportID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -1207,7 +1125,7 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-// handleGetProduct fetches a Product CR from Kubernetes and returns its reconciliation status.
+// handleGetProduct fetches a Product from Nexus Graph Engine and returns its details.
 func (s *VerificationServer) handleGetProduct(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/products/")
@@ -1217,79 +1135,140 @@ func (s *VerificationServer) handleGetProduct(w http.ResponseWriter, r *http.Req
 		name = r.URL.Query().Get("name")
 	}
 	if name == "" {
+		name = r.URL.Query().Get("batch_id")
+	}
+
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		tenantID = r.URL.Query().Get("tenant_id")
+	}
+	if tenantID == "" {
+		tenantID = "org_saurient_demo"
+	}
+	tenantCtx := tenant.WithTenant(ctx, tenantID)
+
+	nClient := s.getNexusClient()
+	if nClient == nil && s.nexusEngine == nil {
+		http.Error(w, `{"error":"nexus client unavailable"}`, http.StatusServiceUnavailable)
+		return
+	}
+
+	if name == "" {
 		http.Error(w, `{"error":"product name is required in path or query"}`, http.StatusBadRequest)
 		return
 	}
 
-	namespace := r.URL.Query().Get("namespace")
-	if namespace == "" {
-		namespace = "default"
-	}
+	// 1. Try to read from Nexus graph node first
+	if nClient != nil {
+		pNode, err := nexus.GetProductNode(ctx, nClient, tenantID, name)
+		if err != nil || pNode == nil || pNode.Product == nil {
+			// Search by batch_id or name in tenant's products
+			if allProds, listErr := nexus.ListProductNodes(ctx, nClient, tenantID); listErr == nil {
+				for _, prod := range allProds {
+					if prod != nil && prod.Product != nil && (prod.DisplayName() == name || prod.Spec.BatchID == name || prod.Spec.ProductID == name) {
+						pNode = prod
+						break
+					}
+				}
+			}
+		}
 
-	if s.k8sClient == nil {
-		http.Error(w, `{"error":"kubernetes client unavailable"}`, http.StatusServiceUnavailable)
-		return
-	}
-
-	var productCR saurientv1alpha1.Product
-	err := s.k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &productCR)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			http.Error(w, `{"error":"product not found"}`, http.StatusNotFound)
+		if pNode != nil && pNode.Product != nil {
+			passportRefName := ""
+			if pNode.Spec.PassportID != "" {
+				passportRefName = pNode.Spec.PassportID
+			}
+			resp := map[string]interface{}{
+				"name":               pNode.DisplayName(),
+				"namespace":          "default",
+				"tenant_id":          pNode.Spec.TenantID,
+				"facility_id":        pNode.Spec.FacilityID,
+				"batch_id":           pNode.Spec.BatchID,
+				"product_name":       pNode.Spec.ProductName,
+				"commodity_type":     pNode.Spec.CommodityType,
+				"rulebook_ref": map[string]string{
+					"name":      pNode.Spec.RulebookRef,
+					"namespace": "default",
+				},
+				"phase":              pNode.Spec.Phase,
+				"passport_id":        pNode.Spec.PassportID,
+				"total_footprint_kg": pNode.Spec.TotalFootprintKg,
+				"data_hash":          pNode.Spec.DataHash,
+				"passport_ref": map[string]string{
+					"name":      passportRefName,
+					"namespace": "default",
+				},
+				"last_updated": pNode.Spec.LastUpdated,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(resp)
 			return
 		}
-		http.Error(w, fmt.Sprintf(`{"error":"failed to get product: %v"}`, err), http.StatusInternalServerError)
-		return
 	}
 
-	resp := map[string]interface{}{
-		"name":               productCR.Name,
-		"namespace":          productCR.Namespace,
-		"tenant_id":          productCR.Spec.TenantID,
-		"facility_id":        productCR.Spec.FacilityID,
-		"batch_id":           productCR.Spec.BatchID,
-		"product_name":       productCR.Spec.ProductName,
-		"commodity_type":     productCR.Spec.CommodityType,
-		"rulebook_ref":       productCR.Spec.RulebookRef,
-		"phase":              productCR.Status.Phase,
-		"passport_id":        productCR.Status.PassportID,
-		"total_footprint_kg": productCR.Status.TotalFootprintKg,
-		"data_hash":          productCR.Status.DataHash,
-		"passport_ref":       productCR.Status.PassportRef,
-		"last_updated":       productCR.Status.LastUpdated,
+	if s.nexusEngine != nil {
+		prod, err := s.nexusEngine.GetProduct(tenantCtx, name)
+		if err == nil && prod != nil {
+			resp := map[string]interface{}{
+				"name":               prod.Name,
+				"namespace":          prod.Namespace,
+				"tenant_id":          prod.TenantID,
+				"facility_id":        prod.FacilityID,
+				"batch_id":           prod.BatchID,
+				"product_name":       prod.ProductName,
+				"commodity_type":     prod.CommodityType,
+				"rulebook_ref": map[string]string{
+					"name":      prod.RulebookRefName,
+					"namespace": prod.Namespace,
+				},
+				"phase":              prod.Phase,
+				"passport_id":        prod.PassportID,
+				"total_footprint_kg": prod.TotalFootprintKg,
+				"data_hash":          prod.DataHash,
+				"passport_ref": map[string]string{
+					"name":      prod.PassportID,
+					"namespace": prod.Namespace,
+				},
+				"last_updated": prod.LastUpdated.Format(time.RFC3339),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
 	}
 
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(resp)
+	http.Error(w, `{"error":"product not found"}`, http.StatusNotFound)
 }
 
 // RuleRequest is the JSON payload for POST /api/v1/rules.
 type RuleRequest struct {
-	Name           string                          `json:"name"`
-	Namespace      string                          `json:"namespace"`
-	CommodityType  string                          `json:"commodity_type"`
-	Version        string                          `json:"version"`
-	AccountingMode saurientv1alpha1.AccountingMode `json:"accounting_mode,omitempty"`
-	Rules          []saurientv1alpha1.RuleDefinition `json:"rules,omitempty"`
-	Scope1Formula  string                          `json:"scope_1_formula,omitempty"`
-	Scope2Formula  string                          `json:"scope_2_formula,omitempty"`
-	Scope3Formula  string                          `json:"scope_3_formula,omitempty"`
-	FunctionalUnit string                          `json:"functional_unit"`
-	BatchQuantity  float64                         `json:"batch_quantity,omitempty"`
+	Name           string                  `json:"name"`
+	Namespace      string                  `json:"namespace"`
+	CommodityType  string                  `json:"commodity_type"`
+	Version        string                  `json:"version"`
+	AccountingMode engine.AccountingMode   `json:"accounting_mode,omitempty"`
+	Rules          []engine.RuleDefinition `json:"rules,omitempty"`
+	Scope1Formula  string                  `json:"scope_1_formula,omitempty"`
+	Scope2Formula  string                  `json:"scope_2_formula,omitempty"`
+	Scope3Formula  string                  `json:"scope_3_formula,omitempty"`
+	FunctionalUnit string                  `json:"functional_unit"`
+	BatchQuantity  float64                 `json:"batch_quantity,omitempty"`
 }
 
 // RulebookItemResponse is the response model for GET /api/v1/rules.
 type RulebookItemResponse struct {
-	ID             string                            `json:"id"`
-	Name           string                            `json:"name"`
-	Label          string                            `json:"label"`
-	CommodityType  string                            `json:"commodity_type"`
-	Version        string                            `json:"version,omitempty"`
-	AccountingMode saurientv1alpha1.AccountingMode   `json:"accounting_mode,omitempty"`
-	Standard       string                            `json:"standard,omitempty"`
-	FunctionalUnit string                            `json:"functional_unit,omitempty"`
-	BatchQuantity  float64                           `json:"batch_quantity,omitempty"`
-	Rules          []saurientv1alpha1.RuleDefinition `json:"rules,omitempty"`
+	ID             string                  `json:"id"`
+	Name           string                  `json:"name"`
+	Label          string                  `json:"label"`
+	CommodityType  string                  `json:"commodity_type"`
+	Version        string                  `json:"version,omitempty"`
+	AccountingMode engine.AccountingMode   `json:"accounting_mode,omitempty"`
+	Standard       string                  `json:"standard,omitempty"`
+	FunctionalUnit string                  `json:"functional_unit,omitempty"`
+	BatchQuantity  float64                 `json:"batch_quantity,omitempty"`
+	Rules          []engine.RuleDefinition `json:"rules,omitempty"`
 }
 
 func resolveRulebookForProduct(rulebookName, commodityType string, customRules map[string]RulebookItemResponse) engine.CalculationRulebook {
@@ -1297,17 +1276,17 @@ func resolveRulebookForProduct(rulebookName, commodityType string, customRules m
 		if cr, ok := customRules[rulebookName]; ok {
 			rb := engine.CalculationRulebook{
 				CommodityType:  cr.CommodityType,
-				AccountingMode: engine.AccountingMode(cr.AccountingMode),
+				AccountingMode: cr.AccountingMode,
 				FunctionalUnit: cr.FunctionalUnit,
 				BatchQuantity:  float64(cr.BatchQuantity),
 			}
 			for _, r := range cr.Rules {
 				switch r.Scope {
-				case saurientv1alpha1.Scope1:
+				case engine.Scope1:
 					rb.Scope1Formula = r.Formula
-				case saurientv1alpha1.Scope2:
+				case engine.Scope2:
 					rb.Scope2Formula = r.Formula
-				case saurientv1alpha1.Scope3:
+				case engine.Scope3:
 					rb.Scope3Formula = r.Formula
 				}
 			}
@@ -1321,17 +1300,17 @@ func resolveRulebookForProduct(rulebookName, commodityType string, customRules m
 	if def, ok := defaults[rulebookName]; ok {
 		rb := engine.CalculationRulebook{
 			CommodityType:  def.CommodityType,
-			AccountingMode: engine.AccountingMode(def.AccountingMode),
+			AccountingMode: def.AccountingMode,
 			FunctionalUnit: def.FunctionalUnit,
 			BatchQuantity:  float64(def.BatchQuantity),
 		}
 		for _, r := range def.Rules {
 			switch r.Scope {
-			case saurientv1alpha1.Scope1:
+			case engine.Scope1:
 				rb.Scope1Formula = r.Formula
-			case saurientv1alpha1.Scope2:
+			case engine.Scope2:
 				rb.Scope2Formula = r.Formula
-			case saurientv1alpha1.Scope3:
+			case engine.Scope3:
 				rb.Scope3Formula = r.Formula
 			}
 		}
@@ -1351,16 +1330,16 @@ func getDefaultRulebooks() map[string]RulebookItemResponse {
 			Label:          "cocoa-rulebook-2026 (ISO 14067)",
 			CommodityType:  "Cocoa",
 			Version:        "2026.1",
-			AccountingMode: saurientv1alpha1.ModePCF,
+			AccountingMode: engine.ModePCF,
 			Standard:       "ISO 14067 Product Footprint",
 			FunctionalUnit: "kg CO2e per kg",
 			BatchQuantity:  1000,
-			Rules: []saurientv1alpha1.RuleDefinition{
-				{ID: "R01", Name: "Direct Fuel & Generator Combustion", Scope: saurientv1alpha1.Scope1, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputNone, Formula: "fuel_consumed_liters * 2.68", Description: "Scope 1 diesel combustion emission factor"},
-				{ID: "R02", Name: "Grid Electricity Consumption", Scope: saurientv1alpha1.Scope2, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputNone, Formula: "electricity_consumed_kwh * 0.45", Description: "Scope 2 national grid carbon intensity"},
-				{ID: "R03", Name: "Raw Materials & Packaging Upstream", Scope: saurientv1alpha1.Scope3, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputNone, Formula: "batch_quantity_kg * 0.175", Description: "Scope 3 raw bean agricultural footprint"},
-				{ID: "R04", Name: "Total Batch Footprint Aggregation", Scope: saurientv1alpha1.Intermediate, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputTotalFootprint, Formula: "R01 + R02 + R03", Description: "Sum of Scope 1, 2, and 3 DAG calculation steps"},
-				{ID: "R05", Name: "Product Carbon Intensity", Scope: saurientv1alpha1.Intermediate, Mode: saurientv1alpha1.ModePCF, OutputType: saurientv1alpha1.OutputIntensity, Formula: "R04 / batch_quantity_kg", Description: "Unit carbon intensity metric"},
+			Rules: []engine.RuleDefinition{
+				{ID: "R01", Name: "Direct Fuel & Generator Combustion", Scope: engine.Scope1, Mode: engine.ModePCF, OutputType: engine.OutputNone, Formula: "fuel_consumed_liters * 2.68", Description: "Scope 1 diesel combustion emission factor"},
+				{ID: "R02", Name: "Grid Electricity Consumption", Scope: engine.Scope2, Mode: engine.ModePCF, OutputType: engine.OutputNone, Formula: "electricity_consumed_kwh * 0.45", Description: "Scope 2 national grid carbon intensity"},
+				{ID: "R03", Name: "Raw Materials & Packaging Upstream", Scope: engine.Scope3, Mode: engine.ModePCF, OutputType: engine.OutputNone, Formula: "batch_quantity_kg * 0.175", Description: "Scope 3 raw bean agricultural footprint"},
+				{ID: "R04", Name: "Total Batch Footprint Aggregation", Scope: engine.Intermediate, Mode: engine.ModePCF, OutputType: engine.OutputTotalFootprint, Formula: "R01 + R02 + R03", Description: "Sum of Scope 1, 2, and 3 DAG calculation steps"},
+				{ID: "R05", Name: "Product Carbon Intensity", Scope: engine.Intermediate, Mode: engine.ModePCF, OutputType: engine.OutputIntensity, Formula: "R04 / batch_quantity_kg", Description: "Unit carbon intensity metric"},
 			},
 		},
 		"metal-rulebook-2026": {
@@ -1369,7 +1348,7 @@ func getDefaultRulebooks() map[string]RulebookItemResponse {
 			Label:          "metal-rulebook-2026 (EU CBAM CN 7601)",
 			CommodityType:  "Metals",
 			Version:        "2026.1",
-			AccountingMode: saurientv1alpha1.ModeCBAM,
+			AccountingMode: engine.ModeCBAM,
 			Standard:       "EU CBAM Annex IV",
 			FunctionalUnit: "kg CO2e per kg Aluminium Ingot",
 			BatchQuantity:  5000,
@@ -1380,7 +1359,7 @@ func getDefaultRulebooks() map[string]RulebookItemResponse {
 			Label:          "cashew-rulebook-2026 (GHG Protocol)",
 			CommodityType:  "Cashew",
 			Version:        "2026.1",
-			AccountingMode: saurientv1alpha1.ModeGHG,
+			AccountingMode: engine.ModeGHG,
 			Standard:       "GHG Protocol Product Standard",
 			FunctionalUnit: "kg CO2e per kg",
 			BatchQuantity:  1000,
@@ -1391,7 +1370,7 @@ func getDefaultRulebooks() map[string]RulebookItemResponse {
 			Label:          "textiles-rulebook-2026 (ISO 14067)",
 			CommodityType:  "Textiles",
 			Version:        "2026.1",
-			AccountingMode: saurientv1alpha1.ModePCF,
+			AccountingMode: engine.ModePCF,
 			Standard:       "ISO 14067 Textile Boundary",
 			FunctionalUnit: "kg CO2e per meter",
 			BatchQuantity:  1000,
@@ -1402,7 +1381,7 @@ func getDefaultRulebooks() map[string]RulebookItemResponse {
 			Label:          "food-rulebook-2026 (IPCC Tier 2)",
 			CommodityType:  "Processed Foods",
 			Version:        "2026.1",
-			AccountingMode: saurientv1alpha1.ModePCF,
+			AccountingMode: engine.ModePCF,
 			Standard:       "IPCC Tier 2 Food Standard",
 			FunctionalUnit: "kg CO2e per L",
 			BatchQuantity:  1000,
@@ -1413,7 +1392,7 @@ func getDefaultRulebooks() map[string]RulebookItemResponse {
 			Label:          "cement-rulebook-2026 (GHG Protocol)",
 			CommodityType:  "Construction",
 			Version:        "2026.1",
-			AccountingMode: saurientv1alpha1.ModeGHG,
+			AccountingMode: engine.ModeGHG,
 			Standard:       "GHG Protocol Heavy Industry",
 			FunctionalUnit: "kg CO2e per ton",
 			BatchQuantity:  1000,
@@ -1424,7 +1403,7 @@ func getDefaultRulebooks() map[string]RulebookItemResponse {
 			Label:          "default-rulebook (Standard Scope 1-3)",
 			CommodityType:  "General",
 			Version:        "2026.1",
-			AccountingMode: saurientv1alpha1.ModeAll,
+			AccountingMode: engine.ModeAll,
 			Standard:       "Standard Scope 1-3 GHG",
 			FunctionalUnit: "kg CO2e per unit",
 			BatchQuantity:  1000,
@@ -1457,7 +1436,7 @@ func (s *VerificationServer) handleRules(w http.ResponseWriter, r *http.Request)
 	http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
 }
 
-// handleListRules returns all registered CalculationRulebook CR items and default rules.
+// handleListRules returns all registered rulebooks from Nexus and default rules.
 func (s *VerificationServer) handleListRules(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -1469,27 +1448,54 @@ func (s *VerificationServer) handleListRules(w http.ResponseWriter, r *http.Requ
 	}
 	s.rulesMutex.RUnlock()
 
-	if s.k8sClient != nil {
-		var crbList saurientv1alpha1.CalculationRulebookList
-		if err := s.k8sClient.List(ctx, &crbList); err == nil {
-			for _, item := range crbList.Items {
-				std := "ISO 14067 Product Footprint"
-				if item.Spec.AccountingMode == saurientv1alpha1.ModeCBAM {
-					std = "EU CBAM Annex IV"
-				} else if item.Spec.AccountingMode == saurientv1alpha1.ModeGHG {
-					std = "GHG Protocol Product Standard"
+	nClient := s.getNexusClient()
+	if nClient != nil {
+		if ruleNodes, err := nexus.ListRulebookNodes(ctx, nClient); err == nil {
+			for _, item := range ruleNodes {
+				if item == nil || item.Rulebook == nil {
+					continue
 				}
-				rulesMap[item.Name] = RulebookItemResponse{
-					ID:             item.Name,
-					Name:           item.Name,
-					Label:          fmt.Sprintf("%s (%s)", item.Name, std),
+				var rulesDefs []engine.RuleDefinition
+				if item.Spec.RulesRaw != "" {
+					_ = json.Unmarshal([]byte(item.Spec.RulesRaw), &rulesDefs)
+				}
+				rulesMap[item.DisplayName()] = RulebookItemResponse{
+					ID:             item.Spec.RulebookID,
+					Name:           item.DisplayName(),
+					Label:          fmt.Sprintf("%s (%s)", item.DisplayName(), item.Spec.Standard),
 					CommodityType:  item.Spec.CommodityType,
 					Version:        item.Spec.Version,
-					AccountingMode: item.Spec.AccountingMode,
-					Standard:       std,
+					AccountingMode: engine.AccountingMode(item.Spec.AccountingMode),
+					Standard:       item.Spec.Standard,
 					FunctionalUnit: item.Spec.FunctionalUnit,
 					BatchQuantity:  item.Spec.BatchQuantity,
-					Rules:          item.Spec.Rules,
+					Rules:          rulesDefs,
+				}
+			}
+		}
+	}
+
+	if s.nexusEngine != nil {
+		if nexusRules, err := s.nexusEngine.ListRulebooks(ctx); err == nil {
+			for _, item := range nexusRules {
+				if _, exists := rulesMap[item.Name]; exists {
+					continue
+				}
+				var rulesDefs []engine.RuleDefinition
+				if item.RulesRaw != "" {
+					_ = json.Unmarshal([]byte(item.RulesRaw), &rulesDefs)
+				}
+				rulesMap[item.Name] = RulebookItemResponse{
+					ID:             item.ID,
+					Name:           item.Name,
+					Label:          item.Label,
+					CommodityType:  item.CommodityType,
+					Version:        item.Version,
+					AccountingMode: engine.AccountingMode(item.AccountingMode),
+					Standard:       item.Standard,
+					FunctionalUnit: item.FunctionalUnit,
+					BatchQuantity:  item.BatchQuantity,
+					Rules:          rulesDefs,
 				}
 			}
 		}
@@ -1500,11 +1506,12 @@ func (s *VerificationServer) handleListRules(w http.ResponseWriter, r *http.Requ
 		result = append(result, v)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-// handleCreateRule parses rule JSON and creates a CalculationRulebook CR in Kubernetes.
+// handleCreateRule parses rule JSON and saves a Calculation Rulebook into Nexus.
 func (s *VerificationServer) handleCreateRule(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -1540,44 +1547,63 @@ func (s *VerificationServer) handleCreateRule(w http.ResponseWriter, r *http.Req
 		req.Version = "2026.1"
 	}
 
-	ruleCR := &saurientv1alpha1.CalculationRulebook{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "saurient.io/v1alpha1",
-			Kind:       "CalculationRulebook",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: saurientv1alpha1.CalculationRulebookSpec{
-			CommodityType:  req.CommodityType,
-			Version:        req.Version,
-			AccountingMode: req.AccountingMode,
-			Rules:          req.Rules,
-			Scope1Formula:  req.Scope1Formula,
-			Scope2Formula:  req.Scope2Formula,
-			Scope3Formula:  req.Scope3Formula,
-			FunctionalUnit: req.FunctionalUnit,
-			BatchQuantity:  req.BatchQuantity,
-		},
-	}
-
-	if s.k8sClient != nil {
-		if createErr := s.k8sClient.Create(ctx, ruleCR); createErr != nil {
-			log.Printf("Failed to create CalculationRulebook CR %s: %v", name, createErr)
-			writeJSONError(w, fmt.Sprintf("failed to create CalculationRulebook CR: %v", createErr), http.StatusInternalServerError)
-			return
-		}
-		log.Printf("CalculationRulebook CR created: %s/%s", namespace, name)
-	} else {
-		log.Printf("k8s client unavailable — CalculationRulebook CR %s/%s not persisted to cluster", namespace, name)
-	}
-
 	std := "ISO 14067 Product Footprint"
-	if req.AccountingMode == saurientv1alpha1.ModeCBAM {
+	if req.AccountingMode == engine.ModeCBAM {
 		std = "EU CBAM Annex IV"
-	} else if req.AccountingMode == saurientv1alpha1.ModeGHG {
+	} else if req.AccountingMode == engine.ModeGHG {
 		std = "GHG Protocol Product Standard"
+	}
+
+	rulesRaw, _ := json.Marshal(req.Rules)
+
+	ruleModel := &nexus.RulebookModel{
+		ID:             name,
+		Name:           name,
+		Namespace:      namespace,
+		Label:          fmt.Sprintf("%s (%s)", name, std),
+		CommodityType:  req.CommodityType,
+		Version:        req.Version,
+		AccountingMode: string(req.AccountingMode),
+		Standard:       std,
+		FunctionalUnit: req.FunctionalUnit,
+		BatchQuantity:  req.BatchQuantity,
+		RulesRaw:       string(rulesRaw),
+		Scope1Formula:  req.Scope1Formula,
+		Scope2Formula:  req.Scope2Formula,
+		Scope3Formula:  req.Scope3Formula,
+		CreatedAt:      time.Now(),
+	}
+
+	nClient := s.getNexusClient()
+	if nClient != nil {
+		rbSpec := configv1.RulebookSpec{
+			RulebookID:       name,
+			CommodityType:    req.CommodityType,
+			Version:          req.Version,
+			AccountingMode:   string(req.AccountingMode),
+			Standard:         std,
+			RulesRaw:         string(rulesRaw),
+			Scope1Formula:    req.Scope1Formula,
+			Scope2Formula:    req.Scope2Formula,
+			Scope3Formula:    req.Scope3Formula,
+			FunctionalUnit:   req.FunctionalUnit,
+			BatchQuantity:    req.BatchQuantity,
+			BoundaryType:     "Cradle-to-Gate",
+			AllocationMethod: "Physical",
+		}
+		if _, err := nexus.CreateRulebookNode(ctx, nClient, name, rbSpec); err != nil {
+			log.Printf("Failed to save Rulebook node in Nexus graph %s: %v", name, err)
+		} else {
+			log.Printf("Rulebook node saved in Nexus graph: %s", name)
+		}
+	}
+
+	if s.nexusEngine != nil {
+		if err := s.nexusEngine.SaveRulebook(ctx, ruleModel); err != nil {
+			log.Printf("Failed to save Rulebook to Nexus %s: %v", name, err)
+		} else {
+			log.Printf("Rulebook saved to Nexus: %s", name)
+		}
 	}
 
 	s.rulesMutex.Lock()
@@ -1598,6 +1624,7 @@ func (s *VerificationServer) handleCreateRule(w http.ResponseWriter, r *http.Req
 	}
 	s.rulesMutex.Unlock()
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"name":           name,
@@ -1605,14 +1632,16 @@ func (s *VerificationServer) handleCreateRule(w http.ResponseWriter, r *http.Req
 		"commodity_type": req.CommodityType,
 		"version":        req.Version,
 		"status":         "Created",
+		"message":        fmt.Sprintf("Calculation rulebook %s registered successfully in Nexus", name),
 		"created_at":     time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
-// createProductCRFromPassport creates a Product CR in Kubernetes when a passport is submitted.
+// createProductFromPassport creates a Product in Nexus when a passport is submitted.
 // This is best-effort: errors are logged but do not fail the passport creation.
 func (s *VerificationServer) createProductCRFromPassport(ctx context.Context, req *PassportInputReq, passportID string) {
-	if s.k8sClient == nil {
+	nClient := s.getNexusClient()
+	if nClient == nil && s.nexusEngine == nil {
 		return
 	}
 
@@ -1634,36 +1663,49 @@ func (s *VerificationServer) createProductCRFromPassport(ctx context.Context, re
 		activityRaw = "{}"
 	}
 
-	productCR := &saurientv1alpha1.Product{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "saurient.io/v1alpha1",
-			Kind:       "Product",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resourceName,
-			Namespace: namespace,
-			Labels: map[string]string{
-				"saurient.io/tenant-id":   req.TenantID,
-				"saurient.io/passport-id": passportID,
-			},
-		},
-		Spec: saurientv1alpha1.ProductSpec{
+	if nClient != nil {
+		prodSpec := inventoryv1.ProductSpec{
+			ProductID:       batchID,
+			ProductName:     req.BatchNumber,
+			CommodityType:   req.CommodityType,
+			BatchID:         batchID,
+			TenantID:        req.TenantID,
+			FacilityID:      req.FacilityID,
+			ActivityDataRaw: activityRaw,
+			RulebookRef:     "default-rulebook",
+			Phase:           "Calculated",
+			PassportID:      passportID,
+			LastUpdated:     time.Now().UTC().Format(time.RFC3339),
+		}
+		if _, err := nexus.CreateProductNode(ctx, nClient, req.TenantID, prodSpec); err != nil {
+			log.Printf("createProductCRFromPassport: failed to create Product node %s: %v", resourceName, err)
+		} else {
+			log.Printf("createProductCRFromPassport: Product node created in Nexus graph %s", resourceName)
+		}
+	}
+
+	if s.nexusEngine != nil {
+		productModel := &nexus.ProductModel{
+			Name:            resourceName,
+			Namespace:       namespace,
 			TenantID:        req.TenantID,
 			FacilityID:      req.FacilityID,
 			BatchID:         batchID,
+			ProductName:     req.BatchNumber,
 			CommodityType:   req.CommodityType,
 			ActivityDataRaw: activityRaw,
-			RulebookRef: saurientv1alpha1.LocalObjectReference{
-				Name:      "default-rulebook",
-				Namespace: namespace,
-			},
-		},
-	}
-
-	if err := s.k8sClient.Create(ctx, productCR); err != nil {
-		log.Printf("createProductCRFromPassport: failed to create Product CR %s: %v", resourceName, err)
-	} else {
-		log.Printf("createProductCRFromPassport: Product CR created %s/%s", namespace, resourceName)
+			RulebookRefName: "default-rulebook",
+			Phase:           "Calculated",
+			PassportID:      passportID,
+			CreatedAt:       time.Now(),
+			LastUpdated:     time.Now(),
+		}
+		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
+		if err := s.nexusEngine.SaveProduct(tenantCtx, productModel); err != nil {
+			log.Printf("createProductFromPassport: failed to save Product %s: %v", resourceName, err)
+		} else {
+			log.Printf("createProductFromPassport: Product saved to Nexus %s", resourceName)
+		}
 	}
 }
 
@@ -1713,19 +1755,8 @@ func (s *VerificationServer) handleDeletePassport(w http.ResponseWriter, r *http
 		tenantID = "org_saurient_demo"
 	}
 
-	namespace := r.URL.Query().Get("namespace")
-	if namespace == "" {
-		namespace = "default"
-	}
-
-	if s.k8sClient != nil {
-		var passportCR saurientv1alpha1.CarbonPassport
-		if err := s.k8sClient.Get(ctx, types.NamespacedName{Name: passportID, Namespace: namespace}, &passportCR); err == nil {
-			_ = s.k8sClient.Delete(ctx, &passportCR)
-		}
-	}
-
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
+	_ = nexus.DeletePassportNode(ctx, s.getNexusClient(), passportID)
 	if s.nexusEngine != nil {
 		_ = s.nexusEngine.DeletePassportByPassportID(tenantCtx, passportID)
 		_ = s.nexusEngine.DeletePassportByBatchNumber(tenantCtx, passportID)
@@ -1899,6 +1930,31 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 	// Create Product CR in Kubernetes (best-effort, triggers reconciler pipeline)
 	s.createProductCRFromPassport(ctx, &req, passportID)
 
+	nClient := s.getNexusClient()
+	if nClient != nil {
+		passportSpec := runtimev1.CarbonPassportSpec{
+			PassportID:         passportID,
+			TenantID:           req.TenantID,
+			FacilityID:         req.FacilityID,
+			BatchID:            req.BatchNumber,
+			CommodityType:      req.CommodityType,
+			TotalFootprintKg:   totalKg,
+			Scope1Kg:           req.Scope1KgCO2e,
+			Scope2Kg:           req.Scope2KgCO2e,
+			Scope3Kg:           req.Scope3KgCO2e,
+			VerificationStatus: "VERIFIED",
+			CalculationDetails: string(rawBytes),
+			DataHash:           dataHashStr,
+			IssuedAt:           time.Now().UTC().Format(time.RFC3339),
+			Version:            "1.0",
+		}
+		if _, err := nexus.CreatePassportNode(ctx, nClient, passportSpec, nil); err != nil {
+			log.Printf("Failed to create CarbonPassport node in Nexus graph: %v", err)
+		} else {
+			log.Printf("CarbonPassport node created in Nexus graph: %s", passportID)
+		}
+	}
+
 	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
 		_ = s.nexusEngine.SavePassportAndAudit(tenantCtx, passportModel, auditModel)
@@ -1967,7 +2023,13 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 
 	// Fetch the previous DataHash for the audit trail.
 	previousHash := ""
-	if s.nexusEngine != nil {
+	nClient := s.getNexusClient()
+	if nClient != nil {
+		if pNode, err := nexus.GetPassportNode(ctx, nClient, passportID); err == nil && pNode != nil {
+			previousHash = pNode.Spec.DataHash
+		}
+	}
+	if previousHash == "" && s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, req.TenantID)
 		if prev, err := s.nexusEngine.GetPassportByID(tenantCtx, passportID); err == nil && prev != nil {
 			previousHash = prev.DataHash
@@ -1996,6 +2058,30 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 		PreviousHash:  previousHash,
 		CurrentHash:   dataHashStr,
 		ChangePayload: rawBytes,
+	}
+
+	if nClient != nil {
+		passportSpec := runtimev1.CarbonPassportSpec{
+			PassportID:         passportID,
+			TenantID:           req.TenantID,
+			FacilityID:         req.FacilityID,
+			BatchID:            req.BatchNumber,
+			CommodityType:      req.CommodityType,
+			TotalFootprintKg:   totalKg,
+			Scope1Kg:           req.Scope1KgCO2e,
+			Scope2Kg:           req.Scope2KgCO2e,
+			Scope3Kg:           req.Scope3KgCO2e,
+			VerificationStatus: "VERIFIED",
+			CalculationDetails: string(rawBytes),
+			DataHash:           dataHashStr,
+			IssuedAt:           time.Now().UTC().Format(time.RFC3339),
+			Version:            "1.1",
+		}
+		if _, err := nexus.CreatePassportNode(ctx, nClient, passportSpec, nil); err != nil {
+			log.Printf("Failed to update CarbonPassport node in Nexus graph: %v", err)
+		} else {
+			log.Printf("CarbonPassport node updated in Nexus graph: %s", passportID)
+		}
 	}
 
 	if s.nexusEngine != nil {
@@ -2044,36 +2130,76 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	if s.nexusEngine == nil {
-		http.Error(w, `{"error":"nexus graph engine unavailable"}`, http.StatusServiceUnavailable)
+	nClient := s.getNexusClient()
+	if nClient == nil && s.nexusEngine == nil {
+		http.Error(w, `{"error":"nexus client unavailable"}`, http.StatusServiceUnavailable)
 		return
 	}
 
-	tenantCtx := tenant.WithTenant(ctx, tenantID)
-	passport, err := s.nexusEngine.GetPassportByID(tenantCtx, passportID)
-	if err != nil || passport == nil {
-		passport, err = s.nexusEngine.GetPassportByBatchNumber(tenantCtx, passportID)
-	}
-	if err != nil || passport == nil {
-		writeJSONError(w, fmt.Sprintf("Passport not found for the ID: %s", passportID), http.StatusNotFound)
-		return
+	// 1. Try to read from Nexus graph node first
+	if nClient != nil {
+		pNode, err := nexus.GetPassportNode(ctx, nClient, passportID)
+		if err != nil || pNode == nil {
+			pNode, err = nexus.GetPassportNodeByBatchID(ctx, nClient, passportID)
+		}
+		if err == nil && pNode != nil {
+			pModel := nexus.CarbonPassportModelFromNode(pNode)
+			richResp := nexus.BuildRichPassportResponse(pModel)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(richResp)
+			return
+		}
 	}
 
-	richResp := nexus.BuildRichPassportResponse(passport)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(richResp)
+	// 2. Fallback to nexusEngine if available
+	if s.nexusEngine != nil {
+		tenantCtx := tenant.WithTenant(ctx, tenantID)
+		passport, err := s.nexusEngine.GetPassportByID(tenantCtx, passportID)
+		if err != nil || passport == nil {
+			passport, err = s.nexusEngine.GetPassportByBatchNumber(tenantCtx, passportID)
+		}
+		if err == nil && passport != nil {
+			richResp := nexus.BuildRichPassportResponse(passport)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(richResp)
+			return
+		}
+	}
+
+	writeJSONError(w, fmt.Sprintf("Passport not found for the ID: %s", passportID), http.StatusNotFound)
 }
 
 func (s *VerificationServer) handleListPassports(w http.ResponseWriter, r *http.Request, tenantID string) {
 	ctx := r.Context()
 	list := make([]nexus.RichDigitalCarbonPassportResponse, 0)
+	seen := make(map[string]bool)
+
+	nClient := s.getNexusClient()
+	if nClient != nil {
+		if nodes, err := nexus.ListPassportNodes(ctx, nClient, tenantID); err == nil {
+			for _, pNode := range nodes {
+				if pNode == nil || pNode.CarbonPassport == nil {
+					continue
+				}
+				pModel := nexus.CarbonPassportModelFromNode(pNode)
+				if pModel != nil && !seen[pModel.PassportID] {
+					seen[pModel.PassportID] = true
+					list = append(list, nexus.BuildRichPassportResponse(pModel))
+				}
+			}
+		}
+	}
 
 	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
 		if passports, err := s.nexusEngine.ListPassports(tenantCtx); err == nil {
 			for _, p := range passports {
-				list = append(list, nexus.BuildRichPassportResponse(p))
+				if p != nil && !seen[p.PassportID] {
+					seen[p.PassportID] = true
+					list = append(list, nexus.BuildRichPassportResponse(p))
+				}
 			}
 		}
 	}

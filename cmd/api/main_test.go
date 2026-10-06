@@ -2,32 +2,31 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	saurientv1alpha1 "saurient-platform/api/v1alpha1"
+	"saurient-platform/internal/engine"
+	"saurient-platform/internal/nexus"
+	"saurient-platform/internal/tenant"
 	nexusdsl "saurient-platform/pkg/nexus"
 )
 
-func buildTestScheme(t *testing.T) *runtime.Scheme {
-	t.Helper()
-	s := runtime.NewScheme()
-	if err := saurientv1alpha1.AddToScheme(s); err != nil {
-		t.Fatalf("AddToScheme: %v", err)
-	}
-	return s
-}
-
 func newTestServer(t *testing.T) *VerificationServer {
 	t.Helper()
-	scheme := buildTestScheme(t)
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	return &VerificationServer{k8sClient: fakeClient}
+	client := nexus.GetNexusClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	nEngine := nexus.GetNexusEngine()
+	celEng := engine.NewCELEngine()
+	rec := nexus.NewProductReconcilerWithClient(client, nEngine, celEng)
+	return &VerificationServer{
+		nexusClient: client,
+		nexusEngine: nEngine,
+		reconciler:  rec,
+	}
 }
 
 // TestSanitiseK8sName verifies the helper produces valid k8s resource names.
@@ -295,14 +294,14 @@ func TestHandleCreateProduct_DetailedInput(t *testing.T) {
 	}
 }
 
-// TestHandleGetPassport_MissingTenantID checks fallback to org_saurient_demo tenant when missing.
-func TestHandleGetPassport_MissingTenantID(t *testing.T) {
+// TestHandleGetPassport_NotFound checks 404 when passport is not found.
+func TestHandleGetPassport_NotFound(t *testing.T) {
 	srv := newTestServer(t)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/passports/some-passport-id", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/passports/non-existent-passport-id", nil)
 	rr := httptest.NewRecorder()
 	srv.handleGetPassport(rr, req)
-	if rr.Code != http.StatusServiceUnavailable {
-		t.Errorf("expected 503, got %d", rr.Code)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", rr.Code)
 	}
 }
 
@@ -317,9 +316,9 @@ func TestHandleGetPassport_MissingPassportID(t *testing.T) {
 	}
 }
 
-// TestHandleGetPassport_NoCacheNoDBUnavailable expects 503 when both Redis and Postgres are unavailable.
-func TestHandleGetPassport_NoCacheNoDBUnavailable(t *testing.T) {
-	srv := newTestServer(t) // no redisRepo, no pgRepo
+// TestHandleGetPassport_EngineUnavailable expects 503 when nexus engine is unavailable.
+func TestHandleGetPassport_EngineUnavailable(t *testing.T) {
+	srv := &VerificationServer{} // no nexusEngine
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/passports/some-id", nil)
 	req.Header.Set("X-Tenant-ID", "t-001")
 	rr := httptest.NewRecorder()
@@ -387,5 +386,85 @@ func TestHandleGraphQL_IntrospectionAndQuery(t *testing.T) {
 	}
 	if data["carbonPassports"] == nil {
 		t.Fatalf("query response missing data.carbonPassports: %s", rrQuery.Body.String())
+	}
+}
+
+// TestHandleCreateProduct_AsynchronousReconciliation verifies that handleCreateProduct
+// creates a Product node with status "Pending" immediately, and the background ProductReconciler
+// receives the event and transitions the product to "Calculated", issuing a CarbonPassport.
+func TestHandleCreateProduct_AsynchronousReconciliation(t *testing.T) {
+	client := nexus.GetNexusClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	eng := nexus.GetNexusEngine()
+	celEng := engine.NewCELEngine()
+	rec := nexus.NewProductReconcilerWithClient(client, eng, celEng)
+	rec.SetSweepPeriod(50 * time.Millisecond)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	rec.Start(ctx)
+	defer rec.Stop()
+
+	srv := &VerificationServer{
+		nexusClient: client,
+		nexusEngine: eng,
+		reconciler:  rec,
+	}
+
+	payload := map[string]interface{}{
+		"tenant_id":         "t-async-001",
+		"facility_id":       "fac-async-001",
+		"batch_id":          "batch-async-001",
+		"product_name":      "Async Steel Ingot",
+		"commodity_type":    "Steel",
+		"activity_data_raw": `{"fuel_consumed_liters":1200,"electricity_consumed_kwh":4000,"raw_material_kg":1000,"transport_km":50}`,
+	}
+	b, _ := json.Marshal(payload)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/products", bytes.NewBuffer(b))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	srv.handleCreateProduct(rr, req)
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", rr.Code, rr.Body.String())
+	}
+
+	// Verify HTTP response was immediate and status is Pending
+	var resp map[string]interface{}
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp["status"] != "Pending" {
+		t.Errorf("expected immediate HTTP response status 'Pending', got %v", resp["status"])
+	}
+
+	// Wait for asynchronous reconciler to process the product event
+	tenantCtx := tenant.WithTenant(context.Background(), "t-async-001")
+	var product *nexus.ProductModel
+	var err error
+	for i := 0; i < 30; i++ {
+		time.Sleep(50 * time.Millisecond)
+		product, err = eng.GetProduct(tenantCtx, "batch-async-001")
+		if err == nil && product.Phase == "Calculated" {
+			break
+		}
+	}
+
+	if product == nil || product.Phase != "Calculated" {
+		t.Fatalf("product failed to asynchronously reconcile to Calculated within timeout, current phase: %v", product.Phase)
+	}
+	if product.PassportID == "" {
+		t.Errorf("expected passport_id to be populated after reconciliation")
+	}
+	if product.TotalFootprintKg <= 0 {
+		t.Errorf("expected positive total footprint, got %f", product.TotalFootprintKg)
+	}
+
+	// Verify passport in Nexus
+	passport, err := eng.GetPassportByID(tenantCtx, product.PassportID)
+	if err != nil || passport == nil {
+		t.Fatalf("expected to find generated carbon passport %s in nexus: %v", product.PassportID, err)
+	}
+	if passport.TotalFootprintKg != product.TotalFootprintKg {
+		t.Errorf("passport footprint mismatch: %f vs %f", passport.TotalFootprintKg, product.TotalFootprintKg)
 	}
 }
