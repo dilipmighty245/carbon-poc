@@ -59,20 +59,14 @@ GO111MODULE=off bash "${CODEGEN_SCRIPT}" all \
   --go-header-file "${BOILERPLATE}" \
   --output-base "${GOPATH}/src"
 
-echo "==> [5/6] Syncing generated client code back to repository..."
+echo "==> [5/7] Syncing generated client code back to repository..."
 cp -r "${GOPATH}/src/saurient-platform/build/"* "${BUILD_DIR}/"
-
-# Ensure nexus-gql has its own module boundary
-if [ -d "${BUILD_DIR}/nexus-gql" ]; then
-  cat << 'EOF' > "${BUILD_DIR}/nexus-gql/go.mod"
-module saurient-platform/build/nexus-gql
-
-go 1.20
-EOF
-fi
 
 # Replace module imports
 find "${BUILD_DIR}" -type f -name "*.go" -exec sed -i '' -e "s|nexustempmodule/|${MODULE_PATH}/|g" {} +
+
+# Remove any isolated go.mod in nexus-gql so it compiles natively as part of saurient-platform
+rm -f "${BUILD_DIR}/nexus-gql/go.mod"
 
 # Fix Go 1.24+ non-constant format string vet rule in generated client
 if [ -f "${BUILD_DIR}/nexus-client/client.go" ]; then
@@ -81,11 +75,17 @@ if [ -f "${BUILD_DIR}/nexus-client/client.go" ]; then
   sed -i '' -e 's|logger\.Fatalf("\[Get\([a-zA-Z]*\)ByName\] Getting version of Object: %s in write cache failed with error %v"|logger.Debugf("[Get\1ByName] Getting version of Object: %s in write cache failed with error %v"|g' "${BUILD_DIR}/nexus-client/client.go"
 fi
 
-echo "==> [6/6] Verifying Go compilation of generated nexus-client..."
-(cd "${REPO_ROOT}" && go build -v ./build/nexus-client ./build/client/... ./build/apis/... ./build/helper ./build/common > /dev/null)
+echo "==> [6/7] Generating Nexus GraphQL server via gqlgen..."
+if [ -d "${BUILD_DIR}/nexus-gql" ]; then
+  (cd "${BUILD_DIR}/nexus-gql" && /Users/dt032761/go/bin/gqlgen generate)
+fi
+
+echo "==> [7/7] Verifying Go compilation of generated nexus-client and nexus-gql..."
+(cd "${REPO_ROOT}" && go build -v ./build/nexus-client ./build/client/... ./build/apis/... ./build/helper ./build/common ./build/nexus-gql/... > /dev/null)
 
 echo "==> SUCCESS: Nexus datamodel compiled successfully into ${BUILD_DIR}/"
-echo "    - CRDs:          ${BUILD_DIR}/crds/"
-echo "    - Nexus Client:  ${BUILD_DIR}/nexus-client/"
-echo "    - K8s Client:    ${BUILD_DIR}/client/"
-echo "    - K8s APIs:      ${BUILD_DIR}/apis/"
+echo "    - CRDs:            ${BUILD_DIR}/crds/"
+echo "    - Nexus Client:    ${BUILD_DIR}/nexus-client/"
+echo "    - K8s Client:      ${BUILD_DIR}/client/"
+echo "    - K8s APIs:        ${BUILD_DIR}/apis/"
+echo "    - Nexus GraphQL:   ${BUILD_DIR}/nexus-gql/"

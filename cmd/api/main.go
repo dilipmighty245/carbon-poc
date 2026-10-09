@@ -17,24 +17,29 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/graphql-go/graphql"
+	"github.com/rs/cors"
+	"github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql/handler"
+	"github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql/playground"
 
 	configv1 "saurient-platform/build/apis/config.saurient.io/v1"
 	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
 	runtimev1 "saurient-platform/build/apis/runtime.saurient.io/v1"
 	nexus_client "saurient-platform/build/nexus-client"
+	gqlgraph "saurient-platform/build/nexus-gql/graph"
+	gqlgenerated "saurient-platform/build/nexus-gql/graph/generated"
 	"saurient-platform/internal/api"
 	"saurient-platform/internal/engine"
 	"saurient-platform/internal/nexus"
 	"saurient-platform/internal/tenant"
-	nexusdsl "saurient-platform/pkg/nexus"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type VerificationServer struct {
 	nexusClient *nexus_client.Clientset
 	nexusEngine *nexus.NexusGraphEngine
 	reconciler  *nexus.ProductReconciler
-	gqlSchema   graphql.Schema
+	gqlHandler  http.Handler
 	rulesMutex  sync.RWMutex
 	customRules map[string]RulebookItemResponse
 }
@@ -430,13 +435,12 @@ func main() {
 	reconciler.Start(context.Background())
 	server.reconciler = reconciler
 
-	// Initialize Nexus GraphQL Schema Engine
-	gqlSchema, gqlErr := nexusdsl.BuildNexusGraphQLSchema(server)
-	if gqlErr != nil {
-		log.Fatalf("Failed to build Nexus GraphQL Schema: %v", gqlErr)
-	}
-	server.gqlSchema = gqlSchema
-	log.Println("API Gateway initialized Nexus GraphQL Schema & Graph Engine")
+	// Initialize compiler-generated Nexus GraphQL Server (matching graph-framework-for-microservices)
+	gqlgraph.SetNexusClient(nClient)
+	es := gqlgenerated.NewExecutableSchema(gqlgenerated.Config{Resolvers: &gqlgraph.Resolver{}})
+	gqlServer := handler.NewDefaultServer(es)
+	server.gqlHandler = gqlServer
+	log.Println("API Gateway initialized Compiler-Generated Nexus GraphQL Server & Resolvers")
 
 	// 1. Healthz Probe Endpoint
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -463,26 +467,25 @@ func main() {
 	http.HandleFunc("/api/v1/nexus/graph", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		graphSpec := map[string]interface{}{
-			"framework": "Nexus (graph-framework-for-microservices)",
-			"repository": "https://github.com/xmen4xp/graph-framework-for-microservices",
-			"root_node": "Enterprise",
+			"framework":  "Nexus (graph-framework-for-microservices)",
+			"repository": "https://github.com/vmware-tanzu/graph-framework-for-microservices",
+			"root_node":  "Root",
 			"hierarchy": map[string]interface{}{
-				"Enterprise": map[string]interface{}{
-					"nexus_tag": "child",
-					"children": []string{"FacilityMap", "ProductTypeMap"},
+				"Root": map[string]interface{}{
+					"nexus_tag": "root",
+					"children":  []string{"Config", "Inventory", "Runtime"},
 				},
-				"Facility": map[string]interface{}{
+				"Config": map[string]interface{}{
 					"nexus_tag": "child",
-					"children": []string{"DeviceMap", "ProductionBatchMap"},
+					"children":  []string{"RulebookMap", "CbamBenchmarkMap", "StoryboardSceneMap"},
 				},
-				"ProductType": map[string]interface{}{
+				"Inventory": map[string]interface{}{
 					"nexus_tag": "child",
-					"children": []string{"CalculationRulebookMap", "CarbonPassportMap"},
+					"children":  []string{"TenantMap", "ACVAgencyMap", "SupplierMap"},
 				},
-				"CarbonPassport": map[string]interface{}{
+				"Runtime": map[string]interface{}{
 					"nexus_tag": "child",
-					"children": []string{"EmissionSnapshotMap", "VerificationRecordMap", "ComplianceArtifactMap"},
-					"status_tag": "CarbonPassportStatusNode",
+					"children":  []string{"CarbonPassportMap", "ProcessPassportMap", "ReadinessAssessmentMap", "VerificationMap", "ComplianceArtifactMap", "ProvenanceNodeMap"},
 				},
 			},
 		}
@@ -491,13 +494,18 @@ func main() {
 		_, _ = w.Write(resp)
 	})
 
-	// 4. Nexus GraphQL Gateway Endpoint & Playground
-	http.HandleFunc("/graphql", server.handleGraphQL)
-	http.HandleFunc("/graphql/playground", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(graphqlPlaygroundHTML))
+	// 4. Nexus GraphQL Gateway Endpoints (matching graph-framework-for-microservices)
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
 	})
+
+	http.Handle("/query", corsMiddleware.Handler(gqlServer))
+	http.Handle("/apis/graphql/v1/query", corsMiddleware.Handler(gqlServer))
+	http.HandleFunc("/graphql", server.handleGraphQL)
+	http.Handle("/graphql/playground", playground.Handler("GraphQL playground", "/graphql"))
 
 	// 5. Nexus Automatic Node REST Endpoints for Data Model Tree
 	http.HandleFunc("/api/v1/nexus/nodes/", server.handleNexusNodes)
@@ -619,35 +627,20 @@ func (s *VerificationServer) GetPassportByID(ctx context.Context, passportID str
 }
 
 func (s *VerificationServer) handleGraphQL(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 
-	if r.Method == http.MethodGet {
-		query := r.URL.Query().Get("query")
-		if query == "" {
-			// Serve GraphQL Playground on GET without query
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(graphqlPlaygroundHTML))
-			return
-		}
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
-	type graphQLReq struct {
-		Query         string                 `json:"query"`
-		OperationName string                 `json:"operationName"`
-		Variables     map[string]interface{} `json:"variables"`
-	}
-
-	var req graphQLReq
-	if r.Method == http.MethodPost {
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, `{"errors":[{"message":"Invalid JSON payload"}]}`, http.StatusBadRequest)
-			return
-		}
-	} else {
-		req.Query = r.URL.Query().Get("query")
-		req.OperationName = r.URL.Query().Get("operationName")
+	if r.Method == http.MethodGet && r.URL.Query().Get("query") == "" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(graphqlPlaygroundHTML))
+		return
 	}
 
 	tenantID := r.Header.Get("X-Tenant-ID")
@@ -659,18 +652,7 @@ func (s *VerificationServer) handleGraphQL(w http.ResponseWriter, r *http.Reques
 	}
 
 	tenantCtx := tenant.WithTenant(r.Context(), tenantID)
-
-	params := graphql.Params{
-		Schema:         s.gqlSchema,
-		RequestString:  req.Query,
-		OperationName:  req.OperationName,
-		VariableValues: req.Variables,
-		Context:        tenantCtx,
-	}
-
-	result := graphql.Do(params)
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(result)
+	s.gqlHandler.ServeHTTP(w, r.WithContext(tenantCtx))
 }
 
 func (s *VerificationServer) handleNexusNodes(w http.ResponseWriter, r *http.Request) {
@@ -803,6 +785,8 @@ type BatchData struct {
 	ProductName       string  `json:"product_name,omitempty"`
 	Commodity         string  `json:"commodity,omitempty"`
 	BatchID           string  `json:"batch_id,omitempty"`
+	CnCode            string  `json:"cn_code,omitempty"`
+	HsCode            string  `json:"hs_code,omitempty"`
 	ProductionDate    string  `json:"production_date,omitempty"`
 	FacilityName      string  `json:"facility_name,omitempty"`
 	FacilityLocation  string  `json:"facility_location,omitempty"`
@@ -818,6 +802,8 @@ type ProductRequest struct {
 	BatchID          string                 `json:"batch_id,omitempty"`
 	ProductName      string                 `json:"product_name,omitempty"`
 	CommodityType    string                 `json:"commodity_type,omitempty"`
+	CnCode           string                 `json:"cn_code,omitempty"`
+	HsCode           string                 `json:"hs_code,omitempty"`
 	ActivityDataRaw  string                 `json:"activity_data_raw,omitempty"`
 	RulebookRef      map[string]string      `json:"rulebook_ref,omitempty"`
 	BatchData        *BatchData             `json:"batch_data,omitempty"`
@@ -958,6 +944,12 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 		if req.FacilityID == "" {
 			req.FacilityID = req.BatchData.FacilityName
 		}
+		if req.CnCode == "" {
+			req.CnCode = req.BatchData.CnCode
+		}
+		if req.HsCode == "" {
+			req.HsCode = req.BatchData.HsCode
+		}
 	}
 
 	if req.CommodityType == "" {
@@ -1082,6 +1074,8 @@ func (s *VerificationServer) handleCreateProduct(w http.ResponseWriter, r *http.
 		ProductName:     req.ProductName,
 		CommodityType:   req.CommodityType,
 		BatchID:         req.BatchID,
+		CnCode:          req.CnCode,
+		HsCode:          req.HsCode,
 		TenantID:        req.TenantID,
 		FacilityID:      req.FacilityID,
 		ActivityDataRaw: req.ActivityDataRaw,
@@ -1476,8 +1470,8 @@ func (s *VerificationServer) handleListRules(w http.ResponseWriter, r *http.Requ
 					continue
 				}
 				var rulesDefs []engine.RuleDefinition
-				if item.RulesRaw != "" {
-					_ = json.Unmarshal([]byte(item.RulesRaw), &rulesDefs)
+				if len(item.RulesRaw) > 0 {
+					_ = json.Unmarshal(item.RulesRaw, &rulesDefs)
 				}
 				rulesMap[item.Name] = RulebookItemResponse{
 					ID:             item.ID,
@@ -1561,7 +1555,7 @@ func (s *VerificationServer) handleCreateRule(w http.ResponseWriter, r *http.Req
 		Standard:       std,
 		FunctionalUnit: req.FunctionalUnit,
 		BatchQuantity:  req.BatchQuantity,
-		RulesRaw:       string(rulesRaw),
+		RulesRaw:       json.RawMessage(rulesRaw),
 		Scope1Formula:  req.Scope1Formula,
 		Scope2Formula:  req.Scope2Formula,
 		Scope3Formula:  req.Scope3Formula,
@@ -1707,11 +1701,16 @@ func (s *VerificationServer) handlePassports(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 	allowedOrigin := getEnv("ALLOWED_ORIGIN", "*")
 	w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-	w.Header().Set("Access-Control-Allow-Methods", "GET, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Tenant-ID")
 
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/sign") {
+		s.handleSignPassport(w, r)
 		return
 	}
 
@@ -1726,6 +1725,106 @@ func (s *VerificationServer) handlePassports(w http.ResponseWriter, r *http.Requ
 	}
 
 	http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+}
+
+type PassportSignRequest struct {
+	SignerName string `json:"signer_name"`
+	SignerRole string `json:"signer_role"`
+	KeyID      string `json:"key_id"`
+	Signature  string `json:"signature,omitempty"`
+	Notes      string `json:"notes,omitempty"`
+}
+
+func (s *VerificationServer) handleSignPassport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/passports/")
+	path = strings.TrimSuffix(path, "/sign")
+	passportID := strings.TrimSpace(path)
+	if passportID == "" {
+		http.Error(w, `{"error":"passport_id is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	var req PassportSignRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && err != io.EOF {
+		http.Error(w, `{"error":"invalid json payload"}`, http.StatusBadRequest)
+		return
+	}
+	if req.SignerName == "" {
+		req.SignerName = "Dr. Elena Rostova"
+	}
+	if req.SignerRole == "" {
+		req.SignerRole = "Chief Sustainability Officer"
+	}
+	if req.KeyID == "" {
+		req.KeyID = "0xKEY-ORATOR-PROD-SECURE-ED25519-88492"
+	}
+
+	nClient := s.getNexusClient()
+	if nClient == nil {
+		http.Error(w, `{"error":"nexus client unavailable"}`, http.StatusServiceUnavailable)
+		return
+	}
+
+	pNode, err := nexus.GetPassportNode(ctx, nClient, passportID)
+	if err != nil || pNode == nil {
+		pNode, err = nexus.GetPassportNodeByBatchID(ctx, nClient, passportID)
+	}
+	if err != nil || pNode == nil {
+		http.Error(w, fmt.Sprintf(`{"error":"passport not found: %s"}`, passportID), http.StatusNotFound)
+		return
+	}
+
+	// Update RuntimeCarbonPassport node in Nexus graph
+	pNode.Spec.VerificationStatus = "VERIFIED"
+	pNode.Spec.Frozen = true
+	pNode.Spec.FrozenAt = time.Now().UTC().Format(time.RFC3339)
+	if pNode.Spec.IssuedAt == "" {
+		pNode.Spec.IssuedAt = time.Now().UTC().Format(time.RFC3339)
+	}
+	if err := pNode.Update(ctx); err != nil {
+		http.Error(w, fmt.Sprintf(`{"error":"failed to sign passport node: %v"}`, err), http.StatusInternalServerError)
+		return
+	}
+
+	// Append immutable AuditRecord under CarbonPassport
+	auditName := fmt.Sprintf("audit-sign-%d", time.Now().UnixNano())
+	signHash := fmt.Sprintf("0xSIG-%x", sha256.Sum256([]byte(pNode.Spec.DataHash+req.KeyID)))
+	_, _ = pNode.AddAuditRecords(ctx, &runtimev1.AuditRecord{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: auditName,
+		},
+		Spec: runtimev1.AuditRecordSpec{
+			ActionType:   "SignedAndIssued",
+			PreviousHash: pNode.Spec.DataHash,
+			CurrentHash:  signHash,
+			Timestamp:    time.Now().UTC().Format(time.RFC3339),
+			UserRef:      fmt.Sprintf("%s (%s, KeyID: %s)", req.SignerName, req.SignerRole, req.KeyID),
+		},
+	})
+
+	// Also clear cache for passport
+	tenantID := r.Header.Get("X-Tenant-ID")
+	if tenantID == "" {
+		tenantID = pNode.Spec.TenantID
+	}
+	if s.nexusEngine != nil {
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, pNode.DisplayName()))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":      "VERIFIED",
+		"message":     "Passport successfully signed and published to registry",
+		"passport_id": pNode.DisplayName(),
+		"batch_id":    pNode.Spec.BatchID,
+		"signer":      req.SignerName,
+		"signer_role": req.SignerRole,
+		"key_id":      req.KeyID,
+		"signature":   signHash,
+		"signed_at":   time.Now().UTC().Format(time.RFC3339),
+	})
 }
 
 func (s *VerificationServer) handleDeletePassport(w http.ResponseWriter, r *http.Request) {
@@ -1958,7 +2057,8 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 
 	if s.nexusEngine != nil {
 		cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportModel.PassportID)
-		_ = s.nexusEngine.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
+		richBytes, _ := json.Marshal(richResp)
+		_ = s.nexusEngine.CachePassport(ctx, cacheKey, richBytes, 24*time.Hour)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -2087,7 +2187,8 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 
 	if s.nexusEngine != nil {
 		cacheKey := fmt.Sprintf("%s:%s", req.TenantID, passportID)
-		_ = s.nexusEngine.CachePassport(ctx, cacheKey, richResp, 24*time.Hour)
+		richBytes, _ := json.Marshal(richResp)
+		_ = s.nexusEngine.CachePassport(ctx, cacheKey, richBytes, 24*time.Hour)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

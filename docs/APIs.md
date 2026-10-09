@@ -6,7 +6,7 @@ This document defines the comprehensive API specification, database schemas, and
 
 ## 1. Overview & Architectural Principles
 
-The platform follows a **3-CRD Kubernetes & Microservice Architecture** (`CalculationRulebook` $\rightarrow$ `Product` $\rightarrow$ `CarbonPassport`). It provides both REST API endpoints (`/api/v1/*`) and a Nexus GraphQL Reflection Engine (`/graphql`).
+The platform follows a **3-CRD Kubernetes & Microservice Architecture** (`CalculationRulebook` $\rightarrow$ `Product` $\rightarrow$ `CarbonPassport`). It provides both REST API endpoints (`/api/v1/*`) and a compiler-generated Nexus GraphQL Server (`/graphql` and `/query`).
 
 ### Key Principles
 * **Multi-Tenant Isolation:** Enforced via PostgreSQL Row-Level Security (RLS) and mandatory `X-Tenant-ID` HTTP headers.

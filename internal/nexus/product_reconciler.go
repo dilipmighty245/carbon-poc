@@ -28,6 +28,9 @@ type ProductReconciler struct {
 	running     bool
 	mu          sync.Mutex
 	sweepPeriod time.Duration
+
+	inFlightMu sync.Mutex
+	inFlight   map[string]bool
 }
 
 // NewProductReconciler creates a new ProductReconciler instance bound to the Nexus Graph Engine.
@@ -52,7 +55,24 @@ func NewProductReconcilerWithClient(client *nexus_client.Clientset, graphEngine 
 		celEngine:   celEngine,
 		stopCh:      make(chan struct{}),
 		sweepPeriod: 30 * time.Second,
+		inFlight:    make(map[string]bool),
 	}
+}
+
+func (r *ProductReconciler) tryLockProduct(key string) bool {
+	r.inFlightMu.Lock()
+	defer r.inFlightMu.Unlock()
+	if r.inFlight[key] {
+		return false
+	}
+	r.inFlight[key] = true
+	return true
+}
+
+func (r *ProductReconciler) unlockProduct(key string) {
+	r.inFlightMu.Lock()
+	defer r.inFlightMu.Unlock()
+	delete(r.inFlight, key)
 }
 
 // SetSweepPeriod configures the periodic sweep duration (useful for test acceleration).
@@ -202,7 +222,7 @@ func (r *ProductReconciler) ProcessProductDelete(obj *nexus_client.InventoryProd
 	}
 }
 
-// reconcilePendingProducts scans for any Product models or nodes in "Pending" phase
+// reconcilePendingProducts scans for any Product nodes in "Pending" phase
 // and executes their calculation. This guarantees eventual consistency.
 func (r *ProductReconciler) reconcilePendingProducts(ctx context.Context) {
 	if r.client != nil {
@@ -213,20 +233,6 @@ func (r *ProductReconciler) reconcilePendingProducts(ctx context.Context) {
 					log.Printf("[ProductReconciler] Sweep loop reconciling pending product node: %s (%s)", node.DisplayName(), node.Spec.BatchID)
 					if _, err := r.ReconcileProductNode(ctx, node); err != nil {
 						log.Printf("[ProductReconciler] Sweep loop error reconciling product node %s: %v", node.DisplayName(), err)
-					}
-				}
-			}
-		}
-	}
-
-	if r.engine != nil {
-		products, err := r.engine.ListProducts(ctx, "")
-		if err == nil {
-			for _, p := range products {
-				if p.Phase == "Pending" || p.Phase == "" {
-					log.Printf("[ProductReconciler] Sweep loop reconciling pending product: %s (%s)", p.Name, p.BatchID)
-					if _, err := r.ReconcileProduct(ctx, p); err != nil {
-						log.Printf("[ProductReconciler] Sweep loop error reconciling product %s: %v", p.Name, err)
 					}
 				}
 			}
@@ -288,6 +294,13 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 	}
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
 
+	// Deduplication lock: prevent concurrent reconciliation between Informer callback and sweep loop
+	lockKey := fmt.Sprintf("%s:%s", tenantID, prodNode.DisplayName())
+	if !r.tryLockProduct(lockKey) {
+		return nil, nil // Reconciliation already in progress by another worker
+	}
+	defer r.unlockProduct(lockKey)
+
 	// Idempotency: skip if already calculated with an issued passport
 	if prodNode.Spec.Phase == "Calculated" && prodNode.Spec.PassportID != "" {
 		if r.client != nil {
@@ -346,9 +359,9 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 					Scope3Formula:  rbm.Scope3Formula,
 					Version:        rbm.Version,
 				}
-				if rbm.RulesRaw != "" {
+				if len(rbm.RulesRaw) > 0 {
 					var rules []engine.RuleDefinition
-					if err := json.Unmarshal([]byte(rbm.RulesRaw), &rules); err == nil {
+					if err := json.Unmarshal(rbm.RulesRaw, &rules); err == nil {
 						rb.Rules = rules
 					}
 				}
@@ -468,8 +481,9 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 		}
 
 		richPassportObj := BuildRichPassportResponse(passportModel)
+		richBytes, _ := json.Marshal(richPassportObj)
 		cacheKey := fmt.Sprintf("%s:%s", tenantID, passportID)
-		_ = r.engine.CachePassport(tenantCtx, cacheKey, richPassportObj, 24*time.Hour)
+		_ = r.engine.CachePassport(tenantCtx, cacheKey, richBytes, 24*time.Hour)
 
 		prodModel := &ProductModel{
 			Name:             prodNode.DisplayName(),
@@ -596,9 +610,9 @@ func (r *ProductReconciler) ReconcileProduct(ctx context.Context, product *Produ
 					Scope3Formula:  rbm.Scope3Formula,
 					Version:        rbm.Version,
 				}
-				if rbm.RulesRaw != "" {
+				if len(rbm.RulesRaw) > 0 {
 					var rules []engine.RuleDefinition
-					if err := json.Unmarshal([]byte(rbm.RulesRaw), &rules); err == nil {
+					if err := json.Unmarshal(rbm.RulesRaw, &rules); err == nil {
 						rb.Rules = rules
 					}
 				}
@@ -680,8 +694,9 @@ func (r *ProductReconciler) ReconcileProduct(ctx context.Context, product *Produ
 		}
 
 		richPassportObj := BuildRichPassportResponse(passportModel)
+		richBytes, _ := json.Marshal(richPassportObj)
 		cacheKey := fmt.Sprintf("%s:%s", product.TenantID, passportID)
-		_ = r.engine.CachePassport(tenantCtx, cacheKey, richPassportObj, 24*time.Hour)
+		_ = r.engine.CachePassport(tenantCtx, cacheKey, richBytes, 24*time.Hour)
 	}
 
 	product.Phase = "Calculated"

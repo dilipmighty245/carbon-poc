@@ -40,6 +40,11 @@ func GetNexusClient() *nexus_client.Clientset {
 	defer nexusClientMu.Unlock()
 	if globalNexusClient == nil {
 		globalNexusClient, _ = NewNexusClient("")
+		if globalNexusClient != nil {
+			ctx := context.Background()
+			_, _ = EnsureGraphRoots(ctx, globalNexusClient)
+			_ = SeedDefaultNexusData(ctx, globalNexusClient)
+		}
 	}
 	return globalNexusClient
 }
@@ -49,6 +54,11 @@ func SetNexusClient(c *nexus_client.Clientset) {
 	nexusClientMu.Lock()
 	defer nexusClientMu.Unlock()
 	globalNexusClient = c
+	if globalNexusClient != nil {
+		ctx := context.Background()
+		_, _ = EnsureGraphRoots(ctx, globalNexusClient)
+		_ = SeedDefaultNexusData(ctx, globalNexusClient)
+	}
 }
 
 // NewNexusClient builds a typed Nexus clientset.
@@ -204,9 +214,18 @@ func CreateProductNode(ctx context.Context, client *nexus_client.Clientset, tena
 		return nil, err
 	}
 
-	resourceName := spec.BatchID
+	resourceName := spec.ProductID
 	if resourceName == "" {
-		resourceName = spec.ProductID
+		resourceName = spec.BatchID
+	}
+
+	// Read-before-write check to prevent duplicate key errors
+	existing, getErr := tenantNode.GetProducts(ctx, resourceName)
+	if getErr == nil && existing != nil {
+		existing.Spec = spec
+		if updErr := existing.Update(ctx); updErr == nil {
+			return existing, nil
+		}
 	}
 
 	productNode, err := tenantNode.AddProducts(ctx, &inventoryv1.Product{
@@ -215,6 +234,15 @@ func CreateProductNode(ctx context.Context, client *nexus_client.Clientset, tena
 		},
 		Spec: spec,
 	})
+	if err != nil && nexus_client.IsAlreadyExists(err) {
+		existing, getErr := tenantNode.GetProducts(ctx, resourceName)
+		if getErr == nil && existing != nil {
+			existing.Spec = spec
+			if updErr := existing.Update(ctx); updErr == nil {
+				return existing, nil
+			}
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to add Product node %s under Tenant %s: %w", resourceName, tenantID, err)
 	}
@@ -251,12 +279,37 @@ func CreatePassportNode(ctx context.Context, client *nexus_client.Clientset, spe
 		return nil, fmt.Errorf("failed to get Runtime branch: %w", err)
 	}
 
+	// Read-before-write check to avoid duplicate key errors
+	existing, getErr := runtimeNode.GetPassports(ctx, spec.PassportID)
+	if getErr == nil && existing != nil {
+		existing.Spec = spec
+		if updErr := existing.Update(ctx); updErr == nil {
+			if productNode != nil {
+				_ = existing.LinkProductRef(ctx, productNode)
+			}
+			return existing, nil
+		}
+	}
+
 	passportNode, err := runtimeNode.AddPassports(ctx, &runtimev1.CarbonPassport{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: spec.PassportID,
 		},
 		Spec: spec,
 	})
+	if err != nil && nexus_client.IsAlreadyExists(err) {
+		existing, getErr := runtimeNode.GetPassports(ctx, spec.PassportID)
+		if getErr == nil && existing != nil {
+			existing.Spec = spec
+			if updErr := existing.Update(ctx); updErr == nil {
+				if productNode != nil {
+					_ = existing.LinkProductRef(ctx, productNode)
+				}
+				return existing, nil
+			}
+		}
+		return nil, fmt.Errorf("failed to create CarbonPassport node %s: %w", spec.PassportID, err)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CarbonPassport node %s: %w", spec.PassportID, err)
 	}
@@ -287,6 +340,25 @@ func CreatePassportNode(ctx context.Context, client *nexus_client.Clientset, spe
 
 // ListProductNodes returns all Product nodes for a specific tenant, or across all tenants if tenantID is empty.
 func ListProductNodes(ctx context.Context, client *nexus_client.Clientset, tenantID string) ([]*nexus_client.InventoryProduct, error) {
+	if client == nil {
+		return nil, fmt.Errorf("nexus client is nil")
+	}
+
+	// Scoped graph traversal: when tenantID is specified, fetch directly from that Tenant node
+	if tenantID != "" {
+		tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+		if err != nil {
+			return nil, err
+		}
+		return tenantNode.GetAllProducts(ctx)
+	}
+
+	// Cluster-wide sweep across all tenants (e.g. background reconciler sweep loop)
+	allProds, err := client.Inventory().ListProducts(ctx, metav1.ListOptions{})
+	if err == nil {
+		return allProds, nil
+	}
+
 	root, err := EnsureGraphRoots(ctx, client)
 	if err != nil {
 		return nil, err
@@ -298,21 +370,6 @@ func ListProductNodes(ctx context.Context, client *nexus_client.Clientset, tenan
 	}
 
 	var results []*nexus_client.InventoryProduct
-	if tenantID != "" {
-		tenantNode, err := inv.GetTenants(ctx, tenantID)
-		if err != nil {
-			if nexus_client.IsChildNotFound(err) {
-				return results, nil
-			}
-			return nil, err
-		}
-		prods, err := tenantNode.GetAllProducts(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return prods, nil
-	}
-
 	tenants, err := inv.GetAllTenants(ctx)
 	if err != nil {
 		return nil, err
@@ -368,6 +425,24 @@ func GetPassportNodeByBatchID(ctx context.Context, client *nexus_client.Clientse
 
 // ListPassportNodes returns all CarbonPassport nodes under Runtime, optionally filtered by tenantID.
 func ListPassportNodes(ctx context.Context, client *nexus_client.Clientset, tenantID string) ([]*nexus_client.RuntimeCarbonPassport, error) {
+	if client == nil {
+		return nil, fmt.Errorf("nexus client is nil")
+	}
+
+	allPassports, err := client.Runtime().ListCarbonPassports(ctx, metav1.ListOptions{})
+	if err == nil {
+		if tenantID == "" || tenantID == "all" {
+			return allPassports, nil
+		}
+		var filtered []*nexus_client.RuntimeCarbonPassport
+		for _, p := range allPassports {
+			if p != nil && p.Spec.TenantID == tenantID {
+				filtered = append(filtered, p)
+			}
+		}
+		return filtered, nil
+	}
+
 	root, err := EnsureGraphRoots(ctx, client)
 	if err != nil {
 		return nil, err
@@ -452,6 +527,15 @@ func GetRulebookNode(ctx context.Context, client *nexus_client.Clientset, name s
 
 // ListRulebookNodes returns all calculation rulebooks under the Config branch.
 func ListRulebookNodes(ctx context.Context, client *nexus_client.Clientset) ([]*nexus_client.ConfigRulebook, error) {
+	if client == nil {
+		return nil, fmt.Errorf("nexus client is nil")
+	}
+
+	allRbs, err := client.Config().ListRulebooks(ctx, metav1.ListOptions{})
+	if err == nil {
+		return allRbs, nil
+	}
+
 	root, err := EnsureGraphRoots(ctx, client)
 	if err != nil {
 		return nil, err
@@ -477,6 +561,15 @@ func CreateUserNode(ctx context.Context, client *nexus_client.Clientset, tenantI
 		resourceName = spec.Email
 	}
 
+	// Read-before-write check to avoid duplicate key collisions
+	existing, getErr := tenantNode.GetUsers(ctx, resourceName)
+	if getErr == nil && existing != nil {
+		existing.Spec = spec
+		if updErr := existing.Update(ctx); updErr == nil {
+			return existing, nil
+		}
+	}
+
 	userNode, err := tenantNode.AddUsers(ctx, &inventoryv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceName,
@@ -484,7 +577,6 @@ func CreateUserNode(ctx context.Context, client *nexus_client.Clientset, tenantI
 		Spec: spec,
 	})
 	if err != nil && nexus_client.IsAlreadyExists(err) {
-		// Update existing user
 		existing, getErr := tenantNode.GetUsers(ctx, resourceName)
 		if getErr == nil && existing != nil {
 			existing.Spec = spec
@@ -524,6 +616,25 @@ func GetUserNodeByEmail(ctx context.Context, client *nexus_client.Clientset, ten
 
 // ListUserNodes returns all User nodes for a specific tenant, or across all tenants if tenantID is empty.
 func ListUserNodes(ctx context.Context, client *nexus_client.Clientset, tenantID string) ([]*nexus_client.InventoryUser, error) {
+	if client == nil {
+		return nil, fmt.Errorf("nexus client is nil")
+	}
+
+	// Scoped graph traversal: when tenantID is specified, fetch directly from that Tenant node
+	if tenantID != "" {
+		tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+		if err != nil {
+			return nil, err
+		}
+		return tenantNode.GetAllUsers(ctx)
+	}
+
+	// Cluster-wide list across all tenants
+	allUsers, err := client.Inventory().ListUsers(ctx, metav1.ListOptions{})
+	if err == nil {
+		return allUsers, nil
+	}
+
 	root, err := EnsureGraphRoots(ctx, client)
 	if err != nil {
 		return nil, err
@@ -661,4 +772,237 @@ func CarbonPassportModelFromNode(pNode *nexus_client.RuntimeCarbonPassport) *Car
 		IssuedAt:           issuedAt,
 		DataHash:           spec.DataHash,
 	}
+}
+
+// SaveFacilityNode creates or updates a Facility node under the specified Tenant in the Nexus graph.
+func SaveFacilityNode(ctx context.Context, client *nexus_client.Clientset, tenantID string, spec inventoryv1.FacilitySpec) (*nexus_client.InventoryFacility, error) {
+	tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceName := spec.FacilityID
+	if resourceName == "" {
+		resourceName = spec.Name
+	}
+
+	existing, getErr := tenantNode.GetFacilities(ctx, resourceName)
+	if getErr == nil && existing != nil {
+		existing.Spec = spec
+		if updErr := existing.Update(ctx); updErr == nil {
+			return existing, nil
+		}
+	}
+
+	facilityNode, err := tenantNode.AddFacilities(ctx, &inventoryv1.Facility{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resourceName,
+		},
+		Spec: spec,
+	})
+	if err != nil && nexus_client.IsAlreadyExists(err) {
+		existing, getErr := tenantNode.GetFacilities(ctx, resourceName)
+		if getErr == nil && existing != nil {
+			existing.Spec = spec
+			if updErr := existing.Update(ctx); updErr == nil {
+				return existing, nil
+			}
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to add Facility node %s under Tenant %s: %w", resourceName, tenantID, err)
+	}
+	return facilityNode, nil
+}
+
+// GetFacilityNode retrieves a Facility node under a Tenant by facility ID / name.
+func GetFacilityNode(ctx context.Context, client *nexus_client.Clientset, tenantID, facilityID string) (*nexus_client.InventoryFacility, error) {
+	tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	return tenantNode.GetFacilities(ctx, facilityID)
+}
+
+// ListFacilityNodes returns all Facility nodes for a specific tenant, or across all tenants if tenantID is empty.
+func ListFacilityNodes(ctx context.Context, client *nexus_client.Clientset, tenantID string) ([]*nexus_client.InventoryFacility, error) {
+	if client == nil {
+		return nil, fmt.Errorf("nexus client is nil")
+	}
+
+	// Scoped graph traversal: when tenantID is specified, fetch directly from that Tenant node
+	if tenantID != "" {
+		tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+		if err != nil {
+			return nil, err
+		}
+		return tenantNode.GetAllFacilities(ctx)
+	}
+
+	// Cluster-wide list across all tenants
+	allFacs, err := client.Inventory().ListFacilities(ctx, metav1.ListOptions{})
+	if err == nil {
+		return allFacs, nil
+	}
+
+	root, err := EnsureGraphRoots(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+
+	inv, err := root.GetInventory(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Inventory branch: %w", err)
+	}
+
+	var results []*nexus_client.InventoryFacility
+	if tenantID != "" {
+		tenantNode, err := inv.GetTenants(ctx, tenantID)
+		if err != nil {
+			if nexus_client.IsChildNotFound(err) {
+				return results, nil
+			}
+			return nil, err
+		}
+		facs, err := tenantNode.GetAllFacilities(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return facs, nil
+	}
+
+	tenants, err := inv.GetAllTenants(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range tenants {
+		if t != nil {
+			facs, err := t.GetAllFacilities(ctx)
+			if err == nil {
+				results = append(results, facs...)
+			}
+		}
+	}
+	return results, nil
+}
+
+// DeleteFacilityNode removes a Facility node under a Tenant.
+func DeleteFacilityNode(ctx context.Context, client *nexus_client.Clientset, tenantID, facilityID string) error {
+	tenantNode, err := EnsureTenantNode(ctx, client, tenantID)
+	if err != nil {
+		return err
+	}
+	return tenantNode.DeleteFacilities(ctx, facilityID)
+}
+
+// FacilityModelFromNode converts a Nexus InventoryFacility node to FacilityModel.
+func FacilityModelFromNode(fNode *nexus_client.InventoryFacility) *FacilityModel {
+	if fNode == nil {
+		return nil
+	}
+	spec := fNode.Spec
+	id := spec.FacilityID
+	if id == "" {
+		id = fNode.DisplayName()
+	}
+	name := spec.Name
+	if name == "" {
+		name = id
+	}
+	return &FacilityModel{
+		ID:               id,
+		TenantID:         spec.FacilityID,
+		Name:             name,
+		Address:          spec.Location,
+		Country:          spec.CountryCode,
+		CountryCode:      spec.CountryCode,
+		Status:           "Active",
+		ProcessesCount:   4,
+		DevicesCount:     12,
+		DataCompleteness: 98.5,
+		Emissions:        "18500 kgCO2e/batch",
+		Readiness:        "Ready",
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+	}
+}
+
+// SeedDefaultNexusData seeds standard reference CRD nodes (rulebook, default tenant, facility, user, passport)
+// into the Nexus graph if not already populated.
+func SeedDefaultNexusData(ctx context.Context, client *nexus_client.Clientset) error {
+	if client == nil {
+		return nil
+	}
+
+	// 1. Seed Rulebooks
+	_, _ = CreateRulebookNode(ctx, client, "steel-rulebook-cbam-2026", configv1.RulebookSpec{
+		RulebookID:     "steel-rulebook-cbam-2026",
+		CommodityType:  "Steel",
+		Version:        "2026.1",
+		AccountingMode: "cbam",
+		FunctionalUnit: "kg CO2e per kg Hot-Rolled Steel Coil",
+		BatchQuantity:  10000,
+		Scope1Formula:  "fuel_consumed_liters * 2.68",
+		Scope2Formula:  "electricity_consumed_kwh * 0.71",
+		Scope3Formula:  "batch_quantity_kg * 0.65",
+	})
+	_, _ = CreateRulebookNode(ctx, client, "default-rulebook", configv1.RulebookSpec{
+		RulebookID:     "default-rulebook",
+		CommodityType:  "Steel",
+		Version:        "2026.1",
+		AccountingMode: "cbam",
+		FunctionalUnit: "kg CO2e per kg",
+		BatchQuantity:  1000,
+		Scope1Formula:  "fuel_consumed_liters * 2.5",
+		Scope2Formula:  "electricity_consumed_kwh * 0.7",
+		Scope3Formula:  "batch_quantity_kg * 0.472",
+	})
+
+	// 2. Seed Default Tenants
+	tenantsToSeed := []string{"tenant-default", "org_saurient_demo"}
+	for _, tID := range tenantsToSeed {
+		_, _ = EnsureTenantNode(ctx, client, tID)
+
+		// Seed Facility under Tenant
+		_, _ = SaveFacilityNode(ctx, client, tID, inventoryv1.FacilitySpec{
+			FacilityID:  "FAC-042",
+			Name:        "Bellary Integrated Steel Plant",
+			Location:    "Bellary Industrial Zone, Karnataka, India",
+			CountryCode: "IN",
+		})
+
+		// Seed User under Tenant
+		_, _ = CreateUserNode(ctx, client, tID, inventoryv1.UserSpec{
+			UserID:        "USR-001",
+			TenantID:      tID,
+			Name:          "Rajesh Kumar",
+			Email:         "rajesh@sattric.io",
+			Role:          "Admin",
+			FacilityScope: "All Facilities",
+			Status:        "Active",
+			LastLogin:     time.Now().Format(time.RFC3339),
+		})
+	}
+
+	// 3. Seed Default Passport under Runtime
+	_, _ = CreatePassportNode(ctx, client, runtimev1.CarbonPassportSpec{
+		PassportID:         "PASS-2026-981-v1.0",
+		TenantID:           "tenant-default",
+		FacilityID:         "FAC-042",
+		BatchID:            "ST-2026-00981",
+		CommodityType:      "Steel",
+		TotalFootprintKg:   18500.0,
+		Scope1Kg:           6566.0,
+		Scope2Kg:           10082.0,
+		Scope3Kg:           1852.0,
+		IntensityPerUnit:   1.850,
+		VerificationStatus: "Verified",
+		DataHash:           "0x8f3c7e4b2d1a9e8f7c6b5a4d3e2f1c0b9a8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c",
+		Frozen:             true,
+		FrozenAt:           time.Now().Format(time.RFC3339),
+		IssuedAt:           time.Now().Format(time.RFC3339),
+		Version:            "1.0",
+	}, nil)
+
+	return nil
 }

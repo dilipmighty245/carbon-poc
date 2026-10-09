@@ -1,7 +1,7 @@
 package inventory
 
 import (
-	"github.com/xmen4xp/graph-framework-for-microservices/nexus/nexus"
+	"github.com/vmware-tanzu/graph-framework-for-microservices/nexus/nexus"
 )
 
 type Inventory struct {

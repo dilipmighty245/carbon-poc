@@ -69,6 +69,22 @@ type NexusGraphEngine struct {
 
 	eventMu            sync.RWMutex
 	productSubscribers []chan ProductEvent
+
+	cacheMu  sync.RWMutex
+	cacheMap map[string][]byte
+
+	opMu             sync.RWMutex
+	tenantProfiles   map[string]*TenantProfileModel
+	processes        map[string][]*ProcessModel
+	reportingPeriods map[string][]*ReportingPeriodModel
+	localisations    map[string]*LocalisationModel
+	approvals        map[string][]*ApprovalModel
+	agencies         map[string][]*AgencyModel
+	engagements      map[string][]*VerificationEngagementModel
+	teamMembers      map[string][]*EngagementTeamMemberModel
+	coiDeclarations  map[string][]*COIDeclarationModel
+	findings         map[string][]*FindingModel
+	signoffs         map[string][]*ReviewSignoffModel
 }
 
 var (
@@ -84,6 +100,18 @@ func GetNexusEngine() *NexusGraphEngine {
 			edges:              make(map[string]LineageEdge),
 			dagMap:             make(map[string]*LineageDAG),
 			productSubscribers: make([]chan ProductEvent, 0),
+			cacheMap:           make(map[string][]byte),
+			tenantProfiles:     make(map[string]*TenantProfileModel),
+			processes:          make(map[string][]*ProcessModel),
+			reportingPeriods:   make(map[string][]*ReportingPeriodModel),
+			localisations:      make(map[string]*LocalisationModel),
+			approvals:          make(map[string][]*ApprovalModel),
+			agencies:           make(map[string][]*AgencyModel),
+			engagements:        make(map[string][]*VerificationEngagementModel),
+			teamMembers:        make(map[string][]*EngagementTeamMemberModel),
+			coiDeclarations:    make(map[string][]*COIDeclarationModel),
+			findings:           make(map[string][]*FindingModel),
+			signoffs:           make(map[string][]*ReviewSignoffModel),
 		}
 		globalEngine.seedDefaultGraphTopology()
 	})

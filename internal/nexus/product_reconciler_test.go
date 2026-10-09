@@ -293,8 +293,12 @@ func TestProductReconciler_PeriodicSweepLoop(t *testing.T) {
 		}
 	}
 
+	currentPhase := "nil"
+	if updatedProd != nil {
+		currentPhase = updatedProd.Phase
+	}
 	if updatedProd == nil || updatedProd.Phase != "Calculated" {
-		t.Fatalf("periodic sweep loop failed to reconcile product to Calculated, current phase: %v", updatedProd.Phase)
+		t.Fatalf("periodic sweep loop failed to reconcile product to Calculated, current phase: %v", currentPhase)
 	}
 	if updatedProd.PassportID == "" {
 		t.Errorf("expected product passport_id to be populated by sweep loop")

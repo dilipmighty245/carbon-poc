@@ -4,7 +4,7 @@ import (
 	"saurient-platform/datamodel/config"
 	"saurient-platform/datamodel/inventory"
 
-	"github.com/xmen4xp/graph-framework-for-microservices/nexus/nexus"
+	"github.com/vmware-tanzu/graph-framework-for-microservices/nexus/nexus"
 )
 
 type Runtime struct {

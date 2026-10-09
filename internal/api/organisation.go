@@ -291,10 +291,19 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 
 	switch r.Method {
 	case http.MethodGet:
-		facilities, err := h.engine.ListFacilities(ctx)
-		if err != nil {
-			writeJSONError(w, fmt.Sprintf("failed to list facilities: %v", err), http.StatusInternalServerError)
-			return
+		var facilities []*nexus.FacilityModel
+		if h.client != nil {
+			facNodes, err := nexus.ListFacilityNodes(ctx, h.client, tenantID)
+			if err == nil {
+				for _, fn := range facNodes {
+					if fm := nexus.FacilityModelFromNode(fn); fm != nil {
+						facilities = append(facilities, fm)
+					}
+				}
+			}
+		}
+		if len(facilities) == 0 && h.engine != nil {
+			facilities, _ = h.engine.ListFacilities(ctx)
 		}
 		if facilities == nil {
 			facilities = []*nexus.FacilityModel{}
@@ -318,9 +327,21 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 		if f.Status == "" {
 			f.Status = "ACTIVE"
 		}
-		if err := h.engine.SaveFacility(ctx, &f); err != nil {
-			writeJSONError(w, fmt.Sprintf("failed to save facility: %v", err), http.StatusInternalServerError)
-			return
+
+		if h.client != nil {
+			spec := inventoryv1.FacilitySpec{
+				FacilityID:  f.ID,
+				Name:        f.Name,
+				Location:    f.Address,
+				CountryCode: f.CountryCode,
+			}
+			if _, err := nexus.SaveFacilityNode(ctx, h.client, tenantID, spec); err != nil {
+				writeJSONError(w, fmt.Sprintf("failed to save facility node in nexus: %v", err), http.StatusInternalServerError)
+				return
+			}
+		}
+		if h.engine != nil {
+			_ = h.engine.SaveFacility(ctx, &f)
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(f)
@@ -334,9 +355,11 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 			writeJSONError(w, "facility ID is required", http.StatusBadRequest)
 			return
 		}
-		if err := h.engine.DeleteFacility(ctx, id); err != nil {
-			writeJSONError(w, fmt.Sprintf("failed to delete facility: %v", err), http.StatusInternalServerError)
-			return
+		if h.client != nil {
+			_ = nexus.DeleteFacilityNode(ctx, h.client, tenantID, id)
+		}
+		if h.engine != nil {
+			_ = h.engine.DeleteFacility(ctx, id)
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{"message": "facility deleted successfully", "id": id})

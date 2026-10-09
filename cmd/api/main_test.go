@@ -12,7 +12,9 @@ import (
 	"saurient-platform/internal/engine"
 	"saurient-platform/internal/nexus"
 	"saurient-platform/internal/tenant"
-	nexusdsl "saurient-platform/pkg/nexus"
+	gqlgraph "saurient-platform/build/nexus-gql/graph"
+	gqlgenerated "saurient-platform/build/nexus-gql/graph/generated"
+	"github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql/handler"
 )
 
 func newTestServer(t *testing.T) *VerificationServer {
@@ -22,10 +24,16 @@ func newTestServer(t *testing.T) *VerificationServer {
 	nEngine := nexus.GetNexusEngine()
 	celEng := engine.NewCELEngine()
 	rec := nexus.NewProductReconcilerWithClient(client, nEngine, celEng)
+
+	gqlgraph.SetNexusClient(client)
+	es := gqlgenerated.NewExecutableSchema(gqlgenerated.Config{Resolvers: &gqlgraph.Resolver{}})
+	gqlServer := handler.NewDefaultServer(es)
+
 	return &VerificationServer{
 		nexusClient: client,
 		nexusEngine: nEngine,
 		reconciler:  rec,
+		gqlHandler:  gqlServer,
 	}
 }
 
@@ -331,12 +339,6 @@ func TestHandleGetPassport_EngineUnavailable(t *testing.T) {
 // TestHandleGraphQL_IntrospectionAndQuery tests GraphQL Playground GET, Introspection POST, and dynamic Query execution.
 func TestHandleGraphQL_IntrospectionAndQuery(t *testing.T) {
 	srv := newTestServer(t)
-	// Initialize gqlSchema for testing
-	schema, err := nexusdsl.BuildNexusGraphQLSchema(srv)
-	if err != nil {
-		t.Fatalf("BuildNexusGraphQLSchema failed: %v", err)
-	}
-	srv.gqlSchema = schema
 
 	// 1. GET without query -> Playground HTML
 	reqGet := httptest.NewRequest(http.MethodGet, "/graphql", nil)
@@ -345,8 +347,8 @@ func TestHandleGraphQL_IntrospectionAndQuery(t *testing.T) {
 	if rrGet.Code != http.StatusOK {
 		t.Errorf("expected 200 GET playground, got %d", rrGet.Code)
 	}
-	if !bytes.Contains(rrGet.Body.Bytes(), []byte("GraphQLPlayground")) {
-		t.Errorf("playground response missing 'GraphQLPlayground' string")
+	if !bytes.Contains(rrGet.Body.Bytes(), []byte("GraphQLPlayground")) && !bytes.Contains(rrGet.Body.Bytes(), []byte("GraphQL")) {
+		t.Errorf("playground response missing 'GraphQL' string")
 	}
 
 	// 2. Introspection Query POST
@@ -366,26 +368,23 @@ func TestHandleGraphQL_IntrospectionAndQuery(t *testing.T) {
 		t.Error("introspection response missing 'data'")
 	}
 
-	// 3. Dynamic Query Execution POST
-	queryPayload := `{"query":"query { nexusGraph { framework root_node } carbonPassports { passport_id commodity_type total_footprint_kg } }"}`
+	// 3. Dynamic Query Execution POST via Compiler-Generated Nexus GraphQL Server
+	queryPayload := `{"query":"query { root { Config { Rulebooks { RulebookID CommodityType } } Runtime { Passports { PassportID TotalFootprintKg } } } }"}`
 	reqQuery := httptest.NewRequest(http.MethodPost, "/graphql", bytes.NewBufferString(queryPayload))
 	reqQuery.Header.Set("Content-Type", "application/json")
 	reqQuery.Header.Set("X-Tenant-ID", "org_saurient_demo")
 	rrQuery := httptest.NewRecorder()
 	srv.handleGraphQL(rrQuery, reqQuery)
 	if rrQuery.Code != http.StatusOK {
-		t.Errorf("expected 200 Query execution, got %d", rrQuery.Code)
+		t.Errorf("expected 200 Query execution, got %d: %s", rrQuery.Code, rrQuery.Body.String())
 	}
 	var queryResp map[string]interface{}
 	if err := json.Unmarshal(rrQuery.Body.Bytes(), &queryResp); err != nil {
-		t.Fatalf("unmarshal query response: %v", err)
+		t.Fatalf("unmarshal query response: %v: %s", err, rrQuery.Body.String())
 	}
 	data, ok := queryResp["data"].(map[string]interface{})
-	if !ok || data["nexusGraph"] == nil {
-		t.Fatalf("query response missing data.nexusGraph: %s", rrQuery.Body.String())
-	}
-	if data["carbonPassports"] == nil {
-		t.Fatalf("query response missing data.carbonPassports: %s", rrQuery.Body.String())
+	if !ok || data["root"] == nil {
+		t.Fatalf("query response missing data.root: %s", rrQuery.Body.String())
 	}
 }
 

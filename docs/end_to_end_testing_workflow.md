@@ -612,13 +612,14 @@ curl -s -H "X-Tenant-ID: org_saurient_demo" \
 
 ---
 
-### 5.5 GraphQL Query Interface (`POST /graphql`)
+### 5.5 GraphQL Query Interface (`POST /graphql` and `POST /query`)
 
-The API Gateway supports GraphQL queries for fetching passports, facilities, and enterprise topologies.
+The API Gateway provides a full compiler-generated Nexus GraphQL engine adhering to the Nexus Datamodel and VMware Tanzu GraphQL specifications.
 
 #### HTTP Request
 - **Method**: `POST`
-- **Endpoint**: `http://localhost:8080/graphql`
+- **Endpoint**: `http://localhost:8080/graphql` (also available at `http://localhost:8080/query`)
+- **Interactive Playground**: `http://localhost:8080/graphql/playground`
 - **Headers**:
   - `Content-Type: application/json`
   - `X-Tenant-ID: org_saurient_demo`
@@ -626,7 +627,7 @@ The API Gateway supports GraphQL queries for fetching passports, facilities, and
 #### HTTP Request Body:
 ```json
 {
-  "query": "{ carbonPassports { passport_id tenant_id facility_id commodity_type total_footprint_kg intensity_per_unit verification_status } }"
+  "query": "{ root { Config { Rulebooks { RulebookID CommodityType } } Runtime { Passports { PassportID TotalFootprintKg VerificationStatus } } } }"
 }
 ```
 
@@ -635,24 +636,32 @@ The API Gateway supports GraphQL queries for fetching passports, facilities, and
 curl -s -X POST http://localhost:8080/graphql \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: org_saurient_demo" \
-  -d '{"query": "{ carbonPassports { passport_id tenant_id facility_id commodity_type total_footprint_kg intensity_per_unit verification_status } }"}' | jq .
+  -d '{"query": "{ root { Config { Rulebooks { RulebookID CommodityType } } Runtime { Passports { PassportID TotalFootprintKg VerificationStatus } } } }"}' | jq .
 ```
 
 #### Expected GraphQL Response:
 ```json
 {
   "data": {
-    "carbonPassports": [
-      {
-        "passport_id": "4806cae0-30f4-49e9-aaad-7a83b7cbf34b",
-        "tenant_id": "org_saurient_demo",
-        "facility_id": "fac-rotterdam-01",
-        "commodity_type": "Cement",
-        "total_footprint_kg": 7765,
-        "intensity_per_unit": 77.65,
-        "verification_status": "Calculated"
+    "root": {
+      "Config": {
+        "Rulebooks": [
+          {
+            "RulebookID": "cement-rulebook-2026",
+            "CommodityType": "Cement"
+          }
+        ]
+      },
+      "Runtime": {
+        "Passports": [
+          {
+            "PassportID": "4806cae0-30f4-49e9-aaad-7a83b7cbf34b",
+            "TotalFootprintKg": 7765,
+            "VerificationStatus": "Calculated"
+          }
+        ]
       }
-    ]
+    }
   }
 }
 ```
