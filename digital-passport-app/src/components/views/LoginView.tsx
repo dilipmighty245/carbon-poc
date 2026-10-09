@@ -1,72 +1,47 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, AlertTriangle, Building, CheckCircle2, ShieldAlert, PlusCircle, LogIn } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, AlertTriangle, Building, ShieldAlert, PlusCircle, LogIn } from 'lucide-react';
 import { loginUser } from '../../api/client';
 
 export const LoginView: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const justRegistered = searchParams.get('registered') === 'true';
 
-  // Registration Check - strictly check for registered company data
-  const [registeredCompany] = useState<any>(() => {
-    try {
-      const stored = localStorage.getItem('saurient_registered_company');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.ownerEmail && parsed.legalName) return parsed;
-      }
-    } catch {
-      // ignore
-    }
-    return null;
-  });
-
-  const isRegistered = Boolean(registeredCompany?.ownerEmail || (localStorage.getItem('saurient_company_registered') === 'true' && justRegistered));
-
-  // Multi-tenant Org Selection Mode: 'existing' (log into registered org) or 'new' (create new org)
-  const [orgMode, setOrgMode] = useState<'existing' | 'new'>(isRegistered ? 'existing' : 'new');
+  // Multi-tenant Org Selection Mode: 'existing' (log into workspace) or 'new' (create new org)
+  const [orgMode, setOrgMode] = useState<'existing' | 'new'>('existing');
 
   const [showRegModal, setShowRegModal] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [role, setRole] = useState('Company Operator');
-  const [email, setEmail] = useState(registeredCompany?.ownerEmail || 'operator@saurient.io');
-  const [password, setPassword] = useState(registeredCompany?.ownerPassword || 'password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const roles = [
     { 
       title: 'Company Operator', 
-      email: registeredCompany?.ownerEmail || 'operator@saurient.io',
-      password: registeredCompany?.ownerPassword || 'password123' 
+      desc: 'Facility & ESG Operations',
     },
     { 
       title: 'Verifier', 
-      email: 'verifier@saurient.io', 
-      password: 'verifier123' 
+      desc: 'Accredited Verifier', 
     },
     { 
       title: 'Passport Officer', 
-      email: 'officer@saurient.io', 
-      password: 'officer123' 
+      desc: 'Issuance & Governance', 
     },
     { 
       title: 'Public Viewer', 
-      email: 'No login required', 
-      password: '' 
+      desc: 'No login required', 
     },
   ];
 
-  const handleSelectRole = (r: { title: string; email: string; password?: string }) => {
+  const handleSelectRole = (r: { title: string; desc: string }) => {
     setRole(r.title);
     setLoginError(null);
     if (orgMode === 'new' && r.title !== 'Public Viewer') {
       setShowRegModal(true);
       return;
     }
-    if (r.email !== 'No login required') {
-      setEmail(r.email);
-      setPassword(r.password || '');
-    } else {
+    if (r.title === 'Public Viewer') {
       setEmail('');
       setPassword('');
     }
@@ -81,13 +56,15 @@ export const LoginView: React.FC = () => {
       return;
     }
 
-    if (role !== 'Public Viewer' && (!email || !password)) {
+    if (role !== 'Public Viewer' && (!email.trim() || !password)) {
       setLoginError('Please enter your work email and password.');
       return;
     }
 
     try {
-      await loginUser(email, password);
+      if (email.trim() && password) {
+        await loginUser(email.trim(), password);
+      }
     } catch (err) {
       console.warn('Backend login check failed, proceeding in session mode:', err);
     }
@@ -169,24 +146,8 @@ export const LoginView: React.FC = () => {
           </button>
         </div>
 
-        {/* Registration Status Banner */}
-        {isRegistered && (
-          <div className="mb-6 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center gap-2 text-emerald-900">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold">{registeredCompany?.legalName || 'Registered Organisation'}</p>
-                <p className="text-[10px] font-mono font-bold text-emerald-700">{registeredCompany?.ownerEmail || 'marcus.vance@saurient.io'}</p>
-              </div>
-            </div>
-            <span className="text-[9px] font-extrabold uppercase bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full">
-              {justRegistered ? 'JUST REGISTERED' : 'REGISTERED'}
-            </span>
-          </div>
-        )}
-
         <h3 className="text-2xl font-bold mb-1">Welcome back</h3>
-        <p className="text-xs text-slate-500 mb-6">Choose an authorized user role or use prefilled credentials.</p>
+        <p className="text-xs text-slate-500 mb-6">Choose an authorized user role and enter your workspace credentials.</p>
 
         {/* Roles Selectors */}
         <div className="grid grid-cols-2 gap-3 mb-6">
@@ -202,17 +163,19 @@ export const LoginView: React.FC = () => {
               }`}
             >
               <h4 className="font-bold text-xs text-slate-900">{r.title}</h4>
-              <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">{r.email}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 truncate">{r.desc}</p>
             </button>
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Work Email</label>
             <input
               type="email"
+              placeholder="name@company.com"
               value={email}
+              autoComplete="off"
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"
             />
@@ -226,6 +189,7 @@ export const LoginView: React.FC = () => {
               type="password"
               placeholder="Enter password"
               value={password}
+              autoComplete="new-password"
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"
             />
