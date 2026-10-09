@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { freezeMrvDataset } from '../api/client';
 import type {
   EngagementMeta,
   EvidenceItem,
@@ -41,7 +42,7 @@ interface MrvContextType {
   findings: FindingItem[];
   corrections: CorrectionItem[];
   audit: AuditLogItem[];
-  freezeDataset: () => void;
+  freezeDataset: (customHash?: string, customId?: string) => void;
   resolveFinding: (findingId: string) => void;
   addEvidence: (item: Partial<EvidenceItem>) => void;
   primaryAction: PrimaryAction;
@@ -99,17 +100,26 @@ export const MrvProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     finalVersion: 'V1.0-VERIFIED',
   });
 
-  const freezeDataset = () => {
+  const freezeDataset = (customHash?: string, customId?: string) => {
     const stamp = new Date().toISOString().replace('T', ' ').slice(0, 16);
+    const freezeId = customId || `FRZ-${Date.now().toString(36).toUpperCase()}`;
+    const freezeHash = customHash || `sha256-${Math.random().toString(36).substring(2)}`;
     setEngagement((prev) => ({
       ...prev,
       freezeInfo: {
-        id: `FRZ-${Date.now().toString(36).toUpperCase()}`,
-        hash: `sha256-${Math.random().toString(36).substring(2)}`,
+        id: freezeId,
+        hash: freezeHash,
         ts: stamp,
-        frozenBy: 'Current User',
+        frozenBy: localStorage.getItem('saurient_user_name') || 'Company Carbon Officer',
       },
     }));
+    freezeMrvDataset({
+      engagement_id: meta.engagementId,
+      passport_id: meta.pcfProject,
+      batch_id: meta.batch,
+      reason: 'Operational dataset locked for MRV verification',
+      frozen_by: localStorage.getItem('saurient_user_email') || 'operator@asante-cocoa.com',
+    }).catch((err) => console.warn('Background dataset freeze sync failed:', err));
   };
 
   const resolveFinding = (findingId: string) => {

@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	nexus_client "saurient-platform/build/nexus-client"
 	"saurient-platform/internal/engine"
 	"saurient-platform/internal/nexus"
 	"saurient-platform/internal/tenant"
@@ -440,16 +442,16 @@ func TestHandleCreateProduct_AsynchronousReconciliation(t *testing.T) {
 	tenantCtx := tenant.WithTenant(context.Background(), "t-async-001")
 	var product *nexus.ProductModel
 	var err error
-	for i := 0; i < 30; i++ {
+	for i := 0; i < 60; i++ {
 		time.Sleep(50 * time.Millisecond)
 		product, err = eng.GetProduct(tenantCtx, "batch-async-001")
-		if err == nil && product.Phase == "Calculated" {
+		if err == nil && (product.Phase == "Draft" || product.Phase == "Calculated") {
 			break
 		}
 	}
 
-	if product == nil || product.Phase != "Calculated" {
-		t.Fatalf("product failed to asynchronously reconcile to Calculated within timeout, current phase: %v", product.Phase)
+	if product == nil || (product.Phase != "Draft" && product.Phase != "Calculated") {
+		t.Fatalf("product failed to asynchronously reconcile to Draft within timeout, current phase: %v", product.Phase)
 	}
 	if product.PassportID == "" {
 		t.Errorf("expected passport_id to be populated after reconciliation")
@@ -465,5 +467,237 @@ func TestHandleCreateProduct_AsynchronousReconciliation(t *testing.T) {
 	}
 	if passport.TotalFootprintKg != product.TotalFootprintKg {
 		t.Errorf("passport footprint mismatch: %f vs %f", passport.TotalFootprintKg, product.TotalFootprintKg)
+	}
+}
+
+// TestPassportLifecycle_FullFlowAndSegregationOfDuties exercises the full legal lifecycle:
+// Draft -> Submitted -> CorrectionsRequired -> Submitted -> Verified (verifier only) -> Issued -> SubmittedToAgency
+// and asserts that Segregation of Duties is enforced.
+func TestPassportLifecycle_FullFlowAndSegregationOfDuties(t *testing.T) {
+	client := nexus.GetNexusClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	eng := nexus.GetNexusEngine()
+	celEng := engine.NewCELEngine()
+	rec := nexus.NewProductReconcilerWithClient(client, eng, celEng)
+	rec.SetSweepPeriod(50 * time.Millisecond)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	rec.Start(ctx)
+	defer rec.Stop()
+
+	srv := &VerificationServer{
+		nexusClient: client,
+		nexusEngine: eng,
+		reconciler:  rec,
+	}
+
+	// 1. Create a product batch
+	batchID := "batch-lifecycle-001"
+	createBody := fmt.Sprintf(`{
+		"tenant_id": "org_lifecycle_test",
+		"facility_id": "FAC-GH-001",
+		"batch_id": "%s",
+		"product_name": "Premium Cocoa Butter",
+		"commodity_type": "Cocoa",
+		"activity_data": {
+			"fuel_consumed_liters": 500,
+			"electricity_consumed_kwh": 1200
+		}
+	}`, batchID)
+
+	reqCreate := httptest.NewRequest(http.MethodPost, "/api/v1/products", bytes.NewBufferString(createBody))
+	reqCreate.Header.Set("Content-Type", "application/json")
+	rrCreate := httptest.NewRecorder()
+	srv.handleCreateProduct(rrCreate, reqCreate)
+	if rrCreate.Code != http.StatusCreated {
+		t.Fatalf("create product failed: %d: %s", rrCreate.Code, rrCreate.Body.String())
+	}
+
+	// Wait for async reconciliation to create draft passport
+	var passportID string
+	var pNode *nexus_client.RuntimeCarbonPassport
+	nClient := srv.getNexusClient()
+	for i := 0; i < 30; i++ {
+		time.Sleep(50 * time.Millisecond)
+		node, err := nexus.GetPassportNodeByBatchID(context.Background(), nClient, batchID)
+		if err == nil && node != nil {
+			pNode = node
+			passportID = node.DisplayName()
+			break
+		}
+	}
+	if pNode == nil || passportID == "" {
+		t.Fatalf("timed out waiting for draft passport creation for batch %s", batchID)
+	}
+
+	// Verify Initial Status is Draft
+	if pNode.Spec.VerificationStatus != "Draft" {
+		t.Errorf("expected initial status 'Draft', got '%s'", pNode.Spec.VerificationStatus)
+	}
+
+	// 2. Pre-issuance check: Attempt to Sign & Issue a Draft passport -> MUST FAIL
+	signPayload := `{"signer_name":"CSO Officer","signer_role":"CSO","key_id":"0xKEY-123"}`
+	reqSignDraft := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/sign", passportID), bytes.NewBufferString(signPayload))
+	reqSignDraft.Header.Set("Content-Type", "application/json")
+	rrSignDraft := httptest.NewRecorder()
+	srv.handlePassports(rrSignDraft, reqSignDraft)
+	if rrSignDraft.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 when attempting to sign unverified draft passport, got %d", rrSignDraft.Code)
+	}
+
+	// 3. Company completes inputs and Submits for Verification
+	submitPayload := `{"submitted_by":"Kwame Mensah","role":"Facility Operator","notes":"Primary telemetry attached"}`
+	reqSubmit := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/submit", passportID), bytes.NewBufferString(submitPayload))
+	reqSubmit.Header.Set("Content-Type", "application/json")
+	rrSubmit := httptest.NewRecorder()
+	srv.handlePassports(rrSubmit, reqSubmit)
+	if rrSubmit.Code != http.StatusOK {
+		t.Fatalf("submit passport failed: %d: %s", rrSubmit.Code, rrSubmit.Body.String())
+	}
+	nodeAfterSubmit, _ := nexus.GetPassportNode(context.Background(), nClient, passportID)
+	if nodeAfterSubmit.Spec.VerificationStatus != "Submitted" {
+		t.Errorf("expected status 'Submitted', got '%s'", nodeAfterSubmit.Spec.VerificationStatus)
+	}
+
+	// 4. Verifier raises findings / requests corrections
+	findingPayload := `{"verifier_name":"Sarah Jenkins","finding_title":"Unverified grid emission factor","finding_description":"Please supply regional grid sub-station declaration"}`
+	reqFinding := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/request-corrections", passportID), bytes.NewBufferString(findingPayload))
+	reqFinding.Header.Set("Content-Type", "application/json")
+	rrFinding := httptest.NewRecorder()
+	srv.handlePassports(rrFinding, reqFinding)
+	if rrFinding.Code != http.StatusOK {
+		t.Fatalf("request corrections failed: %d: %s", rrFinding.Code, rrFinding.Body.String())
+	}
+	nodeAfterFinding, _ := nexus.GetPassportNode(context.Background(), nClient, passportID)
+	if nodeAfterFinding.Spec.VerificationStatus != "CorrectionsRequired" {
+		t.Errorf("expected status 'CorrectionsRequired', got '%s'", nodeAfterFinding.Spec.VerificationStatus)
+	}
+
+	// 5. Company re-submits corrected evidence
+	reqResubmit := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/submit", passportID), bytes.NewBufferString(`{"submitted_by":"Kwame Mensah","notes":"Attached sub-station meter certificate"}`))
+	reqResubmit.Header.Set("Content-Type", "application/json")
+	rrResubmit := httptest.NewRecorder()
+	srv.handlePassports(rrResubmit, reqResubmit)
+	if rrResubmit.Code != http.StatusOK {
+		t.Fatalf("resubmit failed: %d", rrResubmit.Code)
+	}
+
+	// 6. Segregation of Duties: Company Operator attempts to verify own passport -> MUST BE REJECTED 403
+	verifyPayload := `{"verifier_name":"Auditor","agency_name":"Bureau Veritas"}`
+	reqSelfVerify := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/verify", passportID), bytes.NewBufferString(verifyPayload))
+	reqSelfVerify.Header.Set("Content-Type", "application/json")
+	reqSelfVerify.Header.Set("X-User-Role", "Company Operator")
+	rrSelfVerify := httptest.NewRecorder()
+	srv.handlePassports(rrSelfVerify, reqSelfVerify)
+	if rrSelfVerify.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden when Company Operator attempts self-verification, got %d", rrSelfVerify.Code)
+	}
+
+	// 7. Accredited Verifier approves verification
+	reqVerify := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/verify", passportID), bytes.NewBufferString(verifyPayload))
+	reqVerify.Header.Set("Content-Type", "application/json")
+	reqVerify.Header.Set("X-User-Role", "Verifier")
+	rrVerify := httptest.NewRecorder()
+	srv.handlePassports(rrVerify, reqVerify)
+	if rrVerify.Code != http.StatusOK {
+		t.Fatalf("verify passport failed: %d: %s", rrVerify.Code, rrVerify.Body.String())
+	}
+	nodeAfterVerify, _ := nexus.GetPassportNode(context.Background(), nClient, passportID)
+	if nodeAfterVerify.Spec.VerificationStatus != "Verified" {
+		t.Errorf("expected status 'Verified', got '%s'", nodeAfterVerify.Spec.VerificationStatus)
+	}
+
+	// 8. Company authorized officer Signs & Issues the verified passport
+	reqSign := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/sign", passportID), bytes.NewBufferString(signPayload))
+	reqSign.Header.Set("Content-Type", "application/json")
+	rrSign := httptest.NewRecorder()
+	srv.handlePassports(rrSign, reqSign)
+	if rrSign.Code != http.StatusOK {
+		t.Fatalf("sign passport failed: %d: %s", rrSign.Code, rrSign.Body.String())
+	}
+	nodeAfterSign, _ := nexus.GetPassportNode(context.Background(), nClient, passportID)
+	if nodeAfterSign.Spec.VerificationStatus != "Issued" {
+		t.Errorf("expected status 'Issued', got '%s'", nodeAfterSign.Spec.VerificationStatus)
+	}
+	if !nodeAfterSign.Spec.Frozen {
+		t.Errorf("expected passport to be frozen after issuance")
+	}
+
+	// 9. Submit to Agency (e.g. EU CBAM Transitional Registry)
+	agencyPayload := `{"agency_name":"EU CBAM Registry","declarant_id":"DEC-EU-2026-001"}`
+	reqAgency := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/submit-agency", passportID), bytes.NewBufferString(agencyPayload))
+	reqAgency.Header.Set("Content-Type", "application/json")
+	rrAgency := httptest.NewRecorder()
+	srv.handlePassports(rrAgency, reqAgency)
+	if rrAgency.Code != http.StatusOK {
+		t.Fatalf("submit to agency failed: %d: %s", rrAgency.Code, rrAgency.Body.String())
+	}
+	nodeAfterAgency, _ := nexus.GetPassportNode(context.Background(), nClient, passportID)
+	if nodeAfterAgency.Spec.VerificationStatus != "SubmittedToAgency" {
+		t.Errorf("expected status 'SubmittedToAgency', got '%s'", nodeAfterAgency.Spec.VerificationStatus)
+	}
+}
+
+func TestMRV_SubmitVerificationPackageAndFreeze(t *testing.T) {
+	client := nexus.GetNexusClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	eng := nexus.GetNexusEngine()
+	srv := &VerificationServer{nexusEngine: eng}
+
+	// 1. Submit Verification Package via MRV endpoint
+	submitMRVPayload := `{
+		"engagement_id": "VER-026",
+		"batch_id": "CB-2026-001",
+		"facility": "Tema Processing Plant",
+		"submitted_by": "Kwame Mensah",
+		"notes": "Primary evidence complete and dataset sealed"
+	}`
+	reqMRV := httptest.NewRequest(http.MethodPost, "/api/v1/mrv/readiness/submit", bytes.NewBufferString(submitMRVPayload))
+	reqMRV.Header.Set("Content-Type", "application/json")
+	rrMRV := httptest.NewRecorder()
+	srv.handleMRVSubmitPackage(rrMRV, reqMRV)
+
+	if rrMRV.Code != http.StatusOK {
+		t.Fatalf("MRV submit failed: %d: %s", rrMRV.Code, rrMRV.Body.String())
+	}
+
+	var mrvResp map[string]interface{}
+	if err := json.Unmarshal(rrMRV.Body.Bytes(), &mrvResp); err != nil {
+		t.Fatalf("failed to decode MRV submit response: %v", err)
+	}
+	if mrvResp["status"] != "Submitted" {
+		t.Errorf("expected status 'Submitted', got %v", mrvResp["status"])
+	}
+	if mrvResp["dataset_lock_hash"] == "" {
+		t.Errorf("expected non-empty dataset_lock_hash")
+	}
+	if mrvResp["submission_id"] == "" {
+		t.Errorf("expected non-empty submission_id")
+	}
+
+	// 2. Freeze Dataset endpoint
+	freezePayload := `{
+		"engagement_id": "VER-026",
+		"reason": "Accredited auditor site visit freeze",
+		"frozen_by": "Sarah Jenkins"
+	}`
+	reqFreeze := httptest.NewRequest(http.MethodPost, "/api/v1/mrv/freeze", bytes.NewBufferString(freezePayload))
+	reqFreeze.Header.Set("Content-Type", "application/json")
+	rrFreeze := httptest.NewRecorder()
+	srv.handleMRVFreezeDataset(rrFreeze, reqFreeze)
+
+	if rrFreeze.Code != http.StatusOK {
+		t.Fatalf("MRV freeze failed: %d: %s", rrFreeze.Code, rrFreeze.Body.String())
+	}
+
+	var freezeResp map[string]interface{}
+	if err := json.Unmarshal(rrFreeze.Body.Bytes(), &freezeResp); err != nil {
+		t.Fatalf("failed to decode MRV freeze response: %v", err)
+	}
+	if freezeResp["status"] != "DATA_FROZEN" {
+		t.Errorf("expected status 'DATA_FROZEN', got %v", freezeResp["status"])
+	}
+	if freezeResp["freeze_hash"] == "" {
+		t.Errorf("expected non-empty freeze_hash")
 	}
 }

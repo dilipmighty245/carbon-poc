@@ -211,6 +211,163 @@ export async function getPassport(passportId: string, tenantId = DEFAULT_TENANT_
   return result.data;
 }
 
+export async function submitPassportForVerification(passportId: string, submittedBy = 'Company Operator', notes = '', tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/passports/${passportId}/submit`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+      'X-User-Role': localStorage.getItem('saurient_user_role') || 'Company Operator',
+      'X-User-Email': localStorage.getItem('saurient_user_email') || submittedBy,
+    },
+    body: JSON.stringify({ submitted_by: submittedBy, notes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Failed to submit passport: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function requestPassportCorrections(passportId: string, verifierName = 'Sarah Jenkins (Lead Verifier)', findingTitle = 'Material Finding', description = '', tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/passports/${passportId}/request-corrections`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+      'X-User-Role': localStorage.getItem('saurient_user_role') || 'Verifier',
+      'X-User-Email': localStorage.getItem('saurient_user_email') || 'auditor@bureau-veritas.com',
+    },
+    body: JSON.stringify({
+      verifier_name: verifierName,
+      finding_title: findingTitle,
+      finding_description: description,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Failed to request corrections: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function verifyPassport(passportId: string, verifierName = 'Sarah Jenkins (Lead Verifier)', agencyName = 'Bureau Veritas UK Ltd (Accreditation #NAB-8820)', opinion = 'Verified Without Qualification', tenantId = DEFAULT_TENANT_ID) {
+  const userRole = localStorage.getItem('saurient_user_role') || 'Verifier';
+  const res = await fetch(`${API_BASE_URL}/passports/${passportId}/verify`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+      'X-User-Role': userRole,
+      'X-User-Email': localStorage.getItem('saurient_user_email') || 'auditor@bureau-veritas.com',
+    },
+    body: JSON.stringify({
+      verifier_name: verifierName,
+      agency_name: agencyName,
+      assurance_level: 'Reasonable Assurance',
+      opinion,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Failed to verify passport: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function signAndIssuePassport(passportId: string, signerName = 'Dr. Elena Rostova', signerRole = 'Chief Sustainability Officer', keyId = '0xKEY-ORATOR-PROD-SECURE-ED25519-88492', tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/passports/${passportId}/sign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+      'X-User-Role': localStorage.getItem('saurient_user_role') || 'Passport Officer',
+      'X-User-Email': localStorage.getItem('saurient_user_email') || 'officer@saurient.com',
+    },
+    body: JSON.stringify({
+      signer_name: signerName,
+      signer_role: signerRole,
+      key_id: keyId,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Failed to sign passport: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function submitPassportToAgency(passportId: string, agencyName = 'EU CBAM Transitional Registry & National Competent Authority', declarantId = 'DEC-EU-2026-901', tenantId = DEFAULT_TENANT_ID) {
+  const res = await fetch(`${API_BASE_URL}/passports/${passportId}/submit-agency`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+      'X-User-Role': localStorage.getItem('saurient_user_role') || 'Company Operator',
+      'X-User-Email': localStorage.getItem('saurient_user_email') || 'operator@asante-cocoa.com',
+    },
+    body: JSON.stringify({
+      agency_name: agencyName,
+      declarant_id: declarantId,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Failed to submit to agency: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export interface MrvSubmitPackagePayload {
+  engagement_id?: string;
+  passport_id?: string;
+  batch_id?: string;
+  facility?: string;
+  submitted_by?: string;
+  notes?: string;
+  dataset_hash?: string;
+}
+
+export async function submitMrvVerificationPackage(payload: MrvSubmitPackagePayload, tenantId = DEFAULT_TENANT_ID) {
+  const userRole = localStorage.getItem('saurient_user_role') || 'Company Operator';
+  const userEmail = localStorage.getItem('saurient_user_email') || payload.submitted_by || 'operator@asante-cocoa.com';
+  const res = await fetch(`${API_BASE_URL}/mrv/readiness/submit`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+      'X-User-Role': userRole,
+      'X-User-Email': userEmail,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Failed to submit verification package: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function freezeMrvDataset(payload: { engagement_id?: string; passport_id?: string; batch_id?: string; reason?: string; frozen_by?: string }, tenantId = DEFAULT_TENANT_ID) {
+  const userRole = localStorage.getItem('saurient_user_role') || 'Company Operator';
+  const userEmail = localStorage.getItem('saurient_user_email') || payload.frozen_by || 'operator@asante-cocoa.com';
+  const res = await fetch(`${API_BASE_URL}/mrv/freeze`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+      'X-User-Role': userRole,
+      'X-User-Email': userEmail,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Failed to freeze dataset: ${res.status}`);
+  }
+  return await res.json();
+}
+
 export async function getProductStatus(productName: string, namespace = 'default') {
   const endpoint = `${API_BASE_URL}/products/${productName}?namespace=${namespace}`;
   try {
