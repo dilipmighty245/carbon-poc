@@ -111,14 +111,19 @@ export async function createProduct(req: ProductCreateRequest): Promise<ProductC
   }
 }
 
-export async function getAllPassportsWithMeta(tenantId = DEFAULT_TENANT_ID): Promise<ApiFetchResult<RichDigitalPassport[]>> {
+export async function getAllPassportsWithMeta(tenantId?: string): Promise<ApiFetchResult<RichDigitalPassport[]>> {
+  const tid = tenantId || getActiveTenantId();
+  const role = typeof window !== 'undefined' ? (localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || '') : '';
+  const isVerifier = role.toLowerCase().includes('verifier');
+  const effectiveTenant = (isVerifier || tid.includes('verifier') || tid === 'public') ? 'all' : tid;
   const endpoint = `${API_BASE_URL}/passports`;
   const startTime = performance.now();
 
   try {
     const res = await fetch(endpoint, {
       headers: {
-        'X-Tenant-ID': tenantId,
+        'X-Tenant-ID': effectiveTenant,
+        'X-User-Role': role,
       },
     });
     const responseTimeMs = Math.round(performance.now() - startTime);
@@ -157,18 +162,24 @@ export async function getAllPassportsWithMeta(tenantId = DEFAULT_TENANT_ID): Pro
   }
 }
 
-export async function getAllPassports(tenantId = DEFAULT_TENANT_ID): Promise<RichDigitalPassport[]> {
-  const res = await getAllPassportsWithMeta(tenantId);
+export async function getAllPassports(tenantId?: string): Promise<RichDigitalPassport[]> {
+  const tid = tenantId || getActiveTenantId();
+  const res = await getAllPassportsWithMeta(tid);
   return res.data;
 }
 
-export async function getPassportWithMeta(passportId: string, tenantId = DEFAULT_TENANT_ID): Promise<ApiFetchResult<RichDigitalPassport | null>> {
+export async function getPassportWithMeta(passportId: string, tenantId?: string): Promise<ApiFetchResult<RichDigitalPassport | null>> {
+  const tid = tenantId || getActiveTenantId();
+  const role = typeof window !== 'undefined' ? (localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || '') : '';
+  const isVerifier = role.toLowerCase().includes('verifier');
+  const effectiveTenant = (isVerifier || tid.includes('verifier') || tid === 'public') ? 'all' : tid;
   const endpoint = `${API_BASE_URL}/passports/${passportId}`;
   const startTime = performance.now();
   try {
     const res = await fetch(endpoint, {
       headers: {
-        'X-Tenant-ID': tenantId,
+        'X-Tenant-ID': effectiveTenant,
+        'X-User-Role': role,
       },
     });
     const responseTimeMs = Math.round(performance.now() - startTime);
@@ -206,17 +217,19 @@ export async function getPassportWithMeta(passportId: string, tenantId = DEFAULT
   }
 }
 
-export async function getPassport(passportId: string, tenantId = DEFAULT_TENANT_ID): Promise<RichDigitalPassport | null> {
-  const result = await getPassportWithMeta(passportId, tenantId);
+export async function getPassport(passportId: string, tenantId?: string): Promise<RichDigitalPassport | null> {
+  const tid = tenantId || getActiveTenantId();
+  const result = await getPassportWithMeta(passportId, tid);
   return result.data;
 }
 
-export async function submitPassportForVerification(passportId: string, submittedBy = 'Company Operator', notes = '', tenantId = DEFAULT_TENANT_ID) {
+export async function submitPassportForVerification(passportId: string, submittedBy = 'Company Operator', notes = '', tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}/submit`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
       'X-User-Role': localStorage.getItem('saurient_user_role') || 'Company Operator',
       'X-User-Email': localStorage.getItem('saurient_user_email') || submittedBy,
     },
@@ -271,6 +284,21 @@ export async function verifyPassport(passportId: string, verifierName = 'Sarah J
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     throw new Error(err.error || `Failed to verify passport: ${res.status}`);
+  }
+  return await res.json();
+}
+
+export async function deletePassport(passportId: string, tenantId = DEFAULT_TENANT_ID) {
+  const tid = tenantId || getActiveTenantId();
+  const res = await fetch(`${API_BASE_URL}/passports/${passportId}`, {
+    method: 'DELETE',
+    headers: {
+      'X-Tenant-ID': tid,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Failed to delete passport: ${res.status}`);
   }
   return await res.json();
 }
@@ -486,20 +514,22 @@ export async function saveOrgProfile(profile: any, tenantId = DEFAULT_TENANT_ID)
   return await res.json();
 }
 
-export async function getOrgFacilities(tenantId = DEFAULT_TENANT_ID) {
+export async function getOrgFacilities(tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/facilities`, {
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
 
-export async function saveOrgFacility(facility: any, tenantId = DEFAULT_TENANT_ID) {
+export async function saveOrgFacility(facility: any, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/facilities`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(facility),
   });
@@ -507,29 +537,32 @@ export async function saveOrgFacility(facility: any, tenantId = DEFAULT_TENANT_I
   return await res.json();
 }
 
-export async function deleteOrgFacility(id: string, tenantId = DEFAULT_TENANT_ID) {
+export async function deleteOrgFacility(id: string, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/facilities/${id}`, {
     method: 'DELETE',
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
 
-export async function getOrgProcesses(tenantId = DEFAULT_TENANT_ID) {
+export async function getOrgProcesses(tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/processes`, {
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
 
-export async function saveOrgProcess(process: any, tenantId = DEFAULT_TENANT_ID) {
+export async function saveOrgProcess(process: any, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/processes`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(process),
   });
@@ -537,10 +570,11 @@ export async function saveOrgProcess(process: any, tenantId = DEFAULT_TENANT_ID)
   return await res.json();
 }
 
-export async function deleteOrgProcess(id: string, tenantId = DEFAULT_TENANT_ID) {
+export async function deleteOrgProcess(id: string, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/processes/${id}`, {
     method: 'DELETE',
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();

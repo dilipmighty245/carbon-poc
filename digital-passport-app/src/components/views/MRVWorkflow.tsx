@@ -15,8 +15,10 @@ import { SiteVisitsTab } from './mrv/tabs/SiteVisitsTab';
 import { FindingsTab } from './mrv/tabs/FindingsTab';
 import { CorrectionsTab } from './mrv/tabs/CorrectionsTab';
 import { ReportTab } from './mrv/tabs/ReportTab';
+import { VerificationQueueTab } from './mrv/tabs/VerificationQueueTab';
 
 const TAB_COMPONENTS: Record<string, React.FC> = {
+  queue: VerificationQueueTab,
   readiness: ReadinessTab,
   evidence: EvidenceVaultTab,
   calculation: CalculationReviewTab,
@@ -32,7 +34,7 @@ const TAB_COMPONENTS: Record<string, React.FC> = {
 };
 
 function InnerMRVWorkflow() {
-  const { tab = 'readiness' } = useParams<{ tab?: string }>();
+  const { tab = 'queue' } = useParams<{ tab?: string }>();
   const navigate = useNavigate();
   const { meta, freezeDataset } = useMrv();
 
@@ -80,7 +82,7 @@ function InnerMRVWorkflow() {
     );
   }
 
-  const activeTabKey = TAB_COMPONENTS[tab.toLowerCase()] ? tab.toLowerCase() : 'readiness';
+  const activeTabKey = TAB_COMPONENTS[tab.toLowerCase()] ? tab.toLowerCase() : 'queue';
   const ActiveComponent = TAB_COMPONENTS[activeTabKey];
 
   return (

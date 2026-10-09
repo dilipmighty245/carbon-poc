@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SimpleWordsCard } from '../common/SimpleWordsCard';
-import { createProduct, createRulebook, getAllRules, getOrgFacilities, DEFAULT_TENANT_ID } from '../../api/client';
+import { createProduct, createRulebook, getAllRules, getOrgFacilities, DEFAULT_TENANT_ID, getActiveTenantId } from '../../api/client';
 import type { RuleDefinition } from '../../types';
 import { Building, Factory, Leaf, Package, FileText, CheckCircle2, AlertCircle, Radio, ShieldCheck, Sliders, Check, Plus, X, BookPlus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -251,10 +251,11 @@ export const ProductSetup: React.FC = () => {
     setErrorMsg('');
 
     const selectedFac = facilitiesList.find((f) => f.name === facility) || facilitiesList[0];
+    const activeTenant = getActiveTenantId();
 
     try {
       const resp = await createProduct({
-        tenant_id: DEFAULT_TENANT_ID,
+        tenant_id: activeTenant,
         facility_id: selectedFac?.id || facility,
         batch_id: batchId,
         product_name: productName,

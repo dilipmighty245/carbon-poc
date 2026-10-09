@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QrCode, RefreshCw } from 'lucide-react';
-import { getAllPassportsWithMeta, DEFAULT_TENANT_ID, type ApiFetchResult } from '../../api/client';
+import { getAllPassportsWithMeta, DEFAULT_TENANT_ID, getActiveTenantId, type ApiFetchResult } from '../../api/client';
 import type { RichDigitalPassport } from '../../types';
 
 import { PassportRegistryTab } from './passport/tabs/PassportRegistryTab';
@@ -35,7 +35,7 @@ export const DigitalPassportOutput: React.FC = () => {
 
   const [passportsResult, setPassportsResult] = useState<ApiFetchResult<RichDigitalPassport[]> | null>(null);
   const [loading, setLoading] = useState(true);
-  const tenantId = DEFAULT_TENANT_ID;
+  const tenantId = getActiveTenantId();
 
   const loadData = async () => {
     setLoading(true);
@@ -111,12 +111,12 @@ export const DigitalPassportOutput: React.FC = () => {
       </div>
 
       {/* Render Active Sub-View */}
-      {activeTabId === 'registry' && <PassportRegistryTab passports={passports} tenantId={tenantId} />}
+      {activeTabId === 'registry' && <PassportRegistryTab passports={passports} tenantId={tenantId} onRefresh={loadData} />}
       {activeTabId === 'readiness' && <PassportReadinessTab passports={passports} />}
       {activeTabId === 'preview' && <PassportPreviewTab passports={passports} />}
       {activeTabId === 'sign-issue' && <SignAndIssueTab passports={passports} />}
       {(activeTabId === 'detail' || activeTabId === 'passport-detail') && (
-        <PassportDetailTab passports={passports} />
+        <PassportDetailTab passports={passports} onRefresh={loadData} />
       )}
       {activeTabId === 'qr' && <QrVerificationTab passports={passports} />}
       {activeTabId === 'sharing' && <PassportSharingTab passports={passports} />}

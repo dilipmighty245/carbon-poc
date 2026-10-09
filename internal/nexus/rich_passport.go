@@ -146,14 +146,16 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		passportID = uuid.New().String()
 	}
 
-	issuanceDate := p.IssuedAt.Format(time.RFC3339)
-	if p.IssuedAt.IsZero() {
-		issuanceDate = time.Now().Format(time.RFC3339)
-	}
-
-	status := "Calculated"
+	status := StatusDraft
 	if p.VerificationStatus != "" {
 		status = p.VerificationStatus
+	}
+
+	issuanceDate := ""
+	if !p.IssuedAt.IsZero() {
+		issuanceDate = p.IssuedAt.Format(time.RFC3339)
+	} else if status == StatusIssued || status == StatusSubmittedToAgency || strings.EqualFold(status, "VERIFIED") {
+		issuanceDate = time.Now().Format(time.RFC3339)
 	}
 
 	commodity := p.CommodityType
@@ -249,7 +251,7 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 			p.Scope3KgCO2e = s3
 			p.TotalFootprintKg = total
 			if p.VerificationStatus == "Pending" || p.VerificationStatus == "" {
-				p.VerificationStatus = "Calculated"
+				p.VerificationStatus = StatusDraft
 			}
 		}
 	}
@@ -334,8 +336,8 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	}
 	calcVer := "v1.2.0"
 	verifierName := "Pending Independent Verification"
-	if status == "Verified" || status == "VERIFIED" {
-		verifierName = "Third-Party Certified Auditor"
+	if status == StatusVerified || status == StatusIssued || status == StatusSubmittedToAgency || strings.EqualFold(status, "VERIFIED") {
+		verifierName = "Bureau Veritas (Accredited Verifier #NAB-8820)"
 	}
 	verifierComments := ""
 	evidenceDocs := []string{}

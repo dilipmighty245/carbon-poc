@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, AlertTriangle, Building, LogIn, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, AlertTriangle, Building, LogIn, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { loginUser } from '../../api/client';
 
 export const LoginView: React.FC = () => {
@@ -9,7 +9,7 @@ export const LoginView: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [registeredCompany, setRegisteredCompany] = useState<any | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const DEMO_ACCOUNTS: Record<string, { name: string; email: string; pass: string; route: string; desc: string; badge: string; tenantId: string }> = {
     'Company Operator': {
@@ -18,7 +18,7 @@ export const LoginView: React.FC = () => {
       pass: 'DemoPassword2026!',
       route: '/company-dashboard',
       desc: 'Facility & ESG Operations',
-      badge: 'Opens: Company Dashboard',
+      badge: 'Asante Cocoa Ltd',
       tenantId: 'org_asante_cocoa',
     },
     'Verifier': {
@@ -26,8 +26,8 @@ export const LoginView: React.FC = () => {
       email: 'auditor@bureau-veritas.com',
       pass: 'DemoPassword2026!',
       route: '/mrv',
-      desc: 'Accredited Verifier (Bureau Veritas)',
-      badge: 'Opens: Verifier MRV Portal',
+      desc: 'Accredited Verifier (#NAB-8820)',
+      badge: 'Bureau Veritas UK',
       tenantId: 'tenant-verifier-agency',
     },
     'Passport Officer': {
@@ -36,7 +36,7 @@ export const LoginView: React.FC = () => {
       pass: 'DemoPassword2026!',
       route: '/passport/sign-issue',
       desc: 'Issuance & Governance Authority',
-      badge: 'Opens: Sign & Issue',
+      badge: 'Saurient Authority',
       tenantId: 'org_saurient_demo',
     },
     'Public Viewer': {
@@ -45,7 +45,7 @@ export const LoginView: React.FC = () => {
       pass: '',
       route: '/passport/registry',
       desc: 'Customs & Public Registry',
-      badge: 'Opens: Public Registry',
+      badge: 'Public Verification',
       tenantId: 'public',
     },
   };
@@ -54,38 +54,26 @@ export const LoginView: React.FC = () => {
   const [email, setEmail] = useState(DEMO_ACCOUNTS['Company Operator'].email);
   const [password, setPassword] = useState(DEMO_ACCOUNTS['Company Operator'].pass);
 
-  useEffect(() => {
-    const regStr = localStorage.getItem('saurient_registered_company');
-    if (regStr) {
-      try {
-        const parsed = JSON.parse(regStr);
-        setRegisteredCompany(parsed);
-      } catch (e) {
-        console.warn('Failed to parse registered company:', e);
-      }
-    }
-  }, []);
-
   const roles = [
     { 
       title: 'Company Operator', 
       desc: 'Facility & ESG Operations',
-      badge: 'Opens: Company Dashboard',
+      badge: 'Asante Cocoa Ltd',
     },
     { 
       title: 'Verifier', 
-      desc: 'Accredited Verifier', 
-      badge: 'Opens: Verifier MRV Portal',
+      desc: 'Accredited Verifier (#NAB-8820)', 
+      badge: 'Bureau Veritas UK',
     },
     { 
       title: 'Passport Officer', 
-      desc: 'Issuance & Governance', 
-      badge: 'Opens: Sign & Issue',
+      desc: 'Issuance & Governance Authority', 
+      badge: 'Saurient Authority',
     },
     { 
       title: 'Public Viewer', 
-      desc: 'No login required', 
-      badge: 'Opens: Public Registry',
+      desc: 'Customs & Public Registry', 
+      badge: 'Public Verification',
     },
   ];
 
@@ -98,15 +86,6 @@ export const LoginView: React.FC = () => {
       setEmail(acc.email);
       setPassword(acc.pass);
     }
-  };
-
-  const handleSelectRegisteredCompany = () => {
-    if (!registeredCompany) return;
-    setRole('Organisation Admin');
-    setEmail(registeredCompany.ownerEmail || '');
-    setPassword(registeredCompany.ownerPassword || 'DemoPassword2026!');
-    setLoginError(null);
-    setSuccessMsg(null);
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -214,30 +193,6 @@ export const LoginView: React.FC = () => {
           </button>
         </div>
 
-        {/* Registered Organisation Quick-Use Pill (if registered previously) */}
-        {registeredCompany && (
-          <div className="mb-5 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
-            <div>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
-                Registered Organisation Admin
-              </span>
-              <p className="text-xs font-bold text-slate-900 mt-1">{registeredCompany.legalName || 'Registered Organisation'}</p>
-              <p className="text-[10px] font-mono text-slate-600">{registeredCompany.ownerEmail}</p>
-            </div>
-            <button
-              type="button"
-              onClick={handleSelectRegisteredCompany}
-              className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all ${
-                role === 'Organisation Admin'
-                  ? 'bg-emerald-700 text-white border-emerald-800'
-                  : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-100/60'
-              }`}
-            >
-              {role === 'Organisation Admin' ? 'Selected' : 'Use Admin'}
-            </button>
-          </div>
-        )}
-
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <LogIn className="w-4 h-4 text-emerald-600" />
@@ -248,26 +203,34 @@ export const LoginView: React.FC = () => {
           </p>
         </div>
 
-        {/* Demo Roles Quick Selectors */}
-        <div className="grid grid-cols-2 gap-2.5 mb-5">
-          {roles.map((r, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleSelectRole(r)}
-              className={`p-2.5 rounded-xl border text-left transition-all ${
-                role === r.title
-                  ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20'
-                  : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
-              }`}
-            >
-              <h4 className="font-bold text-xs text-slate-900">{r.title}</h4>
-              <p className="text-[10px] text-slate-500 mt-0.5 truncate">{r.desc}</p>
-              <span className="inline-block mt-1 text-[9px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
-                {r.badge}
-              </span>
-            </button>
-          ))}
+        {/* Enterprise Persona Quick Switcher */}
+        <div className="mb-4">
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+            Select Workspace Persona
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {roles.map((r, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSelectRole(r)}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  role === r.title
+                    ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-xs text-slate-900">{r.title}</h4>
+                  {role === r.title && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                </div>
+                <p className="text-[10px] text-slate-500 mt-0.5 truncate">{r.desc}</p>
+                <span className="inline-block mt-1 text-[9px] font-semibold text-emerald-800 bg-emerald-100/80 px-1.5 py-0.5 rounded">
+                  {r.badge}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Sign In Form */}
@@ -288,14 +251,24 @@ export const LoginView: React.FC = () => {
             <div className="flex justify-between items-center mb-1">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Password</label>
             </div>
-            <input
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              autoComplete="current-password"
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter password"
+                value={password}
+                autoComplete="current-password"
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {loginError && (

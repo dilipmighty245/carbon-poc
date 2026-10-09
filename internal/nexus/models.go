@@ -5,6 +5,18 @@ import (
 	"time"
 )
 
+// Carbon Passport Lifecycle Statuses
+const (
+	StatusDraft               = "Draft"
+	StatusDataCompleted       = "DataCompleted"
+	StatusSubmitted           = "Submitted"
+	StatusUnderVerification   = "UnderVerification"
+	StatusCorrectionsRequired = "CorrectionsRequired"
+	StatusVerified            = "Verified"
+	StatusIssued              = "Issued"
+	StatusSubmittedToAgency   = "SubmittedToAgency"
+)
+
 // CarbonPassportModel represents a calculated or verified passport in the Nexus graph.
 type CarbonPassportModel struct {
 	PassportID         string          `json:"passport_id"`
@@ -170,6 +182,8 @@ type OrganisationUserModel struct {
 	TenantID      string    `json:"tenant_id"`
 	Name          string    `json:"name"`
 	Email         string    `json:"email"`
+	PasswordHash  string    `json:"-"`
+	Salt          string    `json:"-"`
 	Role          string    `json:"role"`
 	FacilityScope string    `json:"facility_scope"`
 	LastLogin     string    `json:"last_login"`

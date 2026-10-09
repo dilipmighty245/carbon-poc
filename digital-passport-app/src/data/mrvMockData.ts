@@ -42,6 +42,7 @@ export const ENGAGEMENT_META: EngagementMeta = {
 };
 
 export const TABS = [
+  { key: "queue", label: "Verification Queue", primary: "Audit Passports" },
   { key: "readiness", label: "Readiness", primary: "Resolve Blockers" },
   { key: "evidence", label: "Evidence Vault", primary: "Add Evidence" },
   { key: "calculation", label: "Calculation Review", primary: "Complete Review" },

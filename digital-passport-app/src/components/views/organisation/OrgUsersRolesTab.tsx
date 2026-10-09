@@ -517,7 +517,7 @@ export const OrgUsersRolesTab: React.FC = () => {
                 <label className="font-bold text-slate-700 block mb-1">Initial Password (Optional)</label>
                 <input
                   type="password"
-                  placeholder="Defaults to DemoPassword2026! if omitted"
+                  placeholder="Enter initial temporary password"
                   value={invitePassword}
                   onChange={(e) => setInvitePassword(e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-600"

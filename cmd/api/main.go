@@ -2823,7 +2823,15 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 		if err != nil || passport == nil {
 			passport, err = s.nexusEngine.GetPassportByBatchNumber(tenantCtx, passportID)
 		}
-		if err == nil && passport != nil {
+		if (err != nil || passport == nil) && (tenantID != "" && tenantID != "all") {
+			// Cross-tenant fallback for independent auditors
+			allTenantCtx := tenant.WithTenant(ctx, "")
+			passport, err = s.nexusEngine.GetPassportByID(allTenantCtx, passportID)
+			if err != nil || passport == nil {
+				passport, _ = s.nexusEngine.GetPassportByBatchNumber(allTenantCtx, passportID)
+			}
+		}
+		if passport != nil {
 			richResp := nexus.BuildRichPassportResponse(passport)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
@@ -2839,6 +2847,12 @@ func (s *VerificationServer) handleListPassports(w http.ResponseWriter, r *http.
 	ctx := r.Context()
 	list := make([]nexus.RichDigitalCarbonPassportResponse, 0)
 	seen := make(map[string]bool)
+
+	// Verifiers and public auditors have cross-tenant audit purview across registered producer tenants
+	userRole := r.Header.Get("X-User-Role")
+	if strings.Contains(strings.ToLower(userRole), "verifier") || tenantID == "all" || tenantID == "public" || strings.HasPrefix(tenantID, "tenant-verifier") {
+		tenantID = ""
+	}
 
 	nClient := s.getNexusClient()
 	if nClient != nil {

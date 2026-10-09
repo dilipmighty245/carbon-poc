@@ -43,7 +43,7 @@ test.describe('Connected Saurient Core Journey: Org Registration -> Facility Tel
     // =========================================================================
     // STEP 2: Authentication & Session (/login)
     // =========================================================================
-    await loginPage.login(TEST_SPECIMEN.company.ownerPassword);
+    await loginPage.login(TEST_SPECIMEN.company.ownerPassword, 'elena.rostova@saurient.io');
     await loginPage.assertDashboardLoaded(legalName);
 
     // =========================================================================

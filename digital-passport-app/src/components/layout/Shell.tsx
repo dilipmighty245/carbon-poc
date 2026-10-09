@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Building2, 
@@ -16,7 +16,10 @@ import {
   Settings,
   Bell,
   Network,
-  PlusCircle
+  PlusCircle,
+  ChevronDown,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 
 interface ShellProps {
@@ -24,10 +27,59 @@ interface ShellProps {
 }
 
 export const Shell: React.FC<ShellProps> = ({ children }) => {
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
   const isVerifier = userRole.toLowerCase().includes('verifier');
   const isOfficer = userRole.toLowerCase().includes('officer');
   const isOperator = !isVerifier && !isOfficer;
+
+  const userEmail = localStorage.getItem('saurient_user_email') || (
+    isVerifier ? 'auditor@bureau-veritas.com' : isOfficer ? 'officer@saurient.com' : 'operator@asante-cocoa.com'
+  );
+  const userName = localStorage.getItem('saurient_user_name') || (
+    isVerifier ? 'Sarah Jenkins' : isOfficer ? 'Helena Vance' : 'Kwame Mensah'
+  );
+  const userInitials = isVerifier ? 'V' : isOfficer ? 'P' : 'O';
+
+  const companyName = (() => {
+    if (isVerifier) return 'Bureau Veritas UK Ltd (#NAB-8820)';
+    const regStr = localStorage.getItem('saurient_registered_company');
+    if (regStr) {
+      try {
+        const c = JSON.parse(regStr);
+        if (c.legalName) return c.legalName;
+      } catch (e) {}
+    }
+    return 'Asante Cocoa Cooperative';
+  })();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('saurient_user_role');
+    localStorage.removeItem('auth_role');
+    localStorage.removeItem('saurient_user_email');
+    localStorage.removeItem('saurient_user_name');
+    localStorage.removeItem('saurient_auth_token');
+    localStorage.removeItem('saurient_user_id');
+    localStorage.removeItem('saurient_tenant_id');
+    navigate('/login');
+  };
 
   const verifierNavItems = [
     { to: '/mrv', label: 'Verification Queue', icon: GitMerge, end: true },
@@ -179,25 +231,110 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 </span>
               )}
 
-              <NavLink
-                to="/login"
-                className="text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors"
-                title="Switch demo account"
-              >
-                Switch Role ({isVerifier ? 'Verifier' : isOfficer ? 'Officer' : 'Operator'})
-              </NavLink>
-
-              <button className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg relative transition-colors">
+              <button className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg relative transition-colors" title="Notifications">
                 <Bell className="w-4 h-4" />
                 <span className="w-2 h-2 rounded-full bg-emerald-500 absolute top-1.5 right-1.5"></span>
               </button>
 
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-                <div className={`w-7 h-7 rounded-full text-white font-semibold text-xs flex items-center justify-center ${
-                  isVerifier ? 'bg-indigo-600' : isOfficer ? 'bg-amber-600' : 'bg-emerald-600'
-                }`}>
-                  {isVerifier ? 'V' : isOfficer ? 'P' : 'O'}
-                </div>
+              {/* Interactive User Profile & Log Out Popover */}
+              <div className="relative pl-2 border-l border-slate-200" ref={dropdownRef}>
+                <button
+                  type="button"
+                  data-testid="user-profile-menu-button"
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  aria-expanded={dropdownOpen}
+                  aria-haspopup="true"
+                  title="Click to open user menu"
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full text-white font-black text-xs flex items-center justify-center shadow-xs ${
+                      isVerifier ? 'bg-indigo-600 ring-2 ring-indigo-200' : isOfficer ? 'bg-amber-600 ring-2 ring-amber-200' : 'bg-emerald-600 ring-2 ring-emerald-200'
+                    }`}
+                  >
+                    {userInitials}
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <p className="text-xs font-bold text-slate-800 leading-tight">
+                      {userName}
+                    </p>
+                    <p className="text-[10px] text-slate-400 leading-tight">
+                      {isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
+                    </p>
+                  </div>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu Popover */}
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`w-9 h-9 rounded-full text-white font-black text-sm flex items-center justify-center shrink-0 ${
+                            isVerifier ? 'bg-indigo-600' : isOfficer ? 'bg-amber-600' : 'bg-emerald-600'
+                          }`}
+                        >
+                          {userInitials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-900 truncate">{userName}</p>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">{userEmail}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2.5 flex items-center gap-1.5">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                            isVerifier
+                              ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                              : isOfficer
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          }`}
+                        >
+                          {isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1 truncate">
+                        {companyName}
+                      </p>
+                    </div>
+
+                    <div className="py-1">
+                      {!isVerifier && (
+                        <NavLink
+                          to="/organisation"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                        >
+                          <Building2 className="w-4 h-4 text-slate-400" />
+                          <span>Organisation & Facility</span>
+                        </NavLink>
+                      )}
+
+                      <NavLink
+                        to="/login"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                      >
+                        <UserCheck className="w-4 h-4 text-slate-400" />
+                        <span>Switch Workspace / Role</span>
+                      </NavLink>
+                    </div>
+
+                    <div className="pt-1 border-t border-slate-100">
+                      <button
+                        type="button"
+                        data-testid="logout-button"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors cursor-pointer text-left"
+                      >
+                        <LogOut className="w-4 h-4 text-rose-500" />
+                        <span>Log Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </header>

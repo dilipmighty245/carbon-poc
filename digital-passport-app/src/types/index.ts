@@ -71,6 +71,16 @@ export interface ProductCreateResponse {
   passport_id?: string;
 }
 
+export type PassportLifecycleStatus =
+  | 'Draft'
+  | 'DataCompleted'
+  | 'Submitted'
+  | 'UnderVerification'
+  | 'CorrectionsRequired'
+  | 'Verified'
+  | 'Issued'
+  | 'SubmittedToAgency';
+
 export interface RichDigitalPassport {
   passport_metadata: {
     passport_id: string;

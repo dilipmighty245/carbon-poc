@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,9 +33,68 @@ func NewOrganisationHandlerWithClient(client *nexus_client.Clientset, engine *ne
 	if engine == nil {
 		engine = nexus.GetNexusEngine()
 	}
-	return &OrganisationHandler{
+	h := &OrganisationHandler{
 		client: client,
 		engine: engine,
+	}
+	h.ensureSeedUsers(context.Background())
+	return h
+}
+
+func (h *OrganisationHandler) ensureSeedUsers(ctx context.Context) {
+	if h.client == nil {
+		return
+	}
+	seedUsers := []struct {
+		tenantID string
+		name     string
+		email    string
+		password string
+		role     string
+	}{
+		{
+			tenantID: "tenant-verifier-agency",
+			name:     "Santosh Samudrala",
+			email:    "auditor@bureau-veritas.com",
+			password: "DemoPassword2026!",
+			role:     "Verifier",
+		},
+		{
+			tenantID: "org_asante_cocoa",
+			name:     "Santosh Samudrala (Lead Operator)",
+			email:    "operator@asante-cocoa.com",
+			password: "DemoPassword2026!",
+			role:     "Company Operator",
+		},
+		{
+			tenantID: "org_saurient_demo",
+			name:     "Santosh Samudrala",
+			email:    "officer@saurient.com",
+			password: "DemoPassword2026!",
+			role:     "Passport Officer",
+		},
+	}
+
+	for _, su := range seedUsers {
+		existing, _ := nexus.GetUserNodeByEmail(ctx, h.client, su.tenantID, su.email)
+		if existing == nil {
+			salt := GenerateSalt()
+			hash := HashPassword(su.password, salt)
+			userID := "usr-" + su.tenantID + "-" + strings.Split(su.email, "@")[0]
+			spec := inventoryv1.UserSpec{
+				UserID:        userID,
+				Name:          su.name,
+				Email:         su.email,
+				Role:          su.role,
+				Salt:          salt,
+				PasswordHash:  hash,
+				TenantID:      su.tenantID,
+				FacilityScope: "All Facilities",
+				Status:        "Active",
+				LastLogin:     time.Now().UTC().Format(time.RFC3339),
+			}
+			_, _ = nexus.CreateUserNode(ctx, h.client, su.tenantID, spec)
+		}
 	}
 }
 
@@ -437,7 +497,19 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 			f.ID = "fac-" + uuid.New().String()[:8]
 		}
 		if f.Status == "" {
-			f.Status = "ACTIVE"
+			f.Status = "Active"
+		}
+		if f.DevicesCount == 0 {
+			f.DevicesCount = 1
+		}
+		if f.Emissions == "" {
+			f.Emissions = "0 tCO₂e"
+		}
+		if f.DataCompleteness == 0 {
+			f.DataCompleteness = 100.0
+		}
+		if f.Readiness == "" {
+			f.Readiness = "Audit-Ready"
 		}
 
 		if h.client != nil {

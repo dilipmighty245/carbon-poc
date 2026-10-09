@@ -52,11 +52,30 @@ func TestEndToEndPoCFlow(t *testing.T) {
 		}
 	})
 
-	// --- Step 2: Tenant Auth Login ---
-	t.Run("02_TenantAuthLogin", func(t *testing.T) {
+	// --- Step 2: Tenant Auth Registration & Login ---
+	t.Run("02_TenantAuthRegistrationAndLogin", func(t *testing.T) {
+		regPayload := map[string]string{
+			"tenant_id": tenantID,
+			"name":      "Plant Operator",
+			"email":     "operator@saurient.demo",
+			"password":  "DemoPassword2026!",
+			"role":      "Plant Operator",
+		}
+		regBytes, _ := json.Marshal(regPayload)
+		regReq := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(regBytes))
+		regReq.Header.Set("Content-Type", "application/json")
+		regReq.Header.Set("X-Tenant-ID", tenantID)
+
+		regRec := httptest.NewRecorder()
+		mux.ServeHTTP(regRec, regReq)
+
+		if regRec.Code != http.StatusCreated {
+			t.Fatalf("expected 201 Created from registration, got %d: %s", regRec.Code, regRec.Body.String())
+		}
+
 		loginPayload := map[string]string{
 			"email":    "operator@saurient.demo",
-			"password": "••••••••••••",
+			"password": "DemoPassword2026!",
 		}
 		bodyBytes, _ := json.Marshal(loginPayload)
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(bodyBytes))

@@ -48,174 +48,7 @@ export interface Facility {
   }[];
 }
 
-export const initialFacilities: Facility[] = [
-  {
-    id: "FAC-GH-001",
-    name: "Tema Processing Plant",
-    type: "Production Facility",
-    country: "Ghana",
-    countryCode: "GH",
-    address: "Heavy Industrial Area, Tema, Greater Accra, Ghana",
-    status: "Active",
-    processesCount: 6,
-    devicesCount: 18,
-    dataCompleteness: 96,
-    emissions: "12,480 tCO₂e",
-    readiness: "Audit-Ready",
-    geo: { lat: "5.6698° N", lng: "0.0166° W", timezone: "GMT (UTC+0)" },
-    productionCapacity: "84,000 tonnes / year",
-    operatingHours: "24/7 · 3 shifts",
-    manager: {
-      name: "Kwame Mensah",
-      title: "Plant Operations Manager",
-      email: "k.mensah@saurient-carbon.com",
-    },
-    energySources: ["Grid electricity (VRA)", "On-site solar 1.2 MW", "Diesel backup gensets"],
-    utilities: ["Ghana Water Company", "Natural gas pipeline", "Fibre + industrial LAN"],
-    products: ["Refined cocoa liquor", "Cocoa butter", "Packaged cocoa powder"],
-    emissionSources: [
-      { name: "Stationary combustion (roasting gensets)", scope: "Scope 1" },
-      { name: "Purchased electricity (grid)", scope: "Scope 2" },
-      { name: "Process refrigerants", scope: "Scope 1" },
-      { name: "Inbound bean transport", scope: "Scope 3" },
-    ],
-    processTree: [
-      {
-        id: "PRC-001",
-        name: "Bean Roasting & Grinding",
-        lines: [
-          {
-            id: "LINE-01",
-            name: "Roasting Line A",
-            meters: [
-              { name: "Gas Meter M-101", type: "Natural Gas Flow" },
-              { name: "Power Meter E-201", type: "kWh Telemetry" },
-            ],
-          },
-          {
-            id: "LINE-02",
-            name: "Grinding Mill B",
-            meters: [{ name: "Mill Power Meter E-202", type: "kWh Telemetry" }],
-          },
-        ],
-      },
-      {
-        id: "PRC-002",
-        name: "Cocoa Butter Refining & Pressing",
-        lines: [
-          {
-            id: "LINE-03",
-            name: "Press Line C",
-            meters: [{ name: "Press Steam Meter S-301", type: "Steam Flow" }],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "FAC-GH-002",
-    name: "Kumasi Materials Hub",
-    type: "Aggregation Warehouse",
-    country: "Ghana",
-    countryCode: "GH",
-    address: "Boankra Inland Port Zone, Kumasi, Ashanti, Ghana",
-    status: "Active",
-    processesCount: 2,
-    devicesCount: 8,
-    dataCompleteness: 91,
-    emissions: "3,120 tCO₂e",
-    readiness: "Audit-Ready",
-    geo: { lat: "6.6885° N", lng: "1.6244° W", timezone: "GMT (UTC+0)" },
-    productionCapacity: "120,000 tonnes storage",
-    operatingHours: "16/5 · 2 shifts",
-    manager: {
-      name: "Abena Serwaa",
-      title: "Logistics Hub Supervisor",
-      email: "a.serwaa@saurient-carbon.com",
-    },
-    energySources: ["Grid electricity", "Solar rooftop 400 kW"],
-    utilities: ["Municipal water", "Logistics fleet EV chargers"],
-    products: ["Raw cocoa beans", "Pre-bagged commodities"],
-    emissionSources: [
-      { name: "Forklift diesel combustion", scope: "Scope 1" },
-      { name: "Purchased warehouse electricity", scope: "Scope 2" },
-      { name: "Local farm aggregation haulage", scope: "Scope 3" },
-    ],
-    processTree: [
-      {
-        id: "PRC-003",
-        name: "Sorting & Moisture Testing",
-        lines: [
-          {
-            id: "LINE-04",
-            name: "Sorting Bay 1",
-            meters: [{ name: "Telemetry Scale W-101", type: "Weight Sensor" }],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "FAC-GH-003",
-    name: "Takoradi Export Terminal",
-    type: "Port Terminal",
-    country: "Ghana",
-    countryCode: "GH",
-    address: "Takoradi Port Container Terminal, Western Region, Ghana",
-    status: "Active",
-    processesCount: 3,
-    devicesCount: 12,
-    dataCompleteness: 98,
-    emissions: "1,850 tCO₂e",
-    readiness: "Audit-Ready",
-    geo: { lat: "4.8845° N", lng: "1.7554° W", timezone: "GMT (UTC+0)" },
-    productionCapacity: "200,000 TEU / year",
-    operatingHours: "24/7 · 3 shifts",
-    manager: {
-      name: "Kofi Annan",
-      title: "Port Terminal Operations Lead",
-      email: "k.annan@saurient-carbon.com",
-    },
-    energySources: ["Shore power connection", "Grid electricity"],
-    utilities: ["Port authority water & power"],
-    products: ["Export-packaged cocoa butter & steel frames"],
-    emissionSources: [
-      { name: "Container crane diesel", scope: "Scope 1" },
-      { name: "Terminal lighting grid", scope: "Scope 2" },
-    ],
-    processTree: [],
-  },
-  {
-    id: "FAC-GH-004",
-    name: "Accra Corporate Office",
-    type: "Administrative HQ",
-    country: "Ghana",
-    countryCode: "GH",
-    address: "Airport Residential Area, Accra, Ghana",
-    status: "Active",
-    processesCount: 1,
-    devicesCount: 4,
-    dataCompleteness: 88,
-    emissions: "420 tCO₂e",
-    readiness: "In Review",
-    geo: { lat: "5.6037° N", lng: "0.1870° W", timezone: "GMT (UTC+0)" },
-    productionCapacity: "Corporate administration",
-    operatingHours: "08:00 - 17:00 (Mon - Fri)",
-    manager: {
-      name: "Esi Badu",
-      title: "Facility Manager",
-      email: "e.badu@saurient-carbon.com",
-    },
-    energySources: ["Grid electricity", "Rooftop solar"],
-    utilities: ["Commercial internet & power"],
-    products: ["Executive management"],
-    emissionSources: [
-      { name: "HVAC purchased electricity", scope: "Scope 2" },
-      { name: "Employee commuting", scope: "Scope 3" },
-    ],
-    processTree: [],
-  },
-];
+export const initialFacilities: Facility[] = [];
 
 export const OrgFacilitiesTab: React.FC = () => {
   const [facilitiesList, setFacilitiesList] = useState<Facility[]>([]);
@@ -251,8 +84,10 @@ export const OrgFacilitiesTab: React.FC = () => {
     e.preventDefault();
     if (!newFacilityName) return;
 
+    const facNum = facilitiesList.length + 1;
+    const facId = `FAC-GH-00${facNum}`;
     const newFac: Facility = {
-      id: `FAC-GH-00${facilitiesList.length + 1}`,
+      id: facId,
       name: newFacilityName,
       type: newFacilityType,
       country: newFacilityCountry,
@@ -260,9 +95,9 @@ export const OrgFacilitiesTab: React.FC = () => {
       address: newFacilityAddress || "Industrial Zone, Ghana",
       status: "Active",
       processesCount: 1,
-      devicesCount: 2,
+      devicesCount: 1, // Automatically connects 1 Sattric meter upon facility creation
       dataCompleteness: 100,
-      emissions: "0 tCO₂e",
+      emissions: "0 tCO₂e", // Baseline zero emissions
       readiness: "Audit-Ready",
       geo: { lat: "5.6000° N", lng: "0.2000° W", timezone: "GMT (UTC+0)" },
       productionCapacity: "50,000 tonnes / year",
@@ -276,7 +111,24 @@ export const OrgFacilitiesTab: React.FC = () => {
       utilities: ["Industrial water"],
       products: ["Commodities"],
       emissionSources: [{ name: "Electricity", scope: "Scope 2" }],
-      processTree: [],
+      processTree: [
+        {
+          id: `PRC-${facId}`,
+          name: "Main Operations & Telemetry",
+          lines: [
+            {
+              id: "LINE-01",
+              name: "Primary Ingestion Feeder",
+              meters: [
+                {
+                  name: `Sattric+ Energy Meter SM-${facNum}`,
+                  type: "Sattric IoT Telemetry (kWh / Gas)",
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
 
     try {
@@ -303,6 +155,34 @@ export const OrgFacilitiesTab: React.FC = () => {
     }
   };
 
+  // Dynamic Telemetry & Emissions Calculations (Zero baseline for clean slate)
+  const activeSitesCount = facilitiesList.length;
+
+  const totalSattricMeters = facilitiesList.reduce(
+    (sum, f) => sum + (typeof f.devicesCount === 'number' && f.devicesCount > 0 ? f.devicesCount : 1),
+    0
+  );
+
+  const avgCompleteness =
+    activeSitesCount > 0
+      ? Math.round(
+          facilitiesList.reduce((sum, f) => sum + (f.dataCompleteness || 0), 0) /
+            activeSitesCount
+        )
+      : 0;
+
+  const totalEmissionsVal = facilitiesList.reduce((acc, f) => {
+    if (!f.emissions) return acc;
+    const clean = f.emissions.replace(/,/g, '');
+    const match = clean.match(/([\d.]+)/);
+    if (!match) return acc;
+    let val = parseFloat(match[1]);
+    if (clean.toLowerCase().includes('kgco2') || clean.toLowerCase().includes('kg co2')) {
+      val = val / 1000;
+    }
+    return acc + (isNaN(val) ? 0 : val);
+  }, 0);
+
   return (
     <div className="space-y-6">
       {/* Top Stats Bar */}
@@ -313,7 +193,9 @@ export const OrgFacilitiesTab: React.FC = () => {
           </div>
           <div>
             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Active Sites</span>
-            <span className="text-xl font-black text-slate-900">{facilitiesList.length} Facilities</span>
+            <span className="text-xl font-black text-slate-900">
+              {activeSitesCount} {activeSitesCount === 1 ? 'Facility' : 'Facilities'}
+            </span>
           </div>
         </div>
 
@@ -323,7 +205,9 @@ export const OrgFacilitiesTab: React.FC = () => {
           </div>
           <div>
             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Connected Telemetry</span>
-            <span className="text-xl font-black text-slate-900">42 Sensors & Meters</span>
+            <span className="text-xl font-black text-slate-900">
+              {totalSattricMeters} {totalSattricMeters === 1 ? 'Sattric Meter' : 'Sattric Meters'}
+            </span>
           </div>
         </div>
 
@@ -333,7 +217,7 @@ export const OrgFacilitiesTab: React.FC = () => {
           </div>
           <div>
             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Avg Data Completeness</span>
-            <span className="text-xl font-black text-emerald-700">93.2%</span>
+            <span className="text-xl font-black text-emerald-700">{avgCompleteness}%</span>
           </div>
         </div>
 
@@ -343,7 +227,11 @@ export const OrgFacilitiesTab: React.FC = () => {
           </div>
           <div>
             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Total Emissions Scope</span>
-            <span className="text-xl font-black text-slate-900">17,870 tCO₂e</span>
+            <span className="text-xl font-black text-slate-900">
+              {activeSitesCount === 0 || totalEmissionsVal === 0
+                ? '0 tCO₂e'
+                : `${Math.round(totalEmissionsVal).toLocaleString()} tCO₂e`}
+            </span>
           </div>
         </div>
       </div>
@@ -392,7 +280,32 @@ export const OrgFacilitiesTab: React.FC = () => {
       </div>
 
       {/* Main Facilities View */}
-      {viewMode === 'grid' ? (
+      {filteredFacilities.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center space-y-4">
+          <div className="w-12 h-12 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto">
+            <Factory className="w-6 h-6" />
+          </div>
+          <div className="max-w-md mx-auto space-y-1">
+            <h3 className="font-bold text-slate-900 text-sm">
+              {facilitiesList.length === 0 ? 'No Operating Facilities Configured' : 'No Facilities Match Search'}
+            </h3>
+            <p className="text-xs text-slate-500">
+              {facilitiesList.length === 0
+                ? 'Your organisation starts with a zero baseline. When you add a facility, 1 Sattric IoT Telemetry Meter is automatically connected to stream live data.'
+                : 'Try adjusting your search criteria or clear filters.'}
+            </p>
+          </div>
+          {facilitiesList.length === 0 && (
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Facility & Connect Meter</span>
+            </button>
+          )}
+        </div>
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredFacilities.map((f) => (
             <div
@@ -436,10 +349,10 @@ export const OrgFacilitiesTab: React.FC = () => {
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-medium text-slate-600">
                 <div className="flex items-center gap-4">
-                  <span><strong className="text-slate-900">{f.processesCount}</strong> Processes</span>
-                  <span><strong className="text-slate-900">{f.devicesCount}</strong> Telemetry Devices</span>
+                  <span><strong className="text-slate-900">{f.processesCount || 1}</strong> Processes</span>
+                  <span><strong className="text-slate-900">{f.devicesCount || 1}</strong> Sattric Meter{(f.devicesCount || 1) === 1 ? '' : 's'}</span>
                 </div>
-                <span className="font-mono font-bold text-slate-900">{f.emissions}</span>
+                <span className="font-mono font-bold text-slate-900">{f.emissions || '0 tCO₂e'}</span>
               </div>
             </div>
           ))}
@@ -475,7 +388,7 @@ export const OrgFacilitiesTab: React.FC = () => {
                       <span className="font-mono text-[10px] font-bold text-slate-700">{f.dataCompleteness}%</span>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{f.emissions}</td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{f.emissions || '0 tCO₂e'}</td>
                   <td className="py-3.5 px-4">
                     <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded">
                       {f.readiness}

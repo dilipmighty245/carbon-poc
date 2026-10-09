@@ -252,3 +252,138 @@ func TestOrganisationHandler_AddUserInOrganisation_And_AssignRole(t *testing.T) 
 	}
 }
 
+func TestOrganisationHandler_Facilities_DynamicTelemetry_And_SattricMeters(t *testing.T) {
+	client := nexus_client.NewFakeClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	engine := nexus.GetNexusEngine()
+
+	handler := NewOrganisationHandlerWithClient(client, engine)
+	mux := http.NewServeMux()
+	handler.RegisterRoutes(mux)
+
+	tenantID := "tenant-dynamic-telemetry-test"
+
+	// 1. Initial State: Newly onboarded tenant must start at 0 facilities, 0 connected meters
+	reqZero := httptest.NewRequest(http.MethodGet, "/api/v1/organisation/facilities", nil)
+	reqZero.Header.Set("X-Tenant-ID", tenantID)
+	recZero := httptest.NewRecorder()
+	mux.ServeHTTP(recZero, reqZero)
+
+	if recZero.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK from zero-state facilities, got %d: %s", recZero.Code, recZero.Body.String())
+	}
+	var zeroFacs []*nexus.FacilityModel
+	if err := json.NewDecoder(recZero.Body).Decode(&zeroFacs); err != nil {
+		t.Fatalf("failed to decode zero facilities: %v", err)
+	}
+	if len(zeroFacs) != 0 {
+		t.Fatalf("expected 0 facilities for new tenant, got %d", len(zeroFacs))
+	}
+
+	// 2. Add Facility 1: Automatically connects 1 Sattric meter
+	fac1Req := map[string]interface{}{
+		"id":           "FAC-GH-001",
+		"name":         "Tema Processing Plant",
+		"type":         "Production Facility",
+		"country":      "Ghana",
+		"country_code": "GH",
+		"address":      "Heavy Industrial Area, Tema, Ghana",
+	}
+	body1, _ := json.Marshal(fac1Req)
+	reqAdd1 := httptest.NewRequest(http.MethodPost, "/api/v1/organisation/facilities", bytes.NewBuffer(body1))
+	reqAdd1.Header.Set("Content-Type", "application/json")
+	reqAdd1.Header.Set("X-Tenant-ID", tenantID)
+	recAdd1 := httptest.NewRecorder()
+	mux.ServeHTTP(recAdd1, reqAdd1)
+
+	if recAdd1.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK adding facility 1, got %d: %s", recAdd1.Code, recAdd1.Body.String())
+	}
+
+	// Verify child Meter node created under Facility node in Nexus graph
+	f1Node, err := nexus.GetFacilityNode(context.Background(), client, tenantID, "FAC-GH-001")
+	if err != nil || f1Node == nil {
+		t.Fatalf("failed to get facility 1 node from nexus graph: %v", err)
+	}
+	meters1, err := f1Node.GetAllMeters(context.Background())
+	if err != nil || len(meters1) != 1 {
+		t.Fatalf("expected 1 Sattric meter connected under facility 1 in Nexus datamodel, got %d (err: %v)", len(meters1), err)
+	}
+	if meters1[0].Spec.MeterType != "Sattric IoT Telemetry" {
+		t.Errorf("expected meter type 'Sattric IoT Telemetry', got %s", meters1[0].Spec.MeterType)
+	}
+
+	// 3. Add Facility 2: Automatically connects another Sattric meter
+	fac2Req := map[string]interface{}{
+		"id":           "FAC-GH-002",
+		"name":         "Kumasi Materials Hub",
+		"type":         "Aggregation Warehouse",
+		"country":      "Ghana",
+		"country_code": "GH",
+		"address":      "Boankra Inland Port Zone, Kumasi, Ghana",
+	}
+	body2, _ := json.Marshal(fac2Req)
+	reqAdd2 := httptest.NewRequest(http.MethodPost, "/api/v1/organisation/facilities", bytes.NewBuffer(body2))
+	reqAdd2.Header.Set("Content-Type", "application/json")
+	reqAdd2.Header.Set("X-Tenant-ID", tenantID)
+	recAdd2 := httptest.NewRecorder()
+	mux.ServeHTTP(recAdd2, reqAdd2)
+
+	if recAdd2.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK adding facility 2, got %d: %s", recAdd2.Code, recAdd2.Body.String())
+	}
+
+	// 4. List Facilities: Must return 2 facilities, each with 1 Sattric meter and initial zero emissions
+	reqList := httptest.NewRequest(http.MethodGet, "/api/v1/organisation/facilities", nil)
+	reqList.Header.Set("X-Tenant-ID", tenantID)
+	recList := httptest.NewRecorder()
+	mux.ServeHTTP(recList, reqList)
+
+	if recList.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK listing facilities, got %d: %s", recList.Code, recList.Body.String())
+	}
+	var facList []*nexus.FacilityModel
+	if err := json.NewDecoder(recList.Body).Decode(&facList); err != nil {
+		t.Fatalf("failed to decode facility list: %v", err)
+	}
+	if len(facList) != 2 {
+		t.Fatalf("expected 2 facilities in list, got %d", len(facList))
+	}
+
+	totalTelemetryMeters := 0
+	for _, f := range facList {
+		totalTelemetryMeters += f.DevicesCount
+		if f.Emissions != "0 tCO₂e" {
+			t.Errorf("expected initial emissions '0 tCO₂e', got %s", f.Emissions)
+		}
+	}
+	if totalTelemetryMeters != 2 {
+		t.Fatalf("expected 2 connected Sattric meters across 2 facilities, got %d", totalTelemetryMeters)
+	}
+
+	// 5. Delete Facility 1: Telemetry meters and facilities decrement
+	reqDel := httptest.NewRequest(http.MethodDelete, "/api/v1/organisation/facilities/FAC-GH-001", nil)
+	reqDel.Header.Set("X-Tenant-ID", tenantID)
+	recDel := httptest.NewRecorder()
+	mux.ServeHTTP(recDel, reqDel)
+
+	if recDel.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK deleting facility, got %d: %s", recDel.Code, recDel.Body.String())
+	}
+
+	// Verify only 1 facility remains
+	reqListAfter := httptest.NewRequest(http.MethodGet, "/api/v1/organisation/facilities", nil)
+	reqListAfter.Header.Set("X-Tenant-ID", tenantID)
+	recListAfter := httptest.NewRecorder()
+	mux.ServeHTTP(recListAfter, reqListAfter)
+
+	var facListAfter []*nexus.FacilityModel
+	_ = json.NewDecoder(recListAfter.Body).Decode(&facListAfter)
+	if len(facListAfter) != 1 {
+		t.Fatalf("expected 1 facility remaining after deletion, got %d", len(facListAfter))
+	}
+	if facListAfter[0].DevicesCount != 1 {
+		t.Fatalf("expected 1 connected Sattric meter remaining, got %d", facListAfter[0].DevicesCount)
+	}
+}
+

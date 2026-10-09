@@ -50,10 +50,52 @@ async function runUIBackendE2ETest() {
     errors.push(`API Gateway: ${err.message}`);
   }
 
-  // Step 3: Auth Endpoint Integration
+  // Step 3: Datamodel Auth & Secret Verification Integration
   try {
-    console.log('3. Testing Auth API Endpoint (POST /api/v1/auth/login)...');
-    const authPayload = JSON.stringify({ email: 'operator@saurient.demo', password: 'secret' });
+    console.log('3. Testing Datamodel Auth Flow (Register -> Login -> Verify Token)...');
+    
+    // 3a. Register user node into Nexus datamodel
+    const regPayload = JSON.stringify({
+      tenant_id: 'TENANT-BELLARY-E2E',
+      name: 'Plant Operator',
+      email: 'operator@saurient.demo',
+      password: 'DemoPassword2026!',
+      role: 'Company Operator'
+    });
+    const regRes = await fetchUrl('http://localhost:8080/api/v1/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(regPayload),
+        'X-Tenant-ID': 'TENANT-BELLARY-E2E'
+      },
+      body: regPayload
+    });
+    if (regRes.status === 201 || regRes.status === 409) {
+      console.log(`   ✅ Datamodel User Registration handled (${regRes.status === 201 ? '201 Created' : '409 Already Exists'})`);
+    } else {
+      throw new Error(`Auth register returned status ${regRes.status}: ${regRes.data}`);
+    }
+
+    // 3b. Verify invalid credentials return 401 Unauthorized
+    const badLoginPayload = JSON.stringify({ email: 'operator@saurient.demo', password: 'incorrect-password' });
+    const badLoginRes = await fetchUrl('http://localhost:8080/api/v1/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(badLoginPayload),
+        'X-Tenant-ID': 'TENANT-BELLARY-E2E'
+      },
+      body: badLoginPayload
+    });
+    if (badLoginRes.status === 401) {
+      console.log('   ✅ Unauthorized check verified: Invalid credentials correctly rejected (401 Unauthorized)');
+    } else {
+      throw new Error(`Expected 401 for bad password, got ${badLoginRes.status}`);
+    }
+
+    // 3c. Authenticate with valid password against datamodel
+    const authPayload = JSON.stringify({ email: 'operator@saurient.demo', password: 'DemoPassword2026!' });
     const authRes = await fetchUrl('http://localhost:8080/api/v1/auth/login', {
       method: 'POST',
       headers: {
@@ -65,10 +107,24 @@ async function runUIBackendE2ETest() {
     });
     if (authRes.status === 200) {
       const data = JSON.parse(authRes.data);
-      if (data.token) {
-        console.log('   ✅ Auth API login successful. Issued Token:', data.token.slice(0, 20) + '...');
+      if (data.token && data.user && data.user.email === 'operator@saurient.demo') {
+        console.log('   ✅ Auth API login successful. Issued JWT Token:', data.token.slice(0, 25) + '...');
+
+        // 3d. Validate token via /auth/me
+        const meRes = await fetchUrl('http://localhost:8080/api/v1/auth/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${data.token}`,
+            'X-Tenant-ID': 'TENANT-BELLARY-E2E'
+          }
+        });
+        if (meRes.status === 200) {
+          console.log('   ✅ Session validation /auth/me verified with Bearer token');
+        } else {
+          throw new Error(`/auth/me returned status ${meRes.status}`);
+        }
       } else {
-        throw new Error('Missing token in response');
+        throw new Error('Missing token or user in login response');
       }
     } else {
       throw new Error(`Auth API returned status ${authRes.status}: ${authRes.data}`);

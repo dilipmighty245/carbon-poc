@@ -35,6 +35,9 @@ type Tenant struct {
 	Users      User       `nexus:"children"`
 }
 
+var UserSecretSpec = nexus.SecretSpec{}
+
+// nexus-secret-spec:UserSecretSpec
 type User struct {
 	nexus.Node
 
@@ -42,6 +45,8 @@ type User struct {
 	TenantID      string `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty"`
 	Name          string `json:"name,omitempty" mapstructure:"name,omitempty"`
 	Email         string `json:"email,omitempty" mapstructure:"email,omitempty"`
+	PasswordHash  string `json:"passwordHash,omitempty" mapstructure:"passwordHash,omitempty"`
+	Salt          string `json:"salt,omitempty" mapstructure:"salt,omitempty"`
 	Role          string `json:"role,omitempty" mapstructure:"role,omitempty"`
 	FacilityScope string `json:"facilityScope,omitempty" mapstructure:"facilityScope,omitempty"`
 	LastLogin     string `json:"lastLogin,omitempty" mapstructure:"lastLogin,omitempty"`

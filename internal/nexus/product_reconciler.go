@@ -301,8 +301,8 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 	}
 	defer r.unlockProduct(lockKey)
 
-	// Idempotency: skip if already calculated with an issued passport
-	if prodNode.Spec.Phase == "Calculated" && prodNode.Spec.PassportID != "" {
+	// Idempotency: skip if already processed with a linked passport
+	if (prodNode.Spec.Phase == "Calculated" || prodNode.Spec.Phase == "Draft") && prodNode.Spec.PassportID != "" {
 		if r.client != nil {
 			if pNode, err := GetPassportNode(ctx, r.client, prodNode.Spec.PassportID); err == nil && pNode != nil {
 				return CarbonPassportModelFromNode(pNode), nil
@@ -423,10 +423,10 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 			Scope1Kg:           calcRes.Scope1Kg,
 			Scope2Kg:           calcRes.Scope2Kg,
 			Scope3Kg:           calcRes.Scope3Kg,
-			VerificationStatus: "Calculated",
+			VerificationStatus: StatusDraft,
 			CalculationDetails: string(calcDetailsJSON),
 			DataHash:           calcRes.DataHash,
-			IssuedAt:           time.Now().UTC().Format(time.RFC3339),
+			IssuedAt:           "",
 		}
 		_, cpErr := CreatePassportNode(ctx, client, passportSpec, prodNode)
 		if cpErr != nil {
@@ -434,8 +434,8 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 		}
 	}
 
-	// 6. Transition Product Node to "Calculated" in Nexus graph
-	prodNode.Spec.Phase = "Calculated"
+	// 6. Transition Product Node to "Draft" in Nexus graph
+	prodNode.Spec.Phase = "Draft"
 	prodNode.Spec.PassportID = passportID
 	prodNode.Spec.TotalFootprintKg = calcRes.TotalFootprintKg
 	prodNode.Spec.DataHash = calcRes.DataHash
@@ -451,19 +451,19 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 		FacilityID:         prodNode.Spec.FacilityID,
 		BatchNumber:        prodNode.Spec.BatchID,
 		CommodityType:      prodNode.Spec.CommodityType,
-		VerificationStatus: "Calculated",
+		VerificationStatus: StatusDraft,
 		Scope1KgCO2e:       calcRes.Scope1Kg,
 		Scope2KgCO2e:       calcRes.Scope2Kg,
 		Scope3KgCO2e:       calcRes.Scope3Kg,
 		TotalFootprintKg:   calcRes.TotalFootprintKg,
 		CalculationDetails: calcDetailsJSON,
 		DataHash:           calcRes.DataHash,
-		IssuedAt:           time.Now(),
+		IssuedAt:           time.Time{},
 	}
 
-	actionType := "Calculated"
+	actionType := "DraftCreated"
 	if prodNode.Spec.PassportID != "" {
-		actionType = "Updated"
+		actionType = "DraftRecalculated"
 	}
 
 	auditModel := &PassportAuditTrailModel{
@@ -495,7 +495,7 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 			CommodityType:    prodNode.Spec.CommodityType,
 			ActivityDataRaw:  prodNode.Spec.ActivityDataRaw,
 			RulebookRefName:  prodNode.Spec.RulebookRef,
-			Phase:            "Calculated",
+			Phase:            "Draft",
 			PassportID:       passportID,
 			TotalFootprintKg: calcRes.TotalFootprintKg,
 			DataHash:         calcRes.DataHash,
@@ -525,7 +525,7 @@ func (r *ProductReconciler) ReconcileProduct(ctx context.Context, product *Produ
 		if err == nil && prodNode != nil {
 			passport, recErr := r.ReconcileProductNode(ctx, prodNode)
 			if recErr == nil && passport != nil {
-				product.Phase = "Calculated"
+				product.Phase = "Draft"
 				product.PassportID = passport.PassportID
 				product.TotalFootprintKg = passport.TotalFootprintKg
 				product.DataHash = passport.DataHash
@@ -554,7 +554,7 @@ func (r *ProductReconciler) ReconcileProduct(ctx context.Context, product *Produ
 		if newNode, createErr := CreateProductNode(ctx, r.client, product.TenantID, prodSpec); createErr == nil && newNode != nil {
 			passport, recErr := r.ReconcileProductNode(ctx, newNode)
 			if recErr == nil && passport != nil {
-				product.Phase = "Calculated"
+				product.Phase = "Draft"
 				product.PassportID = passport.PassportID
 				product.TotalFootprintKg = passport.TotalFootprintKg
 				product.DataHash = passport.DataHash
@@ -664,19 +664,19 @@ func (r *ProductReconciler) ReconcileProduct(ctx context.Context, product *Produ
 		FacilityID:         product.FacilityID,
 		BatchNumber:        product.BatchID,
 		CommodityType:      product.CommodityType,
-		VerificationStatus: "Calculated",
+		VerificationStatus: StatusDraft,
 		Scope1KgCO2e:       calcRes.Scope1Kg,
 		Scope2KgCO2e:       calcRes.Scope2Kg,
 		Scope3KgCO2e:       calcRes.Scope3Kg,
 		TotalFootprintKg:   calcRes.TotalFootprintKg,
 		CalculationDetails: calcDetailsJSON,
 		DataHash:           calcRes.DataHash,
-		IssuedAt:           time.Now(),
+		IssuedAt:           time.Time{},
 	}
 
-	actionType := "Calculated"
+	actionType := "DraftCreated"
 	if product.PassportID != "" {
-		actionType = "Updated"
+		actionType = "DraftRecalculated"
 	}
 
 	auditModel := &PassportAuditTrailModel{
@@ -699,7 +699,7 @@ func (r *ProductReconciler) ReconcileProduct(ctx context.Context, product *Produ
 		_ = r.engine.CachePassport(tenantCtx, cacheKey, richBytes, 24*time.Hour)
 	}
 
-	product.Phase = "Calculated"
+	product.Phase = "Draft"
 	product.PassportID = passportID
 	product.TotalFootprintKg = calcRes.TotalFootprintKg
 	product.DataHash = calcRes.DataHash

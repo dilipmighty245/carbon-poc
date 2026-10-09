@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	configv1 "saurient-platform/build/apis/config.saurient.io/v1"
@@ -35,6 +36,13 @@ func (e *NexusGraphEngine) SavePassportAndAudit(ctx context.Context, p *CarbonPa
 		calcDetailsStr = "{}"
 	}
 
+	frozen := false
+	frozenAt := ""
+	if p.VerificationStatus == StatusIssued || p.VerificationStatus == StatusSubmittedToAgency || strings.EqualFold(p.VerificationStatus, "VERIFIED") {
+		frozen = true
+		frozenAt = p.IssuedAt.UTC().Format(time.RFC3339)
+	}
+
 	spec := runtimev1.CarbonPassportSpec{
 		PassportID:         p.PassportID,
 		TenantID:           p.TenantID,
@@ -48,6 +56,8 @@ func (e *NexusGraphEngine) SavePassportAndAudit(ctx context.Context, p *CarbonPa
 		VerificationStatus: p.VerificationStatus,
 		CalculationDetails: calcDetailsStr,
 		DataHash:           p.DataHash,
+		Frozen:             frozen,
+		FrozenAt:           frozenAt,
 		IssuedAt:           p.IssuedAt.UTC().Format(time.RFC3339),
 		Version:            "1.0",
 	}
@@ -98,6 +108,10 @@ func (e *NexusGraphEngine) SavePassportAndAudit(ctx context.Context, p *CarbonPa
 	e.mu.Unlock()
 
 	return nil
+}
+
+func (e *NexusGraphEngine) SavePassport(ctx context.Context, p *CarbonPassportModel) error {
+	return e.SavePassportAndAudit(ctx, p, nil)
 }
 
 func (e *NexusGraphEngine) UpdatePassportAndAudit(ctx context.Context, p *CarbonPassportModel, audit *PassportAuditTrailModel) error {
@@ -606,6 +620,8 @@ func (e *NexusGraphEngine) SaveOrganisationUser(ctx context.Context, user *Organ
 		TenantID:      user.TenantID,
 		Name:          user.Name,
 		Email:         user.Email,
+		PasswordHash:  user.PasswordHash,
+		Salt:          user.Salt,
 		Role:          user.Role,
 		FacilityScope: user.FacilityScope,
 		LastLogin:     user.LastLogin,

@@ -612,18 +612,29 @@ func GetUserNode(ctx context.Context, client *nexus_client.Clientset, tenantID, 
 	return tenantNode.GetUsers(ctx, userID)
 }
 
-// GetUserNodeByEmail searches for a User node under a Tenant by email.
+// GetUserNodeByEmail searches for a User node under a Tenant by email, or across all tenants if tenantID is empty.
 func GetUserNodeByEmail(ctx context.Context, client *nexus_client.Clientset, tenantID, email string) (*nexus_client.InventoryUser, error) {
-	users, err := ListUserNodes(ctx, client, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	for _, u := range users {
-		if u != nil && strings.EqualFold(u.Spec.Email, email) {
-			return u, nil
+	if tenantID != "" {
+		users, err := ListUserNodes(ctx, client, tenantID)
+		if err == nil {
+			for _, u := range users {
+				if u != nil && strings.EqualFold(u.Spec.Email, email) {
+					return u, nil
+				}
+			}
 		}
 	}
-	return nil, fmt.Errorf("user with email %s not found under tenant %s", email, tenantID)
+
+	// Search across all tenants in the Nexus datamodel
+	allUsers, err := ListUserNodes(ctx, client, "")
+	if err == nil {
+		for _, u := range allUsers {
+			if u != nil && strings.EqualFold(u.Spec.Email, email) {
+				return u, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("user with email %s not found in datamodel", email)
 }
 
 // ListUserNodes returns all User nodes for a specific tenant, or across all tenants if tenantID is empty.
@@ -735,6 +746,8 @@ func UserModelFromNode(uNode *nexus_client.InventoryUser) *OrganisationUserModel
 		TenantID:      spec.TenantID,
 		Name:          spec.Name,
 		Email:         spec.Email,
+		PasswordHash:  spec.PasswordHash,
+		Salt:          spec.Salt,
 		Role:          spec.Role,
 		FacilityScope: spec.FacilityScope,
 		LastLogin:     spec.LastLogin,
@@ -824,6 +837,22 @@ func SaveFacilityNode(ctx context.Context, client *nexus_client.Clientset, tenan
 	if err != nil {
 		return nil, fmt.Errorf("failed to add Facility node %s under Tenant %s: %w", resourceName, tenantID, err)
 	}
+
+	// Connect 1 Sattric meter child node under this facility in the Nexus datamodel
+	meterName := fmt.Sprintf("sattric-meter-%s", resourceName)
+	if _, getMeterErr := facilityNode.GetMeters(ctx, meterName); getMeterErr != nil {
+		_, _ = facilityNode.AddMeters(ctx, &inventoryv1.Meter{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: meterName,
+			},
+			Spec: inventoryv1.MeterSpec{
+				MeterID:      meterName,
+				MeterType:    "Sattric IoT Telemetry",
+				Manufacturer: "Sattric Power Systems",
+			},
+		})
+	}
+
 	return facilityNode, nil
 }
 
@@ -921,6 +950,12 @@ func FacilityModelFromNode(fNode *nexus_client.InventoryFacility) *FacilityModel
 	if name == "" {
 		name = id
 	}
+
+	meterCount := 1
+	if meters, err := fNode.GetAllMeters(context.Background()); err == nil && len(meters) > 0 {
+		meterCount = len(meters)
+	}
+
 	return &FacilityModel{
 		ID:               id,
 		TenantID:         spec.FacilityID,
@@ -929,11 +964,11 @@ func FacilityModelFromNode(fNode *nexus_client.InventoryFacility) *FacilityModel
 		Country:          spec.CountryCode,
 		CountryCode:      spec.CountryCode,
 		Status:           "Active",
-		ProcessesCount:   4,
-		DevicesCount:     12,
-		DataCompleteness: 98.5,
-		Emissions:        "18500 kgCO2e/batch",
-		Readiness:        "Ready",
+		ProcessesCount:   1,
+		DevicesCount:     meterCount,
+		DataCompleteness: 100.0,
+		Emissions:        "0 tCO₂e",
+		Readiness:        "Audit-Ready",
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
 	}

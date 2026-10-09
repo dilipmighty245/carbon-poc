@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Upload, User, Users, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw } from 'lucide-react';
-import { saveOrgProfile, registerUser } from '../../api/client';
+import { CheckCircle2, Upload, User, Users, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw, Loader2 } from 'lucide-react';
+import { saveOrgProfile, registerUser, loginUser } from '../../api/client';
 import type { OrgProfileData } from './organisation/OrgProfileTab';
 
 export function generateSaurientEmail(fullName: string): string {
@@ -289,96 +289,123 @@ export const RegistrationView: React.FC = () => {
 
     setErrorMsg(null);
     setIsSubmitting(true);
-    const generatedEmail = generateSaurientEmail(formData.ownerName);
-
-    const profilePayload: OrgProfileData = {
-      legalName: formData.legalName,
-      tradingName: formData.tradingName || formData.legalName,
-      organisationId: `ORG-CP-${formData.registrationNumber || '2026-001'}`,
-      registrationNumber: formData.registrationNumber,
-      countryOfIncorporation: formData.countryOfRegistration || formData.country,
-      registeredAddress: [formData.addressLine1, formData.addressLine2, formData.city, formData.region, formData.country].filter(Boolean).join(', '),
-      headquarters: [formData.city, formData.country].filter(Boolean).join(', '),
-      industry: formData.primarySector || 'Manufacturing',
-      naceCode: 'C 24.10 · Industry Sector',
-      primaryProducts: formData.hsTariffCode,
-      website: `https://www.${(formData.tradingName || formData.legalName || 'saurient').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
-      taxId: formData.taxId,
-      lei: formData.leiNumber,
-      primaryContact: {
-        name: formData.ownerName,
-        title: formData.ownerRole,
-        email: generatedEmail,
-        phone: formData.ownerPhone,
-      },
-      sustainabilityContact: {
-        name: formData.sustainabilityLead || formData.ownerName,
-        title: 'Head of Sustainability & Compliance',
-        email: generatedEmail,
-        phone: formData.ownerPhone,
-      },
-      boundary: {
-        consolidationApproach: formData.consolidationApproach,
-        baseYear: formData.baseYear,
-        reportingCurrency: formData.reportingCurrency,
-        defaultUnits: formData.defaultUnits,
-        ghgStandard: formData.ghgStandard,
-        reportingPeriod: 'Calendar Year (Jan – Dec)',
-      },
-      status: 'Verified (Registered)',
-      verification: {
-        provider: 'Bureau Veritas Assurance UK Ltd.',
-        accreditorId: 'UKAS 0009 · ISO 14065 & ISO/IEC 17029',
-        standard: 'ISAE 3410 / ISO 14064-3',
-        assuranceLevel: 'Reasonable Assurance',
-        certificateHash: '0x8f3a9c2e7b1d4f6a0c5e9b8d2a1f7c4e9910283b',
-        verifiedDate: new Date().toISOString().split('T')[0],
-        expiryDate: '2027-12-31',
-      },
-    };
 
     try {
-      await saveOrgProfile(profilePayload);
-    } catch (err) {
-      console.warn('Backend save profile failed, updating local state:', err);
-    }
+      const cleanOrgKey = (formData.tradingName || formData.legalName || 'org')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/^_+|_+$/g, '');
+      const tenantId = `org_${cleanOrgKey || 'company'}`;
+      const generatedEmail = generateSaurientEmail(formData.ownerName);
 
-    try {
-      const regResp = await registerUser({
-        tenant_id: tenantId,
-        email: generatedEmail,
-        password: formData.ownerPassword || 'password123',
-        name: formData.ownerName || `${formData.ownerFirstName || 'Org'} ${formData.ownerLastName || 'Admin'}`.trim(),
-        role: 'Organisation Admin',
-      });
-      if (regResp && regResp.token) {
-        localStorage.setItem('saurient_auth_token', regResp.token);
-        localStorage.setItem('saurient_user_role', 'Organisation Admin');
-        localStorage.setItem('auth_role', 'Organisation Admin');
-        localStorage.setItem('saurient_user_email', generatedEmail);
-        localStorage.setItem('saurient_user_name', regResp.user?.name || formData.ownerName || 'Admin');
-        localStorage.setItem('saurient_user_id', regResp.user?.id || 'usr-admin');
-        localStorage.setItem('saurient_tenant_id', tenantId);
+      const profilePayload: OrgProfileData = {
+        legalName: formData.legalName,
+        tradingName: formData.tradingName || formData.legalName,
+        organisationId: `ORG-CP-${formData.registrationNumber || '2026-001'}`,
+        registrationNumber: formData.registrationNumber,
+        countryOfIncorporation: formData.countryOfRegistration || formData.country,
+        registeredAddress: [formData.addressLine1, formData.addressLine2, formData.city, formData.region, formData.country].filter(Boolean).join(', '),
+        headquarters: [formData.city, formData.country].filter(Boolean).join(', '),
+        industry: formData.primarySector || 'Manufacturing',
+        naceCode: 'C 24.10 · Industry Sector',
+        primaryProducts: formData.hsTariffCode,
+        website: `https://www.${(formData.tradingName || formData.legalName || 'saurient').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+        taxId: formData.taxId,
+        lei: formData.leiNumber,
+        primaryContact: {
+          name: formData.ownerName,
+          title: formData.ownerRole,
+          email: generatedEmail,
+          phone: formData.ownerPhone,
+        },
+        sustainabilityContact: {
+          name: formData.sustainabilityLead || formData.ownerName,
+          title: 'Head of Sustainability & Compliance',
+          email: generatedEmail,
+          phone: formData.ownerPhone,
+        },
+        boundary: {
+          consolidationApproach: formData.consolidationApproach,
+          baseYear: formData.baseYear,
+          reportingCurrency: formData.reportingCurrency,
+          defaultUnits: formData.defaultUnits,
+          ghgStandard: formData.ghgStandard,
+          reportingPeriod: 'Calendar Year (Jan – Dec)',
+        },
+        status: 'Verified (Registered)',
+        verification: {
+          provider: 'Bureau Veritas Assurance UK Ltd.',
+          accreditorId: 'UKAS 0009 · ISO 14065 & ISO/IEC 17029',
+          standard: 'ISAE 3410 / ISO 14064-3',
+          assuranceLevel: 'Reasonable Assurance',
+          certificateHash: '0x8f3a9c2e7b1d4f6a0c5e9b8d2a1f7c4e9910283b',
+          verifiedDate: new Date().toISOString().split('T')[0],
+          expiryDate: '2027-12-31',
+        },
+      };
+
+      try {
+        await saveOrgProfile(profilePayload, tenantId);
+      } catch (err) {
+        console.warn('Backend save profile failed, updating local state:', err);
       }
-    } catch (err) {
-      console.warn('Backend user registration note:', err);
+
+      try {
+        const regResp = await registerUser({
+          tenant_id: tenantId,
+          email: generatedEmail,
+          password: formData.ownerPassword || 'password123',
+          name: formData.ownerName || `${formData.ownerFirstName || 'Org'} ${formData.ownerLastName || 'Admin'}`.trim(),
+          role: 'Organisation Admin',
+        });
+        if (regResp && regResp.token) {
+          localStorage.setItem('saurient_auth_token', regResp.token);
+          localStorage.setItem('saurient_user_role', 'Organisation Admin');
+          localStorage.setItem('auth_role', 'Organisation Admin');
+          localStorage.setItem('saurient_user_email', generatedEmail);
+          localStorage.setItem('saurient_user_name', regResp.user?.name || formData.ownerName || 'Admin');
+          localStorage.setItem('saurient_user_id', regResp.user?.id || 'usr-admin');
+          localStorage.setItem('saurient_tenant_id', tenantId);
+        }
+      } catch (err) {
+        console.warn('Backend user registration note:', err);
+        // If user is already registered in datamodel, authenticate to obtain token
+        try {
+          const loginResp = await loginUser(generatedEmail, formData.ownerPassword || 'password123', tenantId);
+          if (loginResp && loginResp.token) {
+            localStorage.setItem('saurient_auth_token', loginResp.token);
+            localStorage.setItem('saurient_user_role', 'Organisation Admin');
+            localStorage.setItem('auth_role', 'Organisation Admin');
+            localStorage.setItem('saurient_user_email', generatedEmail);
+            localStorage.setItem('saurient_user_name', loginResp.user?.name || formData.ownerName || 'Admin');
+            localStorage.setItem('saurient_user_id', loginResp.user?.id || 'usr-admin');
+            localStorage.setItem('saurient_tenant_id', tenantId);
+          }
+        } catch (loginErr) {
+          console.warn('Fallback login note:', loginErr);
+        }
+      }
+
+      localStorage.removeItem('saurient_registration_draft');
+      localStorage.setItem('saurient_company_registered', 'true');
+      localStorage.setItem('saurient_tenant_id', tenantId);
+      localStorage.setItem('saurient_registered_company', JSON.stringify({
+        ...formData,
+        ownerEmail: generatedEmail,
+        ownerRole: 'Organisation Admin',
+        ownerPassword: formData.ownerPassword || 'password123',
+        tenantId: tenantId,
+        registrationDate: new Date().toISOString(),
+      }));
+
+      setSubmitSuccess(true);
+      setShowSuccessModal(true);
+    } catch (outerErr: any) {
+      console.error('Registration submission failed:', outerErr);
+      setErrorMsg(outerErr?.message || 'Registration submission failed. Please verify fields and retry.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    localStorage.removeItem('saurient_registration_draft');
-    localStorage.setItem('saurient_company_registered', 'true');
-    localStorage.setItem('saurient_tenant_id', tenantId);
-    localStorage.setItem('saurient_registered_company', JSON.stringify({
-      ...formData,
-      ownerEmail: generatedEmail,
-      ownerRole: 'Organisation Admin',
-      ownerPassword: formData.ownerPassword || 'password123',
-      tenantId: tenantId,
-      registrationDate: new Date().toISOString(),
-    }));
-
-    setIsSubmitting(false);
-    setSubmitSuccess(true);
-    setShowSuccessModal(true);
   };
 
   const handleSaveDraft = () => {
@@ -1092,7 +1119,10 @@ export const RegistrationView: React.FC = () => {
                 className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <span>Saving Registration...</span>
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Submitting Registration...</span>
+                  </span>
                 ) : activeStep === 9 ? (
                   <>
                     <span>Submit Company Registration</span>

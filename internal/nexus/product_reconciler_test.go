@@ -44,8 +44,8 @@ func TestProductReconciler_DirectReconcile(t *testing.T) {
 	if passport.TotalFootprintKg <= 0 {
 		t.Errorf("expected positive total footprint, got %f", passport.TotalFootprintKg)
 	}
-	if passport.VerificationStatus != "Calculated" {
-		t.Errorf("expected status Calculated, got %s", passport.VerificationStatus)
+	if passport.VerificationStatus != "Draft" {
+		t.Errorf("expected status Draft, got %s", passport.VerificationStatus)
 	}
 
 	// Verify product state updated in Nexus
@@ -53,8 +53,8 @@ func TestProductReconciler_DirectReconcile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get product after reconciliation: %v", err)
 	}
-	if savedProd.Phase != "Calculated" {
-		t.Errorf("expected product phase Calculated, got %s", savedProd.Phase)
+	if savedProd.Phase != "Draft" {
+		t.Errorf("expected product phase Draft, got %s", savedProd.Phase)
 	}
 	if savedProd.PassportID != passport.PassportID {
 		t.Errorf("expected passport ID %s, got %s", passport.PassportID, savedProd.PassportID)
@@ -102,8 +102,8 @@ func TestProductReconciler_DirectReconcileNode(t *testing.T) {
 		t.Fatal("expected passport from ReconcileProductNode")
 	}
 
-	if prodNode.Spec.Phase != "Calculated" {
-		t.Errorf("expected node phase Calculated, got %s", prodNode.Spec.Phase)
+	if prodNode.Spec.Phase != "Draft" {
+		t.Errorf("expected node phase Draft, got %s", prodNode.Spec.Phase)
 	}
 	if prodNode.Spec.PassportID == "" {
 		t.Error("expected node passport ID to be populated")
@@ -152,8 +152,8 @@ func TestProductReconciler_InformerCallback_ProcessProductAdd(t *testing.T) {
 	// Trigger the Informer Add callback directly
 	reconciler.ProcessProductAdd(prodNode)
 
-	if prodNode.Spec.Phase != "Calculated" {
-		t.Errorf("expected product phase Calculated after ProcessProductAdd, got %s", prodNode.Spec.Phase)
+	if prodNode.Spec.Phase != "Draft" {
+		t.Errorf("expected product phase Draft after ProcessProductAdd, got %s", prodNode.Spec.Phase)
 	}
 	if prodNode.Spec.PassportID == "" {
 		t.Error("expected passport ID to be populated after ProcessProductAdd")
@@ -190,8 +190,8 @@ func TestProductReconciler_InformerCallback_ProcessProductUpdate(t *testing.T) {
 	// Trigger Update callback with newNode in Pending phase
 	reconciler.ProcessProductUpdate(nil, prodNode)
 
-	if prodNode.Spec.Phase != "Calculated" {
-		t.Errorf("expected product phase Calculated after ProcessProductUpdate, got %s", prodNode.Spec.Phase)
+	if prodNode.Spec.Phase != "Draft" {
+		t.Errorf("expected product phase Draft after ProcessProductUpdate, got %s", prodNode.Spec.Phase)
 	}
 
 	// Test Update callback with already Calculated node: should be a no-op
@@ -253,22 +253,20 @@ func TestProductReconciler_InformerCallback_ProcessProductDelete(t *testing.T) {
 }
 
 func TestProductReconciler_PeriodicSweepLoop(t *testing.T) {
+	fakeClient := nexus_client.NewFakeClient()
 	eng := GetNexusEngine()
 	celEng := engine.NewCELEngine()
-	reconciler := NewProductReconciler(eng, celEng)
+	reconciler := NewProductReconcilerWithClient(fakeClient, eng, celEng)
 	// Accelerate sweep ticker for testing
 	reconciler.SetSweepPeriod(30 * time.Millisecond)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	reconciler.Start(ctx)
-	defer reconciler.Stop()
+	_, _ = EnsureGraphRoots(ctx, fakeClient)
 
 	tenantID := "test-tenant-sweep"
-	tenantCtx := tenant.WithTenant(ctx, tenantID)
-
-	prod := &ProductModel{
-		Name:            "product-test-sweep-005",
+	prodSpec := inventoryv1.ProductSpec{
+		ProductID:       "product-test-sweep-005",
 		TenantID:        tenantID,
 		FacilityID:      "FAC-SWEEP-05",
 		BatchID:         "BATCH-SWEEP-005",
@@ -278,29 +276,32 @@ func TestProductReconciler_PeriodicSweepLoop(t *testing.T) {
 		Phase:           "Pending",
 	}
 
-	if err := eng.SaveProduct(tenantCtx, prod); err != nil {
-		t.Fatalf("failed to save product: %v", err)
+	prodNode, err := CreateProductNode(ctx, fakeClient, tenantID, prodSpec)
+	if err != nil {
+		t.Fatalf("failed to create product node: %v", err)
 	}
 
+	reconciler.Start(ctx)
+	defer reconciler.Stop()
+
 	// Wait for periodic sweep loop to pick up and reconcile the pending product
-	var updatedProd *ProductModel
-	var err error
+	var updatedNode *nexus_client.InventoryProduct
 	for i := 0; i < 40; i++ {
 		time.Sleep(25 * time.Millisecond)
-		updatedProd, err = eng.GetProduct(tenantCtx, prod.Name)
-		if err == nil && updatedProd != nil && updatedProd.Phase == "Calculated" {
+		updatedNode, err = GetProductNode(ctx, fakeClient, tenantID, prodNode.DisplayName())
+		if err == nil && updatedNode != nil && (updatedNode.Spec.Phase == "Draft" || updatedNode.Spec.Phase == "Calculated") {
 			break
 		}
 	}
 
 	currentPhase := "nil"
-	if updatedProd != nil {
-		currentPhase = updatedProd.Phase
+	if updatedNode != nil {
+		currentPhase = updatedNode.Spec.Phase
 	}
-	if updatedProd == nil || updatedProd.Phase != "Calculated" {
-		t.Fatalf("periodic sweep loop failed to reconcile product to Calculated, current phase: %v", currentPhase)
+	if updatedNode == nil || (updatedNode.Spec.Phase != "Draft" && updatedNode.Spec.Phase != "Calculated") {
+		t.Fatalf("periodic sweep loop failed to reconcile product, current phase: %v", currentPhase)
 	}
-	if updatedProd.PassportID == "" {
+	if updatedNode.Spec.PassportID == "" {
 		t.Errorf("expected product passport_id to be populated by sweep loop")
 	}
 }

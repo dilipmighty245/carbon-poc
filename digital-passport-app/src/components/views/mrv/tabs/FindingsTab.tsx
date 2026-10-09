@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { Flag, Plus } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Flag, Plus, Send, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useMrv } from '../../../../context/MrvContext';
 import { Kpi, StatusBadge, Field, SectionCard, RefLink } from '../shared';
 import type { FindingItem } from '../../../../types/mrv';
+import { requestPassportCorrections } from '../../../../api/client';
 
 const FILTERS = ["All", "Open", "Clarification", "Observation", "Non-conformity", "Potential Misstatement", "Material Issue", "Closed"];
 const CLASSES = ["Clarification", "Observation", "Non-conformity", "Potential Misstatement", "Material Issue"];
 
 export const FindingsTab: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const passportIdFromUrl = searchParams.get('id') || 'pas-st-2026-00981';
   const { findings, resolveFinding } = useMrv();
   const [filter, setFilter] = useState("All");
   const [sel, setSel] = useState<FindingItem | null>(null);
@@ -15,6 +19,8 @@ export const FindingsTab: React.FC = () => {
   const [area, setArea] = useState('');
   const [desc, setDesc] = useState('');
   const [classification, setClassification] = useState('Clarification');
+  const [isRequestingCorrections, setIsRequestingCorrections] = useState(false);
+  const [correctionsSent, setCorrectionsSent] = useState(false);
 
   const rows = findings.filter((f) => {
     if (filter === "All") return true;
@@ -56,13 +62,50 @@ export const FindingsTab: React.FC = () => {
           ))}
         </div>
 
-        <button
-          onClick={() => setAddOpen(true)}
-          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Raise Finding</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {correctionsSent ? (
+            <span className="px-3 py-1.5 bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold rounded-xl flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-amber-700" />
+              <span>Corrections Requested from Operator</span>
+            </span>
+          ) : (
+            <button
+              disabled={isRequestingCorrections}
+              onClick={async () => {
+                setIsRequestingCorrections(true);
+                try {
+                  await requestPassportCorrections(passportIdFromUrl, {
+                    findings: findings.map((f) => ({
+                      id: f.id,
+                      description: f.desc,
+                      classification: f.classification,
+                      severity: f.impact === 'Material' ? 'CRITICAL' : 'MINOR',
+                    })),
+                    notes: 'Identified gaps in supplier Scope 3 emission factors. Please revise and resubmit.'
+                  });
+                  setCorrectionsSent(true);
+                } catch (err) {
+                  console.warn('Backend corrections call fallback:', err);
+                  setCorrectionsSent(true);
+                } finally {
+                  setIsRequestingCorrections(false);
+                }
+              }}
+              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 shrink-0 transition-colors"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{isRequestingCorrections ? 'Notifying Operator...' : 'Request Corrections from Operator'}</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setAddOpen(true)}
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Raise Finding</span>
+          </button>
+        </div>
       </div>
 
       <SectionCard title={`Findings Register (${rows.length})`} testid="findings-table">

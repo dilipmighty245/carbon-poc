@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Clock, Send, AlertCircle } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
-import { submitPassportForVerification } from '../../../../api/client';
+import { submitPassportForVerification, getActiveTenantId } from '../../../../api/client';
 
 interface PassportReadinessTabProps {
   passports: RichDigitalPassport[];
@@ -10,14 +10,42 @@ interface PassportReadinessTabProps {
 
 export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ passports }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlId = searchParams.get('id') || searchParams.get('batch');
+
   const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
   const isVerifier = userRole.toLowerCase().includes('verifier');
   const isOfficer = userRole.toLowerCase().includes('officer');
   const isOperator = !isVerifier && !isOfficer;
 
-  const [selectedBatch, setSelectedBatch] = useState(passports[0]?.product_summary?.batch_number || 'ST-2026-00981');
+  const initialBatch = (() => {
+    if (urlId && passports.length > 0) {
+      const match = passports.find(
+        (item) =>
+          item.product_summary?.batch_number === urlId ||
+          item.passport_metadata?.passport_id === urlId
+      );
+      if (match?.product_summary?.batch_number) return match.product_summary.batch_number;
+    }
+    return passports[0]?.product_summary?.batch_number || 'ST-2026-00981';
+  })();
+
+  const [selectedBatch, setSelectedBatch] = useState(initialBatch);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (urlId && passports.length > 0) {
+      const match = passports.find(
+        (item) =>
+          item.product_summary?.batch_number === urlId ||
+          item.passport_metadata?.passport_id === urlId
+      );
+      if (match?.product_summary?.batch_number) {
+        setSelectedBatch(match.product_summary.batch_number);
+      }
+    }
+  }, [urlId, passports]);
 
   const p = passports.find((item) => item.product_summary?.batch_number === selectedBatch) || passports[0];
   const [localStatus, setLocalStatus] = useState<string | null>(null);
@@ -42,7 +70,8 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
     setSubmitMsg(null);
     try {
       const email = localStorage.getItem('saurient_user_email') || 'operator@asante-cocoa.com';
-      await submitPassportForVerification(targetId, email, 'Completed primary energy logs and supplier BOM');
+      const tid = getActiveTenantId();
+      await submitPassportForVerification(targetId, email, 'Completed primary energy logs and supplier BOM', tid);
       setLocalStatus('Submitted');
       setSubmitMsg('Passport completed data and evidence successfully submitted for independent verification!');
     } catch (err: any) {
