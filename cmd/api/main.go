@@ -2041,7 +2041,8 @@ func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http
 			IssuedAt:           time.Now().UTC().Format(time.RFC3339),
 			Version:            "1.0",
 		}
-		if _, err := nexus.CreatePassportNode(ctx, nClient, passportSpec, nil); err != nil {
+		prodNode, _ := nexus.GetProductNode(ctx, nClient, req.TenantID, req.BatchNumber)
+		if _, err := nexus.CreatePassportNode(ctx, nClient, passportSpec, prodNode); err != nil {
 			log.Printf("Failed to create CarbonPassport node in Nexus graph: %v", err)
 		} else {
 			log.Printf("CarbonPassport node created in Nexus graph: %s", passportID)
@@ -2171,7 +2172,8 @@ func (s *VerificationServer) handleUpdatePassport(w http.ResponseWriter, r *http
 			IssuedAt:           time.Now().UTC().Format(time.RFC3339),
 			Version:            "1.1",
 		}
-		if _, err := nexus.CreatePassportNode(ctx, nClient, passportSpec, nil); err != nil {
+		prodNode, _ := nexus.GetProductNode(ctx, nClient, req.TenantID, req.BatchNumber)
+		if _, err := nexus.CreatePassportNode(ctx, nClient, passportSpec, prodNode); err != nil {
 			log.Printf("Failed to update CarbonPassport node in Nexus graph: %v", err)
 		} else {
 			log.Printf("CarbonPassport node updated in Nexus graph: %s", passportID)

@@ -82,6 +82,15 @@ func TestNexusClient_GraphRootsAndProductNode(t *testing.T) {
 		t.Errorf("expected footprint 18500.5, got %f", passportNode.Spec.TotalFootprintKg)
 	}
 
+	// Verify Nexus cross-graph link: CarbonPassport -> Product
+	linkedProd, err := passportNode.GetProductRef(ctx)
+	if err != nil {
+		t.Fatalf("expected linked product from passport, got error: %v", err)
+	}
+	if linkedProd == nil || linkedProd.DisplayName() != productNode.DisplayName() {
+		t.Fatalf("expected linked product %s, got %v", productNode.DisplayName(), linkedProd)
+	}
+
 	// 5. Update Product node status to Calculated
 	productNode.Spec.Phase = "Calculated"
 	productNode.Spec.PassportID = passportID
