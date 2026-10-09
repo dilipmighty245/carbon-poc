@@ -410,12 +410,6 @@ const graphiqlHTML = `<!DOCTYPE html>
 func main() {
 	port := getEnv("PORT", "8080")
 
-	// Ensure backing etcd server is running (either external cluster or embedded)
-	if _, err := nexus.EnsureEtcdServer(nil); err != nil {
-		log.Printf("Warning: failed to ensure etcd server: %v", err)
-	}
-	defer nexus.StopEmbeddedEtcd()
-
 	// Initialize Nexus typed client and ensure root graph anchor hierarchy
 	nClient := nexus.GetNexusClient()
 	if nClient == nil {

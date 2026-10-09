@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"strings"
 	"sync"
@@ -70,8 +69,6 @@ type NexusGraphEngine struct {
 
 	eventMu            sync.RWMutex
 	productSubscribers []chan ProductEvent
-
-	etcdStore *EtcdStore
 }
 
 var (
@@ -87,26 +84,10 @@ func GetNexusEngine() *NexusGraphEngine {
 			edges:              make(map[string]LineageEdge),
 			dagMap:             make(map[string]*LineageDAG),
 			productSubscribers: make([]chan ProductEvent, 0),
-			etcdStore:          GetEtcdStore(),
 		}
 		globalEngine.seedDefaultGraphTopology()
-		if globalEngine.etcdStore != nil && globalEngine.etcdStore.IsAvailable() {
-			if err := globalEngine.etcdStore.LoadAllIntoStore(context.Background(), getStore()); err != nil {
-				log.Printf("[Nexus etcd] Preloading data from etcd into store error: %v", err)
-			}
-		}
 	})
 	return globalEngine
-}
-
-func (e *NexusGraphEngine) getEtcdStore() *EtcdStore {
-	if e == nil {
-		return nil
-	}
-	if e.etcdStore == nil {
-		e.etcdStore = GetEtcdStore()
-	}
-	return e.etcdStore
 }
 
 // SubscribeProductEvents registers a subscriber channel for product events.

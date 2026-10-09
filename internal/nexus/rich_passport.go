@@ -41,6 +41,7 @@ type ProductSummary struct {
 	Facility             FacilitySummary  `json:"facility"`
 	ProductionDate       string           `json:"production_date"`
 	BatchSize            BatchSizeSummary `json:"batch_size"`
+	HSCode               string           `json:"hs_code,omitempty"`
 }
 
 type ValuePercentage struct {
@@ -215,6 +216,15 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	exportMkt := "Global"
 	if bdExp, ok := batchData["export_market"].(string); ok && bdExp != "" {
 		exportMkt = bdExp
+	}
+
+	hsCode := "7208 39 00"
+	if bdHS, ok := batchData["hs_code"].(string); ok && bdHS != "" {
+		hsCode = bdHS
+	} else if p.CommodityType == "Cocoa" {
+		hsCode = "1801 00 00"
+	} else if p.CommodityType == "Metals" {
+		hsCode = "7601 10 00"
 	}
 
 	s1 := p.Scope1KgCO2e
@@ -437,6 +447,7 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 				Quantity: batchQty,
 				Unit:     batchUnit,
 			},
+			HSCode: hsCode,
 		},
 		CarbonFootprint: CarbonFootprintSummary{
 			TotalBatchFootprintKgCO2e: math.Round(total*100) / 100,

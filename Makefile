@@ -53,12 +53,18 @@ test-e2e: check-prereqs clean etcd-start build
 		fi; \
 		sleep 1; \
 	done
-	@echo "==> 1/2 Running Backend Go E2E Integration Test Suite..."
+	@echo "==> 1/3 Running Backend Go E2E Integration Test Suite..."
 	go test -v ./tests/...
-	@echo "==> 2/2 Running Full UI to Backend Integration E2E Test..."
+	@echo "==> 2/3 Running Full UI to Backend Integration E2E Test..."
 	node scripts/e2e_ui_backend_test.mjs
+	@echo "==> 3/3 Running Playwright UI E2E Connected Journey Test..."
+	@cd digital-passport-app && npm run test:e2e
 	@echo "==> Cleaning up background servers..."
 	@$(MAKE) clean
+
+test-e2e-ui-run:
+	@echo "==> Running Playwright UI E2E Connected Journey Test against active servers..."
+	@cd digital-passport-app && npm run test:e2e
 
 e2e: test-e2e
 

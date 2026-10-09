@@ -622,14 +622,6 @@ func (e *NexusGraphEngine) SavePassportAndAudit(ctx context.Context, p *CarbonPa
 	}
 	e.mu.Unlock()
 
-	// Persist to etcd backing store
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.SavePassport(ctx, p)
-		if audit != nil {
-			_ = etcd.SaveAuditTrail(ctx, p.TenantID, audit)
-		}
-	}
-
 	return nil
 }
 
@@ -682,21 +674,12 @@ func (e *NexusGraphEngine) DeletePassportByPassportID(ctx context.Context, passp
 	s.storeMu.Lock()
 	defer s.storeMu.Unlock()
 
-	var tenantID string
-	if p, ok := s.passports[passportID]; ok {
-		tenantID = p.TenantID
-	}
-
 	delete(s.passports, passportID)
 	delete(s.auditTrails, passportID)
 
 	e.mu.Lock()
 	delete(e.nodes, passportID)
 	e.mu.Unlock()
-
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.DeletePassport(ctx, tenantID, passportID)
-	}
 
 	return nil
 }
@@ -708,17 +691,12 @@ func (e *NexusGraphEngine) DeletePassportByBatchNumber(ctx context.Context, batc
 
 	for id, p := range s.passports {
 		if p.BatchNumber == batchNumber {
-			tenantID := p.TenantID
 			delete(s.passports, id)
 			delete(s.auditTrails, id)
 
 			e.mu.Lock()
 			delete(e.nodes, id)
 			e.mu.Unlock()
-
-			if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-				_ = etcd.DeletePassport(ctx, tenantID, id)
-			}
 			break
 		}
 	}
@@ -767,11 +745,6 @@ func (e *NexusGraphEngine) SaveProduct(ctx context.Context, p *ProductModel) err
 	}
 	e.mu.Unlock()
 
-	// Persist to etcd backing store
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.SaveProduct(ctx, p)
-	}
-
 	return nil
 }
 
@@ -816,10 +789,8 @@ func (e *NexusGraphEngine) DeleteProduct(ctx context.Context, identifier string)
 	defer s.storeMu.Unlock()
 
 	var batchID string
-	var tenantID string
 	if p, ok := s.products[identifier]; ok {
 		batchID = p.BatchID
-		tenantID = p.TenantID
 		delete(s.products, p.Name)
 		delete(s.products, p.BatchID)
 	} else {
@@ -831,10 +802,6 @@ func (e *NexusGraphEngine) DeleteProduct(ctx context.Context, identifier string)
 		e.mu.Lock()
 		delete(e.nodes, batchID)
 		e.mu.Unlock()
-
-		if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-			_ = etcd.DeleteProduct(ctx, tenantID, batchID)
-		}
 	}
 
 	return nil
@@ -853,10 +820,6 @@ func (e *NexusGraphEngine) SaveRulebook(ctx context.Context, r *RulebookModel) e
 	s.rulebooks[r.Name] = r
 	if r.ID != "" {
 		s.rulebooks[r.ID] = r
-	}
-
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.SaveRulebook(ctx, r)
 	}
 
 	return nil
@@ -963,10 +926,6 @@ func (e *NexusGraphEngine) SaveTenantProfile(ctx context.Context, p *TenantProfi
 
 	s.tenantProfiles[p.TenantID] = p
 
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.SaveTenantProfile(ctx, p)
-	}
-
 	return nil
 }
 
@@ -1012,10 +971,6 @@ func (e *NexusGraphEngine) SaveFacility(ctx context.Context, f *FacilityModel) e
 		s.facilities[f.TenantID] = append(facs, f)
 	}
 
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.SaveFacility(ctx, f)
-	}
-
 	return nil
 }
 
@@ -1037,10 +992,6 @@ func (e *NexusGraphEngine) DeleteFacility(ctx context.Context, facilityID string
 		}
 	}
 	s.facilities[tID] = updated
-
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.Delete(ctx, KeyFacility(tID, facilityID))
-	}
 
 	return nil
 }
@@ -1087,10 +1038,6 @@ func (e *NexusGraphEngine) SaveProcess(ctx context.Context, p *ProcessModel) err
 		s.processes[p.TenantID] = append(procs, p)
 	}
 
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.SaveProcess(ctx, p)
-	}
-
 	return nil
 }
 
@@ -1112,10 +1059,6 @@ func (e *NexusGraphEngine) DeleteProcess(ctx context.Context, processID string) 
 		}
 	}
 	s.processes[tID] = updated
-
-	if etcd := e.getEtcdStore(); etcd != nil && etcd.IsAvailable() {
-		_ = etcd.Delete(ctx, KeyProcess(tID, processID))
-	}
 
 	return nil
 }
