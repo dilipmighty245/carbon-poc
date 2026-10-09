@@ -13,7 +13,7 @@ export const LoginView: React.FC = () => {
 
   const DEMO_ACCOUNTS: Record<string, { name: string; email: string; pass: string; route: string; desc: string; badge: string; tenantId: string }> = {
     'Company Operator': {
-      name: 'Kofi Asante (Lead Operator)',
+      name: 'Santosh Samudrala (Lead Operator)',
       email: 'operator@asante-cocoa.com',
       pass: 'DemoPassword2026!',
       route: '/company-dashboard',
@@ -31,7 +31,7 @@ export const LoginView: React.FC = () => {
       tenantId: 'tenant-verifier-agency',
     },
     'Passport Officer': {
-      name: 'Dr. Elena Rostova',
+      name: 'Santosh Samudrala',
       email: 'officer@saurient.com',
       pass: 'DemoPassword2026!',
       route: '/passport/sign-issue',

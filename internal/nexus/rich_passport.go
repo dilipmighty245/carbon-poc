@@ -174,8 +174,21 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	}
 
 	producerOrg := p.TenantID
-	if bdOrg, ok := batchData["producer_organization"].(string); ok && bdOrg != "" {
+	bdOrg, _ := batchData["producer_organization"].(string)
+	if bdOrg != "" && !strings.HasPrefix(bdOrg, "org_") {
 		producerOrg = bdOrg
+	} else if p.TenantID == "org_asante_cocoa" || bdOrg == "org_asante_cocoa" {
+		if strings.ToLower(commodity) == "metals" || strings.Contains(strings.ToLower(productName), "aluminium") {
+			producerOrg = "Saurient Industrial Metals"
+		} else {
+			producerOrg = "Asante Cocoa Ltd"
+		}
+	} else if p.TenantID == "org_saurient_demo" || bdOrg == "org_saurient_demo" {
+		producerOrg = "Saurient Industrial Ltd"
+	} else if strings.HasPrefix(producerOrg, "org_") {
+		clean := strings.TrimPrefix(producerOrg, "org_")
+		clean = strings.ReplaceAll(clean, "_", " ")
+		producerOrg = strings.Title(clean)
 	}
 
 	facilityName := p.FacilityID

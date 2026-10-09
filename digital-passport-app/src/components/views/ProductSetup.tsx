@@ -253,6 +253,23 @@ export const ProductSetup: React.FC = () => {
     const selectedFac = facilitiesList.find((f) => f.name === facility) || facilitiesList[0];
     const activeTenant = getActiveTenantId();
 
+    const regCompStr = localStorage.getItem('saurient_registered_company');
+    let friendlyOrg = '';
+    if (regCompStr) {
+      try {
+        friendlyOrg = JSON.parse(regCompStr).legalName;
+      } catch (e) {}
+    }
+    if (!friendlyOrg) {
+      if (activeTenant === 'org_asante_cocoa') {
+        friendlyOrg = commodity === 'Metals' ? 'Saurient Industrial Metals' : 'Asante Cocoa Ltd';
+      } else if (activeTenant === 'org_saurient_demo') {
+        friendlyOrg = 'Saurient Industrial Ltd';
+      } else {
+        friendlyOrg = activeTenant.replace(/^org_/, '').replace(/_/g, ' ');
+      }
+    }
+
     try {
       const resp = await createProduct({
         tenant_id: activeTenant,
@@ -268,6 +285,7 @@ export const ProductSetup: React.FC = () => {
           product_name: productName,
           commodity,
           batch_id: batchId,
+          producer_organization: friendlyOrg,
           facility_name: facility,
           facility_location: selectedFac?.location || 'Primary Facility Site',
           batch_size_quantity: Number(batchQuantity),

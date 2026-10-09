@@ -20,8 +20,13 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
 
   const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId || p.product_summary?.batch_number === passportId) || (passports.length > 0 && !passportId ? passports[0] : null);
 
+  const storedUserName = localStorage.getItem('saurient_user_name');
+  const defaultSignerName = storedUserName
+    ? (storedUserName.includes('Officer') || storedUserName.includes('Sustainability') ? storedUserName : `${storedUserName} (Chief Sustainability Officer)`)
+    : 'Santosh Samudrala (Chief Sustainability Officer)';
+
   const [signingKey, setSigningKey] = useState('0xKEY-ORATOR-PROD-SECURE-ED25519-88492');
-  const [authorizedSigner, setAuthorizedSigner] = useState('Dr. Elena Rostova (Chief Sustainability Officer)');
+  const [authorizedSigner, setAuthorizedSigner] = useState(defaultSignerName);
   const [isSigning, setIsSigning] = useState(false);
   const [isSubmittingAgency, setIsSubmittingAgency] = useState(false);
   const [agencySubmitted, setAgencySubmitted] = useState(false);

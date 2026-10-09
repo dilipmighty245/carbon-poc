@@ -221,9 +221,14 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
       : 'Pending Submission',
   };
 
+  const storedUserName = localStorage.getItem('saurient_user_name');
+  const fallbackIssuer = storedUserName
+    ? (storedUserName.includes('Officer') || storedUserName.includes('Sustainability') ? storedUserName : `${storedUserName} (Chief Sustainability Officer)`)
+    : 'Santosh Samudrala (Chief Sustainability Officer)';
+
   const audit = {
     dataset_lock_hash: (passport as any)?.audit_trail?.dataset_lock_hash || metadata.cryptographic_hash,
-    issued_by: (passport as any)?.audit_trail?.issued_by || 'Dr. Elena Rostova (Chief Sustainability Officer)',
+    issued_by: (passport as any)?.audit_trail?.issued_by || fallbackIssuer,
     issued_at: (passport as any)?.audit_trail?.issued_at || metadata.issuance_date,
   };
 

@@ -30,7 +30,7 @@ export const PassportVersionsTab: React.FC<PassportVersionsTabProps> = ({ passpo
     {
       version: 'v1.1 (Current Issued)',
       date: (passport as any)?.audit_trail?.issued_at || passport?.passport_metadata?.issuance_date || '2026-03-28T14:30:00Z',
-      author: (passport as any)?.audit_trail?.issued_by || 'Dr. Elena Rostova',
+      author: (passport as any)?.audit_trail?.issued_by || localStorage.getItem('saurient_user_name') || 'Santosh Samudrala',
       changes: 'Updated CBAM carbon price paid reconciliation & finalized verifier statement',
       hash: (passport as any)?.audit_trail?.dataset_lock_hash || passport?.passport_metadata?.cryptographic_hash || '0xa7b4c9e1f2d34890',
       active: true,

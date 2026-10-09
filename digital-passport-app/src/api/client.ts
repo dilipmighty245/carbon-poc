@@ -323,7 +323,7 @@ export async function deletePassport(passportId: string, tenantId = DEFAULT_TENA
   return await res.json();
 }
 
-export async function signAndIssuePassport(passportId: string, signerName = 'Dr. Elena Rostova', signerRole = 'Chief Sustainability Officer', keyId = '0xKEY-ORATOR-PROD-SECURE-ED25519-88492', tenantId = DEFAULT_TENANT_ID) {
+export async function signAndIssuePassport(passportId: string, signerName = 'Santosh Samudrala', signerRole = 'Chief Sustainability Officer', keyId = '0xKEY-ORATOR-PROD-SECURE-ED25519-88492', tenantId = DEFAULT_TENANT_ID) {
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}/sign`, {
     method: 'POST',
     headers: {

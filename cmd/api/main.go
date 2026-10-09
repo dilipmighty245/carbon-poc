@@ -2117,7 +2117,7 @@ func (s *VerificationServer) handleSignPassport(w http.ResponseWriter, r *http.R
 		return
 	}
 	if req.SignerName == "" {
-		req.SignerName = "Dr. Elena Rostova"
+		req.SignerName = "Santosh Samudrala"
 	}
 	if req.SignerRole == "" {
 		req.SignerRole = "Chief Sustainability Officer"
