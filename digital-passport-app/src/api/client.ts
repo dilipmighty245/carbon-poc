@@ -459,12 +459,13 @@ export interface AuthResponse {
   expires_in?: number;
 }
 
-export async function loginUser(email: string, password: string, tenantId = DEFAULT_TENANT_ID): Promise<AuthResponse> {
+export async function loginUser(email: string, password: string, tenantId?: string): Promise<AuthResponse> {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify({ email, password }),
   });

@@ -61,6 +61,18 @@ func SetNexusClient(c *nexus_client.Clientset) {
 	}
 }
 
+// ResetNexusClient wipes the in-memory Nexus graph and initializes clean root singletons and standard reference rulebooks.
+func ResetNexusClient(ctx context.Context) error {
+	nexusClientMu.Lock()
+	defer nexusClientMu.Unlock()
+	globalNexusClient = nexus_client.NewFakeClient()
+	_, err := EnsureGraphRoots(ctx, globalNexusClient)
+	if err != nil {
+		return err
+	}
+	return SeedDefaultNexusData(ctx, globalNexusClient)
+}
+
 // NewNexusClient builds a typed Nexus clientset.
 // It tries to connect via:
 // 1. Provided kubeconfig path
@@ -654,7 +666,7 @@ func ListUserNodes(ctx context.Context, client *nexus_client.Clientset, tenantID
 
 	// Cluster-wide list across all tenants
 	allUsers, err := client.Inventory().ListUsers(ctx, metav1.ListOptions{})
-	if err == nil {
+	if err == nil && len(allUsers) > 0 {
 		return allUsers, nil
 	}
 

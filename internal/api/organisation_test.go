@@ -387,3 +387,182 @@ func TestOrganisationHandler_Facilities_DynamicTelemetry_And_SattricMeters(t *te
 	}
 }
 
+func TestOrganisationHandler_SystemReset(t *testing.T) {
+	client := nexus_client.NewFakeClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	engine := nexus.GetNexusEngine()
+
+	handler := NewOrganisationHandlerWithClient(client, engine)
+	mux := http.NewServeMux()
+	handler.RegisterRoutes(mux)
+
+	// Save profile to create state
+	profReq := map[string]interface{}{
+		"legal_name": "Loki Pvt Ltd",
+		"tax_id":     "TAX-999",
+	}
+	body, _ := json.Marshal(profReq)
+	reqSave := httptest.NewRequest(http.MethodPut, "/api/v1/organisation/profile", bytes.NewBuffer(body))
+	reqSave.Header.Set("Content-Type", "application/json")
+	reqSave.Header.Set("X-Tenant-ID", "tenant-to-reset")
+	recSave := httptest.NewRecorder()
+	mux.ServeHTTP(recSave, reqSave)
+	if recSave.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK saving profile, got %d", recSave.Code)
+	}
+
+	// Trigger System Reset via POST /api/v1/system/reset
+	reqReset := httptest.NewRequest(http.MethodPost, "/api/v1/system/reset", nil)
+	recReset := httptest.NewRecorder()
+	mux.ServeHTTP(recReset, reqReset)
+	if recReset.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK resetting system, got %d: %s", recReset.Code, recReset.Body.String())
+	}
+
+	// Assert the profile for tenant-to-reset was cleared of custom data
+	reqGet := httptest.NewRequest(http.MethodGet, "/api/v1/organisation/profile", nil)
+	reqGet.Header.Set("X-Tenant-ID", "tenant-to-reset")
+	recGet := httptest.NewRecorder()
+	mux.ServeHTTP(recGet, reqGet)
+	if recGet.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK after reset, got %d", recGet.Code)
+	}
+	var profAfter nexus.TenantProfileModel
+	_ = json.NewDecoder(recGet.Body).Decode(&profAfter)
+	if profAfter.TaxID == "TAX-999" || profAfter.LegalName == "Loki Pvt Ltd" {
+		t.Fatalf("expected custom profile data to be wiped after reset, got %+v", profAfter)
+	}
+}
+
+func TestOrganisationHandler_AccountOwner_OrganisationAdmin_And_TeamProvisioning(t *testing.T) {
+	client := nexus_client.NewFakeClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	engine := nexus.GetNexusEngine()
+
+	handler := NewOrganisationHandlerWithClient(client, engine)
+	mux := http.NewServeMux()
+	handler.RegisterRoutes(mux)
+
+	tenantID := "tenant-omega-steel"
+
+	// 1. Register Account Owner for new organisation -> role must be "Organisation Admin"
+	regPayload := map[string]string{
+		"tenant_id": tenantID,
+		"name":      "Santosh Samudrala",
+		"email":     "santosh@omega-steel.com",
+		"password":  "OwnerSecurePassword2026!",
+		"role":      "Organisation Admin",
+	}
+	body, _ := json.Marshal(regPayload)
+	reqReg := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
+	reqReg.Header.Set("Content-Type", "application/json")
+	recReg := httptest.NewRecorder()
+	mux.ServeHTTP(recReg, reqReg)
+
+	if recReg.Code != http.StatusCreated {
+		t.Fatalf("expected 201 Created for account owner registration, got %d: %s", recReg.Code, recReg.Body.String())
+	}
+
+	var regResp LoginResponse
+	if err := json.NewDecoder(recReg.Body).Decode(&regResp); err != nil {
+		t.Fatalf("failed to decode register response: %v", err)
+	}
+	if regResp.User.Role != "Organisation Admin" {
+		t.Fatalf("expected role 'Organisation Admin' for account owner, got '%s'", regResp.User.Role)
+	}
+
+	// 2. Verify account owner credentials can log in via POST /api/v1/auth/login
+	loginPayload := map[string]string{
+		"email":    "santosh@omega-steel.com",
+		"password": "OwnerSecurePassword2026!",
+	}
+	loginBody, _ := json.Marshal(loginPayload)
+	reqLogin := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(loginBody))
+	reqLogin.Header.Set("Content-Type", "application/json")
+	reqLogin.Header.Set("X-Tenant-ID", tenantID)
+	recLogin := httptest.NewRecorder()
+	mux.ServeHTTP(recLogin, reqLogin)
+
+	if recLogin.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK logging in as Organisation Admin, got %d: %s", recLogin.Code, recLogin.Body.String())
+	}
+
+	var loginResp LoginResponse
+	if err := json.NewDecoder(recLogin.Body).Decode(&loginResp); err != nil {
+		t.Fatalf("failed to decode login response: %v", err)
+	}
+	if loginResp.User.Role != "Organisation Admin" {
+		t.Fatalf("expected logged in user role 'Organisation Admin', got '%s'", loginResp.User.Role)
+	}
+
+	// 3. Logged-in Organisation Admin uses credentials to create a new team member
+	newMemberPayload := map[string]interface{}{
+		"name":           "Alex Rivera",
+		"email":          "a.rivera@omega-steel.com",
+		"password":       "AlexPassword2026!",
+		"role":           "Data Operator",
+		"facility_scope": "Blast Furnace Line 1",
+	}
+	memberBody, _ := json.Marshal(newMemberPayload)
+	reqAddMember := httptest.NewRequest(http.MethodPost, "/api/v1/organisation/users", bytes.NewBuffer(memberBody))
+	reqAddMember.Header.Set("Content-Type", "application/json")
+	reqAddMember.Header.Set("X-Tenant-ID", tenantID)
+	reqAddMember.Header.Set("Authorization", "Bearer "+loginResp.Token)
+	recAddMember := httptest.NewRecorder()
+	mux.ServeHTTP(recAddMember, reqAddMember)
+
+	if recAddMember.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK creating new member, got %d: %s", recAddMember.Code, recAddMember.Body.String())
+	}
+
+	var createdMember nexus.OrganisationUserModel
+	if err := json.NewDecoder(recAddMember.Body).Decode(&createdMember); err != nil {
+		t.Fatalf("failed to decode created member: %v", err)
+	}
+	if createdMember.Email != "a.rivera@omega-steel.com" || createdMember.Role != "Data Operator" {
+		t.Fatalf("unexpected member created: %+v", createdMember)
+	}
+
+	// 4. Organisation Admin updates the member's role to "Compliance Manager"
+	roleUpdatePayload := map[string]string{
+		"userId":  createdMember.ID,
+		"newRole": "Compliance Manager",
+	}
+	roleBody, _ := json.Marshal(roleUpdatePayload)
+	reqRoleUpdate := httptest.NewRequest(http.MethodPost, "/api/v1/organisation/users/role", bytes.NewBuffer(roleBody))
+	reqRoleUpdate.Header.Set("Content-Type", "application/json")
+	reqRoleUpdate.Header.Set("X-Tenant-ID", tenantID)
+	reqRoleUpdate.Header.Set("Authorization", "Bearer "+loginResp.Token)
+	recRoleUpdate := httptest.NewRecorder()
+	mux.ServeHTTP(recRoleUpdate, reqRoleUpdate)
+
+	if recRoleUpdate.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK updating role, got %d: %s", recRoleUpdate.Code, recRoleUpdate.Body.String())
+	}
+
+	// 5. Verify the created member can now log in with their credentials and has "Compliance Manager" role
+	memberLoginPayload := map[string]string{
+		"email":    "a.rivera@omega-steel.com",
+		"password": "AlexPassword2026!",
+	}
+	memberLoginBody, _ := json.Marshal(memberLoginPayload)
+	reqMemberLogin := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(memberLoginBody))
+	reqMemberLogin.Header.Set("Content-Type", "application/json")
+	reqMemberLogin.Header.Set("X-Tenant-ID", tenantID)
+	recMemberLogin := httptest.NewRecorder()
+	mux.ServeHTTP(recMemberLogin, reqMemberLogin)
+
+	if recMemberLogin.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for member login, got %d: %s", recMemberLogin.Code, recMemberLogin.Body.String())
+	}
+
+	var memberLoginResp LoginResponse
+	if err := json.NewDecoder(recMemberLogin.Body).Decode(&memberLoginResp); err != nil {
+		t.Fatalf("failed to decode member login response: %v", err)
+	}
+	if memberLoginResp.User.Role != "Compliance Manager" {
+		t.Fatalf("expected member role 'Compliance Manager', got '%s'", memberLoginResp.User.Role)
+	}
+}
+
+

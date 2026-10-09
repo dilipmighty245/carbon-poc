@@ -1,17 +1,37 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, AlertTriangle, Building, LogIn, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { loginUser } from '../../api/client';
 
 export const LoginView: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [loginError, setLoginError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const getRegisteredCompany = () => {
+    try {
+      const reg = localStorage.getItem('saurient_registered_company');
+      return reg ? JSON.parse(reg) : null;
+    } catch {
+      return null;
+    }
+  };
+  const registeredCompany = getRegisteredCompany();
+
   const DEMO_ACCOUNTS: Record<string, { name: string; email: string; pass: string; route: string; desc: string; badge: string; tenantId: string }> = {
+    'Organisation Admin': {
+      name: registeredCompany?.ownerName || 'Santosh Samudrala (Organisation Admin)',
+      email: registeredCompany?.ownerEmail || 'admin@asante-cocoa.com',
+      pass: registeredCompany?.ownerPassword || 'DemoPassword2026!',
+      route: '/company-dashboard',
+      desc: 'Workspace & Team Administration',
+      badge: registeredCompany?.tradingName || registeredCompany?.legalName || 'Asante Cocoa Ltd',
+      tenantId: registeredCompany?.tenantId || 'org_asante_cocoa',
+    },
     'Company Operator': {
       name: 'Santosh Samudrala (Lead Operator)',
       email: 'operator@asante-cocoa.com',
@@ -54,7 +74,37 @@ export const LoginView: React.FC = () => {
   const [email, setEmail] = useState(DEMO_ACCOUNTS['Company Operator'].email);
   const [password, setPassword] = useState(DEMO_ACCOUNTS['Company Operator'].pass);
 
+  useEffect(() => {
+    const isRegistered = searchParams.get('registered') === 'true';
+    const emailParam = searchParams.get('email');
+
+    if (isRegistered || emailParam) {
+      setRole('Organisation Admin');
+      if (emailParam) {
+        setEmail(emailParam);
+        const registered = getRegisteredCompany();
+        if (registered && registered.ownerEmail?.toLowerCase() === emailParam.toLowerCase() && registered.ownerPassword) {
+          setPassword(registered.ownerPassword);
+        } else {
+          setPassword(registered?.ownerPassword || 'DemoPassword2026!');
+        }
+      } else {
+        const registered = getRegisteredCompany();
+        if (registered?.ownerEmail) {
+          setEmail(registered.ownerEmail);
+          setPassword(registered.ownerPassword || 'DemoPassword2026!');
+        }
+      }
+      setSuccessMsg('Organisation registered successfully. Sign in with your Organisation Admin credentials to manage your team and assign roles.');
+    }
+  }, [searchParams]);
+
   const roles = [
+    { 
+      title: 'Organisation Admin', 
+      desc: 'Workspace & Team Administration', 
+      badge: registeredCompany?.tradingName || registeredCompany?.legalName || 'Asante Cocoa Ltd',
+    },
     { 
       title: 'Company Operator', 
       desc: 'Facility & ESG Operations',

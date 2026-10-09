@@ -44,16 +44,21 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   );
   const userInitials = isVerifier ? 'V' : isOfficer ? 'P' : 'O';
 
+  const currentTenant = localStorage.getItem('saurient_tenant_id') || 'org_saurient_demo';
+
   const companyName = (() => {
     if (isVerifier) return 'Bureau Veritas UK Ltd (#NAB-8820)';
+    if (currentTenant === 'org_saurient_demo') return 'Saurient Authority';
+    if (currentTenant === 'org_asante_cocoa') return 'Asante Cocoa Ltd';
+    if (currentTenant === 'tenant-verifier-agency') return 'Bureau Veritas UK Ltd';
     const regStr = localStorage.getItem('saurient_registered_company');
     if (regStr) {
       try {
         const c = JSON.parse(regStr);
-        if (c.legalName) return c.legalName;
+        if (c.tenantId === currentTenant && c.legalName) return c.legalName;
       } catch (e) {}
     }
-    return 'Asante Cocoa Cooperative';
+    return 'Saurient Carbon Passport';
   })();
 
   useEffect(() => {
@@ -71,13 +76,8 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('saurient_user_role');
-    localStorage.removeItem('auth_role');
-    localStorage.removeItem('saurient_user_email');
-    localStorage.removeItem('saurient_user_name');
-    localStorage.removeItem('saurient_auth_token');
-    localStorage.removeItem('saurient_user_id');
-    localStorage.removeItem('saurient_tenant_id');
+    localStorage.clear();
+    sessionStorage.clear();
     navigate('/login');
   };
 
@@ -166,13 +166,15 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           <div className="p-4 border-t border-slate-800/80">
             <div className="mb-2">
               <span className={`inline-block px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider rounded-md shadow-xs ${
-                isVerifier 
+                role === 'Organisation Admin'
+                  ? 'bg-purple-400 text-slate-950'
+                  : isVerifier 
                   ? 'bg-indigo-400 text-slate-950' 
                   : isOfficer 
                   ? 'bg-amber-400 text-slate-950' 
                   : 'bg-emerald-400 text-slate-950'
               }`}>
-                {isVerifier ? 'VERIFIER WORKSPACE' : isOfficer ? 'ISSUANCE AUTHORITY' : 'COMPANY WORKSPACE'}
+                {role === 'Organisation Admin' ? 'ORGANISATION ADMIN' : isVerifier ? 'VERIFIER WORKSPACE' : isOfficer ? 'ISSUANCE AUTHORITY' : 'COMPANY WORKSPACE'}
               </span>
             </div>
             {isVerifier ? (
@@ -181,19 +183,25 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 <p className="text-[10px] text-slate-400 mt-0.5">Accredited Lead Auditor (#NAB-8820)</p>
               </>
             ) : (() => {
-              const regStr = localStorage.getItem('saurient_registered_company');
               let compName = 'Saurient Carbon Passport';
-              if (regStr) {
-                try {
-                  const c = JSON.parse(regStr);
-                  if (c.legalName) compName = c.legalName;
-                } catch (e) {}
+              if (currentTenant === 'org_saurient_demo') {
+                compName = 'Saurient Authority';
+              } else if (currentTenant === 'org_asante_cocoa') {
+                compName = 'Asante Cocoa Ltd';
+              } else {
+                const regStr = localStorage.getItem('saurient_registered_company');
+                if (regStr) {
+                  try {
+                    const c = JSON.parse(regStr);
+                    if (c.tenantId === currentTenant && c.legalName) compName = c.legalName;
+                  } catch (e) {}
+                }
               }
               return (
                 <>
                   <p className="text-xs font-bold text-white truncate">{compName}</p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {isOfficer ? 'Passport Officer • Governance' : 'Company Operator • FY 2026'}
+                    {role === 'Organisation Admin' ? 'Organisation Admin • Enterprise Admin' : isOfficer ? 'Passport Officer • Governance' : 'Company Operator • FY 2026'}
                   </p>
                 </>
               );
@@ -209,7 +217,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               <span>{isVerifier ? 'Verifier Portal' : 'Workspace'}</span>
               <span>/</span>
               <span className="text-slate-900 font-semibold">
-                {isVerifier ? 'Independent Verification (Bureau Veritas)' : 'Company Workspace'}
+                {isVerifier ? 'Independent Verification (Bureau Veritas)' : role === 'Organisation Admin' ? 'Organisation Administration' : 'Company Workspace'}
               </span>
             </div>
 
@@ -249,7 +257,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 >
                   <div
                     className={`w-8 h-8 rounded-full text-white font-black text-xs flex items-center justify-center shadow-xs ${
-                      isVerifier ? 'bg-indigo-600 ring-2 ring-indigo-200' : isOfficer ? 'bg-amber-600 ring-2 ring-amber-200' : 'bg-emerald-600 ring-2 ring-emerald-200'
+                      role === 'Organisation Admin' ? 'bg-purple-600 ring-2 ring-purple-200' : isVerifier ? 'bg-indigo-600 ring-2 ring-indigo-200' : isOfficer ? 'bg-amber-600 ring-2 ring-amber-200' : 'bg-emerald-600 ring-2 ring-emerald-200'
                     }`}
                   >
                     {userInitials}
@@ -259,7 +267,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       {userName}
                     </p>
                     <p className="text-[10px] text-slate-400 leading-tight">
-                      {isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
+                      {role === 'Organisation Admin' ? 'Organisation Admin' : isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
                     </p>
                   </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
@@ -272,7 +280,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       <div className="flex items-center gap-2.5">
                         <div
                           className={`w-9 h-9 rounded-full text-white font-black text-sm flex items-center justify-center shrink-0 ${
-                            isVerifier ? 'bg-indigo-600' : isOfficer ? 'bg-amber-600' : 'bg-emerald-600'
+                            role === 'Organisation Admin' ? 'bg-purple-600' : isVerifier ? 'bg-indigo-600' : isOfficer ? 'bg-amber-600' : 'bg-emerald-600'
                           }`}
                         >
                           {userInitials}
@@ -285,14 +293,16 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       <div className="mt-2.5 flex items-center gap-1.5">
                         <span
                           className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                            isVerifier
+                            role === 'Organisation Admin'
+                              ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                              : isVerifier
                               ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
                               : isOfficer
                               ? 'bg-amber-100 text-amber-800 border border-amber-200'
                               : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           }`}
                         >
-                          {isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
+                          {role === 'Organisation Admin' ? 'Organisation Admin' : isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-400 mt-1 truncate">

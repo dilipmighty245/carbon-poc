@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Upload, User, Users, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw, Loader2 } from 'lucide-react';
+import { CheckCircle2, Upload, User, Users, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw, Loader2, ShieldCheck, LogIn } from 'lucide-react';
 import { saveOrgProfile, registerUser, loginUser } from '../../api/client';
 import type { OrgProfileData } from './organisation/OrgProfileTab';
 
@@ -651,6 +651,16 @@ export const RegistrationView: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">System Role Assignment: Organisation Admin</span>
+                    <p className="text-[11px] text-purple-700 mt-0.5">
+                      The Account Owner automatically receives the <strong>Organisation Admin</strong> role in the Nexus datamodel. Once logged in, this administrative account has full authority to invite users and assign roles.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1051,7 +1061,7 @@ export const RegistrationView: React.FC = () => {
                     </p>
                     <p className="text-emerald-700 flex items-center gap-1.5 font-semibold">
                       <Check className="w-4 h-4 text-emerald-600" />
-                      Account Owner: {formData.ownerName || 'Not specified'} ({formData.ownerEmail || generateSaurientEmail(formData.ownerName)})
+                      Account Owner: {formData.ownerName || 'Not specified'} ({formData.ownerEmail || generateSaurientEmail(formData.ownerName)}) — Role: <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-1.5 py-0.5 rounded">Organisation Admin</span>
                     </p>
                     <p className="text-emerald-700 flex items-center gap-1.5 font-semibold">
                       <Check className="w-4 h-4 text-emerald-600" />
@@ -1158,24 +1168,45 @@ export const RegistrationView: React.FC = () => {
               </p>
             </div>
 
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Your organization profile and administrative account are established in the Nexus datamodel. Next, add team members and assign user roles within your organisation.
+            {/* Account Owner & Admin Credentials Details */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left text-xs space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                <span className="font-bold text-slate-700">Account Owner</span>
+                <span className="font-bold text-slate-900">{formData.ownerName || `${formData.ownerFirstName} ${formData.ownerLastName}`.trim()}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                <span className="font-bold text-slate-700">Work Email</span>
+                <span className="font-mono text-slate-900">{formData.ownerEmail || generateSaurientEmail(formData.ownerName)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-700">System Role</span>
+                <span className="bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded text-[11px] border border-purple-200">
+                  Organisation Admin
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed text-left">
+              The account owner is provisioned as <strong>Organisation Admin</strong> in the Nexus graph datamodel. Sign in with these credentials to manage your company workspace, create users, and assign roles.
             </p>
 
-            <div className="flex flex-col gap-2 pt-2">
+            <div className="flex flex-col gap-2 pt-1">
               <button
-                onClick={() => navigate('/organisation?tab=Users%20%26%20Roles')}
+                onClick={() => {
+                  const emailParam = formData.ownerEmail || generateSaurientEmail(formData.ownerName);
+                  navigate(`/login?registered=true&email=${encodeURIComponent(emailParam)}`);
+                }}
                 className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2"
               >
-                <Users className="w-4 h-4" />
-                <span>Add Users & Assign Roles</span>
+                <LogIn className="w-4 h-4" />
+                <span>Proceed to Sign In with Credentials</span>
               </button>
 
               <button
-                onClick={() => navigate('/login?registered=true')}
+                onClick={() => navigate('/company-dashboard')}
                 className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2"
               >
-                <span>Proceed to Login</span>
+                <span>Go to Company Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

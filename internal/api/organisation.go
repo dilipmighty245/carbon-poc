@@ -61,6 +61,13 @@ func (h *OrganisationHandler) ensureSeedUsers(ctx context.Context) {
 		},
 		{
 			tenantID: "org_asante_cocoa",
+			name:     "Santosh Samudrala (Organisation Admin)",
+			email:    "admin@asante-cocoa.com",
+			password: "DemoPassword2026!",
+			role:     "Organisation Admin",
+		},
+		{
+			tenantID: "org_asante_cocoa",
 			name:     "Santosh Samudrala (Lead Operator)",
 			email:    "operator@asante-cocoa.com",
 			password: "DemoPassword2026!",
@@ -136,6 +143,8 @@ func (h *OrganisationHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/organisation/reporting-periods", h.HandleReportingPeriods)
 	mux.HandleFunc("/api/v1/organisation/localisation", h.HandleLocalisation)
 	mux.HandleFunc("/api/v1/organisation/approvals", h.HandleApprovals)
+	mux.HandleFunc("/api/v1/organisation/reset", h.HandleSystemReset)
+	mux.HandleFunc("/api/v1/system/reset", h.HandleSystemReset)
 }
 
 // 0. POST /api/v1/auth/register
@@ -197,7 +206,7 @@ func (h *OrganisationHandler) HandleAuthRegister(w http.ResponseWriter, r *http.
 
 	role := req.Role
 	if role == "" {
-		role = "Company Operator"
+		role = "Organisation Admin"
 	}
 	scope := req.FacilityScope
 	if scope == "" {
@@ -239,6 +248,12 @@ func (h *OrganisationHandler) HandleAuthRegister(w http.ResponseWriter, r *http.
 		LastLogin:     nowStr,
 		Status:        "Active",
 		CreatedAt:     time.Now().UTC(),
+	}
+
+	if h.engine != nil {
+		userModel.PasswordHash = hash
+		userModel.Salt = salt
+		_ = h.engine.SaveOrganisationUser(ctx, userModel)
 	}
 
 	token, _ := GenerateToken(userModel)
@@ -938,4 +953,31 @@ func (h *OrganisationHandler) HandleApprovals(w http.ResponseWriter, r *http.Req
 	default:
 		writeJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+
+// 8. HandleSystemReset completely resets the in-memory Nexus graph, clears all organisations, products, and passports.
+func (h *OrganisationHandler) HandleSystemReset(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if r.Method != http.MethodPost {
+		writeJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ctx := r.Context()
+	_ = nexus.ResetNexusClient(ctx)
+	if h.engine != nil {
+		h.engine.Reset()
+	}
+	h.client = nexus.GetNexusClient()
+	h.ensureSeedUsers(ctx)
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "All organisations, facilities, products, and carbon passports have been completely wiped. Initialized clean platform baseline.",
+		"status":  "reset_successful",
+	})
 }

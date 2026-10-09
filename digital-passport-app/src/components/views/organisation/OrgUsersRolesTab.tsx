@@ -95,32 +95,59 @@ export const permissionsMatrix = [
 ];
 
 const getInitialUsers = (): UserMember[] => {
+  const activeTenant = localStorage.getItem('saurient_tenant_id') || 'org_saurient_demo';
   const stored = localStorage.getItem('saurient_registered_company');
+  const loggedEmail = localStorage.getItem('saurient_user_email');
+  const loggedName = localStorage.getItem('saurient_user_name');
+  const loggedRole = localStorage.getItem('saurient_user_role') || 'Organisation Admin';
+
   if (stored) {
     try {
       const c = JSON.parse(stored);
-      return [
-        {
-          id: 'USR-REG-001',
-          name: c.ownerName || `${c.ownerFirstName || 'Org'} ${c.ownerLastName || 'Admin'}`.trim() || 'Organisation Admin',
-          email: c.ownerEmail || 'admin@saurient.io',
-          role: c.ownerRole || 'Organisation Admin',
-          facilityScope: 'All Facilities',
-          lastLogin: 'Active Now',
-          status: 'Active',
-        },
-      ];
+      if (!c.tenantId || c.tenantId === activeTenant) {
+        return [
+          {
+            id: 'USR-REG-001',
+            name: c.ownerName || `${c.ownerFirstName || 'Org'} ${c.ownerLastName || 'Admin'}`.trim() || 'Organisation Admin',
+            email: c.ownerEmail || 'admin@saurient.io',
+            role: 'Organisation Admin',
+            facilityScope: 'All Facilities',
+            lastLogin: 'Active Now',
+            status: 'Active',
+          },
+        ];
+      }
     } catch (e) {
       console.warn('Failed to parse registered user:', e);
     }
   }
+
+  if (loggedEmail) {
+    return [
+      {
+        id: localStorage.getItem('saurient_user_id') || 'USR-CURRENT',
+        name: loggedName || 'Admin User',
+        email: loggedEmail,
+        role: loggedRole,
+        facilityScope: 'All Facilities',
+        lastLogin: 'Active Now',
+        status: 'Active',
+      },
+    ];
+  }
+
   return [];
 };
 
 export const OrgUsersRolesTab: React.FC = () => {
+  const loggedInEmail = localStorage.getItem('saurient_user_email') || '';
+  const loggedInName = localStorage.getItem('saurient_user_name') || 'Organisation Admin';
+  const loggedInRole = localStorage.getItem('saurient_user_role') || 'Organisation Admin';
+  const activeTenant = localStorage.getItem('saurient_tenant_id') || 'org_saurient_demo';
+
   const [users, setUsers] = useState<UserMember[]>(getInitialUsers());
   const [activeTab, setActiveTab] = useState<'users' | 'matrix'>('users');
-  const [actingRole, setActingRole] = useState<string>('Organisation Admin');
+  const [actingRole, setActingRole] = useState<string>(() => localStorage.getItem('saurient_user_role') || 'Organisation Admin');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUserForRole, setSelectedUserForRole] = useState<UserMember | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -141,7 +168,6 @@ export const OrgUsersRolesTab: React.FC = () => {
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           const map = new Map<string, UserMember>();
-          initUsers.forEach((u) => map.set(u.email.toLowerCase(), u));
           data.forEach((u: any) => {
             const member: UserMember = {
               id: u.id || u.userID || `USR-${Math.random().toString(36).slice(2, 6)}`,
@@ -154,11 +180,20 @@ export const OrgUsersRolesTab: React.FC = () => {
             };
             map.set(member.email.toLowerCase(), member);
           });
+          initUsers.forEach((u) => {
+            if (!map.has(u.email.toLowerCase())) {
+              map.set(u.email.toLowerCase(), u);
+            }
+          });
           setUsers(Array.from(map.values()));
         } else if (initUsers.length > 0) {
           setUsers(initUsers);
         } else {
-          setUsers(initialUsers);
+          if (activeTenant === 'org_saurient_demo' || activeTenant === 'org_asante_cocoa') {
+            setUsers(initialUsers);
+          } else {
+            setUsers(initUsers);
+          }
         }
       })
       .catch((err) => {
@@ -167,7 +202,7 @@ export const OrgUsersRolesTab: React.FC = () => {
           setUsers(initUsers);
         }
       });
-  }, []);
+  }, [activeTenant]);
 
   const filteredUsers = users.filter(
     (u) =>
@@ -198,13 +233,13 @@ export const OrgUsersRolesTab: React.FC = () => {
         password: invitePassword.trim() || 'DemoPassword2026!',
       });
       setFeedbackMsg({
-        text: `User "${newU.name}" successfully added to organisation with role "${newU.role}" in Nexus Datamodel.`,
+        text: `User "${newU.name}" successfully created with role "${newU.role}" in Nexus Datamodel. Credentials are active for login.`,
         type: 'success',
       });
     } catch (err) {
       console.warn('Backend save user failed, saving locally:', err);
       setFeedbackMsg({
-        text: `User "${newU.name}" added with role "${newU.role}" (active in local session).`,
+        text: `User "${newU.name}" added with role "${newU.role}" (active in session).`,
         type: 'info',
       });
     } finally {
@@ -240,31 +275,32 @@ export const OrgUsersRolesTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Progressive RBAC Architecture Banner */}
+      {/* Organisation Admin & RBAC Authority Banner */}
       <div className="bg-slate-900 text-white p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800 shadow-sm">
         <div className="flex items-start md:items-center gap-3">
-          <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 shrink-0">
+          <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 shrink-0">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black tracking-wide text-white uppercase">Progressive RBAC Architecture</span>
-              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">
-                Foundational Phase Active
+              <span className="text-xs font-black tracking-wide text-white uppercase">Organisation Administration & RBAC</span>
+              <span className="bg-purple-500/20 text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded border border-purple-500/30">
+                Administrative Authority Active
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Users belong to the registered organisation. Standard operational roles (Organisation Admin, Compliance Manager, Facility Manager, Carbon Manager, Data Operator, Verifier) are enforced in the Nexus datamodel. Fine-grained permission overrides are phased in progressively.
+              Active User: <strong className="text-white">{loggedInName}</strong> ({loggedInEmail}) • Role: <strong className="text-purple-300">{loggedInRole}</strong>.
+              Use your administrative credentials to create users and assign operational roles across facilities.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <span className="text-xs text-slate-400 font-medium">Acting Session:</span>
+          <span className="text-xs text-slate-400 font-medium">Acting RBAC View:</span>
           <select
             value={actingRole}
             onChange={(e) => setActingRole(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-emerald-500"
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-purple-500"
           >
             {rolesList.map((r) => (
               <option key={r.name} value={r.name}>

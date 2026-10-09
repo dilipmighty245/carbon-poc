@@ -118,6 +118,35 @@ func GetNexusEngine() *NexusGraphEngine {
 	return globalEngine
 }
 
+// Reset clears all in-memory graph models, tenant profiles, processes, reporting periods, and caches.
+func (e *NexusGraphEngine) Reset() {
+	e.mu.Lock()
+	e.cacheMu.Lock()
+	e.opMu.Lock()
+
+	e.nodes = make(map[string]LineageNode)
+	e.edges = make(map[string]LineageEdge)
+	e.dagMap = make(map[string]*LineageDAG)
+	e.cacheMap = make(map[string][]byte)
+	e.tenantProfiles = make(map[string]*TenantProfileModel)
+	e.processes = make(map[string][]*ProcessModel)
+	e.reportingPeriods = make(map[string][]*ReportingPeriodModel)
+	e.localisations = make(map[string]*LocalisationModel)
+	e.approvals = make(map[string][]*ApprovalModel)
+	e.agencies = make(map[string][]*AgencyModel)
+	e.engagements = make(map[string][]*VerificationEngagementModel)
+	e.teamMembers = make(map[string][]*EngagementTeamMemberModel)
+	e.coiDeclarations = make(map[string][]*COIDeclarationModel)
+	e.findings = make(map[string][]*FindingModel)
+	e.signoffs = make(map[string][]*ReviewSignoffModel)
+
+	e.opMu.Unlock()
+	e.cacheMu.Unlock()
+	e.mu.Unlock()
+
+	e.seedDefaultGraphTopology()
+}
+
 // SubscribeProductEvents registers a subscriber channel for product events.
 func (e *NexusGraphEngine) SubscribeProductEvents() <-chan ProductEvent {
 	e.eventMu.Lock()

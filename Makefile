@@ -4,7 +4,7 @@ ETCD_CONTAINER ?= saurient-etcd
 ETCD_IMAGE ?= quay.io/coreos/etcd:v3.5.10
 API_IMG ?= saurient-api:dev
 
-.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed clean check-prereqs etcd-start etcd-stop datamodel-build
+.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed clean clean-data check-prereqs etcd-start etcd-stop datamodel-build
 
 all: test build
 
@@ -153,7 +153,14 @@ dev-setup: check-prereqs clean etcd-start build
 	@echo "==> Starting Digital Passport App (React / Vite)..."
 	cd digital-passport-app && npm run dev
 
+clean-data:
+	@echo "==> Calling API to wipe all organisations, products, batches, and passports..."
+	-@curl -s -X POST http://localhost:8080/api/v1/system/reset | jq . 2>/dev/null || curl -s -X POST http://localhost:8080/api/v1/system/reset || true
+	@echo "   [OK] Platform data reset to clean initial state."
+
 clean: etcd-stop
+	@echo "==> Calling API to clean all organisations, products, and passports if server is active..."
+	-@curl -s -X POST http://localhost:8080/api/v1/system/reset >/dev/null 2>&1 || true
 	@echo "==> Stopping UI frontend server, backend API Gateway, and etcd..."
 	-@if [ -f .api.pid ]; then kill -9 $$(cat .api.pid) >/dev/null 2>&1 || true; rm -f .api.pid; fi
 	-@if [ -f .ui.pid ]; then kill -9 $$(cat .ui.pid) >/dev/null 2>&1 || true; rm -f .ui.pid; fi
