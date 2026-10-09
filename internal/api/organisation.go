@@ -63,7 +63,9 @@ func writeJSONError(w http.ResponseWriter, msg string, code int) {
 
 // RegisterRoutes registers all Organisation REST endpoints with http.ServeMux
 func (h *OrganisationHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/api/v1/auth/register", h.HandleAuthRegister)
 	mux.HandleFunc("/api/v1/auth/login", h.HandleAuthLogin)
+	mux.HandleFunc("/api/v1/auth/me", h.HandleAuthMe)
 	mux.HandleFunc("/api/v1/organisation/profile", h.HandleProfile)
 	mux.HandleFunc("/api/v1/organisation/facilities", h.HandleFacilities)
 	mux.HandleFunc("/api/v1/organisation/facilities/", h.HandleFacilities)
@@ -74,6 +76,119 @@ func (h *OrganisationHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/organisation/reporting-periods", h.HandleReportingPeriods)
 	mux.HandleFunc("/api/v1/organisation/localisation", h.HandleLocalisation)
 	mux.HandleFunc("/api/v1/organisation/approvals", h.HandleApprovals)
+}
+
+// 0. POST /api/v1/auth/register
+type RegisterRequest struct {
+	TenantID      string `json:"tenant_id"`
+	Name          string `json:"name"`
+	Email         string `json:"email"`
+	Password      string `json:"password"`
+	Role          string `json:"role"`
+	FacilityScope string `json:"facility_scope"`
+}
+
+func (h *OrganisationHandler) HandleAuthRegister(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		writeJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	req.Email = strings.TrimSpace(req.Email)
+	req.Name = strings.TrimSpace(req.Name)
+	req.Password = strings.TrimSpace(req.Password)
+	if req.Email == "" || req.Password == "" || req.Name == "" {
+		writeJSONError(w, "name, email, and password are required", http.StatusBadRequest)
+		return
+	}
+	if len(req.Password) < 6 {
+		writeJSONError(w, "password must be at least 6 characters", http.StatusBadRequest)
+		return
+	}
+
+	tenantID := req.TenantID
+	if tenantID == "" {
+		tenantID = getTenantID(r)
+	}
+	if tenantID == "" {
+		tenantID = "org_saurient_demo"
+	}
+	ctx := tenant.WithTenant(r.Context(), tenantID)
+
+	// Check if user already exists in datamodel
+	if h.client != nil {
+		if existing, _ := nexus.GetUserNodeByEmail(ctx, h.client, tenantID, req.Email); existing != nil {
+			writeJSONError(w, "user with this email already exists", http.StatusConflict)
+			return
+		}
+	}
+
+	role := req.Role
+	if role == "" {
+		role = "Company Operator"
+	}
+	scope := req.FacilityScope
+	if scope == "" {
+		scope = "All Facilities"
+	}
+
+	salt := GenerateSalt()
+	hash := HashPassword(req.Password, salt)
+	userID := "usr-" + uuid.New().String()[:8]
+	nowStr := time.Now().UTC().Format(time.RFC3339)
+
+	spec := inventoryv1.UserSpec{
+		UserID:        userID,
+		TenantID:      tenantID,
+		Name:          req.Name,
+		Email:         req.Email,
+		PasswordHash:  hash,
+		Salt:          salt,
+		Role:          role,
+		FacilityScope: scope,
+		LastLogin:     nowStr,
+		Status:        "Active",
+	}
+
+	if h.client != nil {
+		if _, err := nexus.CreateUserNode(ctx, h.client, tenantID, spec); err != nil {
+			writeJSONError(w, fmt.Sprintf("failed to save user node in datamodel: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	userModel := &nexus.OrganisationUserModel{
+		ID:            userID,
+		TenantID:      tenantID,
+		Name:          req.Name,
+		Email:         req.Email,
+		Role:          role,
+		FacilityScope: scope,
+		LastLogin:     nowStr,
+		Status:        "Active",
+		CreatedAt:     time.Now().UTC(),
+	}
+
+	token, _ := GenerateToken(userModel)
+
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(LoginResponse{
+		User:     userModel,
+		TenantID: tenantID,
+		Token:    token,
+	})
 }
 
 // 1. POST /api/v1/auth/login
@@ -106,107 +221,104 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	req.Email = strings.TrimSpace(req.Email)
+	req.Password = strings.TrimSpace(req.Password)
+	if req.Email == "" || req.Password == "" {
+		writeJSONError(w, "email and password are required", http.StatusBadRequest)
+		return
+	}
+
 	tenantID := getTenantID(r)
 	ctx := tenant.WithTenant(r.Context(), tenantID)
 
-	var loggedInUser *nexus.OrganisationUserModel
+	var uNode *nexus_client.InventoryUser
+	var err error
 
-	// 1. Check Nexus graph node first
+	// 1. Fetch user strictly from the Nexus graph datamodel
 	if h.client != nil {
-		if uNode, err := nexus.GetUserNodeByEmail(ctx, h.client, tenantID, req.Email); err == nil && uNode != nil {
-			loggedInUser = nexus.UserModelFromNode(uNode)
-		}
+		uNode, err = nexus.GetUserNodeByEmail(ctx, h.client, tenantID, req.Email)
 	}
 
-	// 2. Fallback to nexusEngine if available
-	if loggedInUser == nil && h.engine != nil {
-		users, err := h.engine.ListOrganisationUsers(ctx)
-		if err == nil {
-			for _, u := range users {
-				if strings.EqualFold(u.Email, req.Email) {
-					loggedInUser = u
-					break
-				}
-			}
-		}
+	if err != nil || uNode == nil {
+		// User does not exist in datamodel! No synthetic user generation!
+		writeJSONError(w, "Invalid email or password", http.StatusUnauthorized)
+		return
 	}
 
-	// 3. Fallback for demo logins if not found: dynamically generate and persist as first-class Nexus node
-	if loggedInUser == nil {
-		role := "Sustainability Manager"
-		if strings.Contains(strings.ToLower(req.Email), "admin") {
-			role = "Admin"
-		} else if strings.Contains(strings.ToLower(req.Email), "auditor") || strings.Contains(strings.ToLower(req.Email), "verifier") {
-			role = "Auditor"
-		} else if strings.Contains(strings.ToLower(req.Email), "viewer") {
-			role = "Viewer"
+	// 2. Verify password hash against datamodel secret spec
+	if uNode.Spec.PasswordHash != "" {
+		if !VerifyPassword(req.Password, uNode.Spec.Salt, uNode.Spec.PasswordHash) {
+			writeJSONError(w, "Invalid email or password", http.StatusUnauthorized)
+			return
 		}
-
-		name := "Authenticated User"
-		if req.Email != "" {
-			parts := strings.Split(req.Email, "@")
-			name = strings.Title(strings.ReplaceAll(parts[0], ".", " "))
+	} else {
+		// Unhashed user fallback: check standard default or update
+		if req.Password != "DemoPassword2026!" && req.Password != "password123" {
+			writeJSONError(w, "Invalid email or password", http.StatusUnauthorized)
+			return
 		}
-
-		userID := "usr-" + uuid.New().String()[:8]
-		lastLogin := time.Now().UTC().Format(time.RFC3339)
-
-		// Persist as first-class declarative Nexus User Node
-		if h.client != nil {
-			userSpec := inventoryv1.UserSpec{
-				UserID:        userID,
-				TenantID:      tenantID,
-				Name:          name,
-				Email:         req.Email,
-				Role:          role,
-				FacilityScope: "All Facilities",
-				LastLogin:     lastLogin,
-				Status:        "Active",
-			}
-			if uNode, err := nexus.CreateUserNode(ctx, h.client, tenantID, userSpec); err == nil && uNode != nil {
-				loggedInUser = nexus.UserModelFromNode(uNode)
-			}
-		}
-
-		if loggedInUser == nil {
-			loggedInUser = &nexus.OrganisationUserModel{
-				ID:            userID,
-				TenantID:      tenantID,
-				Name:          name,
-				Email:         req.Email,
-				Role:          role,
-				FacilityScope: "All Facilities",
-				LastLogin:     lastLogin,
-				Status:        "Active",
-			}
-			if h.engine != nil {
-				_ = h.engine.SaveOrganisationUser(ctx, loggedInUser)
-			}
-		}
-	} else if h.client != nil {
-		// Update LastLogin timestamp
-		loggedInUser.LastLogin = time.Now().UTC().Format(time.RFC3339)
-		userSpec := inventoryv1.UserSpec{
-			UserID:        loggedInUser.ID,
-			TenantID:      loggedInUser.TenantID,
-			Name:          loggedInUser.Name,
-			Email:         loggedInUser.Email,
-			Role:          loggedInUser.Role,
-			FacilityScope: loggedInUser.FacilityScope,
-			LastLogin:     loggedInUser.LastLogin,
-			Status:        loggedInUser.Status,
-		}
-		_, _ = nexus.CreateUserNode(ctx, h.client, tenantID, userSpec)
+		salt := GenerateSalt()
+		uNode.Spec.Salt = salt
+		uNode.Spec.PasswordHash = HashPassword(req.Password, salt)
 	}
+
+	// 3. Update LastLogin timestamp directly on the datamodel node
+	nowStr := time.Now().UTC().Format(time.RFC3339)
+	uNode.Spec.LastLogin = nowStr
+	_ = uNode.Update(ctx)
+
+	loggedInUser := nexus.UserModelFromNode(uNode)
+	token, _ := GenerateToken(loggedInUser)
 
 	resp := LoginResponse{
 		User:     loggedInUser,
-		TenantID: tenantID,
-		Token:    "demo-jwt-token-" + uuid.New().String(),
+		TenantID: uNode.Spec.TenantID,
+		Token:    token,
 	}
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// GET /api/v1/auth/me
+func (h *OrganisationHandler) HandleAuthMe(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		writeJSONError(w, "missing or invalid authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	claims, err := ValidateToken(tokenStr)
+	if err != nil {
+		writeJSONError(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	tenantID := claims.TenantID
+	ctx := tenant.WithTenant(r.Context(), tenantID)
+
+	if h.client != nil {
+		uNode, err := nexus.GetUserNodeByEmail(ctx, h.client, tenantID, claims.Email)
+		if err == nil && uNode != nil {
+			userModel := nexus.UserModelFromNode(uNode)
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(userModel)
+			return
+		}
+	}
+
+	writeJSONError(w, "user not found in datamodel", http.StatusNotFound)
 }
 
 // 2. Profile Handlers (GET, PUT, POST)
@@ -486,7 +598,10 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 		_ = json.NewEncoder(w).Encode(users)
 
 	case http.MethodPost, http.MethodPut:
-		var u nexus.OrganisationUserModel
+		var u struct {
+			nexus.OrganisationUserModel
+			Password string `json:"password,omitempty"`
+		}
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
@@ -496,8 +611,25 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 			u.ID = "usr-" + uuid.New().String()[:8]
 		}
 		if u.Status == "" {
-			u.Status = "ACTIVE"
+			u.Status = "Active"
 		}
+		if u.Role == "" {
+			u.Role = "Data Operator"
+		}
+		if u.FacilityScope == "" {
+			u.FacilityScope = "All Facilities"
+		}
+		if u.LastLogin == "" {
+			u.LastLogin = "Never"
+		}
+
+		pwd := strings.TrimSpace(u.Password)
+		if pwd == "" {
+			pwd = "DemoPassword2026!"
+		}
+
+		salt := GenerateSalt()
+		passwordHash := HashPassword(pwd, salt)
 
 		if h.client != nil {
 			spec := inventoryv1.UserSpec{
@@ -505,6 +637,8 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 				TenantID:      tenantID,
 				Name:          u.Name,
 				Email:         u.Email,
+				PasswordHash:  passwordHash,
+				Salt:          salt,
 				Role:          u.Role,
 				FacilityScope: u.FacilityScope,
 				LastLogin:     u.LastLogin,
@@ -517,11 +651,13 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 		}
 
 		if h.engine != nil {
-			_ = h.engine.SaveOrganisationUser(ctx, &u)
+			u.OrganisationUserModel.PasswordHash = passwordHash
+			u.OrganisationUserModel.Salt = salt
+			_ = h.engine.SaveOrganisationUser(ctx, &u.OrganisationUserModel)
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(u)
+		_ = json.NewEncoder(w).Encode(u.OrganisationUserModel)
 
 	default:
 		writeJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -545,26 +681,37 @@ func (h *OrganisationHandler) HandleUpdateUserRole(w http.ResponseWriter, r *htt
 	ctx := tenant.WithTenant(r.Context(), tenantID)
 
 	var req struct {
-		UserID  string `json:"userId"`
-		NewRole string `json:"newRole"`
+		UserID    string `json:"userId"`
+		UserIDAlt string `json:"user_id"`
+		NewRole   string `json:"newRole"`
+		RoleAlt   string `json:"role"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
-	if req.UserID == "" || req.NewRole == "" {
+	targetUserID := req.UserID
+	if targetUserID == "" {
+		targetUserID = req.UserIDAlt
+	}
+	targetRole := req.NewRole
+	if targetRole == "" {
+		targetRole = req.RoleAlt
+	}
+
+	if targetUserID == "" || targetRole == "" {
 		writeJSONError(w, "userId and newRole are required", http.StatusBadRequest)
 		return
 	}
 
 	var updateErr error
 	if h.client != nil {
-		updateErr = nexus.UpdateUserRoleNode(ctx, h.client, tenantID, req.UserID, req.NewRole)
+		updateErr = nexus.UpdateUserRoleNode(ctx, h.client, tenantID, targetUserID, targetRole)
 	}
 
 	if h.engine != nil {
-		engineErr := h.engine.UpdateUserRole(ctx, req.UserID, req.NewRole)
+		engineErr := h.engine.UpdateUserRole(ctx, targetUserID, targetRole)
 		if updateErr != nil && engineErr == nil {
 			updateErr = nil
 		}
@@ -576,7 +723,7 @@ func (h *OrganisationHandler) HandleUpdateUserRole(w http.ResponseWriter, r *htt
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]string{"message": "role updated successfully", "userId": req.UserID, "role": req.NewRole})
+	_ = json.NewEncoder(w).Encode(map[string]string{"message": "role updated successfully", "userId": targetUserID, "role": targetRole})
 }
 
 // 6. Reporting Periods Handlers (GET, POST, PUT)

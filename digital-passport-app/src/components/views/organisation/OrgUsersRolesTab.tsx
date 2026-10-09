@@ -5,7 +5,12 @@ import {
   Search,
   Check,
   X,
-  Key
+  Key,
+  ShieldCheck,
+  CheckCircle2,
+  Lock,
+  Building2,
+  AlertCircle
 } from 'lucide-react';
 
 export interface UserMember {
@@ -67,7 +72,7 @@ export const initialUsers: UserMember[] = [
 ];
 
 export const rolesList = [
-  { name: 'Organisation Admin', desc: 'Full administrative access across all settings, billing, and user management.' },
+  { name: 'Organisation Admin', desc: 'Full administrative access across entity profile, settings, and user role provisioning.' },
   { name: 'Compliance Manager', desc: 'Manages CBAM verification readiness, evidence dossiers, and declarant links.' },
   { name: 'Facility Manager', desc: 'Oversees site telemetry, process lines, and facility data completeness.' },
   { name: 'Carbon Manager', desc: 'Configures GHG calculation rulebooks, emission factors, and PCF models.' },
@@ -97,7 +102,7 @@ const getInitialUsers = (): UserMember[] => {
       return [
         {
           id: 'USR-REG-001',
-          name: c.ownerName || 'Account Admin',
+          name: c.ownerName || `${c.ownerFirstName || 'Org'} ${c.ownerLastName || 'Admin'}`.trim() || 'Organisation Admin',
           email: c.ownerEmail || 'admin@saurient.io',
           role: c.ownerRole || 'Organisation Admin',
           facilityScope: 'All Facilities',
@@ -119,28 +124,50 @@ export const OrgUsersRolesTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUserForRole, setSelectedUserForRole] = useState<UserMember | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
+
+  // Invite / Add User Form State
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('Data Operator');
+  const [inviteScope, setInviteScope] = useState('All Facilities');
+  const [invitePassword, setInvitePassword] = useState('');
+  const [isSavingUser, setIsSavingUser] = useState(false);
 
   useEffect(() => {
     const initUsers = getInitialUsers();
-    setUsers(initUsers);
 
     getOrgUsers()
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          setUsers(data);
+          const map = new Map<string, UserMember>();
+          initUsers.forEach((u) => map.set(u.email.toLowerCase(), u));
+          data.forEach((u: any) => {
+            const member: UserMember = {
+              id: u.id || u.userID || `USR-${Math.random().toString(36).slice(2, 6)}`,
+              name: u.name,
+              email: u.email,
+              role: u.role || 'Organisation Admin',
+              facilityScope: u.facility_scope || u.facilityScope || 'All Facilities',
+              lastLogin: u.last_login || u.lastLogin || 'Active',
+              status: (u.status === 'ACTIVE' || u.status === 'Active') ? 'Active' : 'Pending',
+            };
+            map.set(member.email.toLowerCase(), member);
+          });
+          setUsers(Array.from(map.values()));
         } else if (initUsers.length > 0) {
           setUsers(initUsers);
-        } else if (Array.isArray(data)) {
-          setUsers([]);
+        } else {
+          setUsers(initialUsers);
         }
       })
-      .catch((err) => console.warn('Failed to fetch users from backend:', err));
+      .catch((err) => {
+        console.warn('Failed to fetch users from backend, fallback to local:', err);
+        if (initUsers.length > 0) {
+          setUsers(initUsers);
+        }
+      });
   }, []);
-
-  // Invite form
-  const [inviteName, setInviteName] = useState('');
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('Data Operator');
 
   const filteredUsers = users.filter(
     (u) =>
@@ -149,38 +176,63 @@ export const OrgUsersRolesTab: React.FC = () => {
       (u.role || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleInviteUser = async (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail) return;
+    if (!inviteEmail.trim() || !inviteName.trim()) return;
 
+    setIsSavingUser(true);
+    const newId = `usr-${Math.random().toString(36).substring(2, 10)}`;
     const newU: UserMember = {
-      id: `USR-00${users.length + 1}`,
-      name: inviteName || 'New Teammate',
-      email: inviteEmail,
+      id: newId,
+      name: inviteName.trim(),
+      email: inviteEmail.trim(),
       role: inviteRole,
-      facilityScope: 'All Facilities',
+      facilityScope: inviteScope || 'All Facilities',
       lastLogin: 'Never',
-      status: 'Pending',
+      status: 'Active',
     };
 
     try {
-      await saveOrgUser(newU);
+      await saveOrgUser({
+        ...newU,
+        password: invitePassword.trim() || 'DemoPassword2026!',
+      });
+      setFeedbackMsg({
+        text: `User "${newU.name}" successfully added to organisation with role "${newU.role}" in Nexus Datamodel.`,
+        type: 'success',
+      });
     } catch (err) {
       console.warn('Backend save user failed, saving locally:', err);
+      setFeedbackMsg({
+        text: `User "${newU.name}" added with role "${newU.role}" (active in local session).`,
+        type: 'info',
+      });
+    } finally {
+      setIsSavingUser(false);
     }
 
-    setUsers([...users, newU]);
+    setUsers((prev) => [...prev, newU]);
     setIsInviteOpen(false);
     setInviteName('');
     setInviteEmail('');
+    setInvitePassword('');
+    setInviteScope('All Facilities');
   };
 
   const handleUpdateRole = async (newRole: string) => {
     if (!selectedUserForRole) return;
     try {
       await updateOrgUserRole(selectedUserForRole.id, newRole);
+      setFeedbackMsg({
+        text: `Role for "${selectedUserForRole.name}" updated to "${newRole}" in Nexus Datamodel.`,
+        type: 'success',
+      });
     } catch (err) {
       console.warn('Backend update role failed, updating locally:', err);
+      setFeedbackMsg({
+        text: `Role for "${selectedUserForRole.name}" updated to "${newRole}".`,
+        type: 'info',
+      });
     }
     setUsers(users.map((u) => (u.id === selectedUserForRole.id ? { ...u, role: newRole } : u)));
     setSelectedUserForRole(null);
@@ -188,29 +240,31 @@ export const OrgUsersRolesTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Active Role Switcher (RBAC Banner) */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl">
-            <Key className="w-5 h-5" />
+      {/* Progressive RBAC Architecture Banner */}
+      <div className="bg-slate-900 text-white p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800 shadow-sm">
+        <div className="flex items-start md:items-center gap-3">
+          <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 shrink-0">
+            <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">RBAC Role Context</span>
-              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded">
-                ACTIVE SESSION
+              <span className="text-xs font-black tracking-wide text-white uppercase">Progressive RBAC Architecture</span>
+              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">
+                Foundational Phase Active
               </span>
             </div>
-            <h3 className="text-sm font-bold text-slate-900">Acting Role: <span className="text-emerald-800">{actingRole}</span></h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Users belong to the registered organisation. Standard operational roles (Organisation Admin, Compliance Manager, Facility Manager, Carbon Manager, Data Operator, Verifier) are enforced in the Nexus datamodel. Fine-grained permission overrides are phased in progressively.
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Switch Acting Role:</span>
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-xs text-slate-400 font-medium">Acting Session:</span>
           <select
             value={actingRole}
             onChange={(e) => setActingRole(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-600"
+            className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-emerald-500"
           >
             {rolesList.map((r) => (
               <option key={r.name} value={r.name}>
@@ -221,7 +275,23 @@ export const OrgUsersRolesTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Internal Navigation Tabs */}
+      {/* Action Notification Banner */}
+      {feedbackMsg && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold rounded-2xl flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{feedbackMsg.text}</span>
+          </div>
+          <button
+            onClick={() => setFeedbackMsg(null)}
+            className="text-emerald-700 hover:text-emerald-900 text-xs font-semibold px-2 py-0.5 rounded"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Internal Navigation Tabs & Top Actions */}
       <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-px">
         <div className="flex items-center gap-2">
           <button
@@ -232,7 +302,7 @@ export const OrgUsersRolesTab: React.FC = () => {
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            Team Members ({users.length})
+            Organisation Users ({users.length})
           </button>
           <button
             onClick={() => setActiveTab('matrix')}
@@ -252,7 +322,7 @@ export const OrgUsersRolesTab: React.FC = () => {
             className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
-            <span>Invite Team Member</span>
+            <span>Add User to Organisation</span>
           </button>
         )}
       </div>
@@ -291,7 +361,13 @@ export const OrgUsersRolesTab: React.FC = () => {
                       <span className="font-mono text-[11px] text-slate-500">{u.email}</span>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="bg-slate-100 text-slate-800 font-bold px-2.5 py-1 rounded-md text-[11px] border border-slate-200">
+                      <span className={`font-bold px-2.5 py-1 rounded-md text-[11px] border ${
+                        u.role === 'Organisation Admin'
+                          ? 'bg-purple-50 text-purple-800 border-purple-200'
+                          : u.role === 'Verifier'
+                          ? 'bg-blue-50 text-blue-800 border-blue-200'
+                          : 'bg-slate-100 text-slate-800 border-slate-200'
+                      }`}>
                         {u.role}
                       </span>
                     </td>
@@ -372,23 +448,27 @@ export const OrgUsersRolesTab: React.FC = () => {
         </div>
       )}
 
-      {/* Invite Member Modal */}
+      {/* Add User Modal */}
       {isInviteOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <h3 className="font-bold text-slate-900 text-sm">Invite Team Member</h3>
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-emerald-700" />
+                <h3 className="font-bold text-slate-900 text-sm">Add User to Organisation</h3>
+              </div>
               <button onClick={() => setIsInviteOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleInviteUser} className="p-5 space-y-4 text-xs">
+            <form onSubmit={handleAddUser} className="p-5 space-y-4 text-xs">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Full Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Kwame Asante"
+                  required
+                  placeholder="e.g. Kwame Mensah"
                   value={inviteName}
                   onChange={(e) => setInviteName(e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-600"
@@ -400,7 +480,7 @@ export const OrgUsersRolesTab: React.FC = () => {
                 <input
                   type="email"
                   required
-                  placeholder="k.asante@saurient-carbon.com"
+                  placeholder="k.mensah@company.com"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-600"
@@ -408,18 +488,43 @@ export const OrgUsersRolesTab: React.FC = () => {
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Assign Initial Role</label>
+                <label className="font-bold text-slate-700 block mb-1">Assign User Role</label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 bg-white focus:outline-none focus:border-emerald-600"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 bg-white focus:outline-none focus:border-emerald-600 font-medium"
                 >
                   {rolesList.map((r) => (
                     <option key={r.name} value={r.name}>
-                      {r.name}
+                      {r.name} — {r.desc.slice(0, 40)}...
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Facility Access Scope</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Tema Processing Plant or All Facilities"
+                  value={inviteScope}
+                  onChange={(e) => setInviteScope(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Initial Password (Optional)</label>
+                <input
+                  type="password"
+                  placeholder="Defaults to DemoPassword2026! if omitted"
+                  value={invitePassword}
+                  onChange={(e) => setInvitePassword(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-600"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Credentials are cryptographically salted and hashed into the Nexus User node.
+                </p>
               </div>
 
               <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
@@ -432,9 +537,11 @@ export const OrgUsersRolesTab: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs"
+                  disabled={isSavingUser}
+                  className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-60 text-white font-bold rounded-xl shadow-xs flex items-center gap-1.5"
                 >
-                  Send Invitation
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>{isSavingUser ? 'Persisting to Nexus...' : 'Add User'}</span>
                 </button>
               </div>
             </form>
@@ -454,11 +561,12 @@ export const OrgUsersRolesTab: React.FC = () => {
             </div>
 
             <div className="p-5 space-y-3 text-xs">
-              <span className="text-slate-500 font-medium block">Select new role capability level:</span>
-              <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+              <span className="text-slate-500 font-medium block">Select role capability level:</span>
+              <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                 {rolesList.map((r) => (
                   <button
                     key={r.name}
+                    type="button"
                     onClick={() => handleUpdateRole(r.name)}
                     className={`w-full text-left p-2.5 rounded-xl border transition-colors ${
                       selectedUserForRole.role === r.name

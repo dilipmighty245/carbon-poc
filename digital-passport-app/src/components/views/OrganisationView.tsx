@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Download, Building2, Factory, Workflow, Users, Calendar, Globe, ShieldAlert, Building } from 'lucide-react';
 import { OrgProfileTab } from './organisation/OrgProfileTab';
 import { OrgFacilitiesTab } from './organisation/OrgFacilitiesTab';
@@ -11,7 +11,36 @@ import { OrgApprovalsTab } from './organisation/OrgApprovalsTab';
 
 export const OrganisationView: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Profile');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const getInitialTab = (): string => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      const lower = tab.toLowerCase();
+      if (lower === 'users' || lower === 'users & roles' || lower === 'roles') {
+        return 'Users & Roles';
+      }
+      if (lower === 'facilities') return 'Facilities';
+      if (lower === 'processes') return 'Processes';
+      if (lower === 'reporting periods' || lower === 'periods') return 'Reporting Periods';
+      if (lower === 'localisation') return 'Localisation';
+      if (lower === 'approvals') return 'Approvals';
+      if (lower === 'profile') return 'Profile';
+    }
+    return 'Profile';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      const lower = tab.toLowerCase();
+      if (lower === 'users' || lower === 'users & roles' || lower === 'roles') {
+        setActiveTab('Users & Roles');
+      }
+    }
+  }, [searchParams]);
 
   const tabs = [
     { id: 'Profile', label: 'Profile', icon: Building2 },

@@ -392,9 +392,26 @@ export async function getNexusCarbonPassports() {
   }
 }
 
-// Organisation REST API Client Functions
+// Authentication & Organisation REST API Client Functions
 
-export async function loginUser(email: string, password: string, tenantId = DEFAULT_TENANT_ID) {
+export interface AuthUser {
+  id: string;
+  tenant_id: string;
+  name: string;
+  email: string;
+  role: string;
+  facilityScope?: string;
+  lastLogin?: string;
+  status: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+  expires_in?: number;
+}
+
+export async function loginUser(email: string, password: string, tenantId = DEFAULT_TENANT_ID): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
@@ -403,7 +420,48 @@ export async function loginUser(email: string, password: string, tenantId = DEFA
     },
     body: JSON.stringify({ email, password }),
   });
-  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(errorBody.error || `Authentication failed (${res.status})`);
+  }
+  return await res.json();
+}
+
+export async function registerUser(payload: {
+  tenant_id?: string;
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  facility_scope?: string;
+}): Promise<AuthResponse> {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': payload.tenant_id || DEFAULT_TENANT_ID,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(errorBody.error || `Registration failed (${res.status})`);
+  }
+  return await res.json();
+}
+
+export async function getCurrentUser(): Promise<AuthUser> {
+  const token = localStorage.getItem('saurient_auth_token');
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: {
+      'Authorization': token ? `Bearer ${token}` : '',
+      'X-Tenant-ID': localStorage.getItem('saurient_tenant_id') || DEFAULT_TENANT_ID,
+    },
+  });
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(errorBody.error || `Failed to fetch current user (${res.status})`);
+  }
   return await res.json();
 }
 
@@ -488,20 +546,30 @@ export async function deleteOrgProcess(id: string, tenantId = DEFAULT_TENANT_ID)
   return await res.json();
 }
 
-export async function getOrgUsers(tenantId = DEFAULT_TENANT_ID) {
+export function getActiveTenantId(): string {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const t = localStorage.getItem('saurient_tenant_id');
+    if (t) return t;
+  }
+  return DEFAULT_TENANT_ID;
+}
+
+export async function getOrgUsers(tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/users`, {
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
 
-export async function saveOrgUser(user: any, tenantId = DEFAULT_TENANT_ID) {
+export async function saveOrgUser(user: any, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/users`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(user),
   });
@@ -509,14 +577,15 @@ export async function saveOrgUser(user: any, tenantId = DEFAULT_TENANT_ID) {
   return await res.json();
 }
 
-export async function updateOrgUserRole(userId: string, role: string, tenantId = DEFAULT_TENANT_ID) {
+export async function updateOrgUserRole(userId: string, role: string, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/users/role`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
-    body: JSON.stringify({ user_id: userId, role }),
+    body: JSON.stringify({ userId, newRole: role, user_id: userId, role }),
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();

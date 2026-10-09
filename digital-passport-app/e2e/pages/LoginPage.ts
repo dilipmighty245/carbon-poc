@@ -10,7 +10,14 @@ export class LoginPage extends BasePage {
     await this.page.goto('/login');
   }
 
-  async login(password = 'Password123!') {
+  async login(password = 'Password123!', email?: string) {
+    if (email) {
+      const emailInput = this.page.locator('input[type="email"]');
+      if (await emailInput.isVisible()) {
+        await emailInput.fill(email);
+      }
+    }
+
     const passwordInput = this.page.locator('input[type="password"]');
     if (await passwordInput.isVisible()) {
       await passwordInput.fill(password);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Upload, User, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Upload, User, Users, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw } from 'lucide-react';
 import { saveOrgProfile, registerUser } from '../../api/client';
 import type { OrgProfileData } from './organisation/OrgProfileTab';
 
@@ -349,10 +349,16 @@ export const RegistrationView: React.FC = () => {
         email: generatedEmail,
         password: formData.ownerPassword || 'password123',
         name: formData.ownerName || `${formData.ownerFirstName || 'Org'} ${formData.ownerLastName || 'Admin'}`.trim(),
-        role: 'Company Operator',
+        role: 'Organisation Admin',
       });
       if (regResp && regResp.token) {
         localStorage.setItem('saurient_auth_token', regResp.token);
+        localStorage.setItem('saurient_user_role', 'Organisation Admin');
+        localStorage.setItem('auth_role', 'Organisation Admin');
+        localStorage.setItem('saurient_user_email', generatedEmail);
+        localStorage.setItem('saurient_user_name', regResp.user?.name || formData.ownerName || 'Admin');
+        localStorage.setItem('saurient_user_id', regResp.user?.id || 'usr-admin');
+        localStorage.setItem('saurient_tenant_id', tenantId);
       }
     } catch (err) {
       console.warn('Backend user registration note:', err);
@@ -360,10 +366,13 @@ export const RegistrationView: React.FC = () => {
 
     localStorage.removeItem('saurient_registration_draft');
     localStorage.setItem('saurient_company_registered', 'true');
+    localStorage.setItem('saurient_tenant_id', tenantId);
     localStorage.setItem('saurient_registered_company', JSON.stringify({
       ...formData,
       ownerEmail: generatedEmail,
+      ownerRole: 'Organisation Admin',
       ownerPassword: formData.ownerPassword || 'password123',
+      tenantId: tenantId,
       registrationDate: new Date().toISOString(),
     }));
 
@@ -1120,16 +1129,26 @@ export const RegistrationView: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed">
-              Your organization profile and administrative account are set up. Please proceed to login with your registered credentials.
+              Your organization profile and administrative account are established in the Nexus datamodel. Next, add team members and assign user roles within your organisation.
             </p>
 
-            <button
-              onClick={() => navigate('/login?registered=true')}
-              className="w-full py-3 bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2"
-            >
-              <span>Proceed to Login</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                onClick={() => navigate('/organisation?tab=Users%20%26%20Roles')}
+                className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2"
+              >
+                <Users className="w-4 h-4" />
+                <span>Add Users & Assign Roles</span>
+              </button>
+
+              <button
+                onClick={() => navigate('/login?registered=true')}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2"
+              >
+                <span>Proceed to Login</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}
