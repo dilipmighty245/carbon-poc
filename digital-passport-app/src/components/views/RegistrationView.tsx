@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Upload, User, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle } from 'lucide-react';
-import { saveOrgProfile } from '../../api/client';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CheckCircle2, Upload, User, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw } from 'lucide-react';
+import { saveOrgProfile, registerUser } from '../../api/client';
 import type { OrgProfileData } from './organisation/OrgProfileTab';
 
 export function generateSaurientEmail(fullName: string): string {
@@ -14,8 +14,81 @@ export function generateSaurientEmail(fullName: string): string {
   return `${parts[0]}.${parts[parts.length - 1]}@saurient.io`;
 }
 
+export const INITIAL_FORM_DATA = {
+  // Account Owner
+  ownerName: '',
+  ownerEmail: '',
+  ownerPhone: '',
+  ownerRole: 'Chief Sustainability Officer',
+  ownerPassword: '',
+  confirmPassword: '',
+  // Legal Identity
+  legalName: '',
+  tradingName: '',
+  registrationNumber: '',
+  incorporationDate: '',
+  legalForm: 'Private Limited Company (Ltd)',
+  countryOfRegistration: '',
+  // Addresses & Tax
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  region: '',
+  postalCode: '',
+  country: '',
+  taxResidency: '',
+  reportingCurrency: 'EUR (€)',
+  taxId: '',
+  vatNumber: '',
+  leiNumber: '',
+  fiscalYearStart: '01 January',
+  docClassification: 'Confidential',
+  // Trade & Customs
+  eoriNumber: '',
+  hsTariffCode: '7208 39 00 — Flat-rolled products of iron/steel (Hot-Rolled Coil)',
+  departurePorts: '',
+  targetMarkets: 'European Union (CBAM Zone)',
+  // Industry & Operations
+  primarySector: '',
+  annualProduction: '',
+  facilitiesCount: '',
+  gridSupplier: '',
+  renewableShare: '',
+  auditStatus: 'Pending Verification',
+  // ERP & Telemetry
+  primaryErp: 'SAP S/4HANA Cloud',
+  iotMeters: '24 Digital Telemetry Meters (Modbus TCP)',
+  dataCoverage: '88% Verified Sensor Telemetry',
+  apiGateway: 'REST API / MQTT Connected',
+  // Contacts
+  sustainabilityLead: '',
+  complianceOfficer: '',
+  financeDirector: '',
+  // Boundary
+  consolidationApproach: 'Operational Control',
+  baseYear: '2026',
+  defaultUnits: 'tCO₂e (metric tonnes)',
+  ghgStandard: 'EU CBAM Regulation & ISO 14067 Product Footprint',
+};
+
+export const INITIAL_STEP_STATUSES = [
+  'In progress',  // Step 1: Account Owner
+  'Not started',  // Step 2: Legal Identity
+  'Not started',  // Step 3: Addresses & Tax
+  'Not started',  // Step 4: Trade & Customs
+  'Not started',  // Step 5: Industry & Operations
+  'Not started',  // Step 6: Data Readiness
+  'Not started',  // Step 7: Contacts
+  'Not started',  // Step 8: Documents
+  'Not started',  // Step 9: Declarations
+  'Not started',  // Step 10: Review & Submit
+];
+
 export const RegistrationView: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const stepParam = searchParams.get('step');
+  const isNew = searchParams.get('new') === 'true';
 
   const [activeStep, setActiveStep] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,65 +98,21 @@ export const RegistrationView: React.FC = () => {
   const [isAutosaved, setIsAutosaved] = useState(false);
 
   // Controlled form state for registration wizard
-  const [formData, setFormData] = useState({
-    // Account Owner
-    ownerName: '',
-    ownerEmail: '',
-    ownerPhone: '',
-    ownerRole: 'Chief Sustainability Officer',
-    ownerPassword: '',
-    confirmPassword: '',
-    // Legal Identity
-    legalName: '',
-    tradingName: '',
-    registrationNumber: '',
-    incorporationDate: '',
-    legalForm: 'Private Limited Company (Ltd)',
-    countryOfRegistration: '',
-    // Addresses & Tax
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    region: '',
-    postalCode: '',
-    country: '',
-    taxResidency: '',
-    reportingCurrency: 'EUR (€)',
-    taxId: '',
-    vatNumber: '',
-    leiNumber: '',
-    fiscalYearStart: '01 January',
-    docClassification: 'Confidential',
-    // Trade & Customs
-    eoriNumber: '',
-    hsTariffCode: '7208 39 00 — Flat-rolled products of iron/steel (Hot-Rolled Coil)',
-    departurePorts: '',
-    targetMarkets: 'European Union (CBAM Zone)',
-    // Industry & Operations
-    primarySector: '',
-    annualProduction: '',
-    facilitiesCount: '',
-    gridSupplier: '',
-    renewableShare: '',
-    auditStatus: 'Pending Verification',
-    // ERP & Telemetry
-    primaryErp: 'SAP S/4HANA Cloud',
-    iotMeters: '24 Digital Telemetry Meters (Modbus TCP)',
-    dataCoverage: '88% Verified Sensor Telemetry',
-    apiGateway: 'REST API / MQTT Connected',
-    // Contacts
-    sustainabilityLead: '',
-    complianceOfficer: '',
-    financeDirector: '',
-    // Boundary
-    consolidationApproach: 'Operational Control',
-    baseYear: '2026',
-    defaultUnits: 'tCO₂e (metric tonnes)',
-    ghgStandard: 'EU CBAM Regulation & ISO 14067 Product Footprint',
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
-  // Restore saved draft on initial page mount if exists
+  const [stepStatuses, setStepStatuses] = useState<string[]>(INITIAL_STEP_STATUSES);
+
+  // Restore saved draft or reset on initial page mount
   useEffect(() => {
+    if (isNew) {
+      localStorage.removeItem('saurient_registration_draft');
+      setFormData(INITIAL_FORM_DATA);
+      setStepStatuses(INITIAL_STEP_STATUSES);
+      setActiveStep(0);
+      setIsAutosaved(false);
+      return;
+    }
+
     const savedDraftStr = localStorage.getItem('saurient_registration_draft');
     if (savedDraftStr) {
       try {
@@ -92,8 +121,14 @@ export const RegistrationView: React.FC = () => {
           setFormData((prev) => ({ ...prev, ...parsed.formData }));
           setIsAutosaved(true);
         }
-        if (typeof parsed.activeStep === 'number') {
-          setActiveStep(parsed.activeStep);
+        if (stepParam !== null) {
+          const s = parseInt(stepParam, 10);
+          if (!isNaN(s) && s >= 0 && s < 10) {
+            setActiveStep(s);
+          }
+        } else {
+          // Default to Step 0 (Account Owner) on initial landing so the user always starts at the beginning
+          setActiveStep(0);
         }
         if (Array.isArray(parsed.stepStatuses)) {
           setStepStatuses(parsed.stepStatuses);
@@ -101,8 +136,22 @@ export const RegistrationView: React.FC = () => {
       } catch (err) {
         console.warn('Failed to restore registration draft:', err);
       }
+    } else if (stepParam !== null) {
+      const s = parseInt(stepParam, 10);
+      if (!isNaN(s) && s >= 0 && s < 10) {
+        setActiveStep(s);
+      }
     }
-  }, []);
+  }, [stepParam, isNew]);
+
+  const handleResetForm = () => {
+    localStorage.removeItem('saurient_registration_draft');
+    setFormData(INITIAL_FORM_DATA);
+    setStepStatuses(INITIAL_STEP_STATUSES);
+    setActiveStep(0);
+    setIsAutosaved(false);
+    setErrorMsg(null);
+  };
 
   const handleChange = (field: string, value: string) => {
     setErrorMsg(null);
@@ -205,20 +254,6 @@ export const RegistrationView: React.FC = () => {
     return true;
   };
 
-  // Dynamic step statuses - only completed steps get green check marks
-  const [stepStatuses, setStepStatuses] = useState<string[]>([
-    'In progress',  // Step 1: Account Owner
-    'Not started',  // Step 2: Legal Identity
-    'Not started',  // Step 3: Addresses & Tax
-    'Not started',  // Step 4: Trade & Customs
-    'Not started',  // Step 5: Industry & Operations
-    'Not started',  // Step 6: Data Readiness
-    'Not started',  // Step 7: Contacts
-    'Not started',  // Step 8: Documents
-    'Not started',  // Step 9: Declarations
-    'Not started',  // Step 10: Review & Submit
-  ]);
-
   const stepTitles = [
     { title: 'Account Owner', desc: 'Primary administrative contact & credentials' },
     { title: 'Legal Identity', desc: 'Official entity registration & legal details' },
@@ -308,6 +343,21 @@ export const RegistrationView: React.FC = () => {
       console.warn('Backend save profile failed, updating local state:', err);
     }
 
+    try {
+      const regResp = await registerUser({
+        tenant_id: tenantId,
+        email: generatedEmail,
+        password: formData.ownerPassword || 'password123',
+        name: formData.ownerName || `${formData.ownerFirstName || 'Org'} ${formData.ownerLastName || 'Admin'}`.trim(),
+        role: 'Company Operator',
+      });
+      if (regResp && regResp.token) {
+        localStorage.setItem('saurient_auth_token', regResp.token);
+      }
+    } catch (err) {
+      console.warn('Backend user registration note:', err);
+    }
+
     localStorage.removeItem('saurient_registration_draft');
     localStorage.setItem('saurient_company_registered', 'true');
     localStorage.setItem('saurient_registered_company', JSON.stringify({
@@ -393,7 +443,19 @@ export const RegistrationView: React.FC = () => {
             ) : (
               <span className="text-slate-400">DRAFT READY</span>
             )}
-            <span className="text-emerald-400">{completionPercentage}% DONE</span>
+            <div className="flex items-center gap-2">
+              {isAutosaved && (
+                <button
+                  type="button"
+                  onClick={handleResetForm}
+                  className="text-[10px] text-slate-400 hover:text-red-400 underline font-normal"
+                  title="Clear draft and start fresh"
+                >
+                  Clear
+                </button>
+              )}
+              <span className="text-emerald-400">{completionPercentage}% DONE</span>
+            </div>
           </div>
         </div>
 
@@ -461,6 +523,17 @@ export const RegistrationView: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {isAutosaved && (
+                <button
+                  type="button"
+                  onClick={handleResetForm}
+                  className="text-xs font-semibold text-slate-600 hover:text-red-600 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5 shadow-2xs"
+                  title="Wipe draft and start fresh registration"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-500 hover:text-red-500" />
+                  <span>Start Fresh</span>
+                </button>
+              )}
               <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
                 {completionPercentage}% COMPLETE
               </span>
