@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, ShieldCheck, CheckCircle2, Eye, Download, ScrollText, History, BadgeCheck, AlertTriangle, Loader2 } from 'lucide-react';
+import { FileText, ShieldCheck, CheckCircle2, Eye, Download, ScrollText, History, BadgeCheck, AlertTriangle, Loader2, ArrowRight } from 'lucide-react';
 import { useMrv } from '../../../../context/MrvContext';
 import { Kpi, StatusBadge, Field, SectionCard } from '../shared';
-import { verifyPassport } from '../../../../api/client';
+import { verifyPassport, getAllPassportsWithMeta } from '../../../../api/client';
 
 const SECTIONS = [
   "Organisation Information", "Facility Information", "Verification Subject", "Carbon Claim",
@@ -19,13 +19,30 @@ const SECTIONS = [
 export const ReportTab: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const passportIdFromUrl = searchParams.get('id') || 'pas-st-2026-00981';
+  const urlParamId = searchParams.get('id') || '';
+  const [targetPassportId, setTargetPassportId] = useState<string>(urlParamId);
   const { meta, engagement, audit } = useMrv();
   const [auditOpen, setAuditOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifiedSuccess, setVerifiedSuccess] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (urlParamId) {
+      setTargetPassportId(urlParamId);
+    } else {
+      getAllPassportsWithMeta('all').then((res) => {
+        if (res.data && res.data.length > 0) {
+          const awaiting = res.data.find((p) => p.passport_metadata?.status === 'Submitted') || res.data[0];
+          const foundId = awaiting.passport_metadata?.passport_id || awaiting.product_summary?.batch_number || '';
+          if (foundId) {
+            setTargetPassportId(foundId);
+          }
+        }
+      });
+    }
+  }, [urlParamId]);
 
   const authRole = localStorage.getItem('auth_role') || 'Verifier';
   const isOperator = authRole.toLowerCase().includes('operator');
@@ -42,20 +59,24 @@ export const ReportTab: React.FC = () => {
       return;
     }
 
+    const passportToVerify = targetPassportId || urlParamId;
+    if (!passportToVerify) {
+      setVerifyError('No passport selected or available in queue to verify.');
+      return;
+    }
+
     setIsVerifying(true);
     try {
-      await verifyPassport(passportIdFromUrl, {
-        notes: 'Verification completed according to ISO 14064-3 and EU CBAM regulation. No material misstatements detected.',
-        verifier_statement: 'Accredited Verification Opinion: Reasonable assurance confirmed for product carbon footprint dataset.'
+      await verifyPassport(passportToVerify, {
+        verifierName: 'Sarah Jenkins (Lead Verifier)',
+        agencyName: 'Bureau Veritas UK Ltd (Accreditation #NAB-8820)',
+        opinion: 'Verified Without Qualification (ISO 14064-3 / CBAM Annex VI Compliant)',
+        tenantId: 'all',
       });
       setVerifiedSuccess(true);
     } catch (err: any) {
-      console.warn('Backend verification call fallback:', err);
-      if (err.message && err.message.includes('Segregation of duties')) {
-        setVerifyError(err.message);
-      } else {
-        setVerifiedSuccess(true);
-      }
+      console.error('Backend verification failed:', err);
+      setVerifyError(err.message || 'Failed to submit accredited verification statement to Nexus graph.');
     } finally {
       setIsVerifying(false);
     }
@@ -190,12 +211,34 @@ export const ReportTab: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {verifiedSuccess ? (
-            <div className="flex items-center gap-2 px-3.5 py-2 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold shadow-xs">
-              <BadgeCheck className="w-4 h-4 text-emerald-700" />
-              <span>Verification Statement Issued & Transmitted</span>
-            </div>
+            <>
+              <div className="flex items-center gap-2 px-3.5 py-2 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold shadow-xs">
+                <BadgeCheck className="w-4 h-4 text-emerald-700" />
+                <span>Verification Statement Issued & Transmitted</span>
+              </div>
+              {targetPassportId && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/passport/detail/${targetPassportId}`)}
+                    className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>View Verified Passport</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/passport/sign-issue?id=${targetPassportId}`)}
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>Proceed to Sign & Issue</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
+                  </button>
+                </>
+              )}
+            </>
           ) : isOperator ? (
             <button
               onClick={() => navigate('/passport/readiness')}

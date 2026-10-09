@@ -51,17 +51,7 @@ export const DigitalPassportOutput: React.FC = () => {
   const validTabs = ['registry', 'readiness', 'preview', 'sign-issue', 'detail', 'passport-detail', 'qr', 'sharing', 'versions'];
   const activeTabId = validTabs.includes(tab.toLowerCase()) ? tab.toLowerCase() : 'registry';
 
-  // Company login should NOT see or access "Sign & Issue"
-  useEffect(() => {
-    if (isOperator && activeTabId === 'sign-issue') {
-      navigate('/passport/readiness', { replace: true });
-    }
-  }, [isOperator, activeTabId, navigate]);
-
-  const visibleTabs = PASSPORT_TABS.filter((t) => {
-    if (isOperator && t.id === 'sign-issue') return false;
-    return true;
-  });
+  const visibleTabs = PASSPORT_TABS;
 
   const handleTabChange = (newTabId: string) => {
     navigate(`/passport/${newTabId}`);

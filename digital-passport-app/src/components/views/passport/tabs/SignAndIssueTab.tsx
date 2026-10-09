@@ -52,9 +52,10 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
   }
 
   const currentStatus = localStatus || passport?.passport_metadata?.status || 'Draft';
-  const isVerified = currentStatus === 'Verified';
-  const isIssued = currentStatus === 'Issued' || currentStatus === 'SubmittedToAgency';
-  const isSubmittedToAgency = currentStatus === 'SubmittedToAgency' || agencySubmitted;
+  const statusUpper = currentStatus.toUpperCase();
+  const isVerified = statusUpper === 'VERIFIED';
+  const isIssued = statusUpper === 'ISSUED' || statusUpper === 'SUBMITTEDTOAGENCY' || statusUpper === 'SUBMITTED_TO_AGENCY';
+  const isSubmittedToAgency = statusUpper === 'SUBMITTEDTOAGENCY' || statusUpper === 'SUBMITTED_TO_AGENCY' || agencySubmitted;
 
   const handleSign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,12 +239,24 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
               <p className="text-xs text-emerald-800 max-w-md mx-auto">
                 Bureau Veritas (#NAB-8820) has completed independent verification. Under organizational Segregation of Duties, final digital signing is restricted to authorized Passport Officers.
               </p>
-              <div className="pt-2">
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem('saurient_user_role', 'Passport Officer');
+                    localStorage.setItem('auth_role', 'officer');
+                    window.location.reload();
+                  }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Switch to Passport Officer to Sign</span>
+                </button>
                 <button
                   onClick={() => navigate('/login')}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
                 >
-                  Log In as Passport Officer to Sign
+                  Switch Persona...
                 </button>
               </div>
             </div>

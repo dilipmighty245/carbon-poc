@@ -264,21 +264,41 @@ export async function requestPassportCorrections(passportId: string, verifierNam
   return await res.json();
 }
 
-export async function verifyPassport(passportId: string, verifierName = 'Sarah Jenkins (Lead Verifier)', agencyName = 'Bureau Veritas UK Ltd (Accreditation #NAB-8820)', opinion = 'Verified Without Qualification', tenantId = DEFAULT_TENANT_ID) {
+export async function verifyPassport(
+  passportId: string,
+  verifierNameOrOptions: string | { verifier_name?: string; verifierName?: string; agency_name?: string; agencyName?: string; opinion?: string; notes?: string; verifier_statement?: string; tenantId?: string; tenant_id?: string } = 'Sarah Jenkins (Lead Verifier)',
+  agencyName = 'Bureau Veritas UK Ltd (Accreditation #NAB-8820)',
+  opinion = 'Verified Without Qualification',
+  tenantId = 'all'
+) {
+  let vName = 'Sarah Jenkins (Lead Verifier)';
+  let aName = agencyName;
+  let op = opinion;
+  let tId = tenantId || 'all';
+
+  if (typeof verifierNameOrOptions === 'object' && verifierNameOrOptions !== null) {
+    vName = verifierNameOrOptions.verifierName || verifierNameOrOptions.verifier_name || vName;
+    aName = verifierNameOrOptions.agencyName || verifierNameOrOptions.agency_name || aName;
+    op = verifierNameOrOptions.opinion || verifierNameOrOptions.verifier_statement || op;
+    tId = verifierNameOrOptions.tenantId || verifierNameOrOptions.tenant_id || tId;
+  } else if (typeof verifierNameOrOptions === 'string' && verifierNameOrOptions.trim() !== '') {
+    vName = verifierNameOrOptions;
+  }
+
   const userRole = localStorage.getItem('saurient_user_role') || 'Verifier';
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}/verify`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tId,
       'X-User-Role': userRole,
       'X-User-Email': localStorage.getItem('saurient_user_email') || 'auditor@bureau-veritas.com',
     },
     body: JSON.stringify({
-      verifier_name: verifierName,
-      agency_name: agencyName,
+      verifier_name: vName,
+      agency_name: aName,
       assurance_level: 'Reasonable Assurance',
-      opinion,
+      opinion: op,
     }),
   });
   if (!res.ok) {

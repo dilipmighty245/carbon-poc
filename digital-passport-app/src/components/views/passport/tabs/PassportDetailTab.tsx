@@ -123,6 +123,7 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
 
   const rawStatus = passport.passport_metadata?.status || 'Draft';
   const currentStatus = localStatus || rawStatus;
+  const statusUpper = currentStatus.toUpperCase();
 
   const metadata = {
     passport_id: passport.passport_metadata?.passport_id || passportId || 'N/A',
@@ -181,15 +182,16 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
     eu_benchmark_comparison_ratio: (passport as any)?.cbam_compliance?.eu_benchmark_comparison_ratio ?? 0.86,
   };
 
-  const isPreVerification = currentStatus === 'Draft' || currentStatus === 'CorrectionsRequired';
-  const isUnderReview = currentStatus === 'Submitted' || currentStatus === 'UnderVerification';
+  const isPreVerification = statusUpper === 'DRAFT' || statusUpper === 'CORRECTIONSREQUIRED' || statusUpper === 'CORRECTIONS_REQUIRED';
+  const isUnderReview = statusUpper === 'SUBMITTED' || statusUpper === 'UNDERVERIFICATION' || statusUpper === 'UNDER_VERIFICATION';
   const isVerifiedOrIssued =
-    currentStatus === 'Verified' || currentStatus === 'Issued' || currentStatus === 'SubmittedToAgency';
+    statusUpper === 'VERIFIED' || statusUpper === 'ISSUED' || statusUpper === 'SUBMITTEDTOAGENCY' || statusUpper === 'SUBMITTED_TO_AGENCY';
 
   const verifier = {
     verifier_body: isVerifiedOrIssued
       ? (passport as any)?.verification?.verifier_body ||
         (passport as any)?.verification_and_assurance?.verifier_name ||
+        (passport as any)?.methodology_and_audit?.verification_details?.verifier_name ||
         passport?.methodology_and_audit?.verification_body ||
         'Bureau Veritas UK Ltd (Accredited Verifier #NAB-8820)'
       : isUnderReview
@@ -198,6 +200,7 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
     verification_statement_id: isVerifiedOrIssued
       ? (passport as any)?.verification?.verification_statement_id ||
         (passport as any)?.verification_and_assurance?.certificate_reference ||
+        (passport as any)?.methodology_and_audit?.verification_details?.verification_id ||
         passport?.methodology_and_audit?.verification_id ||
         'CERT-EU-CBAM-2026-981'
       : isUnderReview
@@ -211,7 +214,8 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
     verification_date: isVerifiedOrIssued
       ? (passport as any)?.verification?.verification_date ||
         (passport as any)?.verification_and_assurance?.verification_date ||
-        '2026-03-28'
+        (passport as any)?.methodology_and_audit?.verification_details?.verification_date?.substring(0, 10) ||
+        '2026-10-09'
       : isUnderReview
       ? 'In Progress'
       : 'Pending Submission',
@@ -346,7 +350,7 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
             </>
           )}
 
-          {currentStatus === 'Verified' && (
+          {statusUpper === 'VERIFIED' && (
             <button
               onClick={() => navigate(`/passport/sign-issue?id=${metadata.passport_id}`)}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
@@ -487,7 +491,7 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
         </div>
       )}
 
-      {currentStatus === 'Verified' && (
+      {statusUpper === 'VERIFIED' && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl">

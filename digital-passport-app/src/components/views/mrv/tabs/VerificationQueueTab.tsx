@@ -319,6 +319,22 @@ export const VerificationQueueTab: React.FC = () => {
                       </button>
                     </>
                   )}
+
+                  {status.toUpperCase() === 'VERIFIED' && (
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-2 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-xl flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Verified & Sealed</span>
+                      </span>
+                      <button
+                        onClick={() => navigate(`/passport/detail/${pId}`)}
+                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1"
+                      >
+                        <span>View Passport</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
