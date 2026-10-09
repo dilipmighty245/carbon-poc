@@ -72,6 +72,7 @@ export const initialUsers: UserMember[] = [
 ];
 
 export const rolesList = [
+  { name: 'Organisation Owner', desc: 'Full ownership and administrative control over entity profile, facilities, users, and governance.' },
   { name: 'Organisation Admin', desc: 'Full administrative access across entity profile, settings, and user role provisioning.' },
   { name: 'Compliance Manager', desc: 'Manages CBAM verification readiness, evidence dossiers, and declarant links.' },
   { name: 'Facility Manager', desc: 'Oversees site telemetry, process lines, and facility data completeness.' },
@@ -83,15 +84,15 @@ export const rolesList = [
 ];
 
 export const permissionsMatrix = [
-  { key: 'view', label: 'View Data', allowedRoles: ['Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator', 'Verifier', 'Auditor', 'Viewer'] },
-  { key: 'create', label: 'Create Records', allowedRoles: ['Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator'] },
-  { key: 'edit', label: 'Edit Drafts', allowedRoles: ['Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator'] },
-  { key: 'submit', label: 'Submit for Review', allowedRoles: ['Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager'] },
-  { key: 'verify', label: 'Verify / Sign-off', allowedRoles: ['Organisation Admin', 'Compliance Manager', 'Verifier'] },
-  { key: 'approve', label: 'Approve & Close Period', allowedRoles: ['Organisation Admin', 'Compliance Manager'] },
-  { key: 'issue', label: 'Issue Passport', allowedRoles: ['Organisation Admin', 'Compliance Manager'] },
-  { key: 'revoke', label: 'Revoke Passport', allowedRoles: ['Organisation Admin'] },
-  { key: 'export', label: 'Export Dossiers', allowedRoles: ['Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Verifier', 'Auditor'] },
+  { key: 'view', label: 'View Data', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator', 'Verifier', 'Auditor', 'Viewer'] },
+  { key: 'create', label: 'Create Records', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator'] },
+  { key: 'edit', label: 'Edit Drafts', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator'] },
+  { key: 'submit', label: 'Submit for Review', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager'] },
+  { key: 'verify', label: 'Verify / Sign-off', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Verifier'] },
+  { key: 'approve', label: 'Approve & Close Period', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager'] },
+  { key: 'issue', label: 'Issue Passport', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager'] },
+  { key: 'revoke', label: 'Revoke Passport', allowedRoles: ['Organisation Owner', 'Organisation Admin'] },
+  { key: 'export', label: 'Export Dossiers', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Verifier', 'Auditor'] },
 ];
 
 const getInitialUsers = (): UserMember[] => {
@@ -99,7 +100,7 @@ const getInitialUsers = (): UserMember[] => {
   const stored = localStorage.getItem('saurient_registered_company');
   const loggedEmail = localStorage.getItem('saurient_user_email');
   const loggedName = localStorage.getItem('saurient_user_name');
-  const loggedRole = localStorage.getItem('saurient_user_role') || 'Organisation Admin';
+  const loggedRole = localStorage.getItem('saurient_user_role') || 'Organisation Owner';
 
   if (stored) {
     try {
@@ -108,9 +109,9 @@ const getInitialUsers = (): UserMember[] => {
         return [
           {
             id: 'USR-REG-001',
-            name: c.ownerName || `${c.ownerFirstName || 'Org'} ${c.ownerLastName || 'Admin'}`.trim() || 'Organisation Admin',
+            name: c.ownerName || `${c.ownerFirstName || 'Org'} ${c.ownerLastName || 'Owner'}`.trim() || 'Organisation Owner',
             email: c.ownerEmail || 'admin@saurient.io',
-            role: 'Organisation Admin',
+            role: c.ownerRole || 'Organisation Owner',
             facilityScope: 'All Facilities',
             lastLogin: 'Active Now',
             status: 'Active',
@@ -141,13 +142,13 @@ const getInitialUsers = (): UserMember[] => {
 
 export const OrgUsersRolesTab: React.FC = () => {
   const loggedInEmail = localStorage.getItem('saurient_user_email') || '';
-  const loggedInName = localStorage.getItem('saurient_user_name') || 'Organisation Admin';
-  const loggedInRole = localStorage.getItem('saurient_user_role') || 'Organisation Admin';
+  const loggedInName = localStorage.getItem('saurient_user_name') || 'Organisation Owner';
+  const loggedInRole = localStorage.getItem('saurient_user_role') || 'Organisation Owner';
   const activeTenant = localStorage.getItem('saurient_tenant_id') || 'org_saurient_demo';
 
   const [users, setUsers] = useState<UserMember[]>(getInitialUsers());
   const [activeTab, setActiveTab] = useState<'users' | 'matrix'>('users');
-  const [actingRole, setActingRole] = useState<string>(() => localStorage.getItem('saurient_user_role') || 'Organisation Admin');
+  const [actingRole, setActingRole] = useState<string>(() => localStorage.getItem('saurient_user_role') || 'Organisation Owner');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUserForRole, setSelectedUserForRole] = useState<UserMember | null>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -398,7 +399,7 @@ export const OrgUsersRolesTab: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4">
                       <span className={`font-bold px-2.5 py-1 rounded-md text-[11px] border ${
-                        u.role === 'Organisation Admin'
+                        u.role === 'Organisation Owner' || u.role === 'organisationowner' || u.role === 'Organisation Admin'
                           ? 'bg-purple-50 text-purple-800 border-purple-200'
                           : u.role === 'Verifier'
                           ? 'bg-blue-50 text-blue-800 border-blue-200'

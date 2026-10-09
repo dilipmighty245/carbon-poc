@@ -23,15 +23,6 @@ export const LoginView: React.FC = () => {
   const registeredCompany = getRegisteredCompany();
 
   const DEMO_ACCOUNTS: Record<string, { name: string; email: string; pass: string; route: string; desc: string; badge: string; tenantId: string }> = {
-    'Organisation Admin': {
-      name: registeredCompany?.ownerName || 'Santosh Samudrala (Organisation Admin)',
-      email: registeredCompany?.ownerEmail || 'admin@asante-cocoa.com',
-      pass: registeredCompany?.ownerPassword || 'DemoPassword2026!',
-      route: '/company-dashboard',
-      desc: 'Workspace & Team Administration',
-      badge: registeredCompany?.tradingName || registeredCompany?.legalName || 'Asante Cocoa Ltd',
-      tenantId: registeredCompany?.tenantId || 'org_asante_cocoa',
-    },
     'Company Operator': {
       name: 'Santosh Samudrala (Lead Operator)',
       email: 'operator@asante-cocoa.com',
@@ -79,32 +70,26 @@ export const LoginView: React.FC = () => {
     const emailParam = searchParams.get('email');
 
     if (isRegistered || emailParam) {
-      setRole('Organisation Admin');
       if (emailParam) {
         setEmail(emailParam);
         const registered = getRegisteredCompany();
         if (registered && registered.ownerEmail?.toLowerCase() === emailParam.toLowerCase() && registered.ownerPassword) {
           setPassword(registered.ownerPassword);
         } else {
-          setPassword(registered?.ownerPassword || 'DemoPassword2026!');
+          setPassword(registered?.ownerPassword || '');
         }
       } else {
         const registered = getRegisteredCompany();
         if (registered?.ownerEmail) {
           setEmail(registered.ownerEmail);
-          setPassword(registered.ownerPassword || 'DemoPassword2026!');
+          setPassword(registered.ownerPassword || '');
         }
       }
-      setSuccessMsg('Organisation registered successfully. Sign in with your Organisation Admin credentials to manage your team and assign roles.');
+      setSuccessMsg('Organisation registered successfully. Sign in with your account credentials.');
     }
   }, [searchParams]);
 
   const roles = [
-    { 
-      title: 'Organisation Admin', 
-      desc: 'Workspace & Team Administration', 
-      badge: registeredCompany?.tradingName || registeredCompany?.legalName || 'Asante Cocoa Ltd',
-    },
     { 
       title: 'Company Operator', 
       desc: 'Facility & ESG Operations',
@@ -167,7 +152,8 @@ export const LoginView: React.FC = () => {
         localStorage.setItem('saurient_user_id', resp.user.id);
         localStorage.setItem('saurient_tenant_id', resp.user.tenant_id);
 
-        const targetRoute = resp.user.role === 'Organisation Admin'
+        const rLower = (resp.user.role || '').toLowerCase().replace(/[\s_]/g, '');
+        const targetRoute = (rLower === 'organisationowner' || rLower === 'organisationadmin' || rLower === 'companyoperator')
           ? '/company-dashboard'
           : DEMO_ACCOUNTS[resp.user.role]?.route || DEMO_ACCOUNTS[role]?.route || '/company-dashboard';
         navigate(targetRoute);

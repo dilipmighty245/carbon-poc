@@ -32,9 +32,13 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
+  const roleNorm = userRole.toLowerCase().replace(/[\s_]/g, '');
+  const isOrgOwner = roleNorm === 'organisationowner';
+  const isOrgAdmin = roleNorm === 'organisationadmin';
+  const isOwnerOrAdmin = isOrgOwner || isOrgAdmin;
   const isVerifier = userRole.toLowerCase().includes('verifier');
   const isOfficer = userRole.toLowerCase().includes('officer');
-  const isOperator = !isVerifier && !isOfficer;
+  const isOperator = !isVerifier && !isOfficer && !isOwnerOrAdmin;
 
   const userEmail = localStorage.getItem('saurient_user_email') || (
     isVerifier ? 'auditor@bureau-veritas.com' : isOfficer ? 'officer@saurient.com' : 'operator@asante-cocoa.com'
@@ -42,7 +46,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   const userName = localStorage.getItem('saurient_user_name') || (
     isVerifier ? 'Sarah Jenkins' : isOfficer ? 'Helena Vance' : 'Kwame Mensah'
   );
-  const userInitials = isVerifier ? 'V' : isOfficer ? 'P' : 'O';
+  const userInitials = isVerifier ? 'V' : isOfficer ? 'P' : isOrgOwner ? 'O' : isOrgAdmin ? 'A' : 'O';
 
   const currentTenant = localStorage.getItem('saurient_tenant_id') || 'org_saurient_demo';
 
@@ -166,7 +170,9 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           <div className="p-4 border-t border-slate-800/80">
             <div className="mb-2">
               <span className={`inline-block px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider rounded-md shadow-xs ${
-                role === 'Organisation Admin'
+                isOrgOwner
+                  ? 'bg-purple-400 text-slate-950'
+                  : isOrgAdmin
                   ? 'bg-purple-400 text-slate-950'
                   : isVerifier 
                   ? 'bg-indigo-400 text-slate-950' 
@@ -174,7 +180,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                   ? 'bg-amber-400 text-slate-950' 
                   : 'bg-emerald-400 text-slate-950'
               }`}>
-                {role === 'Organisation Admin' ? 'ORGANISATION ADMIN' : isVerifier ? 'VERIFIER WORKSPACE' : isOfficer ? 'ISSUANCE AUTHORITY' : 'COMPANY WORKSPACE'}
+                {isOrgOwner ? 'ORGANISATION OWNER' : isOrgAdmin ? 'ORGANISATION ADMIN' : isVerifier ? 'VERIFIER WORKSPACE' : isOfficer ? 'ISSUANCE AUTHORITY' : 'COMPANY WORKSPACE'}
               </span>
             </div>
             {isVerifier ? (
@@ -201,7 +207,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 <>
                   <p className="text-xs font-bold text-white truncate">{compName}</p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {role === 'Organisation Admin' ? 'Organisation Admin • Enterprise Admin' : isOfficer ? 'Passport Officer • Governance' : 'Company Operator • FY 2026'}
+                    {isOrgOwner ? 'Organisation Owner • Entity Lead' : isOrgAdmin ? 'Organisation Admin • Enterprise Admin' : isOfficer ? 'Passport Officer • Governance' : 'Company Operator • FY 2026'}
                   </p>
                 </>
               );
@@ -217,7 +223,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               <span>{isVerifier ? 'Verifier Portal' : 'Workspace'}</span>
               <span>/</span>
               <span className="text-slate-900 font-semibold">
-                {isVerifier ? 'Independent Verification (Bureau Veritas)' : role === 'Organisation Admin' ? 'Organisation Administration' : 'Company Workspace'}
+                {isVerifier ? 'Independent Verification (Bureau Veritas)' : isOwnerOrAdmin ? 'Organisation Administration' : 'Company Workspace'}
               </span>
             </div>
 
@@ -257,7 +263,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 >
                   <div
                     className={`w-8 h-8 rounded-full text-white font-black text-xs flex items-center justify-center shadow-xs ${
-                      role === 'Organisation Admin' ? 'bg-purple-600 ring-2 ring-purple-200' : isVerifier ? 'bg-indigo-600 ring-2 ring-indigo-200' : isOfficer ? 'bg-amber-600 ring-2 ring-amber-200' : 'bg-emerald-600 ring-2 ring-emerald-200'
+                      isOwnerOrAdmin ? 'bg-purple-600 ring-2 ring-purple-200' : isVerifier ? 'bg-indigo-600 ring-2 ring-indigo-200' : isOfficer ? 'bg-amber-600 ring-2 ring-amber-200' : 'bg-emerald-600 ring-2 ring-emerald-200'
                     }`}
                   >
                     {userInitials}
@@ -267,7 +273,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       {userName}
                     </p>
                     <p className="text-[10px] text-slate-400 leading-tight">
-                      {role === 'Organisation Admin' ? 'Organisation Admin' : isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
+                      {isOrgOwner ? 'Organisation Owner' : isOrgAdmin ? 'Organisation Admin' : isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
                     </p>
                   </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
@@ -280,7 +286,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       <div className="flex items-center gap-2.5">
                         <div
                           className={`w-9 h-9 rounded-full text-white font-black text-sm flex items-center justify-center shrink-0 ${
-                            role === 'Organisation Admin' ? 'bg-purple-600' : isVerifier ? 'bg-indigo-600' : isOfficer ? 'bg-amber-600' : 'bg-emerald-600'
+                            isOwnerOrAdmin ? 'bg-purple-600' : isVerifier ? 'bg-indigo-600' : isOfficer ? 'bg-amber-600' : 'bg-emerald-600'
                           }`}
                         >
                           {userInitials}
@@ -293,7 +299,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                       <div className="mt-2.5 flex items-center gap-1.5">
                         <span
                           className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                            role === 'Organisation Admin'
+                            isOwnerOrAdmin
                               ? 'bg-purple-100 text-purple-800 border border-purple-200'
                               : isVerifier
                               ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
@@ -302,7 +308,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                               : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           }`}
                         >
-                          {role === 'Organisation Admin' ? 'Organisation Admin' : isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
+                          {isOrgOwner ? 'Organisation Owner' : isOrgAdmin ? 'Organisation Admin' : isVerifier ? 'Accredited Verifier' : isOfficer ? 'Passport Officer' : 'Company Operator'}
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-400 mt-1 truncate">

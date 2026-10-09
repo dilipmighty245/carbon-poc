@@ -434,7 +434,7 @@ func TestOrganisationHandler_SystemReset(t *testing.T) {
 	}
 }
 
-func TestOrganisationHandler_AccountOwner_OrganisationAdmin_And_TeamProvisioning(t *testing.T) {
+func TestOrganisationHandler_AccountOwner_OrganisationOwner_And_TeamProvisioning(t *testing.T) {
 	client := nexus_client.NewFakeClient()
 	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
 	engine := nexus.GetNexusEngine()
@@ -445,13 +445,12 @@ func TestOrganisationHandler_AccountOwner_OrganisationAdmin_And_TeamProvisioning
 
 	tenantID := "tenant-omega-steel"
 
-	// 1. Register Account Owner for new organisation -> role must be "Organisation Admin"
+	// 1. Register Account Owner for new organisation -> default role must be "Organisation Owner"
 	regPayload := map[string]string{
 		"tenant_id": tenantID,
 		"name":      "Santosh Samudrala",
 		"email":     "santosh@omega-steel.com",
 		"password":  "OwnerSecurePassword2026!",
-		"role":      "Organisation Admin",
 	}
 	body, _ := json.Marshal(regPayload)
 	reqReg := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(body))
@@ -467,8 +466,8 @@ func TestOrganisationHandler_AccountOwner_OrganisationAdmin_And_TeamProvisioning
 	if err := json.NewDecoder(recReg.Body).Decode(&regResp); err != nil {
 		t.Fatalf("failed to decode register response: %v", err)
 	}
-	if regResp.User.Role != "Organisation Admin" {
-		t.Fatalf("expected role 'Organisation Admin' for account owner, got '%s'", regResp.User.Role)
+	if regResp.User.Role != "Organisation Owner" {
+		t.Fatalf("expected role 'Organisation Owner' for account owner, got '%s'", regResp.User.Role)
 	}
 
 	// 2. Verify account owner credentials can log in via POST /api/v1/auth/login
@@ -484,18 +483,18 @@ func TestOrganisationHandler_AccountOwner_OrganisationAdmin_And_TeamProvisioning
 	mux.ServeHTTP(recLogin, reqLogin)
 
 	if recLogin.Code != http.StatusOK {
-		t.Fatalf("expected 200 OK logging in as Organisation Admin, got %d: %s", recLogin.Code, recLogin.Body.String())
+		t.Fatalf("expected 200 OK logging in as Organisation Owner, got %d: %s", recLogin.Code, recLogin.Body.String())
 	}
 
 	var loginResp LoginResponse
 	if err := json.NewDecoder(recLogin.Body).Decode(&loginResp); err != nil {
 		t.Fatalf("failed to decode login response: %v", err)
 	}
-	if loginResp.User.Role != "Organisation Admin" {
-		t.Fatalf("expected logged in user role 'Organisation Admin', got '%s'", loginResp.User.Role)
+	if loginResp.User.Role != "Organisation Owner" {
+		t.Fatalf("expected logged in user role 'Organisation Owner', got '%s'", loginResp.User.Role)
 	}
 
-	// 3. Logged-in Organisation Admin uses credentials to create a new team member
+	// 3. Logged-in Organisation Owner uses credentials to create a new team member
 	newMemberPayload := map[string]interface{}{
 		"name":           "Alex Rivera",
 		"email":          "a.rivera@omega-steel.com",

@@ -61,10 +61,10 @@ func (h *OrganisationHandler) ensureSeedUsers(ctx context.Context) {
 		},
 		{
 			tenantID: "org_asante_cocoa",
-			name:     "Santosh Samudrala (Organisation Admin)",
+			name:     "Santosh Samudrala (Organisation Owner)",
 			email:    "admin@asante-cocoa.com",
 			password: "DemoPassword2026!",
-			role:     "Organisation Admin",
+			role:     "Organisation Owner",
 		},
 		{
 			tenantID: "org_asante_cocoa",
@@ -206,7 +206,7 @@ func (h *OrganisationHandler) HandleAuthRegister(w http.ResponseWriter, r *http.
 
 	role := req.Role
 	if role == "" {
-		role = "Organisation Admin"
+		role = "Organisation Owner"
 	}
 	scope := req.FacilityScope
 	if scope == "" {

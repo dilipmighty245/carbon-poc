@@ -19,7 +19,7 @@ export const INITIAL_FORM_DATA = {
   ownerName: '',
   ownerEmail: '',
   ownerPhone: '',
-  ownerRole: 'Chief Sustainability Officer',
+  ownerRole: 'Organisation Owner',
   ownerPassword: '',
   confirmPassword: '',
   // Legal Identity
@@ -355,16 +355,16 @@ export const RegistrationView: React.FC = () => {
           tenant_id: tenantId,
           email: generatedEmail,
           password: formData.ownerPassword || 'password123',
-          name: formData.ownerName || `${formData.ownerFirstName || 'Org'} ${formData.ownerLastName || 'Admin'}`.trim(),
-          role: 'Organisation Admin',
+          name: formData.ownerName || `${formData.ownerFirstName || 'Org'} ${formData.ownerLastName || 'Owner'}`.trim(),
+          role: 'Organisation Owner',
         });
         if (regResp && regResp.token) {
           localStorage.setItem('saurient_auth_token', regResp.token);
-          localStorage.setItem('saurient_user_role', 'Organisation Admin');
-          localStorage.setItem('auth_role', 'Organisation Admin');
+          localStorage.setItem('saurient_user_role', 'Organisation Owner');
+          localStorage.setItem('auth_role', 'Organisation Owner');
           localStorage.setItem('saurient_user_email', generatedEmail);
-          localStorage.setItem('saurient_user_name', regResp.user?.name || formData.ownerName || 'Admin');
-          localStorage.setItem('saurient_user_id', regResp.user?.id || 'usr-admin');
+          localStorage.setItem('saurient_user_name', regResp.user?.name || formData.ownerName || 'Owner');
+          localStorage.setItem('saurient_user_id', regResp.user?.id || 'usr-owner');
           localStorage.setItem('saurient_tenant_id', tenantId);
         }
       } catch (err) {
@@ -374,11 +374,11 @@ export const RegistrationView: React.FC = () => {
           const loginResp = await loginUser(generatedEmail, formData.ownerPassword || 'password123', tenantId);
           if (loginResp && loginResp.token) {
             localStorage.setItem('saurient_auth_token', loginResp.token);
-            localStorage.setItem('saurient_user_role', 'Organisation Admin');
-            localStorage.setItem('auth_role', 'Organisation Admin');
+            localStorage.setItem('saurient_user_role', 'Organisation Owner');
+            localStorage.setItem('auth_role', 'Organisation Owner');
             localStorage.setItem('saurient_user_email', generatedEmail);
-            localStorage.setItem('saurient_user_name', loginResp.user?.name || formData.ownerName || 'Admin');
-            localStorage.setItem('saurient_user_id', loginResp.user?.id || 'usr-admin');
+            localStorage.setItem('saurient_user_name', loginResp.user?.name || formData.ownerName || 'Owner');
+            localStorage.setItem('saurient_user_id', loginResp.user?.id || 'usr-owner');
             localStorage.setItem('saurient_tenant_id', tenantId);
           }
         } catch (loginErr) {
@@ -392,7 +392,7 @@ export const RegistrationView: React.FC = () => {
       localStorage.setItem('saurient_registered_company', JSON.stringify({
         ...formData,
         ownerEmail: generatedEmail,
-        ownerRole: 'Organisation Admin',
+        ownerRole: 'Organisation Owner',
         ownerPassword: formData.ownerPassword || 'password123',
         tenantId: tenantId,
         registrationDate: new Date().toISOString(),
@@ -655,9 +655,9 @@ export const RegistrationView: React.FC = () => {
                 <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-start gap-2.5">
                   <ShieldCheck className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold">System Role Assignment: Organisation Admin</span>
+                    <span className="font-bold">Default System Role: Organisation Owner</span>
                     <p className="text-[11px] text-purple-700 mt-0.5">
-                      The Account Owner automatically receives the <strong>Organisation Admin</strong> role in the Nexus datamodel. Once logged in, this administrative account has full authority to invite users and assign roles.
+                      The Account Owner automatically receives the <strong>Organisation Owner</strong> role in the Nexus datamodel. Once logged in, this account has full authority to invite users and assign roles.
                     </p>
                   </div>
                 </div>
@@ -1061,7 +1061,7 @@ export const RegistrationView: React.FC = () => {
                     </p>
                     <p className="text-emerald-700 flex items-center gap-1.5 font-semibold">
                       <Check className="w-4 h-4 text-emerald-600" />
-                      Account Owner: {formData.ownerName || 'Not specified'} ({formData.ownerEmail || generateSaurientEmail(formData.ownerName)}) — Role: <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-1.5 py-0.5 rounded">Organisation Admin</span>
+                      Account Owner: {formData.ownerName || 'Not specified'} ({formData.ownerEmail || generateSaurientEmail(formData.ownerName)}) — Role: <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-1.5 py-0.5 rounded">Organisation Owner</span>
                     </p>
                     <p className="text-emerald-700 flex items-center gap-1.5 font-semibold">
                       <Check className="w-4 h-4 text-emerald-600" />
@@ -1181,13 +1181,13 @@ export const RegistrationView: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-700">System Role</span>
                 <span className="bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded text-[11px] border border-purple-200">
-                  Organisation Admin
+                  Organisation Owner
                 </span>
               </div>
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed text-left">
-              The account owner is provisioned as <strong>Organisation Admin</strong> in the Nexus graph datamodel. Sign in with these credentials to manage your company workspace, create users, and assign roles.
+              The account owner is provisioned as <strong>Organisation Owner</strong> in the Nexus graph datamodel. Sign in with these credentials to manage your company workspace, create users, and assign roles.
             </p>
 
             <div className="flex flex-col gap-2 pt-1">
