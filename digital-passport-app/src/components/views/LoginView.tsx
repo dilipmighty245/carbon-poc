@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, AlertTriangle, Building, LogIn, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { ArrowRight, AlertTriangle, Building, LogIn, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck, Factory, Award, QrCode } from 'lucide-react';
 import { loginUser } from '../../api/client';
 
 export const LoginView: React.FC = () => {
@@ -22,14 +22,13 @@ export const LoginView: React.FC = () => {
   };
   const registeredCompany = getRegisteredCompany();
 
-  const DEMO_ACCOUNTS: Record<string, { name: string; email: string; pass: string; route: string; desc: string; badge: string; tenantId: string }> = {
+  const DEMO_ACCOUNTS: Record<string, { name: string; email: string; pass: string; route: string; desc: string; tenantId: string }> = {
     'Company Operator': {
       name: 'Santosh Samudrala (Lead Operator)',
       email: 'operator@asante-cocoa.com',
       pass: 'DemoPassword2026!',
       route: '/company-dashboard',
       desc: 'Facility & ESG Operations',
-      badge: 'Asante Cocoa Ltd',
       tenantId: 'org_asante_cocoa',
     },
     'Verifier': {
@@ -38,7 +37,6 @@ export const LoginView: React.FC = () => {
       pass: 'DemoPassword2026!',
       route: '/mrv',
       desc: 'Accredited Verifier (#NAB-8820)',
-      badge: 'Bureau Veritas UK',
       tenantId: 'tenant-verifier-agency',
     },
     'Passport Officer': {
@@ -47,7 +45,6 @@ export const LoginView: React.FC = () => {
       pass: 'DemoPassword2026!',
       route: '/passport/sign-issue',
       desc: 'Issuance & Governance Authority',
-      badge: 'Saurient Authority',
       tenantId: 'org_saurient_demo',
     },
     'Public Viewer': {
@@ -56,7 +53,6 @@ export const LoginView: React.FC = () => {
       pass: '',
       route: '/passport/registry',
       desc: 'Customs & Public Registry',
-      badge: 'Public Verification',
       tenantId: 'public',
     },
   };
@@ -93,26 +89,26 @@ export const LoginView: React.FC = () => {
     { 
       title: 'Company Operator', 
       desc: 'Facility & ESG Operations',
-      badge: 'Asante Cocoa Ltd',
+      icon: Factory,
     },
     { 
       title: 'Verifier', 
       desc: 'Accredited Verifier (#NAB-8820)', 
-      badge: 'Bureau Veritas UK',
+      icon: ShieldCheck,
     },
     { 
       title: 'Passport Officer', 
       desc: 'Issuance & Governance Authority', 
-      badge: 'Saurient Authority',
+      icon: Award,
     },
     { 
       title: 'Public Viewer', 
       desc: 'Customs & Public Registry', 
-      badge: 'Public Verification',
+      icon: QrCode,
     },
   ];
 
-  const handleSelectRole = (r: { title: string; desc: string; badge?: string }) => {
+  const handleSelectRole = (r: { title: string; desc: string }) => {
     setRole(r.title);
     setLoginError(null);
     setSuccessMsg(null);
@@ -245,27 +241,31 @@ export const LoginView: React.FC = () => {
             Select Workspace Persona
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {roles.map((r, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleSelectRole(r)}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
-                  role === r.title
-                    ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-xs text-slate-900">{r.title}</h4>
-                  {role === r.title && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                </div>
-                <p className="text-[10px] text-slate-500 mt-0.5 truncate">{r.desc}</p>
-                <span className="inline-block mt-1 text-[9px] font-semibold text-emerald-800 bg-emerald-100/80 px-1.5 py-0.5 rounded">
-                  {r.badge}
-                </span>
-              </button>
-            ))}
+            {roles.map((r, idx) => {
+              const Icon = r.icon;
+              const isSelected = role === r.title;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelectRole(r)}
+                  className={`p-3 rounded-2xl border text-left transition-all ${
+                    isSelected
+                      ? 'border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-500/20 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-slate-50/60 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-emerald-700' : 'text-slate-500'}`} />
+                      <h4 className="font-bold text-xs text-slate-900 truncate">{r.title}</h4>
+                    </div>
+                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 ml-1" />}
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-snug">{r.desc}</p>
+                </button>
+              );
+            })}
           </div>
         </div>
 
