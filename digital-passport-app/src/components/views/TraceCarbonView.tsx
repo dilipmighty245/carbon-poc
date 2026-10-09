@@ -525,7 +525,7 @@ export const TraceCarbonView: React.FC = () => {
                           <div>
                             <span className="text-[9px] font-extrabold bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded uppercase">FACILITY</span>
                             <p className="text-xs font-bold text-slate-900 mt-0.5">{facNode?.label || 'Production Site'}</p>
-                            <p className="text-[10px] text-slate-500 font-mono">{facNode?.reference_id || 'FAC-042'}</p>
+                            <p className="text-[10px] text-slate-500 font-mono">{facNode?.reference_id || 'FAC-SITE-01'}</p>
                           </div>
                         </div>
                       </div>

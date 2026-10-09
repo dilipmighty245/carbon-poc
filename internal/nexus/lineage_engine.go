@@ -146,7 +146,7 @@ func (e *NexusGraphEngine) seedDefaultGraphTopology() {
 
 	nodes := []LineageNode{
 		{NodeID: "NODE_ORG_9001", NodeType: "ORGANISATION", ReferenceID: "ORG-9001", Label: "Sattric Industrial Corp", Properties: map[string]interface{}{"country": "India", "sector": "Steel"}},
-		{NodeID: "NODE_FAC_042", NodeType: "FACILITY", ReferenceID: "FAC-042", Label: "Bellary Integrated Steel Plant", Properties: map[string]interface{}{"location": "Karnataka, India", "capacity_tpy": 500000}},
+		{NodeID: "NODE_FAC_042", NodeType: "FACILITY", ReferenceID: "FAC-042", Label: "Primary Manufacturing Facility", Properties: map[string]interface{}{"location": "Primary Operating Site", "capacity_tpy": 500000}},
 		{NodeID: "NODE_BATCH_981", NodeType: "PRODUCT_BATCH", ReferenceID: "ST-2026-00981", Label: "Hot-Rolled Steel Coil Batch", Properties: map[string]interface{}{"quantity_kg": 10000, "cn_code": "7208 10 00"}},
 		{NodeID: "NODE_IN_SCOPE1", NodeType: "INPUT_TELEMETRY", ReferenceID: "MTR-S1-001", Label: "Scope 1 Fuel Meter (Diesel)", Properties: map[string]interface{}{"value": 2450.0, "unit": "liters", "emission_kg": 6566.0, "evidence_ref": "EVD-00176"}},
 		{NodeID: "NODE_IN_SCOPE2", NodeType: "INPUT_TELEMETRY", ReferenceID: "MTR-S2-001", Label: "Scope 2 Energy Meter (Grid Electricity)", Properties: map[string]interface{}{"value": 14200.0, "unit": "kWh", "emission_kg": 10082.0, "evidence_ref": "EVD-00176"}},

@@ -27,7 +27,7 @@ interface CreateProjectWizardProps {
 export function CreateProjectWizard({ open, onOpenChange }: CreateProjectWizardProps) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(DEFAULTS);
-  const [facilityOptions, setFacilityOptions] = useState<string[]>(['Tema Processing Plant', 'Kumasi Milling Unit', 'Takoradi Export Hub', 'Bellary Integrated Steel Plant']);
+  const [facilityOptions, setFacilityOptions] = useState<string[]>([]);
 
   useEffect(() => {
     getOrgFacilities()

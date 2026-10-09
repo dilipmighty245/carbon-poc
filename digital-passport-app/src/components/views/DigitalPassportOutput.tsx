@@ -28,6 +28,11 @@ export const DigitalPassportOutput: React.FC = () => {
   const { tab = 'registry', passportId } = useParams<{ tab?: string; passportId?: string }>();
   const navigate = useNavigate();
 
+  const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
+  const isVerifier = userRole.toLowerCase().includes('verifier');
+  const isOfficer = userRole.toLowerCase().includes('officer');
+  const isOperator = !isVerifier && !isOfficer;
+
   const [passportsResult, setPassportsResult] = useState<ApiFetchResult<RichDigitalPassport[]> | null>(null);
   const [loading, setLoading] = useState(true);
   const tenantId = DEFAULT_TENANT_ID;
@@ -45,6 +50,18 @@ export const DigitalPassportOutput: React.FC = () => {
 
   const validTabs = ['registry', 'readiness', 'preview', 'sign-issue', 'detail', 'passport-detail', 'qr', 'sharing', 'versions'];
   const activeTabId = validTabs.includes(tab.toLowerCase()) ? tab.toLowerCase() : 'registry';
+
+  // Company login should NOT see or access "Sign & Issue"
+  useEffect(() => {
+    if (isOperator && activeTabId === 'sign-issue') {
+      navigate('/passport/readiness', { replace: true });
+    }
+  }, [isOperator, activeTabId, navigate]);
+
+  const visibleTabs = PASSPORT_TABS.filter((t) => {
+    if (isOperator && t.id === 'sign-issue') return false;
+    return true;
+  });
 
   const handleTabChange = (newTabId: string) => {
     navigate(`/passport/${newTabId}`);
@@ -76,7 +93,7 @@ export const DigitalPassportOutput: React.FC = () => {
 
           {/* Sub Navigation Tabs */}
           <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
-            {PASSPORT_TABS.map((t) => (
+            {visibleTabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => handleTabChange(t.id)}

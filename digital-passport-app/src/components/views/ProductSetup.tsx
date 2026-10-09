@@ -11,7 +11,7 @@ export const ProductSetup: React.FC = () => {
   // Form states with fresh default batch ID generator
   const [commodity, setCommodity] = useState('Cocoa');
   const [productName, setProductName] = useState('Fermented Cocoa Beans');
-  const [facility, setFacility] = useState('Tema Processing Plant');
+  const [facility, setFacility] = useState('');
   const [batchId, setBatchId] = useState(`CB-2026-${Math.floor(1000 + Math.random() * 9000)}`);
   const [supplier, setSupplier] = useState('Asunafo Farmers Cooperative');
   const [bom, setBom] = useState('Cocoa beans (raw), water, packaging');
@@ -49,29 +49,12 @@ export const ProductSetup: React.FC = () => {
           setFacilitiesList(list);
           if (list[0]?.name) setFacility(list[0].name);
         } else {
-          // Fallback defaults from organisation facilities if API returns empty array
-          const defaultList = [
-            { id: 'FAC-GH-001', name: 'Tema Processing Plant', location: 'Tema, Ghana' },
-            { id: 'FAC-GH-002', name: 'Kumasi Milling Unit', location: 'Kumasi, Ghana' },
-            { id: 'FAC-GH-003', name: 'Takoradi Export Hub', location: 'Takoradi, Ghana' },
-            { id: 'FAC-IN-042', name: 'Bellary Integrated Steel Plant', location: 'Karnataka, India' },
-          ];
-          setFacilitiesList(defaultList);
-          setFacility(defaultList[0].name);
+          setFacilitiesList([]);
         }
       })
       .catch((err) => {
-        console.warn('Failed to fetch facilities for logged in org, using fallback defaults:', err);
-        const defaultList = [
-          { id: 'FAC-GH-001', name: 'Tema Processing Plant', location: 'Tema, Ghana' },
-          { id: 'FAC-GH-002', name: 'Kumasi Milling Unit', location: 'Kumasi, Ghana' },
-          { id: 'FAC-GH-003', name: 'Takoradi Export Hub', location: 'Takoradi, Ghana' },
-          { id: 'FAC-IN-042', name: 'Bellary Integrated Steel Plant', location: 'Karnataka, India' },
-        ];
-        if (isMounted) {
-          setFacilitiesList(defaultList);
-          setFacility(defaultList[0].name);
-        }
+        console.warn('Failed to fetch facilities for logged in org:', err);
+        setFacilitiesList([]);
       })
       .finally(() => {
         if (isMounted) setLoadingFacilities(false);
@@ -297,11 +280,11 @@ export const ProductSetup: React.FC = () => {
         },
       });
 
-      setSuccessMsg(`Product batch successfully registered and verified (ID: ${resp.name})`);
+      setSuccessMsg(`Product batch successfully registered. Draft Carbon Passport preview created (Batch: ${batchId}). Verification begins after data & evidence are completed and submitted.`);
 
       setTimeout(() => {
-        navigate('/passport');
-      }, 1500);
+        navigate(`/passport/readiness?id=${batchId}`);
+      }, 1600);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Failed to create product batch');
@@ -312,8 +295,8 @@ export const ProductSetup: React.FC = () => {
 
   const simpleWordsPoints = [
     { step: 1, text: 'Register export product batch metadata and facility parameters.' },
-    { step: 2, text: 'Select or add official CEL calculation rulebooks for Scope 1-3 footprinting.' },
-    { step: 3, text: 'Automated engine verifies rules and generates a Digital Carbon Passport.' },
+    { step: 2, text: 'Select official CEL calculation rulebooks for Scope 1-3 footprinting.' },
+    { step: 3, text: 'Automated engine creates a Draft Carbon Passport preview linked to the batch.' },
   ];
 
   const workflowSteps = [
@@ -459,23 +442,43 @@ export const ProductSetup: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Plant / Facility *
-                  {loadingFacilities && <span className="ml-2 text-slate-400 font-normal">(Fetching org facilities...)</span>}
-                </label>
-                <select
-                  value={facility}
-                  onChange={(e) => setFacility(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                  disabled={loadingFacilities}
-                  required
-                >
-                  {facilitiesList.map((f) => (
-                    <option key={f.id || f.name} value={f.name}>
-                      {f.name} {f.location ? `(${f.location})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Plant / Facility *
+                    {loadingFacilities && <span className="ml-2 text-slate-400 font-normal">(Checking facilities...)</span>}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/organisation?tab=asset-tree')}
+                    className="text-[11px] text-emerald-600 hover:text-emerald-700 font-bold hover:underline"
+                  >
+                    + Manage Facilities
+                  </button>
+                </div>
+                {facilitiesList.length > 0 ? (
+                  <select
+                    value={facility}
+                    onChange={(e) => setFacility(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                    disabled={loadingFacilities}
+                    required
+                  >
+                    {facilitiesList.map((f) => (
+                      <option key={f.id || f.name} value={f.name}>
+                        {f.name} {f.location ? `(${f.location})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Enter plant / facility name (or add via Manage Facilities)"
+                    value={facility}
+                    onChange={(e) => setFacility(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                )}
               </div>
 
               <div>

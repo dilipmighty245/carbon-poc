@@ -279,9 +279,21 @@ func CreatePassportNode(ctx context.Context, client *nexus_client.Clientset, spe
 		return nil, fmt.Errorf("failed to get Runtime branch: %w", err)
 	}
 
+	if spec.VerificationStatus == "" {
+		spec.VerificationStatus = StatusDraft
+	}
+
 	// Read-before-write check to avoid duplicate key errors
 	existing, getErr := runtimeNode.GetPassports(ctx, spec.PassportID)
 	if getErr == nil && existing != nil {
+		// Retain existing lifecycle state if already promoted past Draft
+		if existing.Spec.VerificationStatus != "" && (spec.VerificationStatus == StatusDraft || spec.VerificationStatus == "") {
+			spec.VerificationStatus = existing.Spec.VerificationStatus
+		}
+		if existing.Spec.Frozen && !spec.Frozen {
+			spec.Frozen = true
+			spec.FrozenAt = existing.Spec.FrozenAt
+		}
 		existing.Spec = spec
 		if updErr := existing.Update(ctx); updErr == nil {
 			if productNode != nil {
@@ -927,14 +939,14 @@ func FacilityModelFromNode(fNode *nexus_client.InventoryFacility) *FacilityModel
 	}
 }
 
-// SeedDefaultNexusData seeds standard reference CRD nodes (rulebook, default tenant, facility, user, passport)
-// into the Nexus graph if not already populated.
+// SeedDefaultNexusData seeds standard reference CRD rulebooks into the Nexus graph if not already populated.
+// Note: Facilities, users, products, and passports are NOT seeded here to ensure a clean tenant slate.
 func SeedDefaultNexusData(ctx context.Context, client *nexus_client.Clientset) error {
 	if client == nil {
 		return nil
 	}
 
-	// 1. Seed Rulebooks
+	// 1. Seed Reference Rulebooks for CBAM & ISO 14067 calculation
 	_, _ = CreateRulebookNode(ctx, client, "steel-rulebook-cbam-2026", configv1.RulebookSpec{
 		RulebookID:     "steel-rulebook-cbam-2026",
 		CommodityType:  "Steel",
@@ -958,51 +970,11 @@ func SeedDefaultNexusData(ctx context.Context, client *nexus_client.Clientset) e
 		Scope3Formula:  "batch_quantity_kg * 0.472",
 	})
 
-	// 2. Seed Default Tenants
+	// 2. Ensure Default Tenants exist without injecting any mock facilities, users, or passports
 	tenantsToSeed := []string{"tenant-default", "org_saurient_demo"}
 	for _, tID := range tenantsToSeed {
 		_, _ = EnsureTenantNode(ctx, client, tID)
-
-		// Seed Facility under Tenant
-		_, _ = SaveFacilityNode(ctx, client, tID, inventoryv1.FacilitySpec{
-			FacilityID:  "FAC-042",
-			Name:        "Bellary Integrated Steel Plant",
-			Location:    "Bellary Industrial Zone, Karnataka, India",
-			CountryCode: "IN",
-		})
-
-		// Seed User under Tenant
-		_, _ = CreateUserNode(ctx, client, tID, inventoryv1.UserSpec{
-			UserID:        "USR-001",
-			TenantID:      tID,
-			Name:          "Rajesh Kumar",
-			Email:         "rajesh@sattric.io",
-			Role:          "Admin",
-			FacilityScope: "All Facilities",
-			Status:        "Active",
-			LastLogin:     time.Now().Format(time.RFC3339),
-		})
 	}
-
-	// 3. Seed Default Passport under Runtime
-	_, _ = CreatePassportNode(ctx, client, runtimev1.CarbonPassportSpec{
-		PassportID:         "PASS-2026-981-v1.0",
-		TenantID:           "tenant-default",
-		FacilityID:         "FAC-042",
-		BatchID:            "ST-2026-00981",
-		CommodityType:      "Steel",
-		TotalFootprintKg:   18500.0,
-		Scope1Kg:           6566.0,
-		Scope2Kg:           10082.0,
-		Scope3Kg:           1852.0,
-		IntensityPerUnit:   1.850,
-		VerificationStatus: "Verified",
-		DataHash:           "0x8f3c7e4b2d1a9e8f7c6b5a4d3e2f1c0b9a8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c",
-		Frozen:             true,
-		FrozenAt:           time.Now().Format(time.RFC3339),
-		IssuedAt:           time.Now().Format(time.RFC3339),
-		Version:            "1.0",
-	}, nil)
 
 	return nil
 }

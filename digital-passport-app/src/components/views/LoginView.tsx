@@ -11,39 +11,75 @@ export const LoginView: React.FC = () => {
 
   const [showRegModal, setShowRegModal] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const DEMO_ACCOUNTS: Record<string, { email: string; pass: string; route: string; desc: string; badge: string }> = {
+    'Company Operator': {
+      email: 'operator@asante-cocoa.com',
+      pass: 'DemoPassword2026!',
+      route: '/company-dashboard',
+      desc: 'Facility & ESG Operations',
+      badge: 'Opens: Company Dashboard',
+    },
+    'Verifier': {
+      email: 'auditor@bureau-veritas.com',
+      pass: 'DemoPassword2026!',
+      route: '/mrv',
+      desc: 'Accredited Verifier (Bureau Veritas)',
+      badge: 'Opens: Verifier MRV Portal',
+    },
+    'Passport Officer': {
+      email: 'officer@saurient.com',
+      pass: 'DemoPassword2026!',
+      route: '/passport/sign-issue',
+      desc: 'Issuance & Governance Authority',
+      badge: 'Opens: Sign & Issue',
+    },
+    'Public Viewer': {
+      email: '',
+      pass: '',
+      route: '/passport/registry',
+      desc: 'Customs & Public Registry',
+      badge: 'Opens: Public Registry',
+    },
+  };
+
   const [role, setRole] = useState('Company Operator');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEMO_ACCOUNTS['Company Operator'].email);
+  const [password, setPassword] = useState(DEMO_ACCOUNTS['Company Operator'].pass);
 
   const roles = [
     { 
       title: 'Company Operator', 
       desc: 'Facility & ESG Operations',
+      badge: 'Opens: Company Dashboard',
     },
     { 
       title: 'Verifier', 
       desc: 'Accredited Verifier', 
+      badge: 'Opens: Verifier MRV Portal',
     },
     { 
       title: 'Passport Officer', 
       desc: 'Issuance & Governance', 
+      badge: 'Opens: Sign & Issue',
     },
     { 
       title: 'Public Viewer', 
       desc: 'No login required', 
+      badge: 'Opens: Public Registry',
     },
   ];
 
-  const handleSelectRole = (r: { title: string; desc: string }) => {
+  const handleSelectRole = (r: { title: string; desc: string; badge?: string }) => {
     setRole(r.title);
     setLoginError(null);
     if (orgMode === 'new' && r.title !== 'Public Viewer') {
       setShowRegModal(true);
       return;
     }
-    if (r.title === 'Public Viewer') {
-      setEmail('');
-      setPassword('');
+    const acc = DEMO_ACCOUNTS[r.title];
+    if (acc) {
+      setEmail(acc.email);
+      setPassword(acc.pass);
     }
   };
 
@@ -61,6 +97,10 @@ export const LoginView: React.FC = () => {
       return;
     }
 
+    localStorage.setItem('saurient_user_role', role);
+    localStorage.setItem('auth_role', role);
+    localStorage.setItem('saurient_user_email', email.trim() || 'demo@saurient.io');
+
     try {
       if (email.trim() && password) {
         await loginUser(email.trim(), password);
@@ -68,7 +108,9 @@ export const LoginView: React.FC = () => {
     } catch (err) {
       console.warn('Backend login check failed, proceeding in session mode:', err);
     }
-    navigate('/dashboard');
+
+    const targetRoute = DEMO_ACCOUNTS[role]?.route || '/dashboard';
+    navigate(targetRoute);
   };
 
   return (
@@ -164,6 +206,9 @@ export const LoginView: React.FC = () => {
             >
               <h4 className="font-bold text-xs text-slate-900">{r.title}</h4>
               <p className="text-[10px] text-slate-500 mt-0.5 truncate">{r.desc}</p>
+              <span className="inline-block mt-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
+                {r.badge}
+              </span>
             </button>
           ))}
         </div>

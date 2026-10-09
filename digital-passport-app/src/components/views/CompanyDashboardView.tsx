@@ -14,8 +14,8 @@ export const CompanyDashboardView: React.FC = () => {
     { num: 3, label: 'Product Batch', icon: Package, path: '/products/new' },
     { num: 4, label: 'Inputs & Evidence', icon: Zap, path: '/data?tab=telemetry' },
     { num: 5, label: 'Calculation v1.0', icon: Calculator, path: '/pcf?tab=inventory' },
-    { num: 6, label: 'Independent Verification', icon: ShieldCheck, path: '/mrv' },
-    { num: 7, label: 'Issued Passport', icon: Lock, path: '/passport' },
+    { num: 6, label: 'Submit Verification', icon: ShieldCheck, path: '/passport/readiness' },
+    { num: 7, label: 'Issued Passport', icon: Lock, path: '/passport/registry' },
   ];
 
   const kpis = [
@@ -68,10 +68,11 @@ export const CompanyDashboardView: React.FC = () => {
   ];
 
   const records = [
-    { name: 'PCF calculation v3.2', type: 'Refined Cocoa Butter', status: 'LOCKED', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '2.84 kgCO₂e/kg' },
-    { name: 'Supplier declaration', type: 'Aqua Packaging Ghana', status: 'REVIEW', statusClass: 'bg-amber-50 text-amber-700 border-amber-100', val: '86% complete' },
-    { name: 'Passport CP-GH-2026-00481', type: 'Batch CB-2026-001', status: 'READY', statusClass: 'bg-emerald-50 text-emerald-700 border-emerald-100', val: '8/10 gates' },
-    { name: 'CBAM assessment', type: 'Aluminium Housing', status: 'ACTION', statusClass: 'bg-rose-50 text-rose-700 border-rose-100', val: '€86,300 exposure' },
+    { name: 'Passport Draft: Hot-Rolled Steel Coil', type: 'Batch ST-2026-00981', status: 'Draft', statusClass: 'bg-slate-100 text-slate-700 border-slate-300', val: '1.63 kgCO₂e/kg', path: '/passport/readiness?id=pas-st-2026-00981' },
+    { name: 'Independent Verification Queue', type: 'Batch CB-2026-00481 (Cocoa)', status: 'Submitted', statusClass: 'bg-blue-100 text-blue-800 border-blue-300', val: 'Under Bureau Veritas', path: '/mrv' },
+    { name: 'Verified Claim: Aluminium Housing', type: 'Batch AL-2026-0012', status: 'Verified', statusClass: 'bg-emerald-100 text-emerald-800 border-emerald-300', val: 'Sign & Issue Ready', path: '/passport/sign-issue' },
+    { name: 'Issued Passport: Portland Cement', type: 'Batch CEM-2026-08', status: 'Issued', statusClass: 'bg-indigo-100 text-indigo-800 border-indigo-300', val: 'Minted & Sealed', path: '/passport/registry' },
+    { name: 'EU Customs Submission', type: 'Batch ST-2026-0042', status: 'Submitted to Agency', statusClass: 'bg-teal-100 text-teal-900 border-teal-300', val: 'EU CBAM Lodged', path: '/passport/registry' },
   ];
 
   return (
@@ -280,11 +281,15 @@ export const CompanyDashboardView: React.FC = () => {
 
         <div className="divide-y divide-slate-100 text-xs">
           {records.map((r, i) => (
-            <div key={i} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="w-56">
-                <span className="font-bold text-slate-900">{r.name}</span>
+            <div
+              key={i}
+              onClick={() => r.path && navigate(r.path)}
+              className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer"
+            >
+              <div className="w-64">
+                <span className="font-bold text-slate-900 block">{r.name}</span>
               </div>
-              <div className="w-36 text-slate-500 font-medium">
+              <div className="w-48 text-slate-500 font-medium">
                 <span>{r.type}</span>
               </div>
               <div className="w-44">
@@ -292,7 +297,7 @@ export const CompanyDashboardView: React.FC = () => {
                   {r.status}
                 </span>
               </div>
-              <div className="text-right font-medium text-slate-500 text-[11px] w-32">
+              <div className="text-right font-medium text-slate-500 text-[11px] w-36">
                 <span>{r.val}</span>
               </div>
             </div>
