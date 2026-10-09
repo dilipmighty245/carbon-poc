@@ -124,6 +124,15 @@ export const TraceCarbonView: React.FC = () => {
   const efNode = dag?.nodes?.find((n) => n.node_type === 'EMISSION_FACTOR');
   const evdNode = dag?.nodes?.find((n) => n.node_type === 'EVIDENCE_DOCUMENT');
 
+  const calcNodeV11 = dag?.nodes?.find((n) => n.node_type === 'CALC_VERSION' && n.node_id.includes('V1_1'));
+  const passNodeV11 = dag?.nodes?.find((n) => n.node_type === 'PASSPORT' && n.node_id.includes('V1_1'));
+  const hasForkedVersion = Boolean(correctionResult || calcNodeV11 || passNodeV11);
+
+  const origIntensity = (calcNode?.properties?.intensity_kgCO2e_per_kg as number) || (correctionResult?.original_intensity_kg_co2e ?? 1.12);
+  const recIntensity = ((calcNodeV11?.properties?.intensity_kgCO2e_per_kg as number) ?? correctionResult?.new_intensity_kg_co2e) ?? (origIntensity + (newValue - 0.250));
+  const intensityDelta = recIntensity > 0 ? recIntensity - origIntensity : 0;
+  const deltaPercent = origIntensity > 0 ? (intensityDelta / origIntensity) * 100 : 0;
+
   const handleSimulateCorrection = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -369,6 +378,104 @@ export const TraceCarbonView: React.FC = () => {
             {/* Left 2 Cols: Interactive Graph Tree / Topology */}
             <div className="lg:col-span-2 space-y-4">
               
+              {/* LIVE RECALCULATION & IMPACT EVALUATION BANNER */}
+              {hasForkedVersion && (
+                <div className="bg-gradient-to-r from-amber-950/90 via-slate-900 to-slate-950 border-2 border-amber-500/60 rounded-2xl p-5 shadow-xl text-white space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-500/30 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 bg-amber-500 text-slate-950 rounded-lg">
+                        <AlertTriangle className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
+                          Live Impact DAG Evaluation Result
+                          <span className="bg-amber-500/20 text-amber-300 text-[10px] font-mono px-2 py-0.5 rounded border border-amber-500/30">
+                            VERSION FORKED
+                          </span>
+                        </h3>
+                        <p className="text-[11px] text-slate-300">
+                          Upstream Scope 3 declaration revised ({((s3Node?.properties?.value as number) || 0.250).toFixed(3)} ➔ {newValue.toFixed(3)} kgCO2e/kg). The issued passport remains permanently frozen.
+                        </p>
+                      </div>
+                    </div>
+                    {correctionResult?.correction_id && (
+                      <span className="text-[10px] font-mono bg-slate-800 text-amber-300 px-2.5 py-1 rounded-lg border border-slate-700 self-start sm:self-auto">
+                        REF: {correctionResult.correction_id}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Baseline v1.0 (Frozen) */}
+                    <div 
+                      onClick={() => setSelectedNode(passNode || null)}
+                      className="bg-slate-900/90 p-3.5 rounded-xl border border-emerald-500/40 hover:border-emerald-400 cursor-pointer transition space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-400">
+                          v1.0 Certified Baseline
+                        </span>
+                        <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-black flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5" /> FROZEN
+                        </span>
+                      </div>
+                      <p className="text-xl font-black text-white">
+                        {origIntensity.toFixed(2)} <span className="text-xs text-slate-400 font-normal">kgCO2e/kg</span>
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">
+                        Passport: <span className="text-slate-200 font-mono">{passNode?.reference_id || searchId}</span>
+                      </p>
+                      <p className="text-[10px] text-emerald-400/80 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Hash Sealed & Immutable
+                      </p>
+                    </div>
+
+                    {/* Successor v1.1 (Draft Recalculated) */}
+                    <div 
+                      onClick={() => setSelectedNode(passNodeV11 || calcNodeV11 || null)}
+                      className="bg-amber-950/40 p-3.5 rounded-xl border-2 border-amber-500/70 hover:border-amber-400 cursor-pointer transition space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-amber-300">
+                          v1.1 Recalculated Draft
+                        </span>
+                        <span className="text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded font-black">
+                          DRAFT SUCCESSOR
+                        </span>
+                      </div>
+                      <p className="text-xl font-black text-amber-400">
+                        {recIntensity.toFixed(2)} <span className="text-xs text-amber-200/80 font-normal">kgCO2e/kg</span>
+                      </p>
+                      <p className="text-[10px] text-slate-300 truncate">
+                        Draft ID: <span className="text-amber-200 font-mono">{passNodeV11?.reference_id || correctionResult?.new_draft_passport_id || 'PASS-v1.1-DRAFT'}</span>
+                      </p>
+                      <p className="text-[10px] text-amber-300/90 flex items-center gap-1">
+                        <GitBranch className="w-3 h-3 text-amber-400" /> Awaiting Auditor Verification
+                      </p>
+                    </div>
+
+                    {/* Impact Delta */}
+                    <div className="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 space-y-1.5 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                          Downstream Impact Delta
+                        </span>
+                        <p className={`text-xl font-black mt-1 ${intensityDelta > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {intensityDelta >= 0 ? `+${intensityDelta.toFixed(2)}` : intensityDelta.toFixed(2)}
+                          <span className="text-xs text-slate-400 font-normal ml-1">kgCO2e/kg</span>
+                        </p>
+                        <p className="text-[10px] text-slate-300 mt-0.5">
+                          {deltaPercent >= 0 ? `+${deltaPercent.toFixed(1)}%` : `${deltaPercent.toFixed(1)}%`} change in product intensity
+                        </p>
+                      </div>
+                      <p className="text-[9px] text-slate-400 leading-tight">
+                        Complies with EU CBAM & ISO 14067 audit provenance.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* DAG GRAPH TREE VISUALIZATION */}
               {viewMode === 'tree' ? (
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
@@ -526,16 +633,24 @@ export const TraceCarbonView: React.FC = () => {
 
                     {/* TIER 4: CALCULATION & VERIFICATION */}
                     <div className="space-y-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                        TIER 4 • CALCULATION ENGINE & AUDIT ASSURANCE
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                          TIER 4 • CALCULATION ENGINE & AUDIT ASSURANCE
+                        </span>
+                        {calcNodeV11 && (
+                          <span className="text-[9px] font-extrabold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 uppercase">
+                            Successor Calculation Forked (v1.1)
+                          </span>
+                        )}
+                      </div>
+                      <div className={`grid grid-cols-1 ${calcNodeV11 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
+                        {/* Baseline Calc Version */}
                         <div 
                           onClick={() => setSelectedNode(calcNode || null)}
                           className="bg-emerald-950 text-white p-4 rounded-xl shadow-md border border-emerald-500/30 cursor-pointer hover:border-emerald-400 transition"
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[9px] font-extrabold bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded uppercase">CEL CALCULATION ENGINE</span>
+                            <span className="text-[9px] font-extrabold bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded uppercase">CEL BASELINE ENGINE</span>
                             <span className="text-[10px] text-emerald-400 font-mono">{calcNode?.reference_id || 'CALC-V1'}</span>
                           </div>
                           <p className="text-xl font-black text-emerald-400 mt-1">
@@ -544,7 +659,32 @@ export const TraceCarbonView: React.FC = () => {
                           <p className="text-[10px] text-slate-300 mt-1">
                             Total Footprint: {(calcNode?.properties?.total_footprint_kg || 0).toLocaleString()} kgCO2e
                           </p>
+                          <span className="inline-block mt-2 text-[9px] font-bold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded">
+                            v1.0 Certified Baseline
+                          </span>
                         </div>
+
+                        {/* Recalculated Successor Calc Version (when present) */}
+                        {calcNodeV11 && (
+                          <div 
+                            onClick={() => setSelectedNode(calcNodeV11)}
+                            className="bg-gradient-to-br from-amber-950 to-slate-900 text-white p-4 rounded-xl shadow-md border-2 border-amber-500/70 cursor-pointer hover:border-amber-400 transition relative"
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[9px] font-extrabold bg-amber-500 text-slate-950 px-2 py-0.5 rounded uppercase">RECALCULATED CEL</span>
+                              <span className="text-[10px] text-amber-300 font-mono">{calcNodeV11?.reference_id || 'CALC-V1.1'}</span>
+                            </div>
+                            <p className="text-xl font-black text-amber-400 mt-1">
+                              {((calcNodeV11?.properties?.intensity_kgCO2e_per_kg as number) || 0).toFixed(2)} kgCO2e/kg
+                            </p>
+                            <p className="text-[10px] text-amber-200/80 mt-1">
+                              Total Footprint: {((calcNodeV11?.properties?.total_footprint_kg as number) || 0).toLocaleString()} kgCO2e
+                            </p>
+                            <span className="inline-block mt-2 text-[9px] font-bold text-amber-300 bg-amber-900/60 px-2 py-0.5 rounded flex items-center gap-1">
+                              <GitBranch className="w-3 h-3" /> Supersedes v1.0 • Scope 3 Updated
+                            </span>
+                          </div>
+                        )}
 
                         <div 
                           onClick={() => setSelectedNode(verNode || null)}
@@ -571,35 +711,76 @@ export const TraceCarbonView: React.FC = () => {
 
                     {/* TIER 5: ISSUED CARBON PASSPORT */}
                     <div className="space-y-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                        TIER 5 • ISSUED CARBON PASSPORT CERTIFICATE
-                      </span>
-                      <div 
-                        onClick={() => setSelectedNode(passNode || null)}
-                        className="bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-950 text-white p-5 rounded-2xl shadow-lg border border-emerald-500/40 cursor-pointer hover:border-emerald-400 transition"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Lock className="w-4 h-4 text-emerald-400" />
-                              <h3 className="font-black text-base text-white">
-                                Carbon Passport {passNode?.reference_id || searchId}
-                              </h3>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                          TIER 5 • ISSUED CARBON PASSPORT CERTIFICATE
+                        </span>
+                        {passNodeV11 && (
+                          <span className="text-[9px] font-extrabold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 uppercase">
+                            Draft Successor Spawned
+                          </span>
+                        )}
+                      </div>
+                      <div className={`grid grid-cols-1 ${passNodeV11 ? 'sm:grid-cols-2' : ''} gap-3`}>
+                        {/* Frozen Original Passport */}
+                        <div 
+                          onClick={() => setSelectedNode(passNode || null)}
+                          className="bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-950 text-white p-5 rounded-2xl shadow-lg border border-emerald-500/40 cursor-pointer hover:border-emerald-400 transition"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Lock className="w-4 h-4 text-emerald-400" />
+                                <h3 className="font-black text-base text-white">
+                                  Carbon Passport {passNode?.reference_id || searchId}
+                                </h3>
+                              </div>
+                              <p className="text-[10px] text-emerald-300 font-mono">
+                                Hash: {passNode?.properties?.data_hash ? passNode.properties.data_hash.substring(0, 36) + '...' : 'e3b0c44298fc1c149afbf4c8996fb92427ae...'}
+                              </p>
                             </div>
-                            <p className="text-[10px] text-emerald-300 font-mono">
-                              Hash: {passNode?.properties?.data_hash ? passNode.properties.data_hash.substring(0, 36) + '...' : 'e3b0c44298fc1c149afbf4c8996fb92427ae...'}
-                            </p>
-                          </div>
 
-                          <div className="text-left sm:text-right shrink-0">
-                            <span className="inline-block bg-emerald-500 text-slate-950 text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider">
-                              FROZEN & VERIFIED
-                            </span>
-                            <p className="text-xs font-bold text-white mt-1">
-                              Intensity: {(passNode?.properties?.intensity || 0).toFixed(2)} kgCO2e/kg
-                            </p>
+                            <div className="text-left sm:text-right shrink-0">
+                              <span className="inline-block bg-emerald-500 text-slate-950 text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider">
+                                FROZEN & VERIFIED (v1.0)
+                              </span>
+                              <p className="text-xs font-bold text-white mt-1">
+                                Intensity: {(passNode?.properties?.intensity || 0).toFixed(2)} kgCO2e/kg
+                              </p>
+                            </div>
                           </div>
                         </div>
+
+                        {/* Recalculated Draft Passport */}
+                        {passNodeV11 && (
+                          <div 
+                            onClick={() => setSelectedNode(passNodeV11)}
+                            className="bg-gradient-to-r from-amber-950 via-slate-900 to-slate-950 text-white p-5 rounded-2xl shadow-lg border-2 border-amber-500/60 cursor-pointer hover:border-amber-400 transition"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <FileCheck className="w-4 h-4 text-amber-400" />
+                                  <h3 className="font-black text-base text-white">
+                                    Draft Passport {passNodeV11?.reference_id || 'PASS-v1.1-DRAFT'}
+                                  </h3>
+                                </div>
+                                <p className="text-[10px] text-amber-300 font-mono">
+                                  Hash: {passNodeV11?.properties?.data_hash ? String(passNodeV11.properties.data_hash).substring(0, 36) + '...' : 'pending-audit-seal...'}
+                                </p>
+                              </div>
+
+                              <div className="text-left sm:text-right shrink-0">
+                                <span className="inline-block bg-amber-500 text-slate-950 text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-wider">
+                                  DRAFT • PENDING VERIFICATION (v1.1)
+                                </span>
+                                <p className="text-xs font-bold text-amber-400 mt-1">
+                                  Intensity: {((passNodeV11?.properties?.intensity as number) || 0).toFixed(2)} kgCO2e/kg
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -687,16 +868,30 @@ export const TraceCarbonView: React.FC = () => {
                         STEP 5, 6 & 7: CALCULATION, VERIFICATION & PASSPORT ISSUANCE
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className={`grid grid-cols-1 ${calcNodeV11 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
                         <div className="bg-white p-3 rounded-lg border border-slate-200">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-[10px] font-extrabold text-slate-500 uppercase">CALCULATION V1.0</span>
-                            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">CEL Engine</span>
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">CEL Baseline</span>
                           </div>
                           <p className="text-lg font-black text-slate-900">
                             {(calcNode?.properties?.intensity_kgCO2e_per_kg || 0).toFixed(2)} kgCO2e/kg
                           </p>
+                          <span className="text-[10px] text-slate-500">Frozen Certified Version</span>
                         </div>
+
+                        {calcNodeV11 && (
+                          <div className="bg-amber-50/70 p-3 rounded-lg border-2 border-amber-400">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-extrabold text-amber-800 uppercase">CALCULATION V1.1</span>
+                              <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded">Recalculated</span>
+                            </div>
+                            <p className="text-lg font-black text-amber-900">
+                              {((calcNodeV11?.properties?.intensity_kgCO2e_per_kg as number) || 0).toFixed(2)} kgCO2e/kg
+                            </p>
+                            <span className="text-[10px] text-amber-700 font-medium">Pending Auditor Re-Verification</span>
+                          </div>
+                        )}
 
                         <div className="bg-white p-3 rounded-lg border border-slate-200">
                           <div className="flex items-center justify-between mb-1">
@@ -707,6 +902,7 @@ export const TraceCarbonView: React.FC = () => {
                             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                             {verNode?.properties?.opinion || verNode?.properties?.status || 'Calculated'}
                           </p>
+                          <span className="text-[10px] text-slate-500">Unqualified Audit Opinion</span>
                         </div>
                       </div>
                     </div>
@@ -780,6 +976,23 @@ export const TraceCarbonView: React.FC = () => {
                         </p>
                       </div>
                     </div>
+
+                    {calcNodeV11 && (
+                      <div className="p-3 bg-amber-950/40 rounded-xl border border-amber-500/40 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <GitBranch className="w-4 h-4 text-amber-400 shrink-0" />
+                          <div>
+                            <span className="font-bold text-amber-300">Forked Successor Provenance Chain Active</span>
+                            <p className="text-[10px] text-slate-300">
+                              Input revision spawned successor calculation <span className="text-amber-300 font-mono font-bold">{calcNodeV11.reference_id}</span> ({((calcNodeV11.properties?.intensity_kgCO2e_per_kg as number) || 0).toFixed(2)} kgCO2e/kg) and draft passport <span className="text-amber-300 font-mono font-bold">{passNodeV11?.reference_id || 'PASS-v1.1-DRAFT'}</span>.
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[9px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black uppercase shrink-0">
+                          Awaiting Re-Verification
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Calculation -> Inputs, Factors, Evidence Connection Card */}
@@ -917,6 +1130,44 @@ export const TraceCarbonView: React.FC = () => {
                       </>
                     )}
                   </button>
+
+                  {correctionResult && (
+                    <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs space-y-2 mt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-amber-900 flex items-center gap-1 text-[11px]">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
+                          Impact Evaluated
+                        </span>
+                        <span className="text-[10px] font-mono text-amber-800 font-bold">
+                          {correctionResult.correction_id}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-700 space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">v1.0 Frozen Intensity:</span>
+                          <span className="font-bold text-slate-800">{correctionResult.original_intensity_kg_co2e.toFixed(2)} kgCO2e/kg</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-amber-800 font-bold">v1.1 Recalculated Draft:</span>
+                          <span className="font-extrabold text-amber-900">{correctionResult.new_intensity_kg_co2e.toFixed(2)} kgCO2e/kg</span>
+                        </div>
+                        <div className="flex justify-between border-t border-amber-200 pt-1">
+                          <span className="text-slate-600">Draft Certificate:</span>
+                          <span className="font-mono font-bold text-amber-900">{correctionResult.new_draft_passport_id}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCorrectionResult(null);
+                          setNewValue(0.350);
+                        }}
+                        className="w-full text-center text-[10px] font-bold text-amber-800 hover:text-amber-900 underline pt-1"
+                      >
+                        Reset Simulation Form
+                      </button>
+                    </div>
+                  )}
                 </form>
               </div>
 
@@ -945,6 +1196,48 @@ export const TraceCarbonView: React.FC = () => {
             </div>
 
           </div>
+
+          {/* Node Inspector Modal */}
+          {selectedNode && (
+            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 text-white shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
+                      <Network className="w-5 h-5" />
+                    </span>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-white">{selectedNode.label || selectedNode.node_id}</h3>
+                      <p className="text-[10px] text-slate-400 font-mono">ID: {selectedNode.node_id} • Type: {selectedNode.node_type}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedNode(null)}
+                    className="text-slate-400 hover:text-white text-xs px-2.5 py-1 bg-slate-800 rounded-lg hover:bg-slate-700 transition cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="bg-slate-800/80 p-3 rounded-xl space-y-1.5 font-mono text-[11px] max-h-60 overflow-y-auto">
+                    <div className="text-slate-400 text-[10px] font-sans uppercase font-bold mb-1">Node Properties</div>
+                    {Object.entries(selectedNode.properties || {}).map(([key, val]) => (
+                      <div key={key} className="flex justify-between border-b border-slate-700/50 pb-1">
+                        <span className="text-slate-400">{key}:</span>
+                        <span className="text-emerald-300 font-bold truncate max-w-[240px]">{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedNode.reference_id && (
+                    <p className="text-[11px] text-slate-400">
+                      <strong>Reference ID:</strong> <span className="text-slate-200 font-mono">{selectedNode.reference_id}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

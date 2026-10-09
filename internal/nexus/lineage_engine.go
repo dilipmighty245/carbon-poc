@@ -526,11 +526,26 @@ func (e *NexusGraphEngine) CorrectSupplierInput(ctx context.Context, req InputCo
 		newVal = 0.350
 	}
 
-	oldMaterialKg := oldVal * 1000.0
-	newMaterialKg := newVal * 1000.0
+	batchQty := 1000.0
+	baseTotal := 1117.0
+	for _, n := range e.nodes {
+		if n.NodeType == "CALC_VERSION" && !strings.Contains(n.NodeID, "V1_1") {
+			if tf, ok := n.Properties["total_footprint_kg"].(float64); ok && tf > 0 {
+				baseTotal = tf
+			}
+		}
+		if n.NodeType == "PRODUCT_BATCH" {
+			if bq, ok := n.Properties["quantity_kg"].(float64); ok && bq > 0 {
+				batchQty = bq
+			}
+		}
+	}
+
+	oldMaterialKg := oldVal * batchQty
+	newMaterialKg := newVal * batchQty
 	deltaKg := newMaterialKg - oldMaterialKg
-	totalFootprintKg := 1117.0 + deltaKg
-	newIntensity := totalFootprintKg / 1000.0
+	totalFootprintKg := baseTotal + deltaKg
+	newIntensity := totalFootprintKg / batchQty
 
 	inputNode.Properties["value"] = newVal
 	inputNode.Properties["emission_kg"] = newMaterialKg
@@ -591,7 +606,7 @@ func (e *NexusGraphEngine) CorrectSupplierInput(ctx context.Context, req InputCo
 		OldValue:                oldVal,
 		NewValue:                newVal,
 		OriginalCalcVersion:     "v1.0",
-		OriginalIntensityKgCO2e: math.Round((1117.0/1000.0)*100) / 100,
+		OriginalIntensityKgCO2e: math.Round((baseTotal/batchQty)*100) / 100,
 		NewCalcVersion:          "v1.1",
 		NewIntensityKgCO2e:      math.Round(newIntensity*100) / 100,
 		OriginalPassportID:      origPassNode.ReferenceID,
