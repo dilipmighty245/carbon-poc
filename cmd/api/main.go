@@ -18,8 +18,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/cors"
-	"github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql/handler"
-	"github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql/playground"
+	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/handler"
+	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/playground"
 
 	configv1 "saurient-platform/build/apis/config.saurient.io/v1"
 	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
@@ -508,7 +508,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		graphSpec := map[string]interface{}{
 			"framework":  "Nexus (graph-framework-for-microservices)",
-			"repository": "https://github.com/vmware-tanzu/graph-framework-for-microservices",
+			"repository": "https://github.com/dilipmighty245/graph-framework-for-microservices",
 			"root_node":  "Root",
 			"hierarchy": map[string]interface{}{
 				"Root": map[string]interface{}{

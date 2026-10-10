@@ -5,7 +5,7 @@ import (
 	"saurient-platform/datamodel/inventory"
 	"saurient-platform/datamodel/runtime"
 
-	"github.com/vmware-tanzu/graph-framework-for-microservices/nexus/nexus"
+	"github.com/dilipmighty245/graph-framework-for-microservices/nexus/nexus"
 )
 
 type Root struct {

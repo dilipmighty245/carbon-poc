@@ -10,7 +10,7 @@ import (
 
 	gqlgraph "saurient-platform/build/nexus-gql/graph"
 	gqlgenerated "saurient-platform/build/nexus-gql/graph/generated"
-	"github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen/graphql/handler"
+	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/handler"
 
 	"saurient-platform/internal/api"
 	"saurient-platform/internal/nexus"

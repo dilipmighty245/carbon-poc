@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/flowcontrol"
 
-	qm "github.com/vmware-tanzu/graph-framework-for-microservices/nexus/generated/query-manager"
+	qm "github.com/dilipmighty245/graph-framework-for-microservices/nexus/generated/query-manager"
 	nexus_client "saurient-platform/build/nexus-client"
 	"saurient-platform/build/nexus-gql/graph/model"
 )

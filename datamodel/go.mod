@@ -1,7 +1,5 @@
 module saurient-platform/datamodel
 
-go 1.20
+go 1.22.0
 
-replace github.com/vmware-tanzu/graph-framework-for-microservices/nexus => ../../graph-framework-for-microservices/nexus
-
-require github.com/vmware-tanzu/graph-framework-for-microservices/nexus v0.0.0-00010101000000-000000000000
+require github.com/dilipmighty245/graph-framework-for-microservices/nexus v0.0.1

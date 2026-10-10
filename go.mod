@@ -4,23 +4,19 @@ go 1.26.0
 
 require (
 	cel.dev/cel-go v0.32.0
+	github.com/dilipmighty245/graph-framework-for-microservices/gqlgen v0.0.1
+	github.com/dilipmighty245/graph-framework-for-microservices/nexus v0.0.1
 	github.com/elliotchance/orderedmap v1.8.0
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
 	github.com/rs/cors v1.11.1
 	github.com/sirupsen/logrus v1.10.2
 	github.com/vektah/gqlparser/v2 v2.5.0
-	github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen v0.0.0-00010101000000-000000000000
-	github.com/vmware-tanzu/graph-framework-for-microservices/nexus v0.0.0-00010101000000-000000000000
 	google.golang.org/grpc v1.79.3
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v0.29.2
 	saurient-platform/datamodel v0.0.0-00010101000000-000000000000
 )
-
-replace github.com/vmware-tanzu/graph-framework-for-microservices/gqlgen => ../graph-framework-for-microservices/gqlgen
-
-replace github.com/vmware-tanzu/graph-framework-for-microservices/nexus => ../graph-framework-for-microservices/nexus
 
 replace saurient-platform/datamodel => ./datamodel
 

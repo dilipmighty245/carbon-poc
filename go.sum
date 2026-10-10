@@ -22,6 +22,10 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgryski/trifles v0.0.0-20200323201526-dd97f9abfb48 h1:fRzb/w+pyskVMQ+UbP35JkH8yB7MYb4q/qhBarqZE6g=
 github.com/dgryski/trifles v0.0.0-20200323201526-dd97f9abfb48/go.mod h1:if7Fbed8SFyPtHLHbg49SI7NAdJiC5WIA09pe59rfAA=
+github.com/dilipmighty245/graph-framework-for-microservices/gqlgen v0.0.1 h1:AQSBDLe1iyVvDwpcLj2BFLu4QDNtUu9Y+zuk508iTV4=
+github.com/dilipmighty245/graph-framework-for-microservices/gqlgen v0.0.1/go.mod h1:gSFMAKnPoHKBkzw9DrKnhTN8Ea5f9ezMR8Ra7Sr8LKs=
+github.com/dilipmighty245/graph-framework-for-microservices/nexus v0.0.1 h1:6tJ6f7Lb3n4/8J/r2pGfzlS5DAzmq3IJnga1unwyrEk=
+github.com/dilipmighty245/graph-framework-for-microservices/nexus v0.0.1/go.mod h1:mVCZJMDYI60kDPiOhdjMWVmZABNwWUyIFtiUK4ahCv8=
 github.com/elliotchance/orderedmap v1.8.0 h1:TrOREecvh3JbS+NCgwposXG5ZTFHtEsQiCGOhPElnMw=
 github.com/elliotchance/orderedmap v1.8.0/go.mod h1:wsDwEaX5jEoyhbs7x93zk2H/qv0zwuhg4inXhDkYqys=
 github.com/emicklei/go-restful/v3 v3.11.0 h1:rAQeMHw1c7zTmncogyy8VvRZwtkmkZ4FxERmMY4rD+g=

@@ -6,7 +6,7 @@ import (
 	"saurient-platform/datamodel/inventory"
 	"saurient-platform/datamodel/runtime"
 
-	nexusSDK "github.com/vmware-tanzu/graph-framework-for-microservices/nexus/nexus"
+	nexusSDK "github.com/dilipmighty245/graph-framework-for-microservices/nexus/nexus"
 )
 
 // Re-export Datamodel Node Types adhering strictly to Nexus DSL Specifications
