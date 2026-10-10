@@ -1035,7 +1035,7 @@ func SeedDefaultNexusData(ctx context.Context, client *nexus_client.Clientset) e
 	})
 
 	// 2. Ensure Default Tenants exist without injecting any mock facilities, users, or passports
-	tenantsToSeed := []string{"tenant-default", "org_saurient_demo"}
+	tenantsToSeed := []string{"tenant-default", "org_saurient_demo", "org_asante_cocoa"}
 	for _, tID := range tenantsToSeed {
 		_, _ = EnsureTenantNode(ctx, client, tID)
 	}

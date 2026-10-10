@@ -265,25 +265,27 @@ export const ProductSetup: React.FC = () => {
       } catch (e) {}
     }
 
-    if (!effectiveTenant || effectiveTenant === 'all' || effectiveTenant === 'org_saurient_demo' || effectiveTenant === 'tenant-verifier-agency') {
+    if (!effectiveTenant || effectiveTenant === 'all' || effectiveTenant === 'public' || effectiveTenant === 'tenant-verifier-agency') {
       if (regCompStr) {
         try {
           const parsed = JSON.parse(regCompStr);
-          if (parsed.tenantId) effectiveTenant = parsed.tenantId;
+          if (parsed.tenantId && parsed.tenantId !== 'all' && parsed.tenantId !== 'public' && parsed.tenantId !== 'tenant-verifier-agency') {
+            effectiveTenant = parsed.tenantId;
+          }
         } catch (e) {}
       }
-      if (!effectiveTenant || effectiveTenant === 'all' || effectiveTenant === 'org_saurient_demo' || effectiveTenant === 'tenant-verifier-agency') {
+      if (!effectiveTenant || effectiveTenant === 'all' || effectiveTenant === 'public' || effectiveTenant === 'tenant-verifier-agency') {
         effectiveTenant = 'org_asante_cocoa';
       }
     }
 
     if (!friendlyOrg) {
       if (effectiveTenant === 'org_asante_cocoa') {
-        friendlyOrg = commodity === 'Metals' ? 'Saurient Industrial Metals' : 'Asante Cocoa Ltd';
+        friendlyOrg = 'Asante Cocoa Ltd';
       } else if (effectiveTenant === 'org_saurient_demo') {
         friendlyOrg = 'Saurient Industrial Ltd';
       } else {
-        friendlyOrg = effectiveTenant.replace(/^org_/, '').replace(/_/g, ' ');
+        friendlyOrg = effectiveTenant.replace(/^org_/, '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
       }
     }
 

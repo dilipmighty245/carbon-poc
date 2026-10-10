@@ -296,7 +296,7 @@ export const RegistrationView: React.FC = () => {
         .replace(/[^a-z0-9]/g, '_')
         .replace(/^_+|_+$/g, '');
       const tenantId = `org_${cleanOrgKey || 'company'}`;
-      const generatedEmail = generateSaurientEmail(formData.ownerName);
+      const userEmail = (formData.ownerEmail && formData.ownerEmail.trim()) || generateSaurientEmail(formData.ownerName);
 
       const profilePayload: OrgProfileData = {
         legalName: formData.legalName,
@@ -315,13 +315,13 @@ export const RegistrationView: React.FC = () => {
         primaryContact: {
           name: formData.ownerName,
           title: formData.ownerRole,
-          email: generatedEmail,
+          email: userEmail,
           phone: formData.ownerPhone,
         },
         sustainabilityContact: {
           name: formData.sustainabilityLead || formData.ownerName,
           title: 'Head of Sustainability & Compliance',
-          email: generatedEmail,
+          email: userEmail,
           phone: formData.ownerPhone,
         },
         boundary: {
@@ -353,7 +353,7 @@ export const RegistrationView: React.FC = () => {
       try {
         const regResp = await registerUser({
           tenant_id: tenantId,
-          email: generatedEmail,
+          email: userEmail,
           password: formData.ownerPassword || 'password123',
           name: formData.ownerName || `${formData.ownerFirstName || 'Org'} ${formData.ownerLastName || 'Owner'}`.trim(),
           role: 'Organisation Owner',
@@ -362,27 +362,32 @@ export const RegistrationView: React.FC = () => {
           localStorage.setItem('saurient_auth_token', regResp.token);
           localStorage.setItem('saurient_user_role', 'Organisation Owner');
           localStorage.setItem('auth_role', 'Organisation Owner');
-          localStorage.setItem('saurient_user_email', generatedEmail);
+          localStorage.setItem('saurient_user_email', userEmail);
           localStorage.setItem('saurient_user_name', regResp.user?.name || formData.ownerName || 'Owner');
           localStorage.setItem('saurient_user_id', regResp.user?.id || 'usr-owner');
           localStorage.setItem('saurient_tenant_id', tenantId);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Backend user registration note:', err);
         // If user is already registered in datamodel, authenticate to obtain token
+        let loginSucceeded = false;
         try {
-          const loginResp = await loginUser(generatedEmail, formData.ownerPassword || 'password123', tenantId);
+          const loginResp = await loginUser(userEmail, formData.ownerPassword || 'password123', tenantId);
           if (loginResp && loginResp.token) {
             localStorage.setItem('saurient_auth_token', loginResp.token);
             localStorage.setItem('saurient_user_role', 'Organisation Owner');
             localStorage.setItem('auth_role', 'Organisation Owner');
-            localStorage.setItem('saurient_user_email', generatedEmail);
+            localStorage.setItem('saurient_user_email', userEmail);
             localStorage.setItem('saurient_user_name', loginResp.user?.name || formData.ownerName || 'Owner');
             localStorage.setItem('saurient_user_id', loginResp.user?.id || 'usr-owner');
-            localStorage.setItem('saurient_tenant_id', tenantId);
+            localStorage.setItem('saurient_tenant_id', loginResp.tenant_id || tenantId);
+            loginSucceeded = true;
           }
         } catch (loginErr) {
           console.warn('Fallback login note:', loginErr);
+        }
+        if (!loginSucceeded && err?.message && !err.message.includes('already exists')) {
+          throw new Error(err.message || 'Failed to register account with backend');
         }
       }
 
@@ -391,7 +396,7 @@ export const RegistrationView: React.FC = () => {
       localStorage.setItem('saurient_tenant_id', tenantId);
       localStorage.setItem('saurient_registered_company', JSON.stringify({
         ...formData,
-        ownerEmail: generatedEmail,
+        ownerEmail: userEmail,
         ownerRole: 'Organisation Owner',
         ownerPassword: formData.ownerPassword || 'password123',
         tenantId: tenantId,

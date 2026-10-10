@@ -48,14 +48,23 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   );
   const userInitials = isVerifier ? 'V' : isOfficer ? 'P' : isOrgOwner ? 'O' : isOrgAdmin ? 'A' : 'O';
 
-  const currentTenant = localStorage.getItem('saurient_tenant_id') || 'org_saurient_demo';
+  const currentTenant = localStorage.getItem('saurient_tenant_id') || 'org_asante_cocoa';
+
+  const verifierAgencyName = (() => {
+    const custom = localStorage.getItem('saurient_verifier_agency');
+    if (custom) return custom;
+    if (userEmail.includes('@sgs')) return 'SGS Global Verification (#NAB-7410)';
+    if (userEmail.includes('@tuv')) return 'TÜV Rheinland Energy (#NAB-9102)';
+    if (userEmail.includes('@dnv')) return 'DNV Business Assurance (#NAB-6234)';
+    if (userEmail.includes('@bureau-veritas')) return 'Bureau Veritas UK Ltd (#NAB-8820)';
+    return 'Accredited Verification Body';
+  })();
 
   const companyName = (() => {
-    if (isVerifier) return 'Bureau Veritas UK Ltd (#NAB-8820)';
+    if (isVerifier) return verifierAgencyName;
     if (isOfficer) return 'Saurient Issuance Authority';
     if (currentTenant === 'org_asante_cocoa') return 'Asante Cocoa Ltd';
     if (currentTenant === 'org_saurient_demo') return 'Saurient Industrial Ltd';
-    if (currentTenant === 'tenant-verifier-agency') return 'Bureau Veritas UK Ltd';
     const regStr = localStorage.getItem('saurient_registered_company');
     if (regStr) {
       try {
@@ -63,6 +72,9 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         if (c.tenantId === currentTenant && c.legalName) return c.legalName;
         if (c.legalName) return c.legalName;
       } catch (e) {}
+    }
+    if (currentTenant && currentTenant !== 'tenant-default') {
+      return currentTenant.replace(/^org_/, '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     }
     return 'Saurient Carbon Passport';
   })();
@@ -187,8 +199,8 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
             </div>
             {isVerifier ? (
               <>
-                <p className="text-xs font-bold text-white truncate">Bureau Veritas</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Accredited Lead Auditor (#NAB-8820)</p>
+                <p className="text-xs font-bold text-white truncate">{verifierAgencyName}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Accredited Lead Auditor</p>
               </>
             ) : isOfficer ? (
               <>
@@ -230,7 +242,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               <span>{isVerifier ? 'Verifier Portal' : 'Workspace'}</span>
               <span>/</span>
               <span className="text-slate-900 font-semibold">
-                {isVerifier ? 'Independent Verification (Bureau Veritas)' : isOwnerOrAdmin ? 'Organisation Administration' : 'Company Workspace'}
+                {isVerifier ? `Independent Verification (${verifierAgencyName.split(' ')[0]})` : isOwnerOrAdmin ? 'Organisation Administration' : 'Company Workspace'}
               </span>
             </div>
 
@@ -248,7 +260,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               {isVerifier && (
                 <span className="hidden sm:inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-900 px-3 py-1 rounded-lg text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-                  <span>Accredited Auditor: Bureau Veritas (#NAB-8820)</span>
+                  <span>Accredited Auditor: {verifierAgencyName}</span>
                 </span>
               )}
 

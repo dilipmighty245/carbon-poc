@@ -24,19 +24,19 @@ export const LoginView: React.FC = () => {
 
   const DEMO_ACCOUNTS: Record<string, { name: string; email: string; pass: string; route: string; desc: string; tenantId: string }> = {
     'Company Operator': {
-      name: 'Santosh Samudrala (Lead Operator)',
-      email: 'operator@asante-cocoa.com',
-      pass: 'DemoPassword2026!',
+      name: 'Santosh Samudrala',
+      email: registeredCompany?.ownerEmail || 'operator@asante-cocoa.com',
+      pass: registeredCompany?.ownerPassword || 'DemoPassword2026!',
       route: '/company-dashboard',
       desc: 'Facility & ESG Operations',
-      tenantId: 'org_asante_cocoa',
+      tenantId: registeredCompany?.tenantId || 'org_asante_cocoa',
     },
     'Verifier': {
-      name: 'Sarah Jenkins (Lead Verifier)',
+      name: 'Sarah Jenkins',
       email: 'auditor@bureau-veritas.com',
       pass: 'DemoPassword2026!',
       route: '/mrv',
-      desc: 'Accredited Verifier (#NAB-8820)',
+      desc: 'Independent ISO 14064-3 / CBAM Auditor',
       tenantId: 'all',
     },
     'Passport Officer': {
@@ -44,7 +44,7 @@ export const LoginView: React.FC = () => {
       email: 'officer@saurient.com',
       pass: 'DemoPassword2026!',
       route: '/passport/sign-issue',
-      desc: 'Issuance & Governance Authority',
+      desc: 'Issuance & Statutory Authority',
       tenantId: 'all',
     },
     'Public Viewer': {
@@ -93,12 +93,12 @@ export const LoginView: React.FC = () => {
     },
     { 
       title: 'Verifier', 
-      desc: 'Accredited Verifier (#NAB-8820)', 
+      desc: 'Independent Verification Body', 
       icon: ShieldCheck,
     },
     { 
       title: 'Passport Officer', 
-      desc: 'Issuance & Governance Authority', 
+      desc: 'Issuance & Statutory Authority', 
       icon: Award,
     },
     { 

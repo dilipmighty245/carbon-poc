@@ -75,6 +75,13 @@ func (h *OrganisationHandler) ensureSeedUsers(ctx context.Context) {
 		},
 		{
 			tenantID: "org_saurient_demo",
+			name:     "Santosh Samudrala (Industrial Operator)",
+			email:    "operator@saurient.com",
+			password: "DemoPassword2026!",
+			role:     "Company Operator",
+		},
+		{
+			tenantID: "org_saurient_demo",
 			name:     "Santosh Samudrala",
 			email:    "officer@saurient.com",
 			password: "DemoPassword2026!",

@@ -33,7 +33,14 @@ func NewServer(generator *TelemetryGenerator, port string) *Server {
 
 // RegisterRoutes registers all telemetry simulation and query endpoints on the provided mux.
 func (s *Server) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/healthz", s.handleHealthz)
+	// Safely attempt to register /healthz if mux does not already have it (avoids Go 1.22+ mux conflict panics)
+	func() {
+		defer func() {
+			_ = recover()
+		}()
+		mux.HandleFunc("/healthz", s.handleHealthz)
+	}()
+
 	mux.HandleFunc("/api/v1/telemetry/healthz", s.handleHealthz)
 	mux.HandleFunc("/api/v1/telemetry/sample", s.handleSample)
 	mux.HandleFunc("/api/v1/telemetry/latest", s.handleLatest)
