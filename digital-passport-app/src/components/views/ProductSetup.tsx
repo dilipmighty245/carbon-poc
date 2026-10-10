@@ -321,10 +321,10 @@ export const ProductSetup: React.FC = () => {
         },
       });
 
-      setSuccessMsg(`Product batch successfully registered. Draft Carbon Passport preview created (Batch: ${batchId}). Verification begins after data & evidence are completed and submitted.`);
+      setSuccessMsg(`Product batch successfully registered. Draft Carbon Passport created (Batch: ${batchId}). Redirecting to Passport Registry...`);
 
       setTimeout(() => {
-        navigate(`/passport/readiness?id=${batchId}`);
+        navigate('/passport/registry');
       }, 1600);
     } catch (err: any) {
       console.error(err);
