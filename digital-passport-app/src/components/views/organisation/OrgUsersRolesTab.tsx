@@ -95,8 +95,21 @@ export const permissionsMatrix = [
   { key: 'export', label: 'Export Dossiers', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Verifier', 'Auditor'] },
 ];
 
+const getActiveOrgTenant = () => {
+  const regStr = localStorage.getItem('saurient_registered_company');
+  if (regStr) {
+    try {
+      const c = JSON.parse(regStr);
+      if (c.tenantId && c.tenantId !== 'all' && c.tenantId !== 'org_saurient_demo') return c.tenantId;
+    } catch (e) {}
+  }
+  const t = localStorage.getItem('saurient_tenant_id');
+  if (t && t !== 'all' && t !== 'org_saurient_demo' && t !== 'tenant-verifier-agency') return t;
+  return 'org_asante_cocoa';
+};
+
 const getInitialUsers = (): UserMember[] => {
-  const activeTenant = localStorage.getItem('saurient_tenant_id') || 'org_saurient_demo';
+  const activeTenant = getActiveOrgTenant();
   const stored = localStorage.getItem('saurient_registered_company');
   const loggedEmail = localStorage.getItem('saurient_user_email');
   const loggedName = localStorage.getItem('saurient_user_name');
@@ -144,7 +157,7 @@ export const OrgUsersRolesTab: React.FC = () => {
   const loggedInEmail = localStorage.getItem('saurient_user_email') || '';
   const loggedInName = localStorage.getItem('saurient_user_name') || 'Organisation Owner';
   const loggedInRole = localStorage.getItem('saurient_user_role') || 'Organisation Owner';
-  const activeTenant = localStorage.getItem('saurient_tenant_id') || 'org_saurient_demo';
+  const activeTenant = getActiveOrgTenant();
 
   const [users, setUsers] = useState<UserMember[]>(getInitialUsers());
   const [activeTab, setActiveTab] = useState<'users' | 'matrix'>('users');

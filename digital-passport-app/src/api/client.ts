@@ -1,7 +1,7 @@
 import type { ProductCreateRequest, ProductCreateResponse, RichDigitalPassport, RulebookCreateRequest, RulebookItem } from '../types';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-export const DEFAULT_TENANT_ID = 'org_saurient_demo';
+export const DEFAULT_TENANT_ID = 'org_asante_cocoa';
 
 export interface ApiFetchResult<T> {
   data: T;
@@ -12,13 +12,14 @@ export interface ApiFetchResult<T> {
   error?: string;
 }
 
-export async function getAllRulesWithMeta(tenantId = DEFAULT_TENANT_ID): Promise<ApiFetchResult<RulebookItem[]>> {
+export async function getAllRulesWithMeta(tenantId?: string): Promise<ApiFetchResult<RulebookItem[]>> {
+  const tid = tenantId || getActiveTenantId();
   const endpoint = `${API_BASE_URL}/rules`;
   const startTime = performance.now();
   try {
     const res = await fetch(endpoint, {
       headers: {
-        'X-Tenant-ID': tenantId,
+        'X-Tenant-ID': tid,
       },
     });
     const responseTimeMs = Math.round(performance.now() - startTime);
@@ -56,17 +57,18 @@ export async function getAllRulesWithMeta(tenantId = DEFAULT_TENANT_ID): Promise
   }
 }
 
-export async function getAllRules(tenantId = DEFAULT_TENANT_ID): Promise<RulebookItem[]> {
+export async function getAllRules(tenantId?: string): Promise<RulebookItem[]> {
   const res = await getAllRulesWithMeta(tenantId);
   return res.data;
 }
 
-export async function createRulebook(req: RulebookCreateRequest, tenantId = DEFAULT_TENANT_ID): Promise<any> {
+export async function createRulebook(req: RulebookCreateRequest, tenantId?: string): Promise<any> {
+  const tid = tenantId || req.tenant_id || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/rules`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(req),
   });
@@ -78,14 +80,16 @@ export async function createRulebook(req: RulebookCreateRequest, tenantId = DEFA
 
 export async function createProduct(req: ProductCreateRequest): Promise<ProductCreateResponse> {
   let resp: ProductCreateResponse;
+  const tid = req.tenant_id || getActiveTenantId();
+  const enrichedReq = { ...req, tenant_id: tid };
   try {
     const res = await fetch(`${API_BASE_URL}/products`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Tenant-ID': req.tenant_id || DEFAULT_TENANT_ID,
+        'X-Tenant-ID': tid,
       },
-      body: JSON.stringify(req),
+      body: JSON.stringify(enrichedReq),
     });
     if (!res.ok) {
       throw new Error(`HTTP error ${res.status}`);
@@ -98,7 +102,7 @@ export async function createProduct(req: ProductCreateRequest): Promise<ProductC
     resp = {
       name: req.batch_id || `BATCH-${Date.now()}`,
       namespace: req.rulebook_ref?.namespace || 'default',
-      tenant_id: req.tenant_id || DEFAULT_TENANT_ID,
+      tenant_id: tid,
       facility_id: req.facility_id,
       batch_id: req.batch_id,
       product_name: req.product_name,
@@ -242,7 +246,7 @@ export async function submitPassportForVerification(passportId: string, submitte
   return await res.json();
 }
 
-export async function requestPassportCorrections(passportId: string, verifierName = 'Sarah Jenkins (Lead Verifier)', findingTitle = 'Material Finding', description = '', tenantId = DEFAULT_TENANT_ID) {
+export async function requestPassportCorrections(passportId: string, verifierName = 'Sarah Jenkins (Lead Verifier)', findingTitle = 'Material Finding', description = '', tenantId = 'all') {
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}/request-corrections`, {
     method: 'POST',
     headers: {
@@ -308,7 +312,7 @@ export async function verifyPassport(
   return await res.json();
 }
 
-export async function deletePassport(passportId: string, tenantId = DEFAULT_TENANT_ID) {
+export async function deletePassport(passportId: string, tenantId?: string) {
   const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}`, {
     method: 'DELETE',
@@ -323,7 +327,7 @@ export async function deletePassport(passportId: string, tenantId = DEFAULT_TENA
   return await res.json();
 }
 
-export async function signAndIssuePassport(passportId: string, signerName = 'Santosh Samudrala', signerRole = 'Chief Sustainability Officer', keyId = '0xKEY-ORATOR-PROD-SECURE-ED25519-88492', tenantId = DEFAULT_TENANT_ID) {
+export async function signAndIssuePassport(passportId: string, signerName = 'Santosh Samudrala', signerRole = 'Chief Sustainability Officer', keyId = '0xKEY-ORATOR-PROD-SECURE-ED25519-88492', tenantId = 'all') {
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}/sign`, {
     method: 'POST',
     headers: {
@@ -345,14 +349,14 @@ export async function signAndIssuePassport(passportId: string, signerName = 'San
   return await res.json();
 }
 
-export async function submitPassportToAgency(passportId: string, agencyName = 'EU CBAM Transitional Registry & National Competent Authority', declarantId = 'DEC-EU-2026-901', tenantId = DEFAULT_TENANT_ID) {
+export async function submitPassportToAgency(passportId: string, agencyName = 'EU CBAM Transitional Registry & National Competent Authority', declarantId = 'DEC-EU-2026-901', tenantId = 'all') {
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}/submit-agency`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Tenant-ID': tenantId,
-      'X-User-Role': localStorage.getItem('saurient_user_role') || 'Company Operator',
-      'X-User-Email': localStorage.getItem('saurient_user_email') || 'operator@asante-cocoa.com',
+      'X-User-Role': localStorage.getItem('saurient_user_role') || 'Passport Officer',
+      'X-User-Email': localStorage.getItem('saurient_user_email') || 'officer@saurient.com',
     },
     body: JSON.stringify({
       agency_name: agencyName,
@@ -374,16 +378,18 @@ export interface MrvSubmitPackagePayload {
   submitted_by?: string;
   notes?: string;
   dataset_hash?: string;
+  tenant_id?: string;
 }
 
-export async function submitMrvVerificationPackage(payload: MrvSubmitPackagePayload, tenantId = DEFAULT_TENANT_ID) {
+export async function submitMrvVerificationPackage(payload: MrvSubmitPackagePayload, tenantId = 'all') {
   const userRole = localStorage.getItem('saurient_user_role') || 'Company Operator';
   const userEmail = localStorage.getItem('saurient_user_email') || payload.submitted_by || 'operator@asante-cocoa.com';
+  const tid = payload.tenant_id || tenantId || 'all';
   const res = await fetch(`${API_BASE_URL}/mrv/readiness/submit`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
       'X-User-Role': userRole,
       'X-User-Email': userEmail,
     },
@@ -396,14 +402,15 @@ export async function submitMrvVerificationPackage(payload: MrvSubmitPackagePayl
   return await res.json();
 }
 
-export async function freezeMrvDataset(payload: { engagement_id?: string; passport_id?: string; batch_id?: string; reason?: string; frozen_by?: string }, tenantId = DEFAULT_TENANT_ID) {
+export async function freezeMrvDataset(payload: { engagement_id?: string; passport_id?: string; batch_id?: string; reason?: string; frozen_by?: string; tenant_id?: string }, tenantId = 'all') {
   const userRole = localStorage.getItem('saurient_user_role') || 'Company Operator';
   const userEmail = localStorage.getItem('saurient_user_email') || payload.frozen_by || 'operator@asante-cocoa.com';
+  const tid = payload.tenant_id || tenantId || 'all';
   const res = await fetch(`${API_BASE_URL}/mrv/freeze`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
       'X-User-Role': userRole,
       'X-User-Email': userEmail,
     },
@@ -514,20 +521,22 @@ export async function getCurrentUser(): Promise<AuthUser> {
   return await res.json();
 }
 
-export async function getOrgProfile(tenantId = DEFAULT_TENANT_ID) {
+export async function getOrgProfile(tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/profile`, {
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
 
-export async function saveOrgProfile(profile: any, tenantId = DEFAULT_TENANT_ID) {
+export async function saveOrgProfile(profile: any, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/profile`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(profile),
   });
@@ -603,8 +612,22 @@ export async function deleteOrgProcess(id: string, tenantId?: string) {
 
 export function getActiveTenantId(): string {
   if (typeof window !== 'undefined' && window.localStorage) {
+    const role = (localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || '').toLowerCase();
+    // Verifier and Passport Officer are independent authorities across all organisations
+    if (role.includes('verifier') || role.includes('officer') || role.includes('auditor')) {
+      return 'all';
+    }
     const t = localStorage.getItem('saurient_tenant_id');
-    if (t) return t;
+    if (t && t !== 'all' && t !== 'public' && t !== 'tenant-verifier-agency' && t !== 'org_saurient_demo') {
+      return t;
+    }
+    const regStr = localStorage.getItem('saurient_registered_company');
+    if (regStr) {
+      try {
+        const parsed = JSON.parse(regStr);
+        if (parsed.tenantId) return parsed.tenantId;
+      } catch (e) {}
+    }
   }
   return DEFAULT_TENANT_ID;
 }
@@ -646,20 +669,22 @@ export async function updateOrgUserRole(userId: string, role: string, tenantId?:
   return await res.json();
 }
 
-export async function getOrgReportingPeriods(tenantId = DEFAULT_TENANT_ID) {
+export async function getOrgReportingPeriods(tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/reporting-periods`, {
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
 
-export async function saveOrgReportingPeriod(period: any, tenantId = DEFAULT_TENANT_ID) {
+export async function saveOrgReportingPeriod(period: any, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/reporting-periods`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(period),
   });
@@ -667,20 +692,22 @@ export async function saveOrgReportingPeriod(period: any, tenantId = DEFAULT_TEN
   return await res.json();
 }
 
-export async function getOrgLocalisation(tenantId = DEFAULT_TENANT_ID) {
+export async function getOrgLocalisation(tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/localisation`, {
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
 
-export async function saveOrgLocalisation(loc: any, tenantId = DEFAULT_TENANT_ID) {
+export async function saveOrgLocalisation(loc: any, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/localisation`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(loc),
   });
@@ -688,20 +715,22 @@ export async function saveOrgLocalisation(loc: any, tenantId = DEFAULT_TENANT_ID
   return await res.json();
 }
 
-export async function getOrgApprovals(tenantId = DEFAULT_TENANT_ID) {
+export async function getOrgApprovals(tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/approvals`, {
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
 }
 
-export async function saveOrgApproval(approval: any, tenantId = DEFAULT_TENANT_ID) {
+export async function saveOrgApproval(approval: any, tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/approvals`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(approval),
   });
@@ -756,9 +785,10 @@ export interface InputCorrectionRes {
   timestamp: string;
 }
 
-export async function getLineageDAG(passportId = 'PASS-2026-981-v1.0', tenantId = DEFAULT_TENANT_ID): Promise<LineageDAGData> {
+export async function getLineageDAG(passportId = 'PASS-2026-981-v1.0', tenantId?: string): Promise<LineageDAGData> {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/lineage/trace/${passportId}`, {
-    headers: { 'X-Tenant-ID': tenantId },
+    headers: { 'X-Tenant-ID': tid },
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -767,12 +797,13 @@ export async function getLineageDAG(passportId = 'PASS-2026-981-v1.0', tenantId 
   return await res.json();
 }
 
-export async function correctSupplierInput(req: InputCorrectionReq, tenantId = DEFAULT_TENANT_ID): Promise<InputCorrectionRes> {
+export async function correctSupplierInput(req: InputCorrectionReq, tenantId?: string): Promise<InputCorrectionRes> {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/lineage/correct-input`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
     },
     body: JSON.stringify(req),
   });

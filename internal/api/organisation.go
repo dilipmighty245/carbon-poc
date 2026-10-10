@@ -312,6 +312,10 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 	// 1. Fetch user strictly from the Nexus graph datamodel
 	if h.client != nil {
 		uNode, err = nexus.GetUserNodeByEmail(ctx, h.client, tenantID, req.Email)
+		if (err != nil || uNode == nil) && tenantID != "" {
+			// Cross-tenant fallback lookup: User might belong to an organisation different from header
+			uNode, err = nexus.GetUserNodeByEmail(ctx, h.client, "", req.Email)
+		}
 	}
 
 	if err != nil || uNode == nil {
@@ -345,9 +349,26 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 	loggedInUser := nexus.UserModelFromNode(uNode)
 	token, _ := GenerateToken(loggedInUser)
 
+	userTenantID := uNode.Spec.TenantID
+	if userTenantID == "" && loggedInUser != nil {
+		userTenantID = loggedInUser.TenantID
+	}
+	if userTenantID == "" {
+		userTenantID = tenantID
+	}
+
+	// Verifier and Passport Officer are independent authorities across all organisations
+	if loggedInUser != nil {
+		roleLower := strings.ToLower(loggedInUser.Role)
+		if strings.Contains(roleLower, "verifier") || strings.Contains(roleLower, "officer") || strings.Contains(roleLower, "auditor") {
+			userTenantID = "all"
+			loggedInUser.TenantID = "all"
+		}
+	}
+
 	resp := LoginResponse{
 		User:     loggedInUser,
-		TenantID: uNode.Spec.TenantID,
+		TenantID: userTenantID,
 		Token:    token,
 	}
 
@@ -413,6 +434,18 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 		if err != nil || p == nil {
 			writeJSONError(w, fmt.Sprintf("profile not found for tenant: %s", tenantID), http.StatusNotFound)
 			return
+		}
+		if p.LegalName == "" || p.LegalName == "org_saurient_demo" || p.LegalName == tenantID {
+			if tenantID == "org_saurient_demo" {
+				p.LegalName = "Saurient Industrial Ltd"
+			} else if tenantID == "org_asante_cocoa" {
+				p.LegalName = "Asante Cocoa Ltd"
+			} else if strings.HasPrefix(tenantID, "org_") {
+				p.LegalName = strings.Title(strings.ReplaceAll(strings.TrimPrefix(tenantID, "org_"), "_", " "))
+			}
+		}
+		if p.TradingName == "" || p.TradingName == "org_saurient_demo" || p.TradingName == tenantID {
+			p.TradingName = p.LegalName
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(p)

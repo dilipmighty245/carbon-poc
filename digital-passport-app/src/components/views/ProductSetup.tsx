@@ -251,28 +251,48 @@ export const ProductSetup: React.FC = () => {
     setErrorMsg('');
 
     const selectedFac = facilitiesList.find((f) => f.name === facility) || facilitiesList[0];
-    const activeTenant = getActiveTenantId();
-
     const regCompStr = localStorage.getItem('saurient_registered_company');
+    let effectiveTenant = localStorage.getItem('saurient_tenant_id') || '';
     let friendlyOrg = '';
+
     if (regCompStr) {
       try {
-        friendlyOrg = JSON.parse(regCompStr).legalName;
+        const parsed = JSON.parse(regCompStr);
+        if (parsed.tenantId) {
+          effectiveTenant = parsed.tenantId;
+        }
+        friendlyOrg = parsed.legalName || parsed.tradingName || '';
       } catch (e) {}
     }
-    if (!friendlyOrg) {
-      if (activeTenant === 'org_asante_cocoa') {
-        friendlyOrg = commodity === 'Metals' ? 'Saurient Industrial Metals' : 'Asante Cocoa Ltd';
-      } else if (activeTenant === 'org_saurient_demo') {
-        friendlyOrg = 'Saurient Industrial Ltd';
-      } else {
-        friendlyOrg = activeTenant.replace(/^org_/, '').replace(/_/g, ' ');
+
+    if (!effectiveTenant || effectiveTenant === 'all' || effectiveTenant === 'org_saurient_demo' || effectiveTenant === 'tenant-verifier-agency') {
+      if (regCompStr) {
+        try {
+          const parsed = JSON.parse(regCompStr);
+          if (parsed.tenantId) effectiveTenant = parsed.tenantId;
+        } catch (e) {}
+      }
+      if (!effectiveTenant || effectiveTenant === 'all' || effectiveTenant === 'org_saurient_demo' || effectiveTenant === 'tenant-verifier-agency') {
+        effectiveTenant = 'org_asante_cocoa';
       }
     }
 
+    if (!friendlyOrg) {
+      if (effectiveTenant === 'org_asante_cocoa') {
+        friendlyOrg = commodity === 'Metals' ? 'Saurient Industrial Metals' : 'Asante Cocoa Ltd';
+      } else if (effectiveTenant === 'org_saurient_demo') {
+        friendlyOrg = 'Saurient Industrial Ltd';
+      } else {
+        friendlyOrg = effectiveTenant.replace(/^org_/, '').replace(/_/g, ' ');
+      }
+    }
+
+    // Persist active producer tenant for subsequent views
+    localStorage.setItem('saurient_tenant_id', effectiveTenant);
+
     try {
       const resp = await createProduct({
-        tenant_id: activeTenant,
+        tenant_id: effectiveTenant,
         facility_id: selectedFac?.id || facility,
         batch_id: batchId,
         product_name: productName,

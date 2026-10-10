@@ -52,14 +52,16 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
 
   const companyName = (() => {
     if (isVerifier) return 'Bureau Veritas UK Ltd (#NAB-8820)';
-    if (currentTenant === 'org_saurient_demo') return 'Saurient Authority';
+    if (isOfficer) return 'Saurient Issuance Authority';
     if (currentTenant === 'org_asante_cocoa') return 'Asante Cocoa Ltd';
+    if (currentTenant === 'org_saurient_demo') return 'Saurient Industrial Ltd';
     if (currentTenant === 'tenant-verifier-agency') return 'Bureau Veritas UK Ltd';
     const regStr = localStorage.getItem('saurient_registered_company');
     if (regStr) {
       try {
         const c = JSON.parse(regStr);
         if (c.tenantId === currentTenant && c.legalName) return c.legalName;
+        if (c.legalName) return c.legalName;
       } catch (e) {}
     }
     return 'Saurient Carbon Passport';
@@ -187,6 +189,11 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
               <>
                 <p className="text-xs font-bold text-white truncate">Bureau Veritas</p>
                 <p className="text-[10px] text-slate-400 mt-0.5">Accredited Lead Auditor (#NAB-8820)</p>
+              </>
+            ) : isOfficer ? (
+              <>
+                <p className="text-xs font-bold text-white truncate">Saurient Passport Authority</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Independent Issuance Authority</p>
               </>
             ) : (() => {
               let compName = 'Saurient Carbon Passport';

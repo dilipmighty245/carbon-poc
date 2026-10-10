@@ -235,7 +235,40 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
             </div>
           </div>
         ) : isVerified ? (
-          isOperator ? (
+          isVerifier ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center mx-auto shadow-xs">
+                <Lock className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-amber-950">Segregation of Duties Enforced: Auditor Persona</h3>
+              <p className="text-xs text-amber-800 max-w-md mx-auto">
+                You are currently logged in as an <strong>Accredited Verifier (Bureau Veritas)</strong>. Under ISO 14064-3 and EU CBAM Segregation of Duties, independent auditors are legally barred from signing and issuing passports. Final digital signing and public issuance is strictly reserved for the designated <strong>Passport Officer</strong>.
+              </p>
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem('saurient_user_role', 'Passport Officer');
+                    localStorage.setItem('auth_role', 'Passport Officer');
+                    localStorage.setItem('saurient_user_name', 'Santosh Samudrala (Passport Officer)');
+                    localStorage.setItem('saurient_user_email', 'officer@saurient.com');
+                    localStorage.setItem('saurient_tenant_id', 'all');
+                    window.location.reload();
+                  }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Switch to Passport Officer to Issue</span>
+                </button>
+                <button
+                  onClick={() => navigate('/mrv')}
+                  className="px-3.5 py-2 bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 font-bold text-xs rounded-xl transition-colors"
+                >
+                  Back to Verifier Queue
+                </button>
+              </div>
+            </div>
+          ) : isOperator ? (
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-3">
               <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-xs">
                 <ShieldCheck className="w-5 h-5" />
@@ -249,7 +282,10 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
                   type="button"
                   onClick={() => {
                     localStorage.setItem('saurient_user_role', 'Passport Officer');
-                    localStorage.setItem('auth_role', 'officer');
+                    localStorage.setItem('auth_role', 'Passport Officer');
+                    localStorage.setItem('saurient_user_name', 'Santosh Samudrala (Passport Officer)');
+                    localStorage.setItem('saurient_user_email', 'officer@saurient.com');
+                    localStorage.setItem('saurient_tenant_id', 'all');
                     window.location.reload();
                   }}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"

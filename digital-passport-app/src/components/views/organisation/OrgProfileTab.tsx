@@ -245,17 +245,44 @@ export const OrgProfileTab: React.FC = () => {
   const [draftProfile, setDraftProfile] = useState<OrgProfileData>(getInitialProfile());
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  const getTargetTenant = () => {
+    const regStr = localStorage.getItem('saurient_registered_company');
+    if (regStr) {
+      try {
+        const c = JSON.parse(regStr);
+        if (c.tenantId && c.tenantId !== 'all' && c.tenantId !== 'org_saurient_demo') return c.tenantId;
+      } catch (e) {}
+    }
+    const t = localStorage.getItem('saurient_tenant_id');
+    if (t && t !== 'all' && t !== 'org_saurient_demo' && t !== 'tenant-verifier-agency') return t;
+    return 'org_asante_cocoa';
+  };
+
   useEffect(() => {
     const initP = getInitialProfile();
     setProfile(initP);
     setDraftProfile(initP);
 
-    getOrgProfile()
+    const targetTenant = getTargetTenant();
+    getOrgProfile(targetTenant)
       .then((data) => {
         if (data && data.legalName) {
+          const cleanLegal = (data.legalName === 'org_saurient_demo' || data.legalName === targetTenant)
+            ? (initP.legalName || 'Saurient Industrial Ltd')
+            : data.legalName;
+          const cleanTrading = (data.tradingName === 'org_saurient_demo' || data.tradingName === targetTenant)
+            ? (initP.tradingName || cleanLegal)
+            : (data.tradingName || cleanLegal);
+          const cleanOrgId = (data.organisationId === 'org_saurient_demo')
+            ? (initP.organisationId || targetTenant)
+            : (data.organisationId || initP.organisationId);
+
           const merged: OrgProfileData = {
             ...initP,
             ...data,
+            legalName: cleanLegal,
+            tradingName: cleanTrading,
+            organisationId: cleanOrgId,
             primaryContact: { ...initP.primaryContact, ...(data.primaryContact || {}) },
             sustainabilityContact: { ...initP.sustainabilityContact, ...(data.sustainabilityContact || {}) },
             boundary: { ...initP.boundary, ...(data.boundary || {}) },
@@ -275,8 +302,9 @@ export const OrgProfileTab: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    const targetTenant = getTargetTenant();
     try {
-      await saveOrgProfile(draftProfile);
+      await saveOrgProfile(draftProfile, targetTenant);
     } catch (err) {
       console.warn('Backend save profile failed, updating local state:', err);
     }
@@ -317,8 +345,12 @@ export const OrgProfileTab: React.FC = () => {
                 {profile.status}
               </span>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{profile.legalName}</h2>
-            <p className="text-xs font-mono text-slate-500">{profile.organisationId} · {profile.tradingName}</p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              {profile.legalName && profile.legalName !== 'org_saurient_demo' ? profile.legalName : 'Saurient Industrial Ltd'}
+            </h2>
+            <p className="text-xs font-mono text-slate-500">
+              {profile.organisationId} · {profile.tradingName && profile.tradingName !== 'org_saurient_demo' ? profile.tradingName : (profile.legalName || 'Saurient Industrial Ltd')}
+            </p>
           </div>
         </div>
 

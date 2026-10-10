@@ -413,6 +413,44 @@ const graphiqlHTML = `<!DOCTYPE html>
 </body>
 </html>`
 
+const graphqlVoyagerHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Nexus GraphQL Node Graph Voyager - Saurient Carbon Passport</title>
+  <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/graphql-voyager@1.0.0-rc.31/dist/voyager.css" />
+  <style>
+    body { height: 100vh; margin: 0; width: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #voyager { height: 100vh; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/react@16.14.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@16.14.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/graphql-voyager@1.0.0-rc.31/dist/voyager.min.js"></script>
+</head>
+<body>
+  <div id="voyager">Loading Nexus Graph Voyager...</div>
+  <script>
+    function introspectionProvider(introspectionQuery) {
+      return fetch('/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: introspectionQuery }),
+      }).then(function (response) { return response.json(); });
+    }
+    GraphQLVoyager.renderVoyager(document.getElementById('voyager'), {
+      introspection: introspectionProvider,
+      displayOptions: {
+        skipRelay: false,
+        skipDeprecated: true,
+        rootType: 'Query',
+        sortByAlphabet: false
+      }
+    });
+  </script>
+</body>
+</html>`
+
 func main() {
 	port := getEnv("PORT", "8080")
 
@@ -507,6 +545,8 @@ func main() {
 	http.Handle("/apis/graphql/v1/query", corsMiddleware.Handler(gqlServer))
 	http.HandleFunc("/graphql", server.handleGraphQL)
 	http.Handle("/graphql/playground", playground.Handler("GraphQL playground", "/graphql"))
+	http.HandleFunc("/graphql/voyager", server.handleGraphQLVoyager)
+	http.HandleFunc("/voyager", server.handleGraphQLVoyager)
 
 	// 5. Nexus Automatic Node REST Endpoints for Data Model Tree
 	http.HandleFunc("/api/v1/nexus/nodes/", server.handleNexusNodes)
@@ -564,6 +604,7 @@ func main() {
 	log.Printf("Saurient Carbon Passport Nexus API Gateway listening on :%s", port)
 	log.Printf("Swagger UI interactive API documentation available at http://localhost:%s/swagger/", port)
 	log.Printf("GraphQL Playground available at http://localhost:%s/graphql/playground", port)
+	log.Printf("GraphQL Voyager node visualizer available at http://localhost:%s/graphql/voyager", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
@@ -664,6 +705,13 @@ func (s *VerificationServer) handleGraphQL(w http.ResponseWriter, r *http.Reques
 
 	tenantCtx := tenant.WithTenant(r.Context(), tenantID)
 	s.gqlHandler.ServeHTTP(w, r.WithContext(tenantCtx))
+}
+
+func (s *VerificationServer) handleGraphQLVoyager(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(graphqlVoyagerHTML))
 }
 
 func (s *VerificationServer) handleNexusNodes(w http.ResponseWriter, r *http.Request) {
@@ -1940,10 +1988,11 @@ func (s *VerificationServer) handleVerifyPassport(w http.ResponseWriter, r *http
 	path = strings.TrimSuffix(path, "/verify")
 	passportID := strings.TrimSpace(path)
 
-	// Segregation of duties: The company must not approve its own verification!
+	// Segregation of Duties: Under ISO 14064-3 and EU CBAM, only an accredited independent verifier can issue verification statements
 	userRole := r.Header.Get("X-User-Role")
-	if strings.EqualFold(userRole, "Company Operator") || strings.EqualFold(userRole, "Operator") {
-		http.Error(w, `{"error":"Segregation of Duties violation: Facility or company operators are legally prohibited from approving their own verification"}`, http.StatusForbidden)
+	isVerifier := strings.Contains(strings.ToLower(userRole), "verifier") || strings.Contains(strings.ToLower(userRole), "auditor")
+	if strings.Contains(strings.ToLower(userRole), "officer") || strings.EqualFold(userRole, "Company Operator") || strings.EqualFold(userRole, "Operator") || (userRole != "" && !isVerifier) {
+		http.Error(w, `{"error":"Segregation of Duties violation: Only an accredited independent verifier can issue verification statements and verify passports. Passport officers and company operators cannot verify."}`, http.StatusForbidden)
 		return
 	}
 
@@ -2130,6 +2179,18 @@ func (s *VerificationServer) handleSignPassport(w http.ResponseWriter, r *http.R
 	}
 	if req.KeyID == "" {
 		req.KeyID = "0xKEY-ORATOR-PROD-SECURE-ED25519-88492"
+	}
+
+	// Segregation of Duties: Verifiers are independent third-party auditors and cannot sign or issue passports. Only an authorized Passport Officer can issue.
+	userRole := r.Header.Get("X-User-Role")
+	if strings.Contains(strings.ToLower(userRole), "verifier") || strings.Contains(strings.ToLower(userRole), "auditor") {
+		http.Error(w, `{"error":"Segregation of Duties violation: Verifiers are independent third-party auditors and cannot sign or issue passports under ISO 14064-3 and EU CBAM. Only an authorized Passport Officer can issue."}`, http.StatusForbidden)
+		return
+	}
+	isOfficer := strings.Contains(strings.ToLower(userRole), "officer") || strings.Contains(strings.ToLower(req.SignerRole), "officer")
+	if strings.EqualFold(userRole, "Company Operator") || strings.EqualFold(userRole, "Operator") || (userRole != "" && !isOfficer) {
+		http.Error(w, `{"error":"Segregation of Duties violation: Only an authorized Passport Officer can sign and issue digital carbon passports."}`, http.StatusForbidden)
+		return
 	}
 
 	nClient := s.getNexusClient()
@@ -2781,7 +2842,14 @@ func (s *VerificationServer) handleGetPassport(w http.ResponseWriter, r *http.Re
 	if tenantID == "" {
 		tenantID = r.URL.Query().Get("tenant_id")
 	}
-	if tenantID == "" {
+	userRole := r.Header.Get("X-User-Role")
+	isIndependentRole := strings.Contains(strings.ToLower(userRole), "verifier") ||
+		strings.Contains(strings.ToLower(userRole), "officer") ||
+		strings.Contains(strings.ToLower(userRole), "auditor")
+
+	if isIndependentRole || tenantID == "all" || tenantID == "public" || strings.HasPrefix(tenantID, "tenant-verifier") {
+		tenantID = ""
+	} else if tenantID == "" {
 		tenantID = "tenant-default"
 	}
 
@@ -2854,9 +2922,12 @@ func (s *VerificationServer) handleListPassports(w http.ResponseWriter, r *http.
 	list := make([]nexus.RichDigitalCarbonPassportResponse, 0)
 	seen := make(map[string]bool)
 
-	// Verifiers and public auditors have cross-tenant audit purview across registered producer tenants
+	// Verifiers, passport officers, and public auditors have cross-tenant purview across registered producer tenants
 	userRole := r.Header.Get("X-User-Role")
-	if strings.Contains(strings.ToLower(userRole), "verifier") || tenantID == "all" || tenantID == "public" || strings.HasPrefix(tenantID, "tenant-verifier") {
+	isIndependentRole := strings.Contains(strings.ToLower(userRole), "verifier") ||
+		strings.Contains(strings.ToLower(userRole), "officer") ||
+		strings.Contains(strings.ToLower(userRole), "auditor")
+	if isIndependentRole || tenantID == "all" || tenantID == "public" || strings.HasPrefix(tenantID, "tenant-verifier") {
 		tenantID = ""
 	}
 

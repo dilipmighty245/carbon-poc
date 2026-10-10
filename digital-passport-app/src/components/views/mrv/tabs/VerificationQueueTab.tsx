@@ -246,7 +246,7 @@ export const VerificationQueueTab: React.FC = () => {
                     </span>
                     <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600 flex items-center gap-1">
                       <Building2 className="w-3 h-3 text-slate-500" />
-                      {prod?.producer_organization || 'org_saurient_demo'}
+                      {prod?.producer_organization && prod.producer_organization !== 'org_saurient_demo' ? prod.producer_organization : 'Saurient Industrial Ltd'}
                     </span>
                     {prod?.facility?.name && (
                       <span className="text-xs text-slate-500">

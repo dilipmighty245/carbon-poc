@@ -37,7 +37,7 @@ export const LoginView: React.FC = () => {
       pass: 'DemoPassword2026!',
       route: '/mrv',
       desc: 'Accredited Verifier (#NAB-8820)',
-      tenantId: 'tenant-verifier-agency',
+      tenantId: 'all',
     },
     'Passport Officer': {
       name: 'Santosh Samudrala',
@@ -45,7 +45,7 @@ export const LoginView: React.FC = () => {
       pass: 'DemoPassword2026!',
       route: '/passport/sign-issue',
       desc: 'Issuance & Governance Authority',
-      tenantId: 'org_saurient_demo',
+      tenantId: 'all',
     },
     'Public Viewer': {
       name: 'Public Customs Auditor',
@@ -146,7 +146,10 @@ export const LoginView: React.FC = () => {
         localStorage.setItem('saurient_user_email', resp.user.email);
         localStorage.setItem('saurient_user_name', resp.user.name);
         localStorage.setItem('saurient_user_id', resp.user.id);
-        localStorage.setItem('saurient_tenant_id', resp.user.tenant_id);
+        const effectiveRole = resp.user.role || role;
+        const isIndep = effectiveRole.toLowerCase().includes('verifier') || effectiveRole.toLowerCase().includes('officer') || effectiveRole.toLowerCase().includes('auditor');
+        const resolvedTenant = isIndep ? 'all' : (resp.user.tenant_id || resp.tenant_id || 'org_asante_cocoa');
+        localStorage.setItem('saurient_tenant_id', resolvedTenant);
 
         const rLower = (resp.user.role || '').toLowerCase().replace(/[\s_]/g, '');
         const targetRoute = (rLower === 'organisationowner' || rLower === 'organisationadmin' || rLower === 'companyoperator')

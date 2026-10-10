@@ -200,13 +200,26 @@ func EnsureTenantNode(ctx context.Context, client *nexus_client.Clientset, tenan
 
 	tenantNode, err := inv.GetTenants(ctx, tenantID)
 	if nexus_client.IsChildNotFound(err) || tenantNode == nil {
+		legalName := tenantID
+		if tenantID == "org_saurient_demo" {
+			legalName = "Saurient Industrial Ltd"
+		} else if tenantID == "org_asante_cocoa" {
+			legalName = "Asante Cocoa Ltd"
+		} else if tenantID == "tenant-default" {
+			legalName = "Global Carbon Demo Facility"
+		} else if strings.HasPrefix(tenantID, "org_") {
+			clean := strings.TrimPrefix(tenantID, "org_")
+			clean = strings.ReplaceAll(clean, "_", " ")
+			legalName = strings.Title(clean)
+		}
+
 		tenantNode, err = inv.AddTenants(ctx, &inventoryv1.Tenant{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: tenantID,
 			},
 			Spec: inventoryv1.TenantSpec{
 				TenantID:  tenantID,
-				LegalName: tenantID,
+				LegalName: legalName,
 			},
 		})
 		if err != nil && !nexus_client.IsAlreadyExists(err) {
@@ -753,9 +766,13 @@ func UserModelFromNode(uNode *nexus_client.InventoryUser) *OrganisationUserModel
 	if id == "" {
 		id = uNode.DisplayName()
 	}
+	tenantID := spec.TenantID
+	if tenantID == "" && uNode.Labels != nil {
+		tenantID = uNode.Labels["tenants.inventory.saurient.io"]
+	}
 	return &OrganisationUserModel{
 		ID:            id,
-		TenantID:      spec.TenantID,
+		TenantID:      tenantID,
 		Name:          spec.Name,
 		Email:         spec.Email,
 		PasswordHash:  spec.PasswordHash,

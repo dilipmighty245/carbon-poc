@@ -16,6 +16,7 @@ import (
 
 type PassportMetadata struct {
 	PassportID        string `json:"passport_id"`
+	TenantID          string `json:"tenant_id,omitempty"`
 	UniqueQRCode      string `json:"unique_qr_code"`
 	CryptographicHash string `json:"cryptographic_hash"`
 	IssuanceDate      string `json:"issuance_date"`
@@ -34,6 +35,7 @@ type BatchSizeSummary struct {
 }
 
 type ProductSummary struct {
+	TenantID             string           `json:"tenant_id,omitempty"`
 	Commodity            string           `json:"commodity"`
 	ProductName          string           `json:"product_name"`
 	BatchNumber          string           `json:"batch_number"`
@@ -442,12 +444,14 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	return RichDigitalCarbonPassportResponse{
 		PassportMetadata: PassportMetadata{
 			PassportID:        passportID,
+			TenantID:          p.TenantID,
 			UniqueQRCode:      qrCodeURL,
 			CryptographicHash: p.DataHash,
 			IssuanceDate:      issuanceDate,
 			Status:            status,
 		},
 		ProductSummary: ProductSummary{
+			TenantID:             p.TenantID,
 			Commodity:            commodity,
 			ProductName:          productName,
 			BatchNumber:          batchNum,

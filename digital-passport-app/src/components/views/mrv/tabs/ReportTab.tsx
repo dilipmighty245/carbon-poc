@@ -44,8 +44,9 @@ export const ReportTab: React.FC = () => {
     }
   }, [urlParamId]);
 
-  const authRole = localStorage.getItem('auth_role') || 'Verifier';
-  const isOperator = authRole.toLowerCase().includes('operator');
+  const authRole = (localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Verifier').toLowerCase();
+  const isVerifier = authRole.includes('verifier') || authRole.includes('auditor');
+  const isOperator = !isVerifier;
 
   const isReleased = engagement.planApproved || verifiedSuccess;
   const reportStatus = verifiedSuccess ? "VERIFIED" : (isReleased ? "VERIFIED" : "UNDER VERIFICATION");
@@ -54,8 +55,8 @@ export const ReportTab: React.FC = () => {
 
   const handleVerifierSignoff = async () => {
     setVerifyError(null);
-    if (isOperator) {
-      setVerifyError('Segregation of Duties Violation: Company operators are legally prohibited from approving independent verifications under ISO 14064-3 / EU CBAM. Please switch to a Verifier account.');
+    if (!isVerifier) {
+      setVerifyError('Segregation of Duties Violation: Only accredited independent verifiers (e.g. Bureau Veritas) can approve and issue verification statements under ISO 14064-3 / EU CBAM. Passport officers and company operators are barred from verifying.');
       return;
     }
 
@@ -196,16 +197,16 @@ export const ReportTab: React.FC = () => {
               {verifiedSuccess
                 ? 'Accredited Verification Issued & Sealed'
                 : isOperator
-                ? 'Verifier Sign-off Locked (Operator Account)'
+                ? 'Verifier Sign-off Locked (Non-Verifier Account)'
                 : 'Accredited Verifier Independent Sign-Off'}
             </p>
             <p className={`text-xs mt-0.5 ${
               verifiedSuccess ? 'text-emerald-700' : isOperator ? 'text-amber-800' : 'text-indigo-700'
             }`}>
               {verifiedSuccess
-                ? 'Bureau Veritas (#NAB-8820) verified. Company can now proceed to Sign & Issue.'
+                ? 'Bureau Veritas (#NAB-8820) verified. Passport Officer can now proceed to Sign & Issue.'
                 : isOperator
-                ? 'Under EU CBAM / ISO 14064-3, operators cannot sign off on verification. Log in as Verifier to approve.'
+                ? 'Under EU CBAM / ISO 14064-3, only accredited independent verifiers can issue verification opinions. Passport officers and company operators cannot verify.'
                 : 'Formally review findings and grant independent reasonable assurance on dataset.'}
             </p>
           </div>

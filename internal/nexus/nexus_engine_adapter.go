@@ -411,8 +411,18 @@ func (e *NexusGraphEngine) GetTenantProfile(ctx context.Context) (*TenantProfile
 	tNode, err := EnsureTenantNode(ctx, client, tID)
 	if err == nil && tNode != nil {
 		legalName := tNode.Spec.LegalName
-		if legalName == "" {
-			legalName = "Sattric Industrial Corp Ltd"
+		if legalName == "" || legalName == tID || legalName == "org_saurient_demo" {
+			if tID == "org_saurient_demo" {
+				legalName = "Saurient Industrial Ltd"
+			} else if tID == "org_asante_cocoa" {
+				legalName = "Asante Cocoa Ltd"
+			} else if strings.HasPrefix(tID, "org_") {
+				clean := strings.TrimPrefix(tID, "org_")
+				clean = strings.ReplaceAll(clean, "_", " ")
+				legalName = strings.Title(clean)
+			} else {
+				legalName = "Sattric Industrial Corp Ltd"
+			}
 		}
 		country := tNode.Spec.Country
 		if country == "" {

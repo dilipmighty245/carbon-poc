@@ -564,4 +564,170 @@ func TestOrganisationHandler_AccountOwner_OrganisationOwner_And_TeamProvisioning
 	}
 }
 
+func TestOrganisationHandler_RegisteredOrgLogin_CrossTenant(t *testing.T) {
+	client := nexus_client.NewFakeClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	engine := nexus.GetNexusEngine()
+
+	handler := NewOrganisationHandlerWithClient(client, engine)
+	mux := http.NewServeMux()
+	handler.RegisterRoutes(mux)
+
+	customTenantID := "org_nordic_alloys"
+	customEmail := "marcus.vance@nordic-alloys.eu"
+	customPassword := "NordicSecure2026!"
+
+	// 1. Register organization owner user under custom tenant
+	regReq := map[string]string{
+		"tenant_id": customTenantID,
+		"name":      "Marcus Vance",
+		"email":     customEmail,
+		"password":  customPassword,
+		"role":      "Organisation Owner",
+	}
+	regBody, _ := json.Marshal(regReq)
+	reqReg := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(regBody))
+	reqReg.Header.Set("Content-Type", "application/json")
+	reqReg.Header.Set("X-Tenant-ID", customTenantID)
+	recReg := httptest.NewRecorder()
+	mux.ServeHTTP(recReg, reqReg)
+
+	if recReg.Code != http.StatusCreated {
+		t.Fatalf("expected 201 Created registering org owner, got %d: %s", recReg.Code, recReg.Body.String())
+	}
+
+	// 2. Log in with custom email without X-Tenant-ID (or with default org_saurient_demo)
+	loginReq := map[string]string{
+		"email":    customEmail,
+		"password": customPassword,
+	}
+	loginBody, _ := json.Marshal(loginReq)
+	reqLogin := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(loginBody))
+	reqLogin.Header.Set("Content-Type", "application/json")
+	reqLogin.Header.Set("X-Tenant-ID", "org_saurient_demo") // Different tenant header!
+	recLogin := httptest.NewRecorder()
+	mux.ServeHTTP(recLogin, reqLogin)
+
+	if recLogin.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for cross-tenant org owner login, got %d: %s", recLogin.Code, recLogin.Body.String())
+	}
+
+	var resp LoginResponse
+	if err := json.NewDecoder(recLogin.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode login response: %v", err)
+	}
+
+	if resp.Token == "" {
+		t.Fatalf("expected non-empty auth token")
+	}
+	if resp.TenantID != customTenantID {
+		t.Fatalf("expected resolved TenantID '%s', got '%s'", customTenantID, resp.TenantID)
+	}
+	if resp.User.Email != customEmail {
+		t.Fatalf("expected user email '%s', got '%s'", customEmail, resp.User.Email)
+	}
+	if resp.User.Role != "Organisation Owner" {
+		t.Fatalf("expected role 'Organisation Owner', got '%s'", resp.User.Role)
+	}
+
+	// 3. Invalid password must be rejected with 401
+	badLoginReq := map[string]string{
+		"email":    customEmail,
+		"password": "WrongPassword999!",
+	}
+	badLoginBody, _ := json.Marshal(badLoginReq)
+	reqBadLogin := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(badLoginBody))
+	reqBadLogin.Header.Set("Content-Type", "application/json")
+	recBadLogin := httptest.NewRecorder()
+	mux.ServeHTTP(recBadLogin, reqBadLogin)
+
+	if recBadLogin.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 Unauthorized for bad password, got %d: %s", recBadLogin.Code, recBadLogin.Body.String())
+	}
+}
+
+func TestIndependentRolesLoginAndProfileSanitization(t *testing.T) {
+	client := nexus_client.NewFakeClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	engine := nexus.GetNexusEngine()
+
+	handler := NewOrganisationHandlerWithClient(client, engine)
+	mux := http.NewServeMux()
+	handler.RegisterRoutes(mux)
+
+	// 1. Verifier login must return TenantID = "all" (independent authority)
+	vLoginReq := map[string]string{
+		"email":    "auditor@bureau-veritas.com",
+		"password": "DemoPassword2026!",
+	}
+	vBody, _ := json.Marshal(vLoginReq)
+	reqV := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(vBody))
+	reqV.Header.Set("Content-Type", "application/json")
+	recV := httptest.NewRecorder()
+	mux.ServeHTTP(recV, reqV)
+
+	if recV.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for verifier login, got %d: %s", recV.Code, recV.Body.String())
+	}
+	var vResp LoginResponse
+	if err := json.NewDecoder(recV.Body).Decode(&vResp); err != nil {
+		t.Fatalf("failed to decode verifier login response: %v", err)
+	}
+	if vResp.TenantID != "all" {
+		t.Errorf("expected Verifier tenantID to be 'all', got '%s'", vResp.TenantID)
+	}
+	if vResp.User.TenantID != "all" {
+		t.Errorf("expected Verifier user.tenant_id to be 'all', got '%s'", vResp.User.TenantID)
+	}
+
+	// 2. Passport Officer login must return TenantID = "all" (independent authority)
+	oLoginReq := map[string]string{
+		"email":    "officer@saurient.com",
+		"password": "DemoPassword2026!",
+	}
+	oBody, _ := json.Marshal(oLoginReq)
+	reqO := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(oBody))
+	reqO.Header.Set("Content-Type", "application/json")
+	recO := httptest.NewRecorder()
+	mux.ServeHTTP(recO, reqO)
+
+	if recO.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for officer login, got %d: %s", recO.Code, recO.Body.String())
+	}
+	var oResp LoginResponse
+	if err := json.NewDecoder(recO.Body).Decode(&oResp); err != nil {
+		t.Fatalf("failed to decode officer login response: %v", err)
+	}
+	if oResp.TenantID != "all" {
+		t.Errorf("expected Passport Officer tenantID to be 'all', got '%s'", oResp.TenantID)
+	}
+	if oResp.User.TenantID != "all" {
+		t.Errorf("expected Passport Officer user.tenant_id to be 'all', got '%s'", oResp.User.TenantID)
+	}
+
+	// 3. Organization profile for org_saurient_demo must normalize to clean human names, NOT "org_saurient_demo"
+	reqProf := httptest.NewRequest(http.MethodGet, "/api/v1/organisation/profile", nil)
+	reqProf.Header.Set("X-Tenant-ID", "org_saurient_demo")
+	recProf := httptest.NewRecorder()
+	mux.ServeHTTP(recProf, reqProf)
+
+	if recProf.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for org profile, got %d: %s", recProf.Code, recProf.Body.String())
+	}
+	var prof nexus.TenantProfileModel
+	if err := json.NewDecoder(recProf.Body).Decode(&prof); err != nil {
+		t.Fatalf("failed to decode profile response: %v", err)
+	}
+	if prof.LegalName == "org_saurient_demo" {
+		t.Errorf("expected LegalName to be normalized, got raw 'org_saurient_demo'")
+	}
+	if prof.TradingName == "org_saurient_demo" {
+		t.Errorf("expected TradingName to be normalized, got raw 'org_saurient_demo'")
+	}
+	if prof.LegalName != "Saurient Industrial Ltd" {
+		t.Errorf("expected LegalName 'Saurient Industrial Ltd', got '%s'", prof.LegalName)
+	}
+}
+
+
 

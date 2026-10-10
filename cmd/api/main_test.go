@@ -390,6 +390,21 @@ func TestHandleGraphQL_IntrospectionAndQuery(t *testing.T) {
 	}
 }
 
+// TestHandleGraphQLVoyager tests the GraphQL Voyager visualizer HTML endpoint.
+func TestHandleGraphQLVoyager(t *testing.T) {
+	srv := newTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/graphql/voyager", nil)
+	rr := httptest.NewRecorder()
+	srv.handleGraphQLVoyager(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected 200 GET voyager, got %d", rr.Code)
+	}
+	if !bytes.Contains(rr.Body.Bytes(), []byte("GraphQLVoyager")) {
+		t.Errorf("voyager response missing 'GraphQLVoyager' string")
+	}
+}
+
 // TestHandleCreateProduct_AsynchronousReconciliation verifies that handleCreateProduct
 // creates a Product node with status "Pending" immediately, and the background ProductReconciler
 // receives the event and transitions the product to "Calculated", issuing a CarbonPassport.
@@ -536,9 +551,10 @@ func TestPassportLifecycle_FullFlowAndSegregationOfDuties(t *testing.T) {
 	}
 
 	// 2. Pre-issuance check: Attempt to Sign & Issue a Draft passport -> MUST FAIL
-	signPayload := `{"signer_name":"CSO Officer","signer_role":"CSO","key_id":"0xKEY-123"}`
+	signPayload := `{"signer_name":"CSO Officer","signer_role":"CSO Officer","key_id":"0xKEY-123"}`
 	reqSignDraft := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/sign", passportID), bytes.NewBufferString(signPayload))
 	reqSignDraft.Header.Set("Content-Type", "application/json")
+	reqSignDraft.Header.Set("X-User-Role", "Passport Officer")
 	rrSignDraft := httptest.NewRecorder()
 	srv.handlePassports(rrSignDraft, reqSignDraft)
 	if rrSignDraft.Code != http.StatusBadRequest {
@@ -593,6 +609,16 @@ func TestPassportLifecycle_FullFlowAndSegregationOfDuties(t *testing.T) {
 		t.Errorf("expected 403 Forbidden when Company Operator attempts self-verification, got %d", rrSelfVerify.Code)
 	}
 
+	// 6b. Segregation of Duties: Passport Officer attempts to verify -> MUST BE REJECTED 403
+	reqOfficerVerify := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/verify", passportID), bytes.NewBufferString(verifyPayload))
+	reqOfficerVerify.Header.Set("Content-Type", "application/json")
+	reqOfficerVerify.Header.Set("X-User-Role", "Passport Officer")
+	rrOfficerVerify := httptest.NewRecorder()
+	srv.handlePassports(rrOfficerVerify, reqOfficerVerify)
+	if rrOfficerVerify.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden when Passport Officer attempts verification, got %d", rrOfficerVerify.Code)
+	}
+
 	// 7. Accredited Verifier approves verification
 	reqVerify := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/verify", passportID), bytes.NewBufferString(verifyPayload))
 	reqVerify.Header.Set("Content-Type", "application/json")
@@ -607,9 +633,30 @@ func TestPassportLifecycle_FullFlowAndSegregationOfDuties(t *testing.T) {
 		t.Errorf("expected status 'Verified', got '%s'", nodeAfterVerify.Spec.VerificationStatus)
 	}
 
-	// 8. Company authorized officer Signs & Issues the verified passport
+	// 7b. Segregation of Duties: Verifier attempts to Sign & Issue -> MUST BE REJECTED 403
+	reqVerifierSign := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/sign", passportID), bytes.NewBufferString(signPayload))
+	reqVerifierSign.Header.Set("Content-Type", "application/json")
+	reqVerifierSign.Header.Set("X-User-Role", "Verifier")
+	rrVerifierSign := httptest.NewRecorder()
+	srv.handlePassports(rrVerifierSign, reqVerifierSign)
+	if rrVerifierSign.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden when Verifier attempts to sign/issue passport, got %d", rrVerifierSign.Code)
+	}
+
+	// 7c. Segregation of Duties: Company Operator attempts to Sign & Issue -> MUST BE REJECTED 403
+	reqOperatorSign := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/sign", passportID), bytes.NewBufferString(signPayload))
+	reqOperatorSign.Header.Set("Content-Type", "application/json")
+	reqOperatorSign.Header.Set("X-User-Role", "Company Operator")
+	rrOperatorSign := httptest.NewRecorder()
+	srv.handlePassports(rrOperatorSign, reqOperatorSign)
+	if rrOperatorSign.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden when Company Operator attempts to sign/issue passport, got %d", rrOperatorSign.Code)
+	}
+
+	// 8. Authorized Passport Officer Signs & Issues the verified passport
 	reqSign := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/passports/%s/sign", passportID), bytes.NewBufferString(signPayload))
 	reqSign.Header.Set("Content-Type", "application/json")
+	reqSign.Header.Set("X-User-Role", "Passport Officer")
 	rrSign := httptest.NewRecorder()
 	srv.handlePassports(rrSign, reqSign)
 	if rrSign.Code != http.StatusOK {
