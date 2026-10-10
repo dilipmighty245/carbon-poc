@@ -438,8 +438,9 @@ const graphqlVoyagerHTML = `<!DOCTYPE html>
         body: JSON.stringify({ query: introspectionQuery }),
       }).then(function (response) { return response.json(); });
     }
-    GraphQLVoyager.renderVoyager(document.getElementById('voyager'), {
+    GraphQLVoyager.init(document.getElementById('voyager'), {
       introspection: introspectionProvider,
+      workerURI: 'https://cdn.jsdelivr.net/npm/graphql-voyager@1.0.0-rc.31/dist/voyager.worker.js',
       displayOptions: {
         skipRelay: false,
         skipDeprecated: true,

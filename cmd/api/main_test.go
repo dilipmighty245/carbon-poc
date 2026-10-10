@@ -400,8 +400,11 @@ func TestHandleGraphQLVoyager(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Errorf("expected 200 GET voyager, got %d", rr.Code)
 	}
-	if !bytes.Contains(rr.Body.Bytes(), []byte("GraphQLVoyager")) {
-		t.Errorf("voyager response missing 'GraphQLVoyager' string")
+	if !bytes.Contains(rr.Body.Bytes(), []byte("GraphQLVoyager.init")) {
+		t.Errorf("voyager response missing 'GraphQLVoyager.init' call")
+	}
+	if !bytes.Contains(rr.Body.Bytes(), []byte("voyager.worker.js")) {
+		t.Errorf("voyager response missing 'voyager.worker.js' workerURI")
 	}
 }
 
