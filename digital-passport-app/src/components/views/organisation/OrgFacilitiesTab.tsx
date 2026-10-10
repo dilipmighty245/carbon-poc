@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getOrgFacilities, saveOrgFacility, deleteOrgFacility } from '../../../api/client';
+import { LiveTelemetryModal } from '../../telemetry/LiveTelemetryModal';
 import {
   Factory,
   MapPin,
@@ -17,7 +18,9 @@ import {
   Zap,
   Globe,
   PlusCircle,
-  Trash2
+  Trash2,
+  Activity,
+  Radio
 } from 'lucide-react';
 
 export interface Facility {
@@ -80,12 +83,20 @@ export const OrgFacilitiesTab: React.FC = () => {
       (f.country || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const [activeTelemetryMeter, setActiveTelemetryMeter] = useState<{
+    meterId: string;
+    facilityId: string;
+    facilityName: string;
+  } | null>(null);
+
   const handleAddFacility = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFacilityName) return;
 
-    const facNum = facilitiesList.length + 1;
-    const facId = `FAC-GH-00${facNum}`;
+    const facIndex = facilitiesList.length + 1;
+    const facId = `FAC-GH-${String(facIndex).padStart(3, '0')}`;
+    const meterId = `MTR-GH-${String(facIndex).padStart(3, '0')}`;
+
     const newFac: Facility = {
       id: facId,
       name: newFacilityName,
@@ -95,7 +106,7 @@ export const OrgFacilitiesTab: React.FC = () => {
       address: newFacilityAddress || "Industrial Zone, Ghana",
       status: "Active",
       processesCount: 1,
-      devicesCount: 1, // Automatically connects 1 Sattric meter upon facility creation
+      devicesCount: 1, // 1 Sattric EM6400 IoT meter connected automatically
       dataCompleteness: 100,
       emissions: "0 tCO₂e", // Baseline zero emissions
       readiness: "Audit-Ready",
@@ -113,16 +124,16 @@ export const OrgFacilitiesTab: React.FC = () => {
       emissionSources: [{ name: "Electricity", scope: "Scope 2" }],
       processTree: [
         {
-          id: `PRC-${facId}`,
-          name: "Main Operations & Telemetry",
+          id: `PRC-${String(facIndex).padStart(3, '0')}`,
+          name: `${newFacilityName} Processing Line`,
           lines: [
             {
               id: "LINE-01",
-              name: "Primary Ingestion Feeder",
+              name: "Primary Infeed & Feeder",
               meters: [
                 {
-                  name: `Sattric+ Energy Meter SM-${facNum}`,
-                  type: "Sattric IoT Telemetry (kWh / Gas)",
+                  name: `Sattric EM6400 Smart Meter (${meterId})`,
+                  type: "kWh Telemetry · EM6400",
                 },
               ],
             },
@@ -217,7 +228,9 @@ export const OrgFacilitiesTab: React.FC = () => {
           </div>
           <div>
             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Avg Data Completeness</span>
-            <span className="text-xl font-black text-emerald-700">{avgCompleteness}%</span>
+            <span className="text-xl font-black text-emerald-700">
+              {activeSitesCount > 0 ? `${avgCompleteness}%` : '0%'}
+            </span>
           </div>
         </div>
 
@@ -281,27 +294,27 @@ export const OrgFacilitiesTab: React.FC = () => {
 
       {/* Main Facilities View */}
       {filteredFacilities.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center space-y-4">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto">
-            <Factory className="w-6 h-6" />
+        <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-300 text-center space-y-4 shadow-xs">
+          <div className="w-16 h-16 mx-auto bg-emerald-50 text-emerald-800 rounded-2xl flex items-center justify-center border border-emerald-100">
+            <Factory className="w-8 h-8 text-emerald-600" />
           </div>
-          <div className="max-w-md mx-auto space-y-1">
-            <h3 className="font-bold text-slate-900 text-sm">
-              {facilitiesList.length === 0 ? 'No Operating Facilities Configured' : 'No Facilities Match Search'}
+          <div className="max-w-md mx-auto space-y-1.5">
+            <h3 className="text-base font-black text-slate-900 tracking-tight">
+              {facilitiesList.length === 0 ? 'No Operating Facilities Registered' : 'No Facilities Match Search'}
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 leading-relaxed">
               {facilitiesList.length === 0
-                ? 'Your organisation starts with a zero baseline. When you add a facility, 1 Sattric IoT Telemetry Meter is automatically connected to stream live data.'
-                : 'Try adjusting your search criteria or clear filters.'}
+                ? 'Your organisation starts with a zero baseline. When you register a facility, 1 Sattric EM6400 IoT Smart Telemetry Meter is automatically connected to stream live kWh load and Scope 1/2 emissions.'
+                : 'Try adjusting your search criteria or clear active filters.'}
             </p>
           </div>
           {facilitiesList.length === 0 && (
             <button
               onClick={() => setIsAddOpen(true)}
-              className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2"
+              className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Facility & Connect Meter</span>
+              <span>Add First Facility</span>
             </button>
           )}
         </div>
@@ -323,9 +336,26 @@ export const OrgFacilitiesTab: React.FC = () => {
                     <h3 className="font-bold text-slate-900 text-base group-hover:text-emerald-800 transition-colors">{f.name}</h3>
                   </div>
                 </div>
-                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-md">
-                  {f.readiness}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveTelemetryMeter({
+                        meterId: `MTR-GH-${f.id.split('-').pop() || '001'}`,
+                        facilityId: f.id,
+                        facilityName: f.name,
+                      });
+                    }}
+                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-lg border border-emerald-200 flex items-center gap-1 transition-colors"
+                    title="Inspect live EM6400 industrial telemetry"
+                  >
+                    <Activity className="w-3 h-3 text-emerald-600 animate-pulse" />
+                    <span>Telemetry</span>
+                  </button>
+                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-md">
+                    {f.readiness}
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -350,7 +380,10 @@ export const OrgFacilitiesTab: React.FC = () => {
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-medium text-slate-600">
                 <div className="flex items-center gap-4">
                   <span><strong className="text-slate-900">{f.processesCount || 1}</strong> Processes</span>
-                  <span><strong className="text-slate-900">{f.devicesCount || 1}</strong> Sattric Meter{(f.devicesCount || 1) === 1 ? '' : 's'}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span><strong className="text-slate-900">{f.devicesCount || 1}</strong> Sattric {(f.devicesCount || 1) === 1 ? 'Meter' : 'Meters'}</span>
+                  </span>
                 </div>
                 <span className="font-mono font-bold text-slate-900">{f.emissions || '0 tCO₂e'}</span>
               </div>
@@ -395,12 +428,29 @@ export const OrgFacilitiesTab: React.FC = () => {
                     </span>
                   </td>
                   <td className="py-3.5 px-4 text-right">
-                    <button
-                      onClick={() => setSelectedFacility(f)}
-                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] transition-colors"
-                    >
-                      View Details
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => {
+                          const mtrId = `MTR-GH-${f.id.split('-').pop() || '001'}`;
+                          setActiveTelemetryMeter({
+                            meterId: mtrId,
+                            facilityId: f.id,
+                            facilityName: f.name,
+                          });
+                        }}
+                        className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-lg text-[11px] transition-colors border border-emerald-200 flex items-center gap-1"
+                        title="View Live EM6400 Telemetry"
+                      >
+                        <Activity className="w-3 h-3 text-emerald-600 animate-pulse" />
+                        <span>Feed</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedFacility(f)}
+                        className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -503,11 +553,30 @@ export const OrgFacilitiesTab: React.FC = () => {
                           {/* Level 3: Meters / Sensors */}
                           {(line.meters || []).map((meter, mIdx) => (
                             <div key={mIdx} className="pl-4 border-l-2 border-emerald-400 my-1">
-                              <div className="flex items-center justify-between p-2 bg-white text-emerald-800 rounded-lg border border-emerald-100 font-mono text-[11px]">
-                                <span>📡 {meter.name}</span>
-                                <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-bold">
-                                  {meter.type}
-                                </span>
+                              <div className="flex items-center justify-between p-2.5 bg-white text-emerald-800 rounded-xl border border-emerald-100 font-mono text-[11px] gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span>📡</span>
+                                  <span className="font-bold truncate">{meter.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-bold">
+                                    {meter.type}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      const extractedMtr = meter.name.match(/\(([^)]+)\)/)?.[1] || `MTR-GH-${selectedFacility.id.split('-').pop() || '001'}`;
+                                      setActiveTelemetryMeter({
+                                        meterId: extractedMtr,
+                                        facilityId: selectedFacility.id,
+                                        facilityName: selectedFacility.name,
+                                      });
+                                    }}
+                                    className="flex items-center gap-1 px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-sans font-bold text-[10px] rounded-lg transition-colors shadow-xs"
+                                  >
+                                    <Activity className="w-3 h-3 animate-pulse" />
+                                    <span>Live Feed</span>
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -605,6 +674,16 @@ export const OrgFacilitiesTab: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Live EM6400 Industrial Telemetry Modal */}
+      {activeTelemetryMeter && (
+        <LiveTelemetryModal
+          meterId={activeTelemetryMeter.meterId}
+          facilityId={activeTelemetryMeter.facilityId}
+          facilityName={activeTelemetryMeter.facilityName}
+          onClose={() => setActiveTelemetryMeter(null)}
+        />
       )}
     </div>
   );

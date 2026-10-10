@@ -780,3 +780,117 @@ export async function correctSupplierInput(req: InputCorrectionReq, tenantId = D
   return await res.json();
 }
 
+export const TELEMETRY_SERVER_URL =
+  (import.meta as any).env?.VITE_TELEMETRY_URL || 'http://localhost:8085';
+
+export interface EM6400Reading {
+  meter_model: string;
+  meter_id: string;
+  facility_id: string;
+  timestamp: string;
+  V1n: number;
+  V2n: number;
+  V3n: number;
+  V12: number;
+  V23: number;
+  V31: number;
+  Vavg: number;
+  I1: number;
+  I2: number;
+  I3: number;
+  In: number;
+  Iavg: number;
+  KW: number;
+  KVA: number;
+  KVAR: number;
+  PF: number;
+  FREQ: number;
+  THDV1: number;
+  THDV2: number;
+  THDV3: number;
+  THDI1: number;
+  THDI2: number;
+  THDI3: number;
+  KWH_FWD: number;
+  KVAH_FWD: number;
+  KVARH_FWD: number;
+  KWH_REV: number;
+  KVAH_REV: number;
+  KVARH_REV: number;
+  INTR: number;
+  IUNB: number;
+  VUNB: number;
+  RSSI: number;
+  MTR: number;
+  GPRS: number;
+  STALE: number;
+  raw_frame: string;
+}
+
+export async function getLiveTelemetry(params?: {
+  meterId?: string;
+  facilityId?: string;
+  kw?: number;
+  voltage?: number;
+  pf?: number;
+}): Promise<EM6400Reading> {
+  const query = new URLSearchParams();
+  if (params?.meterId) query.set('meter_id', params.meterId);
+  if (params?.facilityId) query.set('facility_id', params.facilityId);
+  if (params?.kw !== undefined) query.set('kw', params.kw.toString());
+  if (params?.voltage !== undefined) query.set('voltage', params.voltage.toString());
+  if (params?.pf !== undefined) query.set('pf', params.pf.toString());
+
+  const endpoints = [
+    `${TELEMETRY_SERVER_URL}/api/v1/telemetry/latest?${query.toString()}`,
+    `${API_BASE_URL}/telemetry/latest?${query.toString()}`,
+  ];
+
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return await res.json();
+    } catch (_) {}
+  }
+  throw new Error('Telemetry server unavailable');
+}
+
+export async function generateTelemetry(params: {
+  meter_id?: string;
+  facility_id?: string;
+  base_kw?: number;
+  nominal_voltage?: number;
+  power_factor?: number;
+  frequency?: number;
+}): Promise<EM6400Reading> {
+  const endpoints = [
+    `${TELEMETRY_SERVER_URL}/api/v1/telemetry/generate`,
+    `${API_BASE_URL}/telemetry/generate`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+      if (res.ok) return await res.json();
+    } catch (_) {}
+  }
+  throw new Error('Telemetry generation failed');
+}
+
+export async function getTelemetrySample(): Promise<EM6400Reading> {
+  const endpoints = [
+    `${TELEMETRY_SERVER_URL}/api/v1/telemetry/sample`,
+    `${API_BASE_URL}/telemetry/sample`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return await res.json();
+    } catch (_) {}
+  }
+  throw new Error('Telemetry sample unavailable');
+}
+

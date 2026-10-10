@@ -30,6 +30,7 @@ import (
 	"saurient-platform/internal/api"
 	"saurient-platform/internal/engine"
 	"saurient-platform/internal/nexus"
+	"saurient-platform/internal/telemetry"
 	"saurient-platform/internal/tenant"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -545,6 +546,11 @@ func main() {
 
 	lineageHandler := api.NewLineageHandler()
 	lineageHandler.RegisterRoutes(http.DefaultServeMux)
+
+	// 10. Industrial Telemetry Simulation (Schneider / Sattric EM6400)
+	telemetryGen := telemetry.NewTelemetryGenerator()
+	telemetryServer := telemetry.NewServer(telemetryGen, port)
+	telemetryServer.RegisterRoutes(http.DefaultServeMux)
 
 	// Redirect root / to /swagger/
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
