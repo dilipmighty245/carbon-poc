@@ -13,7 +13,6 @@ import {
   Building2,
   Package,
   Search,
-  Check,
   QrCode
 } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
@@ -339,25 +338,6 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
                         <Clock className="w-3.5 h-3.5 text-slate-500" />
                         {pStatus}
                       </span>
-                    )}
-
-                    {isSelected ? (
-                      <span className="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-xs">
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Active</span>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectPassport(p);
-                        }}
-                        className="px-3 py-1.5 bg-slate-900 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition-colors flex items-center gap-1 shadow-xs"
-                      >
-                        <span>Select</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
                     )}
                   </div>
                 </div>
