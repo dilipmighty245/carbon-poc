@@ -250,7 +250,7 @@ test.describe('Live Lifecycle Verification (org_loki)', () => {
       await submitAgencyBtn.click();
       const agencyResp = await agencyPromise;
       expect(agencyResp.status()).toBe(200);
-      await expect(page.getByText(/Lodged with EU CBAM Transitional Registry/i)).toBeVisible({ timeout: 8000 });
+      await expect(page.getByText(/Lodged with EU CBAM Transitional Registry|SubmittedToAgency/i).first()).toBeVisible({ timeout: 8000 });
     }
 
     // =========================================================================

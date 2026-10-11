@@ -37,6 +37,8 @@ export const DigitalPassportOutput: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const tenantId = getActiveTenantId();
 
+  const isMountedRef = React.useRef(false);
+
   const refreshData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
@@ -46,18 +48,18 @@ export const DigitalPassportOutput: React.FC = () => {
     } catch (err) {
       console.warn('Failed to refresh passports list:', err);
     } finally {
-      if (!silent) setLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    refreshData(false);
-  }, [tenantId]);
-
-  useEffect(() => {
-    // Silently refresh behind the scenes when active sub-tab changes (e.g., navigating to /passport/registry after sign & issue)
-    refreshData(true);
-  }, [tab]);
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      refreshData(false);
+    } else {
+      refreshData(true);
+    }
+  }, [tab, tenantId]);
 
   const validTabs = ['registry', 'readiness', 'preview', 'sign-issue', 'detail', 'passport-detail', 'qr', 'sharing', 'versions'];
   const activeTabId = validTabs.includes(tab.toLowerCase()) ? tab.toLowerCase() : 'registry';

@@ -36,30 +36,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
   const [queueFilter, setQueueFilter] = useState<'VERIFIED' | 'ISSUED' | 'ALL'>('VERIFIED');
   const [searchQuery, setSearchQuery] = useState('');
   const [localStatusMap, setLocalStatusMap] = useState<Record<string, string>>({});
-
-  // Categorize passports by lifecycle status
-  const verifiedPassports = passports.filter((p) => {
-    const pId = p.passport_metadata?.passport_id || p.product_summary?.batch_number;
-    const s = (localStatusMap[pId] || p.passport_metadata?.status || '').toUpperCase();
-    return s === 'VERIFIED';
-  });
-
-  const issuedPassports = passports.filter((p) => {
-    const pId = p.passport_metadata?.passport_id || p.product_summary?.batch_number;
-    const s = (localStatusMap[pId] || p.passport_metadata?.status || '').toUpperCase();
-    return s === 'ISSUED' || s === 'SUBMITTEDTOAGENCY' || s === 'SUBMITTED_TO_AGENCY';
-  });
-
-  // Default selection: prioritizes a Verified passport awaiting signature, then an Issued passport, then passports[0]
-  const defaultPassport = verifiedPassports.length > 0 
-    ? verifiedPassports[0] 
-    : (issuedPassports.length > 0 ? issuedPassports[0] : (passports.length > 0 ? passports[0] : null));
-
-  const passport = (passportId
-    ? passports.find((p) => p.passport_metadata?.passport_id === passportId || p.product_summary?.batch_number === passportId)
-    : null) || defaultPassport;
-
-  const selectedTargetId = passport?.passport_metadata?.passport_id || passport?.product_summary?.batch_number || '';
+  const [agencySubmittedMap, setAgencySubmittedMap] = useState<Record<string, boolean>>({});
 
   const storedUserName = localStorage.getItem('saurient_user_name');
   const defaultSignerName = storedUserName
@@ -70,14 +47,51 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
   const [authorizedSigner, setAuthorizedSigner] = useState(defaultSignerName);
   const [isSigning, setIsSigning] = useState(false);
   const [isSubmittingAgency, setIsSubmittingAgency] = useState(false);
-  const [agencySubmittedMap, setAgencySubmittedMap] = useState<Record<string, boolean>>({});
   const [signError, setSignError] = useState<string | null>(null);
+
+  // Categorize passports by lifecycle status
+  const verifiedPassports = passports.filter((p) => {
+    const pId = p.passport_metadata?.passport_id || p.product_summary?.batch_number;
+    const s = (localStatusMap[pId] || p.passport_metadata?.status || '').toUpperCase();
+    return s === 'VERIFIED';
+  });
+
+  // Passports that have been signed/issued but NOT yet submitted to agency
+  const pendingAgencyPassports = passports.filter((p) => {
+    const pId = p.passport_metadata?.passport_id || p.product_summary?.batch_number;
+    const s = (localStatusMap[pId] || p.passport_metadata?.status || '').toUpperCase();
+    const isSubmitted = s === 'SUBMITTEDTOAGENCY' || s === 'SUBMITTED_TO_AGENCY' || Boolean(agencySubmittedMap[pId]);
+    return s === 'ISSUED' && !isSubmitted;
+  });
+
+  // Default selection: prioritizes a Verified passport awaiting signature, then an Issued passport awaiting lodging
+  // Passports already submitted to agency are NEVER selected
+  const defaultPassport = verifiedPassports.length > 0 
+    ? verifiedPassports[0] 
+    : (pendingAgencyPassports.length > 0 ? pendingAgencyPassports[0] : null);
+
+  const candidatePassport = passportId
+    ? passports.find((p) => p.passport_metadata?.passport_id === passportId || p.product_summary?.batch_number === passportId)
+    : null;
+
+  const candidateId = candidatePassport?.passport_metadata?.passport_id || candidatePassport?.product_summary?.batch_number || '';
+  const candidateStatus = candidatePassport
+    ? (localStatusMap[candidateId] || candidatePassport.passport_metadata?.status || '').toUpperCase()
+    : '';
+  const isCandidateSubmitted = candidateStatus === 'SUBMITTEDTOAGENCY' || candidateStatus === 'SUBMITTED_TO_AGENCY' || Boolean(candidatePassport && agencySubmittedMap[candidateId]);
+
+  // If candidate is already submitted to agency, we do not show it as target in Sign & Issue
+  const passport = (!isCandidateSubmitted ? candidatePassport : null) || defaultPassport;
+
+  const selectedTargetId = passport?.passport_metadata?.passport_id || passport?.product_summary?.batch_number || '';
 
   const currentStatus = localStatusMap[selectedTargetId] || passport?.passport_metadata?.status || 'Draft';
   const statusUpper = currentStatus.toUpperCase();
   const isVerified = statusUpper === 'VERIFIED';
   const isIssued = statusUpper === 'ISSUED' || statusUpper === 'SUBMITTEDTOAGENCY' || statusUpper === 'SUBMITTED_TO_AGENCY';
   const isSubmittedToAgency = statusUpper === 'SUBMITTEDTOAGENCY' || statusUpper === 'SUBMITTED_TO_AGENCY' || Boolean(agencySubmittedMap[selectedTargetId]);
+  const justSubmitted = Boolean(agencySubmittedMap[selectedTargetId]);
+  const shouldShowWorkspace = Boolean(passport && (!isSubmittedToAgency || justSubmitted));
 
   const handleSelectPassport = (p: RichDigitalPassport) => {
     const pId = p.passport_metadata?.passport_id || p.product_summary?.batch_number;
@@ -124,11 +138,19 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
       setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'SubmittedToAgency' }));
       setAgencySubmittedMap((prev) => ({ ...prev, [selectedTargetId]: true }));
       onRefresh?.();
+      setTimeout(() => {
+        setSearchParams({});
+        navigate('/passport/registry');
+      }, 1200);
     } catch (err: any) {
       console.warn('Agency submit fallback:', err);
       setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'SubmittedToAgency' }));
       setAgencySubmittedMap((prev) => ({ ...prev, [selectedTargetId]: true }));
       onRefresh?.();
+      setTimeout(() => {
+        setSearchParams({});
+        navigate('/passport/registry');
+      }, 1200);
     } finally {
       setIsSubmittingAgency(false);
     }
@@ -138,6 +160,11 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
   const displayedPassports = passports.filter((p) => {
     const pId = p.passport_metadata?.passport_id || p.product_summary?.batch_number;
     const status = (localStatusMap[pId] || p.passport_metadata?.status || '').toUpperCase();
+    const isSubmitted = status === 'SUBMITTEDTOAGENCY' || status === 'SUBMITTED_TO_AGENCY' || Boolean(agencySubmittedMap[pId]);
+
+    // Previously submitted to agency passports are completed and not shown in sign & issue queue
+    if (isSubmitted) return false;
+
     const prod = p.product_summary;
 
     const matchesSearch = !searchQuery || 
@@ -153,7 +180,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
       return status === 'VERIFIED';
     }
     if (queueFilter === 'ISSUED') {
-      return status === 'ISSUED' || status === 'SUBMITTEDTOAGENCY' || status === 'SUBMITTED_TO_AGENCY';
+      return status === 'ISSUED';
     }
     return true;
   });
@@ -207,30 +234,26 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-600">Issued & Published</span>
+              <span className="text-[11px] font-bold text-slate-600">Issued & Awaiting Lodging</span>
               <CheckCircle2 className={`w-4 h-4 ${queueFilter === 'ISSUED' ? 'text-indigo-600' : 'text-slate-400'}`} />
             </div>
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-slate-900">{issuedPassports.length}</span>
-              <span className="text-[10px] font-semibold text-indigo-700">Live in registry</span>
+              <span className="text-2xl font-black text-slate-900">{pendingAgencyPassports.length}</span>
+              <span className="text-[10px] font-semibold text-indigo-700">Pending agency submit</span>
             </div>
           </div>
 
           <div 
-            onClick={() => setQueueFilter('ALL')}
-            className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-              queueFilter === 'ALL'
-                ? 'bg-slate-100 border-slate-300 ring-2 ring-slate-400/20 shadow-xs'
-                : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-            }`}
+            onClick={() => navigate('/passport/registry')}
+            className="p-3.5 rounded-xl border bg-slate-50 border-slate-200 hover:bg-slate-100 cursor-pointer transition-all"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-600">Total Passports in Scope</span>
-              <Package className={`w-4 h-4 ${queueFilter === 'ALL' ? 'text-slate-700' : 'text-slate-400'}`} />
+              <span className="text-[11px] font-bold text-slate-600">Total in Registry</span>
+              <Package className="w-4 h-4 text-slate-400" />
             </div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-2xl font-black text-slate-900">{passports.length}</span>
-              <span className="text-[10px] font-semibold text-slate-500">All lifecycle stages</span>
+              <span className="text-[10px] font-semibold text-slate-500">View all passports →</span>
             </div>
           </div>
         </div>
@@ -242,8 +265,8 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-slate-900">
               {queueFilter === 'VERIFIED' && 'Passports Awaiting Statutory Issuance (Verified)'}
-              {queueFilter === 'ISSUED' && 'Issued & Published Passports'}
-              {queueFilter === 'ALL' && 'All Registered Product Passports'}
+              {queueFilter === 'ISSUED' && 'Issued Passports Pending Agency Lodging'}
+              {queueFilter === 'ALL' && 'All Passports in Issuance Workflow'}
             </h3>
             <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-full">
               {displayedPassports.length}
@@ -350,22 +373,32 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
             })}
           </div>
         ) : (
-          <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 space-y-3">
             <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
             <h4 className="text-sm font-bold text-slate-800">
               {queueFilter === 'VERIFIED' ? 'No Passports Awaiting Issuance' : 'No Passports Found'}
             </h4>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
               {queueFilter === 'VERIFIED'
-                ? 'All accredited passports have been signed, or pending batches are currently under independent review with Bureau Veritas.'
+                ? 'All accredited passports have been signed and lodged with the regulatory agency, or pending batches are currently under independent review with Bureau Veritas.'
                 : 'No registered passports match the current search filter.'}
             </p>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => navigate('/passport/registry')}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center gap-1.5"
+              >
+                <span>View All Passports in Registry</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* 3. Active Signing & Issuance Workspace for Selected Passport */}
-      {passport ? (
+      {shouldShowWorkspace && passport ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
@@ -652,25 +685,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
             )
           ) : null}
         </div>
-      ) : (
-        <div className="bg-white p-12 rounded-2xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto my-8">
-          <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-            <Lock className="w-6 h-6" />
-          </div>
-          <h2 className="text-lg font-bold text-slate-900 mb-1">
-            {passportId ? `Passport not found for ID: ${passportId}` : 'No Passport Selected to Issue'}
-          </h2>
-          <p className="text-xs text-slate-500 mb-6 max-w-md mx-auto">
-            No carbon passport is ready for signing and issuance. Please create a product batch and complete accredited MRV verification first.
-          </p>
-          <button
-            onClick={() => navigate('/products/new')}
-            className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 font-bold text-xs rounded-xl transition"
-          >
-            Register Product Batch
-          </button>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 };
