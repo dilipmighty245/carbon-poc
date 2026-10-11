@@ -110,12 +110,14 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
           >
             Passport Registry
           </button>
-          <button
-            onClick={() => navigate('/products/new')}
-            className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 font-bold text-xs rounded-xl transition"
-          >
-            Register Product Batch
-          </button>
+          {!isVerifier && !isOfficer && (
+            <button
+              onClick={() => navigate('/products/new')}
+              className="px-4 py-2 bg-[#00E599] hover:bg-[#00c985] text-slate-950 font-bold text-xs rounded-xl transition"
+            >
+              Register Product Batch
+            </button>
+          )}
         </div>
       </div>
     );
@@ -324,38 +326,26 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
             </>
           )}
 
-          {isUnderReview && (
+          {isUnderReview && isVerifier && (
             <>
-              {isVerifier ? (
-                <>
-                  <button
-                    onClick={() => navigate(`/mrv/findings?id=${metadata.passport_id}`)}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition-colors"
-                  >
-                    <AlertCircle className="w-4 h-4 text-amber-600" />
-                    <span>Raise Finding</span>
-                  </button>
-                  <button
-                    onClick={() => navigate(`/mrv/report?id=${metadata.passport_id}`)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Issue Statement →</span>
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => navigate('/mrv')}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
-                >
-                  <Clock className="w-4 h-4" />
-                  <span>Verifier Portal (MRV) →</span>
-                </button>
-              )}
+              <button
+                onClick={() => navigate(`/mrv/findings?id=${metadata.passport_id}`)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition-colors"
+              >
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <span>Raise Finding</span>
+              </button>
+              <button
+                onClick={() => navigate(`/mrv/report?id=${metadata.passport_id}`)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Issue Statement →</span>
+              </button>
             </>
           )}
 
-          {statusUpper === 'VERIFIED' && (
+          {statusUpper === 'VERIFIED' && !isVerifier && (
             <button
               onClick={() => navigate(`/passport/sign-issue?id=${metadata.passport_id}`)}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
@@ -394,12 +384,14 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
               </p>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/mrv')}
-            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shrink-0"
-          >
-            Open Verifier Portal →
-          </button>
+          {isVerifier && (
+            <button
+              onClick={() => navigate('/mrv')}
+              className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shrink-0"
+            >
+              Open Verifier Portal →
+            </button>
+          )}
         </div>
       )}
 
@@ -485,12 +477,9 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => navigate('/mrv')}
-                className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold whitespace-nowrap shadow-xs"
-              >
-                Track in Verifier Portal (MRV) →
-              </button>
+              <span className="text-xs font-semibold text-sky-800 bg-sky-100 border border-sky-200 px-3 py-1.5 rounded-xl whitespace-nowrap">
+                Awaiting Bureau Veritas Review
+              </span>
             )}
           </div>
         </div>
@@ -511,13 +500,15 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
               </p>
             </div>
           </div>
-          <button
-            onClick={() => navigate(`/passport/sign-issue?id=${metadata.passport_id}`)}
-            className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold whitespace-nowrap shadow-xs flex items-center gap-1.5"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Authorize & Issue Passport →</span>
-          </button>
+          {!isVerifier && (
+            <button
+              onClick={() => navigate(`/passport/sign-issue?id=${metadata.passport_id}`)}
+              className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold whitespace-nowrap shadow-xs flex items-center gap-1.5"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Authorize & Issue Passport →</span>
+            </button>
+          )}
         </div>
       )}
 

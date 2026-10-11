@@ -8,6 +8,7 @@ import {
   Package, 
   Calculator,
   Shield, 
+  ShieldCheck,
   GitMerge, 
   QrCode, 
   TrendingUp, 
@@ -57,14 +58,14 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   const isOperator = !isVerifier && !isOfficer && !isOwnerOrAdmin;
 
   const userEmail = storedEmail || (
-    isVerifier ? 'auditor@bureau-veritas.com' : isOfficer ? 'officer@saurient.com' : 'operator@asante-cocoa.com'
+    isVerifier ? 'auditor@bureau-veritas.com' : isOfficer ? 'officer@saurient.com' : 'operator@company.com'
   );
   const userName = localStorage.getItem('saurient_user_name') || (
-    isVerifier ? 'Sarah Jenkins' : isOfficer ? 'Helena Vance' : 'Kwame Mensah'
+    isVerifier ? 'Sarah Jenkins' : isOfficer ? 'Helena Vance' : 'Company Operator'
   );
   const userInitials = isVerifier ? 'V' : isOfficer ? 'P' : isOrgOwner ? 'O' : isOrgAdmin ? 'A' : 'O';
 
-  const currentTenant = localStorage.getItem('saurient_tenant_id') || 'org_asante_cocoa';
+  const currentTenant = localStorage.getItem('saurient_tenant_id') || '';
 
   const verifierAgencyName = (() => {
     const custom = localStorage.getItem('saurient_verifier_agency');
@@ -79,8 +80,6 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   const companyName = (() => {
     if (isVerifier) return verifierAgencyName;
     if (isOfficer) return 'Saurient Issuance Authority';
-    if (currentTenant === 'org_asante_cocoa') return 'Asante Cocoa Ltd';
-    if (currentTenant === 'org_saurient_demo') return 'Saurient Industrial Ltd';
     const regStr = localStorage.getItem('saurient_registered_company');
     if (regStr) {
       try {
@@ -89,10 +88,10 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
         if (c.legalName) return c.legalName;
       } catch (e) {}
     }
-    if (currentTenant && currentTenant !== 'tenant-default') {
+    if (currentTenant && currentTenant !== 'tenant-default' && currentTenant !== 'all' && currentTenant !== 'public') {
       return currentTenant.replace(/^org_/, '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     }
-    return 'Saurient Carbon Passport';
+    return 'Digital Carbon Passport';
   })();
 
   useEffect(() => {
@@ -224,19 +223,15 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 <p className="text-[10px] text-slate-400 mt-0.5">Independent Issuance Authority</p>
               </>
             ) : (() => {
-              let compName = 'Saurient Carbon Passport';
-              if (currentTenant === 'org_saurient_demo') {
-                compName = 'Saurient Authority';
-              } else if (currentTenant === 'org_asante_cocoa') {
-                compName = 'Asante Cocoa Ltd';
-              } else {
-                const regStr = localStorage.getItem('saurient_registered_company');
-                if (regStr) {
-                  try {
-                    const c = JSON.parse(regStr);
-                    if (c.tenantId === currentTenant && c.legalName) compName = c.legalName;
-                  } catch (e) {}
-                }
+              let compName = 'Digital Carbon Passport';
+              const regStr = localStorage.getItem('saurient_registered_company');
+              if (regStr) {
+                try {
+                  const c = JSON.parse(regStr);
+                  if (c.legalName) compName = c.legalName;
+                } catch (e) {}
+              } else if (currentTenant && currentTenant !== 'tenant-default' && currentTenant !== 'all' && currentTenant !== 'public') {
+                compName = currentTenant.replace(/^org_/, '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
               }
               return (
                 <>
@@ -255,15 +250,15 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
           {/* Top Bar */}
           <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40">
             <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-              <span>{isVerifier ? 'Verifier Portal' : 'Workspace'}</span>
+              <span>{isVerifier ? 'Verifier Portal' : isOfficer ? 'Passport Authority' : 'Workspace'}</span>
               <span>/</span>
               <span className="text-slate-900 font-semibold">
-                {isVerifier ? `Independent Verification (${verifierAgencyName.split(' ')[0]})` : isOwnerOrAdmin ? 'Organisation Administration' : 'Company Workspace'}
+                {isVerifier ? `Independent Verification (${verifierAgencyName.split(' ')[0]})` : isOfficer ? 'Statutory Issuance Authority' : isOwnerOrAdmin ? 'Organisation Administration' : 'Company Workspace'}
               </span>
             </div>
 
             <div className="flex items-center gap-3">
-              {!isVerifier && (
+              {!isVerifier && !isOfficer && (
                 <NavLink 
                   to="/products/new" 
                   className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-xs"
@@ -277,6 +272,13 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
                 <span className="hidden sm:inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-900 px-3 py-1 rounded-lg text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
                   <span>Accredited Auditor: {verifierAgencyName}</span>
+                </span>
+              )}
+
+              {isOfficer && (
+                <span className="hidden sm:inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-900 px-3 py-1 rounded-lg text-xs font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Passport Officer: Saurient Issuance</span>
                 </span>
               )}
 

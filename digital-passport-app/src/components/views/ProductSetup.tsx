@@ -8,6 +8,18 @@ import { useNavigate } from 'react-router-dom';
 export const ProductSetup: React.FC = () => {
   const navigate = useNavigate();
 
+  const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
+  const isVerifier = userRole.toLowerCase().includes('verifier');
+  const isOfficer = userRole.toLowerCase().includes('officer');
+
+  useEffect(() => {
+    if (isVerifier) {
+      navigate('/mrv', { replace: true });
+    } else if (isOfficer) {
+      navigate('/passport/registry', { replace: true });
+    }
+  }, [isVerifier, isOfficer, navigate]);
+
   // Form states with fresh default batch ID generator
   const [commodity, setCommodity] = useState('Cocoa');
   const [productName, setProductName] = useState('Fermented Cocoa Beans');
@@ -274,17 +286,22 @@ export const ProductSetup: React.FC = () => {
           }
         } catch (e) {}
       }
-      if (!effectiveTenant || effectiveTenant === 'all' || effectiveTenant === 'public' || effectiveTenant === 'tenant-verifier-agency') {
-        effectiveTenant = 'org_asante_cocoa';
-      }
+    }
+
+    if (!effectiveTenant || effectiveTenant === 'all' || effectiveTenant === 'public' || effectiveTenant === 'tenant-verifier-agency') {
+      setErrorMsg('No valid organisation tenant found. Please log in with your company credentials or complete organisation registration.');
+      setSubmitting(false);
+      return;
     }
 
     if (!friendlyOrg) {
-      if (effectiveTenant === 'org_asante_cocoa') {
-        friendlyOrg = 'Asante Cocoa Ltd';
-      } else if (effectiveTenant === 'org_saurient_demo') {
-        friendlyOrg = 'Saurient Industrial Ltd';
-      } else {
+      if (regCompStr) {
+        try {
+          const parsed = JSON.parse(regCompStr);
+          friendlyOrg = parsed.legalName || parsed.tradingName || '';
+        } catch (e) {}
+      }
+      if (!friendlyOrg) {
         friendlyOrg = effectiveTenant.replace(/^org_/, '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
       }
     }
