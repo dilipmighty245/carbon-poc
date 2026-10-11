@@ -21,10 +21,38 @@ import (
 func (e *NexusGraphEngine) SavePassportAndAudit(ctx context.Context, p *CarbonPassportModel, audit *PassportAuditTrailModel) error {
 	client := GetNexusClient()
 	tenantID, _ := tenant.GetTenant(ctx)
-	if tenantID != "" {
-		p.TenantID = tenantID
+
+	// Producer Tenant Immutability:
+	// A passport's TenantID represents the manufacturer/producer organisation.
+	// Never allow cross-tenant actor contexts ("all", "public", "tenant-verifier-agency", or empty) to overwrite a valid producer tenant.
+	if p.TenantID == "" || p.TenantID == "all" || p.TenantID == "public" || strings.HasPrefix(p.TenantID, "tenant-verifier") {
+		if tenantID != "" && tenantID != "all" && tenantID != "public" && !strings.HasPrefix(tenantID, "tenant-verifier") {
+			p.TenantID = tenantID
+		}
 	}
-	if p.TenantID == "" {
+
+	// Fetch linked Product node if available, and resolve producer tenant if needed
+	var prodNode *nexus_client.InventoryProduct
+	if client != nil {
+		if p.TenantID != "" && p.TenantID != "all" && p.BatchNumber != "" {
+			prodNode, _ = GetProductNode(ctx, client, p.TenantID, p.BatchNumber)
+		}
+		if prodNode == nil && (p.BatchNumber != "" || p.PassportID != "") {
+			if prods, err := client.Inventory().ListProducts(ctx, metav1.ListOptions{}); err == nil {
+				for _, pr := range prods {
+					if pr != nil && (pr.Spec.BatchID == p.BatchNumber || pr.Spec.PassportID == p.PassportID || pr.DisplayName() == p.BatchNumber) {
+						prodNode = pr
+						if pr.Spec.TenantID != "" && pr.Spec.TenantID != "all" && pr.Spec.TenantID != "public" {
+							p.TenantID = pr.Spec.TenantID
+						}
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if p.TenantID == "" || p.TenantID == "all" || p.TenantID == "public" {
 		p.TenantID = "tenant-default"
 	}
 	if p.IssuedAt.IsZero() {
@@ -62,15 +90,12 @@ func (e *NexusGraphEngine) SavePassportAndAudit(ctx context.Context, p *CarbonPa
 		Version:            "1.0",
 	}
 
-	// Fetch linked Product node if available
-	var prodNode *nexus_client.InventoryProduct
-	if p.BatchNumber != "" {
-		prodNode, _ = GetProductNode(ctx, client, p.TenantID, p.BatchNumber)
-	}
-
 	pNode, err := CreatePassportNode(ctx, client, spec, prodNode)
 	if err != nil {
 		return err
+	}
+	if pNode != nil && pNode.Spec.TenantID != "" && pNode.Spec.TenantID != "all" {
+		p.TenantID = pNode.Spec.TenantID
 	}
 
 	if audit != nil && pNode != nil {
@@ -411,17 +436,13 @@ func (e *NexusGraphEngine) GetTenantProfile(ctx context.Context) (*TenantProfile
 	tNode, err := EnsureTenantNode(ctx, client, tID)
 	if err == nil && tNode != nil {
 		legalName := tNode.Spec.LegalName
-		if legalName == "" || legalName == tID || legalName == "org_saurient_demo" {
-			if tID == "org_saurient_demo" {
-				legalName = "Saurient Industrial Ltd"
-			} else if tID == "org_asante_cocoa" {
-				legalName = "Asante Cocoa Ltd"
-			} else if strings.HasPrefix(tID, "org_") {
+		if legalName == "" || legalName == tID {
+			if strings.HasPrefix(tID, "org_") {
 				clean := strings.TrimPrefix(tID, "org_")
 				clean = strings.ReplaceAll(clean, "_", " ")
 				legalName = strings.Title(clean)
 			} else {
-				legalName = "Sattric Industrial Corp Ltd"
+				legalName = "Enterprise Manufacturer"
 			}
 		}
 		country := tNode.Spec.Country

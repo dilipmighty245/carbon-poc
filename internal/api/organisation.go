@@ -74,14 +74,7 @@ func (h *OrganisationHandler) ensureSeedUsers(ctx context.Context) {
 			role:     "Company Operator",
 		},
 		{
-			tenantID: "org_saurient_demo",
-			name:     "Santosh Samudrala (Industrial Operator)",
-			email:    "operator@saurient.com",
-			password: "DemoPassword2026!",
-			role:     "Company Operator",
-		},
-		{
-			tenantID: "org_saurient_demo",
+			tenantID: "tenant-issuance-authority",
 			name:     "Santosh Samudrala",
 			email:    "officer@saurient.com",
 			password: "DemoPassword2026!",
@@ -215,8 +208,9 @@ func (h *OrganisationHandler) HandleAuthRegister(w http.ResponseWriter, r *http.
 	if tenantID == "" {
 		tenantID = getTenantID(r)
 	}
-	if tenantID == "" {
-		tenantID = "org_saurient_demo"
+	if tenantID == "" || tenantID == "all" || tenantID == "public" {
+		writeJSONError(w, "valid tenant_id is required", http.StatusBadRequest)
+		return
 	}
 	ctx := tenant.WithTenant(r.Context(), tenantID)
 
@@ -569,16 +563,12 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 			writeJSONError(w, fmt.Sprintf("profile not found for tenant: %s", tenantID), http.StatusNotFound)
 			return
 		}
-		if p.LegalName == "" || p.LegalName == "org_saurient_demo" || p.LegalName == tenantID {
-			if tenantID == "org_saurient_demo" {
-				p.LegalName = "Saurient Industrial Ltd"
-			} else if tenantID == "org_asante_cocoa" {
-				p.LegalName = "Asante Cocoa Ltd"
-			} else if strings.HasPrefix(tenantID, "org_") {
+		if p.LegalName == "" || p.LegalName == tenantID {
+			if strings.HasPrefix(tenantID, "org_") {
 				p.LegalName = strings.Title(strings.ReplaceAll(strings.TrimPrefix(tenantID, "org_"), "_", " "))
 			}
 		}
-		if p.TradingName == "" || p.TradingName == "org_saurient_demo" || p.TradingName == tenantID {
+		if p.TradingName == "" || p.TradingName == tenantID {
 			p.TradingName = p.LegalName
 		}
 		w.WriteHeader(http.StatusOK)

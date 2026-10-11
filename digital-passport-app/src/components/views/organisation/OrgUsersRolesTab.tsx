@@ -100,12 +100,12 @@ const getActiveOrgTenant = () => {
   if (regStr) {
     try {
       const c = JSON.parse(regStr);
-      if (c.tenantId && c.tenantId !== 'all' && c.tenantId !== 'org_saurient_demo') return c.tenantId;
+      if (c.tenantId && c.tenantId !== 'all' && c.tenantId !== 'public' && c.tenantId !== 'tenant-verifier-agency') return c.tenantId;
     } catch (e) {}
   }
   const t = localStorage.getItem('saurient_tenant_id');
-  if (t && t !== 'all' && t !== 'org_saurient_demo' && t !== 'tenant-verifier-agency') return t;
-  return 'org_asante_cocoa';
+  if (t && t !== 'all' && t !== 'public' && t !== 'tenant-verifier-agency') return t;
+  return '';
 };
 
 const getInitialUsers = (): UserMember[] => {
@@ -203,11 +203,7 @@ export const OrgUsersRolesTab: React.FC = () => {
         } else if (initUsers.length > 0) {
           setUsers(initUsers);
         } else {
-          if (activeTenant === 'org_saurient_demo' || activeTenant === 'org_asante_cocoa') {
-            setUsers(initialUsers);
-          } else {
-            setUsers(initUsers);
-          }
+          setUsers(initUsers);
         }
       })
       .catch((err) => {

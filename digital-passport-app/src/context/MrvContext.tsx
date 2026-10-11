@@ -118,7 +118,7 @@ export const MrvProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       passport_id: meta.pcfProject,
       batch_id: meta.batch,
       reason: 'Operational dataset locked for MRV verification',
-      frozen_by: localStorage.getItem('saurient_user_email') || 'operator@asante-cocoa.com',
+      frozen_by: localStorage.getItem('saurient_user_email') || 'operator@company.com',
     }).catch((err) => console.warn('Background dataset freeze sync failed:', err));
   };
 

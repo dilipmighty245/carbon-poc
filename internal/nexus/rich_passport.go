@@ -177,20 +177,27 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 
 	producerOrg := p.TenantID
 	bdOrg, _ := batchData["producer_organization"].(string)
-	if bdOrg != "" && !strings.HasPrefix(bdOrg, "org_") {
+	if bdOrg != "" && !strings.HasPrefix(bdOrg, "org_") && bdOrg != "all" {
 		producerOrg = bdOrg
-	} else if p.TenantID == "org_asante_cocoa" || bdOrg == "org_asante_cocoa" {
-		if strings.ToLower(commodity) == "metals" || strings.Contains(strings.ToLower(productName), "aluminium") {
-			producerOrg = "Saurient Industrial Metals"
-		} else {
-			producerOrg = "Asante Cocoa Ltd"
-		}
-	} else if p.TenantID == "org_saurient_demo" || bdOrg == "org_saurient_demo" {
-		producerOrg = "Saurient Industrial Ltd"
 	} else if strings.HasPrefix(producerOrg, "org_") {
 		clean := strings.TrimPrefix(producerOrg, "org_")
 		clean = strings.ReplaceAll(clean, "_", " ")
 		producerOrg = strings.Title(clean)
+	} else if producerOrg == "all" || producerOrg == "" {
+		if bdOrg != "" && bdOrg != "all" {
+			producerOrg = bdOrg
+		} else {
+			producerOrg = "Enterprise Producer"
+		}
+	}
+
+	metadataTenant := p.TenantID
+	if metadataTenant == "all" || metadataTenant == "" {
+		if strings.HasPrefix(bdOrg, "org_") {
+			metadataTenant = bdOrg
+		} else if bdTenant, ok := batchData["tenant_id"].(string); ok && bdTenant != "" && bdTenant != "all" {
+			metadataTenant = bdTenant
+		}
 	}
 
 	facilityName := p.FacilityID
@@ -441,17 +448,24 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	verifyBaseURL := getEnv("VERIFY_BASE_URL", "https://verify.saurient.io")
 	qrCodeURL := fmt.Sprintf("%s/passport/%s", strings.TrimRight(verifyBaseURL, "/"), passportID)
 
+	effectiveTenant := p.TenantID
+	if effectiveTenant == "all" || effectiveTenant == "" {
+		if metadataTenant != "" && metadataTenant != "all" {
+			effectiveTenant = metadataTenant
+		}
+	}
+
 	return RichDigitalCarbonPassportResponse{
 		PassportMetadata: PassportMetadata{
 			PassportID:        passportID,
-			TenantID:          p.TenantID,
+			TenantID:          effectiveTenant,
 			UniqueQRCode:      qrCodeURL,
 			CryptographicHash: p.DataHash,
 			IssuanceDate:      issuanceDate,
 			Status:            status,
 		},
 		ProductSummary: ProductSummary{
-			TenantID:             p.TenantID,
+			TenantID:             effectiveTenant,
 			Commodity:            commodity,
 			ProductName:          productName,
 			BatchNumber:          batchNum,

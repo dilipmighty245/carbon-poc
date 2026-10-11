@@ -1,7 +1,7 @@
 import type { ProductCreateRequest, ProductCreateResponse, RichDigitalPassport, RulebookCreateRequest, RulebookItem } from '../types';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-export const DEFAULT_TENANT_ID = 'org_asante_cocoa';
+export const DEFAULT_TENANT_ID = '';
 
 export interface ApiFetchResult<T> {
   data: T;
@@ -327,12 +327,13 @@ export async function deletePassport(passportId: string, tenantId?: string) {
   return await res.json();
 }
 
-export async function signAndIssuePassport(passportId: string, signerName = 'Santosh Samudrala', signerRole = 'Chief Sustainability Officer', keyId = '0xKEY-ORATOR-PROD-SECURE-ED25519-88492', tenantId = 'all') {
+export async function signAndIssuePassport(passportId: string, signerName = 'Santosh Samudrala', signerRole = 'Chief Sustainability Officer', keyId = '0xKEY-ORATOR-PROD-SECURE-ED25519-88492', tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}/sign`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
       'X-User-Role': localStorage.getItem('saurient_user_role') || 'Passport Officer',
       'X-User-Email': localStorage.getItem('saurient_user_email') || 'officer@saurient.com',
     },
@@ -349,12 +350,13 @@ export async function signAndIssuePassport(passportId: string, signerName = 'San
   return await res.json();
 }
 
-export async function submitPassportToAgency(passportId: string, agencyName = 'EU CBAM Transitional Registry & National Competent Authority', declarantId = 'DEC-EU-2026-901', tenantId = 'all') {
+export async function submitPassportToAgency(passportId: string, agencyName = 'EU CBAM Transitional Registry & National Competent Authority', declarantId = 'DEC-EU-2026-901', tenantId?: string) {
+  const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/passports/${passportId}/submit-agency`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
+      'X-Tenant-ID': tid,
       'X-User-Role': localStorage.getItem('saurient_user_role') || 'Passport Officer',
       'X-User-Email': localStorage.getItem('saurient_user_email') || 'officer@saurient.com',
     },
@@ -381,10 +383,11 @@ export interface MrvSubmitPackagePayload {
   tenant_id?: string;
 }
 
-export async function submitMrvVerificationPackage(payload: MrvSubmitPackagePayload, tenantId = 'all') {
+export async function submitMrvVerificationPackage(payload: MrvSubmitPackagePayload, tenantId?: string) {
   const userRole = localStorage.getItem('saurient_user_role') || 'Company Operator';
-  const userEmail = localStorage.getItem('saurient_user_email') || payload.submitted_by || 'operator@asante-cocoa.com';
-  const tid = payload.tenant_id || tenantId || 'all';
+  const userEmail = localStorage.getItem('saurient_user_email') || payload.submitted_by || 'operator@company.com';
+  const activeTid = getActiveTenantId();
+  const tid = payload.tenant_id || tenantId || (activeTid !== 'all' ? activeTid : '');
   const res = await fetch(`${API_BASE_URL}/mrv/readiness/submit`, {
     method: 'POST',
     headers: {
@@ -402,10 +405,11 @@ export async function submitMrvVerificationPackage(payload: MrvSubmitPackagePayl
   return await res.json();
 }
 
-export async function freezeMrvDataset(payload: { engagement_id?: string; passport_id?: string; batch_id?: string; reason?: string; frozen_by?: string; tenant_id?: string }, tenantId = 'all') {
+export async function freezeMrvDataset(payload: { engagement_id?: string; passport_id?: string; batch_id?: string; reason?: string; frozen_by?: string; tenant_id?: string }, tenantId?: string) {
   const userRole = localStorage.getItem('saurient_user_role') || 'Company Operator';
-  const userEmail = localStorage.getItem('saurient_user_email') || payload.frozen_by || 'operator@asante-cocoa.com';
-  const tid = payload.tenant_id || tenantId || 'all';
+  const userEmail = localStorage.getItem('saurient_user_email') || payload.frozen_by || 'operator@company.com';
+  const activeTid = getActiveTenantId();
+  const tid = payload.tenant_id || tenantId || (activeTid !== 'all' ? activeTid : '');
   const res = await fetch(`${API_BASE_URL}/mrv/freeze`, {
     method: 'POST',
     headers: {
@@ -662,18 +666,20 @@ export function getActiveTenantId(): string {
       return 'all';
     }
     const t = localStorage.getItem('saurient_tenant_id');
-    if (t && t !== 'all' && t !== 'public' && t !== 'tenant-verifier-agency' && t !== 'org_saurient_demo') {
+    if (t && t !== 'all' && t !== 'public' && t !== 'tenant-verifier-agency') {
       return t;
     }
     const regStr = localStorage.getItem('saurient_registered_company');
     if (regStr) {
       try {
         const parsed = JSON.parse(regStr);
-        if (parsed.tenantId) return parsed.tenantId;
+        if (parsed.tenantId && parsed.tenantId !== 'all' && parsed.tenantId !== 'public' && parsed.tenantId !== 'tenant-verifier-agency') {
+          return parsed.tenantId;
+        }
       } catch (e) {}
     }
   }
-  return DEFAULT_TENANT_ID;
+  return '';
 }
 
 export async function getOrgUsers(tenantId?: string) {

@@ -13,6 +13,9 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
   const navigate = useNavigate();
   const passportId = pathPassportId || searchParams.get('id');
 
+  const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
+  const isVerifier = userRole.toLowerCase().includes('verifier');
+
   const passport =
     passports.find(
       (p) =>
@@ -93,17 +96,28 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
             <Printer className="w-4 h-4" />
             <span>Print PDF</span>
           </button>
-          <button
-            onClick={() => {
-              const targetId = passport?.passport_metadata?.passport_id;
-              if (targetId) navigate(`/passport/sign-issue?id=${targetId}`);
-              else navigate('/passport/sign-issue');
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
-          >
-            <span>Proceed to Sign & Issue</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          {!isVerifier && (
+            <button
+              onClick={() => {
+                const targetId = passport?.passport_metadata?.passport_id;
+                if (targetId) navigate(`/passport/sign-issue?id=${targetId}`);
+                else navigate('/passport/sign-issue');
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
+            >
+              <span>Proceed to Sign & Issue</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+          {isVerifier && (
+            <button
+              onClick={() => navigate('/mrv')}
+              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs"
+            >
+              <span>Verifier Portal (MRV)</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 

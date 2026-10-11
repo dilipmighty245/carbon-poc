@@ -596,7 +596,7 @@ func TestOrganisationHandler_RegisteredOrgLogin_CrossTenant(t *testing.T) {
 		t.Fatalf("expected 201 Created registering org owner, got %d: %s", recReg.Code, recReg.Body.String())
 	}
 
-	// 2. Log in with custom email without X-Tenant-ID (or with default org_saurient_demo)
+	// 2. Log in with custom email without X-Tenant-ID (or with unrelated tenant)
 	loginReq := map[string]string{
 		"email":    customEmail,
 		"password": customPassword,
@@ -604,7 +604,7 @@ func TestOrganisationHandler_RegisteredOrgLogin_CrossTenant(t *testing.T) {
 	loginBody, _ := json.Marshal(loginReq)
 	reqLogin := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(loginBody))
 	reqLogin.Header.Set("Content-Type", "application/json")
-	reqLogin.Header.Set("X-Tenant-ID", "org_saurient_demo") // Different tenant header!
+	reqLogin.Header.Set("X-Tenant-ID", "unrelated_tenant") // Different tenant header!
 	recLogin := httptest.NewRecorder()
 	mux.ServeHTTP(recLogin, reqLogin)
 
@@ -705,9 +705,9 @@ func TestIndependentRolesLoginAndProfileSanitization(t *testing.T) {
 		t.Errorf("expected Passport Officer user.tenant_id to be 'all', got '%s'", oResp.User.TenantID)
 	}
 
-	// 3. Organization profile for org_saurient_demo must normalize to clean human names, NOT "org_saurient_demo"
+	// 3. Organization profile for org_loki_steel must normalize to clean human names, NOT "org_loki_steel"
 	reqProf := httptest.NewRequest(http.MethodGet, "/api/v1/organisation/profile", nil)
-	reqProf.Header.Set("X-Tenant-ID", "org_saurient_demo")
+	reqProf.Header.Set("X-Tenant-ID", "org_loki_steel")
 	recProf := httptest.NewRecorder()
 	mux.ServeHTTP(recProf, reqProf)
 
@@ -718,14 +718,14 @@ func TestIndependentRolesLoginAndProfileSanitization(t *testing.T) {
 	if err := json.NewDecoder(recProf.Body).Decode(&prof); err != nil {
 		t.Fatalf("failed to decode profile response: %v", err)
 	}
-	if prof.LegalName == "org_saurient_demo" {
-		t.Errorf("expected LegalName to be normalized, got raw 'org_saurient_demo'")
+	if prof.LegalName == "org_loki_steel" {
+		t.Errorf("expected LegalName to be normalized, got raw 'org_loki_steel'")
 	}
-	if prof.TradingName == "org_saurient_demo" {
-		t.Errorf("expected TradingName to be normalized, got raw 'org_saurient_demo'")
+	if prof.TradingName == "org_loki_steel" {
+		t.Errorf("expected TradingName to be normalized, got raw 'org_loki_steel'")
 	}
-	if prof.LegalName != "Saurient Industrial Ltd" {
-		t.Errorf("expected LegalName 'Saurient Industrial Ltd', got '%s'", prof.LegalName)
+	if prof.LegalName != "Loki Steel" {
+		t.Errorf("expected LegalName 'Loki Steel', got '%s'", prof.LegalName)
 	}
 }
 

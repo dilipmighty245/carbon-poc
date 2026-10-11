@@ -262,7 +262,7 @@ func (e *NexusGraphEngine) GetLineageDAG(ctx context.Context, passportID string)
 	if targetPassport == nil {
 		targetPassport = &CarbonPassportModel{
 			PassportID:         passportID,
-			TenantID:           "org_saurient_demo",
+			TenantID:           "tenant-default",
 			FacilityID:         "Tema Processing Plant",
 			BatchNumber:        "CB-2026-001",
 			CommodityType:      "Cocoa",
@@ -285,7 +285,7 @@ func (e *NexusGraphEngine) GetLineageDAG(ctx context.Context, passportID string)
 
 	tenantID := targetPassport.TenantID
 	if tenantID == "" {
-		tenantID = "org_saurient_demo"
+		tenantID = "tenant-default"
 	}
 	facilityID := targetPassport.FacilityID
 	if facilityID == "" {

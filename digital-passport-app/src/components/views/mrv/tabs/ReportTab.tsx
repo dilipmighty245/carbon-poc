@@ -72,7 +72,7 @@ export const ReportTab: React.FC = () => {
         verifierName: 'Sarah Jenkins (Lead Verifier)',
         agencyName: 'Bureau Veritas UK Ltd (Accreditation #NAB-8820)',
         opinion: 'Verified Without Qualification (ISO 14064-3 / CBAM Annex VI Compliant)',
-        tenantId: 'all',
+        tenantId: (meta as any)?.tenant_id || undefined,
       });
       setVerifiedSuccess(true);
     } catch (err: any) {
@@ -229,14 +229,25 @@ export const ReportTab: React.FC = () => {
                     <span>View Verified Passport</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/passport/sign-issue?id=${targetPassportId}`)}
-                    className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
-                  >
-                    <span>Proceed to Sign & Issue</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
-                  </button>
+                  {isVerifier ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/mrv')}
+                      className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
+                    >
+                      <span>Back to Verifier Queue</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/passport/sign-issue?id=${targetPassportId}`)}
+                      className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
+                    >
+                      <span>Proceed to Sign & Issue</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
+                    </button>
+                  )}
                 </>
               )}
             </>

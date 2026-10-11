@@ -69,7 +69,7 @@ export const CompanyDashboardView: React.FC = () => {
 
   const records = [
     { name: 'Passport Draft: Hot-Rolled Steel Coil', type: 'Batch ST-2026-00981', status: 'Draft', statusClass: 'bg-slate-100 text-slate-700 border-slate-300', val: '1.63 kgCO₂e/kg', path: '/passport/readiness?id=pas-st-2026-00981' },
-    { name: 'Independent Verification Queue', type: 'Batch CB-2026-00481 (Cocoa)', status: 'Submitted', statusClass: 'bg-blue-100 text-blue-800 border-blue-300', val: 'Under Bureau Veritas', path: '/mrv' },
+    { name: 'Independent Verification Status', type: 'Batch CB-2026-00481 (Cocoa)', status: 'Submitted', statusClass: 'bg-blue-100 text-blue-800 border-blue-300', val: 'Under Bureau Veritas', path: '/passport' },
     { name: 'Verified Claim: Aluminium Housing', type: 'Batch AL-2026-0012', status: 'Verified', statusClass: 'bg-emerald-100 text-emerald-800 border-emerald-300', val: 'Sign & Issue Ready', path: '/passport/sign-issue' },
     { name: 'Issued Passport: Portland Cement', type: 'Batch CEM-2026-08', status: 'Issued', statusClass: 'bg-indigo-100 text-indigo-800 border-indigo-300', val: 'Minted & Sealed', path: '/passport/registry' },
     { name: 'EU Customs Submission', type: 'Batch ST-2026-0042', status: 'Submitted to Agency', statusClass: 'bg-teal-100 text-teal-900 border-teal-300', val: 'EU CBAM Lodged', path: '/passport/registry' },

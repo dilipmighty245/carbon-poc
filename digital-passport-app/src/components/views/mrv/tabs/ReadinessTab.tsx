@@ -4,7 +4,7 @@ import { CheckCircle2, ArrowRight, Loader2, Lock, ShieldCheck, AlertCircle } fro
 import { useMrv } from '../../../../context/MrvContext';
 import { READINESS_CHECKS } from '../../../../data/mrvMockData';
 import { Kpi, SectionCard, StatusBadge, Field } from '../shared';
-import { submitMrvVerificationPackage } from '../../../../api/client';
+import { submitMrvVerificationPackage, getActiveTenantId } from '../../../../api/client';
 
 export const ReadinessTab: React.FC = () => {
   const navigate = useNavigate();
@@ -30,16 +30,18 @@ export const ReadinessTab: React.FC = () => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const email = localStorage.getItem('saurient_user_email') || 'operator@asante-cocoa.com';
+      const email = localStorage.getItem('saurient_user_email') || 'operator@company.com';
       const name = localStorage.getItem('saurient_user_name') || 'Company Carbon Lead';
+      const tid = getActiveTenantId();
       const res = await submitMrvVerificationPackage({
         engagement_id: meta.engagementId,
         passport_id: meta.pcfProject,
         batch_id: meta.batch,
         facility: meta.facility,
+        tenant_id: tid !== 'all' ? tid : undefined,
         submitted_by: `${name} <${email}>`,
         notes: `Readiness checklist passed (${meta.activityRecords} activity records, ${meta.evidenceItems} evidence items). Submitted for independent verification.`,
-      });
+      }, tid !== 'all' ? tid : undefined);
 
       const lockHash = res.dataset_lock_hash || res.freeze_hash || '0x7f48b9281a02f9c3';
       const subId = res.submission_id || 'SUB-2026-026';

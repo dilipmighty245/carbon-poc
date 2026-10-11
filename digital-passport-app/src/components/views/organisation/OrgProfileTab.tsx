@@ -250,12 +250,12 @@ export const OrgProfileTab: React.FC = () => {
     if (regStr) {
       try {
         const c = JSON.parse(regStr);
-        if (c.tenantId && c.tenantId !== 'all' && c.tenantId !== 'org_saurient_demo') return c.tenantId;
+        if (c.tenantId && c.tenantId !== 'all' && c.tenantId !== 'public' && c.tenantId !== 'tenant-verifier-agency') return c.tenantId;
       } catch (e) {}
     }
     const t = localStorage.getItem('saurient_tenant_id');
-    if (t && t !== 'all' && t !== 'org_saurient_demo' && t !== 'tenant-verifier-agency') return t;
-    return 'org_asante_cocoa';
+    if (t && t !== 'all' && t !== 'public' && t !== 'tenant-verifier-agency') return t;
+    return '';
   };
 
   useEffect(() => {
@@ -267,13 +267,13 @@ export const OrgProfileTab: React.FC = () => {
     getOrgProfile(targetTenant)
       .then((data) => {
         if (data && data.legalName) {
-          const cleanLegal = (data.legalName === 'org_saurient_demo' || data.legalName === targetTenant)
-            ? (initP.legalName || 'Saurient Industrial Ltd')
+          const cleanLegal = (data.legalName === targetTenant || !data.legalName || data.legalName.includes('demo'))
+            ? (initP.legalName || 'Registered Enterprise')
             : data.legalName;
-          const cleanTrading = (data.tradingName === 'org_saurient_demo' || data.tradingName === targetTenant)
+          const cleanTrading = (data.tradingName === targetTenant || !data.tradingName || data.tradingName.includes('demo'))
             ? (initP.tradingName || cleanLegal)
             : (data.tradingName || cleanLegal);
-          const cleanOrgId = (data.organisationId === 'org_saurient_demo')
+          const cleanOrgId = (!data.organisationId || data.organisationId.includes('demo'))
             ? (initP.organisationId || targetTenant)
             : (data.organisationId || initP.organisationId);
 
@@ -346,10 +346,10 @@ export const OrgProfileTab: React.FC = () => {
               </span>
             </div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              {profile.legalName && profile.legalName !== 'org_saurient_demo' ? profile.legalName : 'Saurient Industrial Ltd'}
+              {profile.legalName || 'Registered Organisation'}
             </h2>
             <p className="text-xs font-mono text-slate-500">
-              {profile.organisationId} · {profile.tradingName && profile.tradingName !== 'org_saurient_demo' ? profile.tradingName : (profile.legalName || 'Saurient Industrial Ltd')}
+              {profile.organisationId} · {profile.tradingName || profile.legalName || 'Registered Organisation'}
             </p>
           </div>
         </div>

@@ -75,7 +75,7 @@ const openAPISpecJSON = `{
                 "type": "object",
                 "required": ["tenant_id", "commodity_type", "rulebook_ref", "activity_data"],
                 "properties": {
-                  "tenant_id": { "type": "string", "example": "org_saurient_demo" },
+                  "tenant_id": { "type": "string", "example": "org_enterprise_01" },
                   "facility_id": { "type": "string", "example": "fac_nordic_smelter_01" },
                   "batch_id": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
                   "product_name": { "type": "string", "example": "Hydro-Powered Low-Carbon Primary Aluminium Ingot" },
@@ -236,7 +236,7 @@ const openAPISpecJSON = `{
             "in": "header",
             "required": false,
             "description": "Multi-tenant context isolation header",
-            "schema": { "type": "string", "example": "org_saurient_demo" }
+            "schema": { "type": "string", "example": "org_enterprise_01" }
           }
         ],
         "responses": {
@@ -260,7 +260,7 @@ const openAPISpecJSON = `{
         "properties": {
           "name": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
           "namespace": { "type": "string", "example": "default" },
-          "tenant_id": { "type": "string", "example": "org_saurient_demo" },
+          "tenant_id": { "type": "string", "example": "org_enterprise_01" },
           "facility_id": { "type": "string", "example": "fac_nordic_smelter_01" },
           "batch_id": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
           "product_name": { "type": "string", "example": "Hydro-Powered Low-Carbon Primary Aluminium Ingot" },
@@ -273,7 +273,7 @@ const openAPISpecJSON = `{
         "type": "object",
         "properties": {
           "passport_id": { "type": "string", "example": "aluminum-batch-iai-2026-001-passport" },
-          "tenant_id": { "type": "string", "example": "org_saurient_demo" },
+          "tenant_id": { "type": "string", "example": "org_enterprise_01" },
           "facility_id": { "type": "string", "example": "fac_nordic_smelter_01" },
           "batch_number": { "type": "string", "example": "aluminum-batch-iai-2026-001" },
           "commodity_type": { "type": "string", "example": "Aluminium" },
@@ -700,9 +700,6 @@ func (s *VerificationServer) handleGraphQL(w http.ResponseWriter, r *http.Reques
 	if tenantID == "" {
 		tenantID = r.URL.Query().Get("tenant_id")
 	}
-	if tenantID == "" {
-		tenantID = "org_saurient_demo"
-	}
 
 	tenantCtx := tenant.WithTenant(r.Context(), tenantID)
 	s.gqlHandler.ServeHTTP(w, r.WithContext(tenantCtx))
@@ -939,7 +936,8 @@ func (s *VerificationServer) handleDeleteProduct(w http.ResponseWriter, r *http.
 		tenantID = r.URL.Query().Get("tenant_id")
 	}
 	if tenantID == "" {
-		tenantID = "org_saurient_demo"
+		http.Error(w, `{"error":"X-Tenant-ID header or tenant_id query parameter is required"}`, http.StatusBadRequest)
+		return
 	}
 
 	namespace := r.URL.Query().Get("namespace")
@@ -1190,9 +1188,6 @@ func (s *VerificationServer) handleGetProduct(w http.ResponseWriter, r *http.Req
 	if tenantID == "" {
 		tenantID = r.URL.Query().Get("tenant_id")
 	}
-	if tenantID == "" {
-		tenantID = "org_saurient_demo"
-	}
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
 
 	nClient := s.getNexusClient()
@@ -1208,14 +1203,31 @@ func (s *VerificationServer) handleGetProduct(w http.ResponseWriter, r *http.Req
 
 	// 1. Try to read from Nexus graph node first
 	if nClient != nil {
-		pNode, err := nexus.GetProductNode(ctx, nClient, tenantID, name)
-		if err != nil || pNode == nil || pNode.Product == nil {
-			// Search by batch_id or name in tenant's products
-			if allProds, listErr := nexus.ListProductNodes(ctx, nClient, tenantID); listErr == nil {
+		var pNode *nexus_client.InventoryProduct
+		var err error
+		if tenantID != "" && tenantID != "all" {
+			pNode, err = nexus.GetProductNode(ctx, nClient, tenantID, name)
+			if err != nil || pNode == nil || pNode.Product == nil {
+				// Search by batch_id or name in tenant's products
+				if allProds, listErr := nexus.ListProductNodes(ctx, nClient, tenantID); listErr == nil {
+					for _, prod := range allProds {
+						if prod != nil && prod.Product != nil && (prod.DisplayName() == name || prod.Spec.BatchID == name || prod.Spec.ProductID == name) {
+							pNode = prod
+							break
+						}
+					}
+				}
+			}
+		}
+		// If not found or cross-tenant query, search across all products in graph
+		if pNode == nil || pNode.Product == nil {
+			if allProds, listErr := nClient.Inventory().ListProducts(ctx, metav1.ListOptions{}); listErr == nil {
 				for _, prod := range allProds {
 					if prod != nil && prod.Product != nil && (prod.DisplayName() == name || prod.Spec.BatchID == name || prod.Spec.ProductID == name) {
-						pNode = prod
-						break
+						if tenantID == "" || tenantID == "all" || prod.Spec.TenantID == tenantID {
+							pNode = prod
+							break
+						}
 					}
 				}
 			}
@@ -1873,15 +1885,29 @@ func (s *VerificationServer) handleSubmitPassport(w http.ResponseWriter, r *http
 	})
 
 	// Also update in-memory engine model and clear cache
-	tenantID := pNode.Spec.TenantID
+	tenantID := nexus.ResolveProducerTenant(ctx, nClient, pNode.Spec.TenantID, pNode, nil, pNode.Spec.BatchID, pNode.DisplayName())
+	if tenantID != "" && tenantID != "all" && pNode.Spec.TenantID != tenantID {
+		pNode.Spec.TenantID = tenantID
+		_ = pNode.Update(ctx)
+	}
+
+	// Update linked product phase
+	if prodRef, err := pNode.GetProductRef(ctx); err == nil && prodRef != nil {
+		prodRef.Spec.Phase = "Submitted"
+		_ = prodRef.Update(ctx)
+	}
+
 	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
 		if pModel, err := s.nexusEngine.GetPassportByID(tenantCtx, pNode.DisplayName()); err == nil && pModel != nil {
 			pModel.VerificationStatus = nexus.StatusSubmitted
+			pModel.TenantID = tenantID
 			_ = s.nexusEngine.SavePassport(tenantCtx, pModel)
 		}
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, pNode.DisplayName()))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", passportID))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", pNode.DisplayName()))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -1952,15 +1978,29 @@ func (s *VerificationServer) handleRequestCorrections(w http.ResponseWriter, r *
 		},
 	})
 
-	tenantID := pNode.Spec.TenantID
+	tenantID := nexus.ResolveProducerTenant(ctx, nClient, pNode.Spec.TenantID, pNode, nil, pNode.Spec.BatchID, pNode.DisplayName())
+	if tenantID != "" && tenantID != "all" && pNode.Spec.TenantID != tenantID {
+		pNode.Spec.TenantID = tenantID
+		_ = pNode.Update(ctx)
+	}
+
+	// Update linked product phase
+	if prodRef, err := pNode.GetProductRef(ctx); err == nil && prodRef != nil {
+		prodRef.Spec.Phase = "CorrectionsRequired"
+		_ = prodRef.Update(ctx)
+	}
+
 	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
 		if pModel, err := s.nexusEngine.GetPassportByID(tenantCtx, pNode.DisplayName()); err == nil && pModel != nil {
 			pModel.VerificationStatus = nexus.StatusCorrectionsRequired
+			pModel.TenantID = tenantID
 			_ = s.nexusEngine.SavePassport(tenantCtx, pModel)
 		}
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, pNode.DisplayName()))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", passportID))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", pNode.DisplayName()))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -2046,15 +2086,29 @@ func (s *VerificationServer) handleVerifyPassport(w http.ResponseWriter, r *http
 		},
 	})
 
-	tenantID := pNode.Spec.TenantID
+	tenantID := nexus.ResolveProducerTenant(ctx, nClient, pNode.Spec.TenantID, pNode, nil, pNode.Spec.BatchID, pNode.DisplayName())
+	if tenantID != "" && tenantID != "all" && pNode.Spec.TenantID != tenantID {
+		pNode.Spec.TenantID = tenantID
+		_ = pNode.Update(ctx)
+	}
+
+	// Update linked product phase
+	if prodRef, err := pNode.GetProductRef(ctx); err == nil && prodRef != nil {
+		prodRef.Spec.Phase = "Verified"
+		_ = prodRef.Update(ctx)
+	}
+
 	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
 		if pModel, err := s.nexusEngine.GetPassportByID(tenantCtx, pNode.DisplayName()); err == nil && pModel != nil {
 			pModel.VerificationStatus = nexus.StatusVerified
+			pModel.TenantID = tenantID
 			_ = s.nexusEngine.SavePassport(tenantCtx, pModel)
 		}
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, pNode.DisplayName()))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", passportID))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", pNode.DisplayName()))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -2126,15 +2180,29 @@ func (s *VerificationServer) handleSubmitToAgency(w http.ResponseWriter, r *http
 		},
 	})
 
-	tenantID := pNode.Spec.TenantID
+	tenantID := nexus.ResolveProducerTenant(ctx, nClient, pNode.Spec.TenantID, pNode, nil, pNode.Spec.BatchID, pNode.DisplayName())
+	if tenantID != "" && tenantID != "all" && pNode.Spec.TenantID != tenantID {
+		pNode.Spec.TenantID = tenantID
+		_ = pNode.Update(ctx)
+	}
+
+	// Update linked product phase
+	if prodRef, err := pNode.GetProductRef(ctx); err == nil && prodRef != nil {
+		prodRef.Spec.Phase = "SubmittedToAgency"
+		_ = prodRef.Update(ctx)
+	}
+
 	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
 		if pModel, err := s.nexusEngine.GetPassportByID(tenantCtx, pNode.DisplayName()); err == nil && pModel != nil {
 			pModel.VerificationStatus = nexus.StatusSubmittedToAgency
+			pModel.TenantID = tenantID
 			_ = s.nexusEngine.SavePassport(tenantCtx, pModel)
 		}
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, pNode.DisplayName()))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", passportID))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", pNode.DisplayName()))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -2243,19 +2311,30 @@ func (s *VerificationServer) handleSignPassport(w http.ResponseWriter, r *http.R
 		},
 	})
 
-	// Also clear cache for passport
-	tenantID := r.Header.Get("X-Tenant-ID")
-	if tenantID == "" {
-		tenantID = pNode.Spec.TenantID
+	// Producer tenant resolution and self-healing
+	tenantID := nexus.ResolveProducerTenant(ctx, nClient, pNode.Spec.TenantID, pNode, nil, pNode.Spec.BatchID, pNode.DisplayName())
+	if tenantID != "" && tenantID != "all" && pNode.Spec.TenantID != tenantID {
+		pNode.Spec.TenantID = tenantID
+		_ = pNode.Update(ctx)
 	}
+
+	// Update linked product phase
+	if prodRef, err := pNode.GetProductRef(ctx); err == nil && prodRef != nil {
+		prodRef.Spec.Phase = "Issued"
+		_ = prodRef.Update(ctx)
+	}
+
 	if s.nexusEngine != nil {
 		tenantCtx := tenant.WithTenant(ctx, tenantID)
 		if pModel, err := s.nexusEngine.GetPassportByID(tenantCtx, pNode.DisplayName()); err == nil && pModel != nil {
 			pModel.VerificationStatus = nexus.StatusIssued
+			pModel.TenantID = tenantID
 			_ = s.nexusEngine.SavePassport(tenantCtx, pModel)
 		}
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
 		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, pNode.DisplayName()))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", passportID))
+		_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", pNode.DisplayName()))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -2289,8 +2368,10 @@ func (s *VerificationServer) handleDeletePassport(w http.ResponseWriter, r *http
 	if tenantID == "" {
 		tenantID = r.URL.Query().Get("tenant_id")
 	}
-	if tenantID == "" {
-		tenantID = "org_saurient_demo"
+	if tenantID == "" || tenantID == "all" {
+		if pNode, _ := nexus.GetPassportNode(ctx, s.getNexusClient(), passportID); pNode != nil && pNode.Spec.TenantID != "" {
+			tenantID = pNode.Spec.TenantID
+		}
 	}
 
 	tenantCtx := tenant.WithTenant(ctx, tenantID)
@@ -2312,6 +2393,7 @@ type MRVSubmitPackageRequest struct {
 	EngagementID string `json:"engagement_id"`
 	PassportID   string `json:"passport_id"`
 	BatchID      string `json:"batch_id"`
+	TenantID     string `json:"tenant_id,omitempty"`
 	Facility     string `json:"facility"`
 	SubmittedBy  string `json:"submitted_by"`
 	Notes        string `json:"notes"`
@@ -2361,7 +2443,7 @@ func (s *VerificationServer) handleMRVSubmitPackage(w http.ResponseWriter, r *ht
 
 	tenantID := r.Header.Get("X-Tenant-ID")
 	if tenantID == "" {
-		tenantID = "org_saurient_demo"
+		tenantID = req.TenantID
 	}
 
 	nowStr := time.Now().UTC().Format(time.RFC3339)
@@ -2396,10 +2478,32 @@ func (s *VerificationServer) handleMRVSubmitPackage(w http.ResponseWriter, r *ht
 	if pNode != nil {
 		passportID = pNode.DisplayName()
 		batchID = pNode.Spec.BatchID
+
+		// Producer tenant resolution and self-healing
+		tenantID = nexus.ResolveProducerTenant(ctx, nClient, pNode.Spec.TenantID, pNode, nil, batchID, passportID)
+		if tenantID == "" || tenantID == "all" {
+			tenantID = r.Header.Get("X-Tenant-ID")
+		}
+		if tenantID == "" || tenantID == "all" {
+			tenantID = req.TenantID
+		}
+		if tenantID == "" || tenantID == "all" {
+			tenantID = "tenant-default"
+		}
+		if pNode.Spec.TenantID != tenantID && tenantID != "all" && tenantID != "tenant-default" {
+			pNode.Spec.TenantID = tenantID
+		}
+
 		pNode.Spec.VerificationStatus = nexus.StatusSubmitted
 		pNode.Spec.Frozen = true
 		pNode.Spec.FrozenAt = nowStr
 		_ = pNode.Update(ctx)
+
+		// Update linked product phase
+		if prodRef, err := pNode.GetProductRef(ctx); err == nil && prodRef != nil {
+			prodRef.Spec.Phase = "Submitted"
+			_ = prodRef.Update(ctx)
+		}
 
 		auditName := fmt.Sprintf("audit-mrv-submit-%d", time.Now().UnixNano())
 		_, _ = pNode.AddAuditRecords(ctx, &runtimev1.AuditRecord{
@@ -2417,10 +2521,13 @@ func (s *VerificationServer) handleMRVSubmitPackage(w http.ResponseWriter, r *ht
 			tenantCtx := tenant.WithTenant(ctx, tenantID)
 			if pModel, err := s.nexusEngine.GetPassportByID(tenantCtx, passportID); err == nil && pModel != nil {
 				pModel.VerificationStatus = nexus.StatusSubmitted
+				pModel.TenantID = tenantID
 				_ = s.nexusEngine.SavePassport(tenantCtx, pModel)
 			}
 			_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, passportID))
 			_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("%s:%s", tenantID, batchID))
+			_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", passportID))
+			_ = s.nexusEngine.DeletePassportCache(ctx, fmt.Sprintf("all:%s", batchID))
 		}
 	} else {
 		passportID = req.PassportID

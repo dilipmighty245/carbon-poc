@@ -201,11 +201,7 @@ func EnsureTenantNode(ctx context.Context, client *nexus_client.Clientset, tenan
 	tenantNode, err := inv.GetTenants(ctx, tenantID)
 	if nexus_client.IsChildNotFound(err) || tenantNode == nil {
 		legalName := tenantID
-		if tenantID == "org_saurient_demo" {
-			legalName = "Saurient Industrial Ltd"
-		} else if tenantID == "org_asante_cocoa" {
-			legalName = "Asante Cocoa Ltd"
-		} else if tenantID == "tenant-default" {
+		if tenantID == "tenant-default" {
 			legalName = "Global Carbon Demo Facility"
 		} else if strings.HasPrefix(tenantID, "org_") {
 			clean := strings.TrimPrefix(tenantID, "org_")
@@ -292,6 +288,40 @@ func DeleteProductNode(ctx context.Context, client *nexus_client.Clientset, tena
 	return tenantNode.DeleteProducts(ctx, name)
 }
 
+// ResolveProducerTenant resolves and enforces the true producer tenant for a CarbonPassport node,
+// preventing accidental overwrites by cross-tenant actor contexts ("all", "public", "tenant-verifier-agency", etc.).
+func ResolveProducerTenant(ctx context.Context, client *nexus_client.Clientset, candidateTenant string, pNode *nexus_client.RuntimeCarbonPassport, productNode *nexus_client.InventoryProduct, batchID, passportID string) string {
+	if candidateTenant != "" && candidateTenant != "all" && candidateTenant != "public" && !strings.HasPrefix(candidateTenant, "tenant-verifier") {
+		return candidateTenant
+	}
+	if pNode != nil && pNode.Spec.TenantID != "" && pNode.Spec.TenantID != "all" && pNode.Spec.TenantID != "public" && !strings.HasPrefix(pNode.Spec.TenantID, "tenant-verifier") {
+		return pNode.Spec.TenantID
+	}
+	if productNode != nil && productNode.Spec.TenantID != "" && productNode.Spec.TenantID != "all" && productNode.Spec.TenantID != "public" {
+		return productNode.Spec.TenantID
+	}
+	if pNode != nil {
+		if prodRef, err := pNode.GetProductRef(ctx); err == nil && prodRef != nil && prodRef.Spec.TenantID != "" && prodRef.Spec.TenantID != "all" {
+			return prodRef.Spec.TenantID
+		}
+	}
+	if client != nil && (batchID != "" || passportID != "") {
+		if prods, err := client.Inventory().ListProducts(ctx, metav1.ListOptions{}); err == nil {
+			for _, pr := range prods {
+				if pr != nil && (pr.Spec.BatchID == batchID || pr.Spec.PassportID == passportID || pr.DisplayName() == batchID) {
+					if pr.Spec.TenantID != "" && pr.Spec.TenantID != "all" && pr.Spec.TenantID != "public" {
+						return pr.Spec.TenantID
+					}
+				}
+			}
+		}
+	}
+	if candidateTenant != "" && candidateTenant != "all" && candidateTenant != "public" {
+		return candidateTenant
+	}
+	return ""
+}
+
 // CreatePassportNode adds a CarbonPassport node under the Runtime branch and links it to its Product node.
 func CreatePassportNode(ctx context.Context, client *nexus_client.Clientset, spec runtimev1.CarbonPassportSpec, productNode *nexus_client.InventoryProduct) (*nexus_client.RuntimeCarbonPassport, error) {
 	root, err := EnsureGraphRoots(ctx, client)
@@ -308,9 +338,13 @@ func CreatePassportNode(ctx context.Context, client *nexus_client.Clientset, spe
 		spec.VerificationStatus = StatusDraft
 	}
 
+	// Resolve and strictly protect producer tenant identity
+	spec.TenantID = ResolveProducerTenant(ctx, client, spec.TenantID, nil, productNode, spec.BatchID, spec.PassportID)
+
 	// Read-before-write check to avoid duplicate key errors
 	existing, getErr := runtimeNode.GetPassports(ctx, spec.PassportID)
 	if getErr == nil && existing != nil {
+		spec.TenantID = ResolveProducerTenant(ctx, client, spec.TenantID, existing, productNode, spec.BatchID, spec.PassportID)
 		// Retain existing lifecycle state if already promoted past Draft
 		if existing.Spec.VerificationStatus != "" && (spec.VerificationStatus == StatusDraft || spec.VerificationStatus == "") {
 			spec.VerificationStatus = existing.Spec.VerificationStatus
@@ -337,6 +371,7 @@ func CreatePassportNode(ctx context.Context, client *nexus_client.Clientset, spe
 	if err != nil && nexus_client.IsAlreadyExists(err) {
 		existing, getErr := runtimeNode.GetPassports(ctx, spec.PassportID)
 		if getErr == nil && existing != nil {
+			spec.TenantID = ResolveProducerTenant(ctx, client, spec.TenantID, existing, productNode, spec.BatchID, spec.PassportID)
 			existing.Spec = spec
 			if updErr := existing.Update(ctx); updErr == nil {
 				if productNode != nil {
@@ -433,7 +468,17 @@ func GetPassportNode(ctx context.Context, client *nexus_client.Clientset, passpo
 		return nil, fmt.Errorf("failed to get Runtime branch: %w", err)
 	}
 
-	return rt.GetPassports(ctx, passportID)
+	p, err := rt.GetPassports(ctx, passportID)
+	if err == nil && p != nil {
+		if p.Spec.TenantID == "all" || p.Spec.TenantID == "" || p.Spec.TenantID == "public" {
+			resolved := ResolveProducerTenant(ctx, client, "", p, nil, p.Spec.BatchID, p.DisplayName())
+			if resolved != "" && resolved != "all" && resolved != "tenant-default" {
+				p.Spec.TenantID = resolved
+				_ = p.Update(ctx)
+			}
+		}
+	}
+	return p, err
 }
 
 // GetPassportNodeByBatchID searches the Runtime branch for a CarbonPassport with matching BatchID.
@@ -454,6 +499,13 @@ func GetPassportNodeByBatchID(ctx context.Context, client *nexus_client.Clientse
 	}
 	for _, p := range passports {
 		if p != nil && (p.Spec.BatchID == batchID || p.DisplayName() == batchID) {
+			if p.Spec.TenantID == "all" || p.Spec.TenantID == "" || p.Spec.TenantID == "public" {
+				resolved := ResolveProducerTenant(ctx, client, "", p, nil, p.Spec.BatchID, p.DisplayName())
+				if resolved != "" && resolved != "all" && resolved != "tenant-default" {
+					p.Spec.TenantID = resolved
+					_ = p.Update(ctx)
+				}
+			}
 			return p, nil
 		}
 	}
@@ -469,12 +521,37 @@ func ListPassportNodes(ctx context.Context, client *nexus_client.Clientset, tena
 	allPassports, err := client.Runtime().ListCarbonPassports(ctx, metav1.ListOptions{})
 	if err == nil {
 		if tenantID == "" || tenantID == "all" {
+			// Cross-tenant view: self-heal any corrupted tenant IDs
+			for _, p := range allPassports {
+				if p != nil && (p.Spec.TenantID == "all" || p.Spec.TenantID == "" || p.Spec.TenantID == "public") {
+					resolved := ResolveProducerTenant(ctx, client, "", p, nil, p.Spec.BatchID, p.DisplayName())
+					if resolved != "" && resolved != "all" && resolved != "tenant-default" {
+						p.Spec.TenantID = resolved
+						_ = p.Update(ctx)
+					}
+				}
+			}
 			return allPassports, nil
 		}
 		var filtered []*nexus_client.RuntimeCarbonPassport
 		for _, p := range allPassports {
-			if p != nil && p.Spec.TenantID == tenantID {
+			if p == nil {
+				continue
+			}
+			if p.Spec.TenantID == tenantID {
 				filtered = append(filtered, p)
+				continue
+			}
+			// Self-heal and match if tenant was corrupted to "all", "public", or empty
+			if p.Spec.TenantID == "all" || p.Spec.TenantID == "" || p.Spec.TenantID == "public" {
+				resolved := ResolveProducerTenant(ctx, client, "", p, nil, p.Spec.BatchID, p.DisplayName())
+				if resolved != "" && resolved != "all" && resolved != "tenant-default" {
+					p.Spec.TenantID = resolved
+					_ = p.Update(ctx)
+					if resolved == tenantID {
+						filtered = append(filtered, p)
+					}
+				}
 			}
 		}
 		return filtered, nil
@@ -495,14 +572,37 @@ func ListPassportNodes(ctx context.Context, client *nexus_client.Clientset, tena
 		return nil, err
 	}
 
-	if tenantID == "" {
+	if tenantID == "" || tenantID == "all" {
+		for _, p := range passports {
+			if p != nil && (p.Spec.TenantID == "all" || p.Spec.TenantID == "" || p.Spec.TenantID == "public") {
+				resolved := ResolveProducerTenant(ctx, client, "", p, nil, p.Spec.BatchID, p.DisplayName())
+				if resolved != "" && resolved != "all" && resolved != "tenant-default" {
+					p.Spec.TenantID = resolved
+					_ = p.Update(ctx)
+				}
+			}
+		}
 		return passports, nil
 	}
 
 	var filtered []*nexus_client.RuntimeCarbonPassport
 	for _, p := range passports {
-		if p != nil && (p.Spec.TenantID == tenantID || tenantID == "all") {
+		if p == nil {
+			continue
+		}
+		if p.Spec.TenantID == tenantID {
 			filtered = append(filtered, p)
+			continue
+		}
+		if p.Spec.TenantID == "all" || p.Spec.TenantID == "" || p.Spec.TenantID == "public" {
+			resolved := ResolveProducerTenant(ctx, client, "", p, nil, p.Spec.BatchID, p.DisplayName())
+			if resolved != "" && resolved != "all" && resolved != "tenant-default" {
+				p.Spec.TenantID = resolved
+				_ = p.Update(ctx)
+				if resolved == tenantID {
+					filtered = append(filtered, p)
+				}
+			}
 		}
 	}
 	return filtered, nil
@@ -789,6 +889,17 @@ func CarbonPassportModelFromNode(pNode *nexus_client.RuntimeCarbonPassport) *Car
 		return nil
 	}
 	spec := pNode.Spec
+
+	// Ensure producer tenant is accurately resolved and self-healed
+	if spec.TenantID == "all" || spec.TenantID == "" || spec.TenantID == "public" {
+		ctx := context.Background()
+		if prodRef, err := pNode.GetProductRef(ctx); err == nil && prodRef != nil && prodRef.Spec.TenantID != "" && prodRef.Spec.TenantID != "all" {
+			spec.TenantID = prodRef.Spec.TenantID
+			pNode.Spec.TenantID = prodRef.Spec.TenantID
+			_ = pNode.Update(ctx)
+		}
+	}
+
 	issuedAt, _ := time.Parse(time.RFC3339, spec.IssuedAt)
 	if issuedAt.IsZero() {
 		issuedAt = time.Now()
@@ -1035,7 +1146,7 @@ func SeedDefaultNexusData(ctx context.Context, client *nexus_client.Clientset) e
 	})
 
 	// 2. Ensure Default Tenants exist without injecting any mock facilities, users, or passports
-	tenantsToSeed := []string{"tenant-default", "org_saurient_demo", "org_asante_cocoa"}
+	tenantsToSeed := []string{"tenant-default"}
 	for _, tID := range tenantsToSeed {
 		_, _ = EnsureTenantNode(ctx, client, tID)
 	}

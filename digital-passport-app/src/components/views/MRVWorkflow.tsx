@@ -62,20 +62,10 @@ function InnerMRVWorkflow() {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <button
-            onClick={() => navigate('/passport/readiness')}
+            onClick={() => navigate('/passport')}
             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
           >
-            Go to Passport Readiness Gate
-          </button>
-          <button
-            onClick={() => {
-              localStorage.setItem('saurient_user_role', 'Verifier');
-              localStorage.setItem('auth_role', 'Verifier');
-              window.location.reload();
-            }}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
-          >
-            Switch to Verifier Mode (Bureau Veritas)
+            Return to Carbon Passports
           </button>
         </div>
       </div>
