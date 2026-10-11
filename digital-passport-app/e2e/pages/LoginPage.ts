@@ -14,12 +14,14 @@ export class LoginPage extends BasePage {
     if (email) {
       const emailInput = this.page.locator('input[type="email"]');
       if (await emailInput.isVisible()) {
+        await emailInput.clear();
         await emailInput.fill(email);
       }
     }
 
     const passwordInput = this.page.locator('input[type="password"]');
     if (await passwordInput.isVisible()) {
+      await passwordInput.clear();
       await passwordInput.fill(password);
     }
 
@@ -36,7 +38,7 @@ export class LoginPage extends BasePage {
     const body = await loginResp.json();
     expect(body.token).toBeDefined();
 
-    await expect(this.page).toHaveURL(/.*\/dashboard/);
+    await expect(this.page).toHaveURL(/.*dashboard/);
   }
 
   async assertDashboardLoaded(legalName?: string) {

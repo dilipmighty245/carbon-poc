@@ -10,8 +10,11 @@ export class RegistrationPage extends BasePage {
     await this.page.goto('/registration');
   }
 
-  async completeAccountOwnerStep(name: string, phone: string, password: string) {
+  async completeAccountOwnerStep(name: string, phone: string, password: string, email?: string) {
     await this.page.locator('div:has(> label:has-text("Primary Account Owner Name")) input').fill(name);
+    if (email) {
+      await this.page.locator('div:has(> label:has-text("Corporate Work Email")) input').fill(email);
+    }
     await this.page.locator('div:has(> label:has-text("Direct Phone Number")) input').fill(phone);
     await this.page.locator('input[placeholder="Enter account password"]').fill(password);
     await this.page.locator('input[placeholder="Confirm account password"]').fill(password);
@@ -57,7 +60,7 @@ export class RegistrationPage extends BasePage {
   }
 
   async proceedToLogin() {
-    const proceedBtn = this.page.getByRole('button', { name: /proceed to login/i });
+    const proceedBtn = this.page.getByRole('button', { name: /(proceed to sign in|proceed to login)/i });
     await proceedBtn.click();
     await expect(this.page).toHaveURL(/.*\/login/);
   }

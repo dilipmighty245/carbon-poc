@@ -8,7 +8,8 @@
     "start": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:loki": "playwright test e2e/specs/loki_lifecycle_verification.spec.ts"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

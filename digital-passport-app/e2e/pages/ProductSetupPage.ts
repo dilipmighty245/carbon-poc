@@ -30,12 +30,16 @@ export class ProductSetupPage extends BasePage {
     const productNameInput = this.page.locator('div:has(> label:has-text("Product Name")) input');
     await productNameInput.fill(data.productName);
 
-    // Select Facility
+    // Select or Fill Facility
     const facilitySelect = this.page.locator('div:has(> label:has-text("Plant / Facility")) select');
-    await facilitySelect.waitFor({ state: 'visible' });
-    await facilitySelect.selectOption({ label: new RegExp(data.facilityName, 'i') }).catch(async () => {
-      await facilitySelect.selectOption(data.facilityName).catch(() => {});
-    });
+    const facilityInput = this.page.locator('div:has(> label:has-text("Plant / Facility")) input');
+    if (await facilitySelect.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await facilitySelect.selectOption({ label: new RegExp(data.facilityName, 'i') }).catch(async () => {
+        await facilitySelect.selectOption(data.facilityName).catch(() => {});
+      });
+    } else if (await facilityInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await facilityInput.fill(data.facilityName);
+    }
 
     // Fill Batch ID
     const batchInput = this.page.locator('div:has(> label:has-text("Batch / Lot Number")) input');

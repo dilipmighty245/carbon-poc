@@ -7,9 +7,10 @@ import { ProductSetupPage } from '../pages/ProductSetupPage';
 import { PassportPage } from '../pages/PassportPage';
 
 test.describe('Connected Saurient Core Journey: Org Registration -> Facility Telemetry -> Protected Issuance', () => {
-  test.beforeEach(async ({ context }) => {
+  test.beforeEach(async ({ page }) => {
     // Isolate browser context and flush all draft and registration state before mount
-    await context.addInitScript(() => {
+    await page.goto('/login');
+    await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();
     });
@@ -33,7 +34,8 @@ test.describe('Connected Saurient Core Journey: Org Registration -> Facility Tel
     await regPage.completeAccountOwnerStep(
       TEST_SPECIMEN.company.ownerName,
       TEST_SPECIMEN.company.ownerPhone,
-      TEST_SPECIMEN.company.ownerPassword
+      TEST_SPECIMEN.company.ownerPassword,
+      'elena.rostova@saurient.io'
     );
     await regPage.completeLegalIdentityStep(legalName, TEST_SPECIMEN.company.registrationNumber);
     await regPage.jumpToReviewAndSubmit();

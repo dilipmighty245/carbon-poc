@@ -71,6 +71,10 @@ test-e2e-ui-run:
 	@echo "==> Running Playwright UI E2E Connected Journey Test against active servers..."
 	@cd digital-passport-app && npm run test:e2e
 
+test-e2e-loki:
+	@echo "==> Running Playwright E2E UI Live Lifecycle Verification (org_loki)..."
+	@cd digital-passport-app && npm run test:e2e:loki
+
 e2e: test-e2e
 
 check-prereqs:
