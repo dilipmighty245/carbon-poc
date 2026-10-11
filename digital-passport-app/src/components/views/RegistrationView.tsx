@@ -421,7 +421,7 @@ export const RegistrationView: React.FC = () => {
       updatedAt: new Date().toISOString(),
     }));
     setIsAutosaved(true);
-    navigate('/dashboard');
+    navigate('/login');
   };
 
   const handleContinue = async () => {
@@ -461,7 +461,7 @@ export const RegistrationView: React.FC = () => {
     <div className="min-h-screen bg-slate-100 flex">
       {/* Left Stepper Sidebar */}
       <aside className="w-72 bg-slate-950 text-white p-6 space-y-6 hidden md:block shrink-0 border-r border-slate-800">
-        <div className="flex items-center gap-3.5 cursor-pointer" onClick={() => navigate('/dashboard')}>
+        <div className="flex items-center gap-3.5 cursor-pointer" onClick={() => navigate('/login')}>
           <img
             src="/saurient-logo.png"
             alt="Saurient Logo"
@@ -1195,7 +1195,7 @@ export const RegistrationView: React.FC = () => {
               The account owner is provisioned as <strong>Organisation Owner</strong> in the Nexus graph datamodel. Sign in with these credentials to manage your company workspace, create users, and assign roles.
             </p>
 
-            <div className="flex flex-col gap-2 pt-1">
+            <div className="pt-1">
               <button
                 onClick={() => {
                   const emailParam = formData.ownerEmail || generateSaurientEmail(formData.ownerName);
@@ -1205,14 +1205,6 @@ export const RegistrationView: React.FC = () => {
               >
                 <LogIn className="w-4 h-4" />
                 <span>Proceed to Sign In with Credentials</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/company-dashboard')}
-                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2"
-              >
-                <span>Go to Company Dashboard</span>
-                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>

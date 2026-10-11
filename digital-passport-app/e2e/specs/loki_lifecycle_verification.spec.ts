@@ -290,5 +290,12 @@ test.describe('Live Lifecycle Verification (org_loki)', () => {
     expect(otherApiResponse.status()).toBe(200);
     const otherPassports = await otherApiResponse.json();
     expect(otherPassports).toEqual([]);
+
+    // Clean up test product batch so it never seeds or pollutes the user's live session
+    await request.delete(`http://localhost:8080/api/v1/products?batch_id=${batchId}`, {
+      headers: {
+        'X-Tenant-ID': tenantId,
+      },
+    }).catch(() => {});
   });
 });
