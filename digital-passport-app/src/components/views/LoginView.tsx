@@ -125,8 +125,12 @@ export const LoginView: React.FC = () => {
     setSuccessMsg(null);
 
     if (role === 'Public Viewer') {
+      localStorage.setItem('saurient_auth_token', 'demo-public-viewer-token');
+      localStorage.setItem('saurient_user_email', 'public@saurient.com');
+      localStorage.setItem('saurient_user_name', 'Public Customs Auditor');
       localStorage.setItem('saurient_user_role', 'Public Viewer');
       localStorage.setItem('auth_role', 'Public Viewer');
+      localStorage.setItem('saurient_tenant_id', 'public');
       navigate('/passport/registry');
       return;
     }
@@ -150,6 +154,12 @@ export const LoginView: React.FC = () => {
         const isIndep = effectiveRole.toLowerCase().includes('verifier') || effectiveRole.toLowerCase().includes('officer') || effectiveRole.toLowerCase().includes('auditor');
         const resolvedTenant = isIndep ? 'all' : (resp.user.tenant_id || resp.tenant_id || 'org_asante_cocoa');
         localStorage.setItem('saurient_tenant_id', resolvedTenant);
+
+        const redirect = searchParams.get('redirect');
+        if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+          navigate(redirect);
+          return;
+        }
 
         const rLower = (resp.user.role || '').toLowerCase().replace(/[\s_]/g, '');
         const targetRoute = (rLower === 'organisationowner' || rLower === 'organisationadmin' || rLower === 'companyoperator')

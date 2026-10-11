@@ -466,6 +466,36 @@ export interface AuthResponse {
   expires_in?: number;
 }
 
+export interface LoginErrorDetails {
+  error: string;
+  reason?: 'user_not_found' | 'company_not_registered' | 'invalid_password' | string;
+  company_registered?: boolean;
+  company_name?: string;
+  tenant_id?: string;
+  domain?: string;
+  message?: string;
+}
+
+export class AuthError extends Error {
+  status: number;
+  reason?: string;
+  companyRegistered?: boolean;
+  companyName?: string;
+  tenantId?: string;
+  domain?: string;
+
+  constructor(message: string, status: number, details?: Partial<LoginErrorDetails>) {
+    super(message);
+    this.name = 'AuthError';
+    this.status = status;
+    this.reason = details?.reason;
+    this.companyRegistered = details?.company_registered;
+    this.companyName = details?.company_name;
+    this.tenantId = details?.tenant_id;
+    this.domain = details?.domain;
+  }
+}
+
 export async function loginUser(email: string, password: string, tenantId?: string): Promise<AuthResponse> {
   const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -478,7 +508,11 @@ export async function loginUser(email: string, password: string, tenantId?: stri
   });
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({}));
-    throw new Error(errorBody.error || `Authentication failed (${res.status})`);
+    throw new AuthError(
+      errorBody.message || errorBody.error || `Authentication failed (${res.status})`,
+      res.status,
+      errorBody
+    );
   }
   return await res.json();
 }
@@ -515,6 +549,16 @@ export async function getCurrentUser(): Promise<AuthUser> {
     },
   });
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('saurient_auth_token');
+      localStorage.removeItem('saurient_user_role');
+      localStorage.removeItem('auth_role');
+      localStorage.removeItem('saurient_user_email');
+      localStorage.removeItem('saurient_user_id');
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/registration')) {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      }
+    }
     const errorBody = await res.json().catch(() => ({}));
     throw new Error(errorBody.error || `Failed to fetch current user (${res.status})`);
   }

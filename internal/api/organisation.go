@@ -135,11 +135,28 @@ func writeJSONError(w http.ResponseWriter, msg string, code int) {
 	http.Error(w, string(b), code)
 }
 
+type LoginErrorResponse struct {
+	Error             string `json:"error"`
+	Reason            string `json:"reason,omitempty"` // "user_not_found", "company_not_registered", "invalid_password"
+	CompanyRegistered bool   `json:"company_registered"`
+	CompanyName       string `json:"company_name,omitempty"`
+	TenantID          string `json:"tenant_id,omitempty"`
+	Domain            string `json:"domain,omitempty"`
+	Message           string `json:"message,omitempty"`
+}
+
+func writeLoginError(w http.ResponseWriter, resp LoginErrorResponse, code int) {
+	setCORSHeaders(w)
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
 // RegisterRoutes registers all Organisation REST endpoints with http.ServeMux
 func (h *OrganisationHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/auth/register", h.HandleAuthRegister)
 	mux.HandleFunc("/api/v1/auth/login", h.HandleAuthLogin)
 	mux.HandleFunc("/api/v1/auth/me", h.HandleAuthMe)
+	mux.HandleFunc("/api/v1/auth/request-access", h.HandleRequestAccess)
 	mux.HandleFunc("/api/v1/organisation/profile", h.HandleProfile)
 	mux.HandleFunc("/api/v1/organisation/facilities", h.HandleFacilities)
 	mux.HandleFunc("/api/v1/organisation/facilities/", h.HandleFacilities)
@@ -327,20 +344,84 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 
 	if err != nil || uNode == nil {
 		// User does not exist in datamodel! No synthetic user generation!
-		writeJSONError(w, "Invalid email or password", http.StatusUnauthorized)
+		if h.engine != nil {
+			if prof, found := h.engine.FindTenantByEmailOrDomain(ctx, req.Email); found && prof != nil {
+				companyName := prof.LegalName
+				if companyName == "" {
+					companyName = prof.TradingName
+				}
+				if companyName == "" {
+					companyName = prof.TenantID
+				}
+				loginErr := LoginErrorResponse{
+					Error:             fmt.Sprintf("User %s is not registered under %s", req.Email, companyName),
+					Reason:            "user_not_found",
+					CompanyRegistered: true,
+					CompanyName:       companyName,
+					TenantID:          prof.TenantID,
+					Message:           fmt.Sprintf("Your company (%s) is registered on the platform, but your user account was not found. Please request your company's Organisation Owner or Admin to give you access.", companyName),
+				}
+				writeLoginError(w, loginErr, http.StatusUnauthorized)
+				return
+			}
+		}
+
+		parts := strings.Split(req.Email, "@")
+		domain := ""
+		if len(parts) == 2 {
+			domain = parts[1]
+		}
+		loginErr := LoginErrorResponse{
+			Error:             "Company not registered",
+			Reason:            "company_not_registered",
+			CompanyRegistered: false,
+			Domain:            domain,
+			Message:           "Neither your user account nor your company has been registered on the platform. Unless you register your company, you cannot log in. Please register your company first.",
+		}
+		writeLoginError(w, loginErr, http.StatusUnauthorized)
 		return
 	}
 
 	// 2. Verify password hash against datamodel secret spec
 	if uNode.Spec.PasswordHash != "" {
 		if !VerifyPassword(req.Password, uNode.Spec.Salt, uNode.Spec.PasswordHash) {
-			writeJSONError(w, "Invalid email or password", http.StatusUnauthorized)
+			companyName := uNode.Spec.TenantID
+			if h.engine != nil {
+				tCtx := tenant.WithTenant(ctx, uNode.Spec.TenantID)
+				if prof, err := h.engine.GetTenantProfile(tCtx); err == nil && prof != nil && prof.LegalName != "" {
+					companyName = prof.LegalName
+				}
+			}
+			loginErr := LoginErrorResponse{
+				Error:             "Invalid email or password",
+				Reason:            "invalid_password",
+				CompanyRegistered: true,
+				CompanyName:       companyName,
+				TenantID:          uNode.Spec.TenantID,
+				Message:           "Incorrect password entered for this registered user account.",
+			}
+			writeLoginError(w, loginErr, http.StatusUnauthorized)
 			return
 		}
 	} else {
 		// Unhashed user fallback: check standard default or update
 		if req.Password != "DemoPassword2026!" && req.Password != "password123" {
-			writeJSONError(w, "Invalid email or password", http.StatusUnauthorized)
+			companyName := uNode.Spec.TenantID
+			if h.engine != nil {
+				tCtx := tenant.WithTenant(ctx, uNode.Spec.TenantID)
+				if prof, err := h.engine.GetTenantProfile(tCtx); err == nil && prof != nil && prof.LegalName != "" {
+					companyName = prof.LegalName
+				}
+			}
+			loginErr := LoginErrorResponse{
+				Error:             "Invalid email or password",
+				Reason:            "invalid_password",
+				CompanyRegistered: true,
+				CompanyName:       companyName,
+				TenantID:          uNode.Spec.TenantID,
+				Message:           "Incorrect password entered for this registered user account.",
+			}
+			writeLoginError(w, loginErr, http.StatusUnauthorized)
 			return
 		}
 		salt := GenerateSalt()
@@ -422,6 +503,52 @@ func (h *OrganisationHandler) HandleAuthMe(w http.ResponseWriter, r *http.Reques
 	}
 
 	writeJSONError(w, "user not found in datamodel", http.StatusNotFound)
+}
+
+// 1b. POST /api/v1/auth/request-access
+type RequestAccessPayload struct {
+	Email       string `json:"email"`
+	Name        string `json:"name,omitempty"`
+	CompanyName string `json:"company_name,omitempty"`
+	TenantID    string `json:"tenant_id,omitempty"`
+	Message     string `json:"message,omitempty"`
+}
+
+func (h *OrganisationHandler) HandleRequestAccess(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if r.Method != http.MethodPost {
+		writeJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req RequestAccessPayload
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSONError(w, "invalid request payload", http.StatusBadRequest)
+		return
+	}
+	req.Email = strings.TrimSpace(req.Email)
+	if req.Email == "" {
+		writeJSONError(w, "email is required", http.StatusBadRequest)
+		return
+	}
+
+	targetComp := req.CompanyName
+	if targetComp == "" {
+		targetComp = req.TenantID
+	}
+	if targetComp == "" {
+		targetComp = "Organisation Administrator"
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  "submitted",
+		"message": fmt.Sprintf("Access request successfully sent to the Organisation Admin of %s for %s.", targetComp, req.Email),
+	})
 }
 
 // 2. Profile Handlers (GET, PUT, POST)

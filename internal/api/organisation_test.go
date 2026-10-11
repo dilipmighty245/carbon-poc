@@ -729,5 +729,105 @@ func TestIndependentRolesLoginAndProfileSanitization(t *testing.T) {
 	}
 }
 
+func TestOrganisationHandler_CompanyRegistrationAndAccessRequest(t *testing.T) {
+	client := nexus_client.NewFakeClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	engine := nexus.GetNexusEngine()
+	h := NewOrganisationHandlerWithClient(client, engine)
+
+	// 1. Unregistered company and user -> reason must be company_not_registered
+	loginBody, _ := json.Marshal(map[string]string{
+		"email":    "worker@never-registered-steel.com",
+		"password": "Password123!",
+	})
+	reqLogin := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(loginBody))
+	recLogin := httptest.NewRecorder()
+	h.HandleAuthLogin(recLogin, reqLogin)
+
+	if recLogin.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 Unauthorized, got %d", recLogin.Code)
+	}
+	var errResp1 LoginErrorResponse
+	if err := json.NewDecoder(recLogin.Body).Decode(&errResp1); err != nil {
+		t.Fatalf("failed to decode login error response: %v", err)
+	}
+	if errResp1.CompanyRegistered {
+		t.Errorf("expected company_registered to be false, got true")
+	}
+	if errResp1.Reason != "company_not_registered" {
+		t.Errorf("expected reason 'company_not_registered', got '%s'", errResp1.Reason)
+	}
+
+	// 2. Register a new company and owner
+	coopTenant := "tenant_cocoa_coop"
+	profBody, _ := json.Marshal(map[string]interface{}{
+		"legal_name":   "Cocoa Growers Cooperative",
+		"trading_name": "Cocoa Coop",
+		"website":      "https://cocoa-coop.org",
+	})
+	reqProf := httptest.NewRequest(http.MethodPut, "/api/v1/organisation/profile", bytes.NewBuffer(profBody))
+	reqProf.Header.Set("X-Tenant-ID", coopTenant)
+	recProf := httptest.NewRecorder()
+	h.HandleProfile(recProf, reqProf)
+	if recProf.Code != http.StatusOK {
+		t.Fatalf("failed to save profile: %d", recProf.Code)
+	}
+
+	ownerBody, _ := json.Marshal(map[string]string{
+		"tenant_id": coopTenant,
+		"email":     "admin@cocoa-coop.org",
+		"name":      "Kwame Mensah",
+		"password":  "CoopPass2026!",
+		"role":      "Organisation Owner",
+	})
+	reqOwner := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", bytes.NewBuffer(ownerBody))
+	recOwner := httptest.NewRecorder()
+	h.HandleAuthRegister(recOwner, reqOwner)
+	if recOwner.Code != http.StatusCreated {
+		t.Fatalf("failed to register owner: %d", recOwner.Code)
+	}
+
+	// 3. User with same company domain tries to login -> Company IS registered, but user not found!
+	userLoginBody, _ := json.Marshal(map[string]string{
+		"email":    "unregistered-field-worker@cocoa-coop.org",
+		"password": "WorkerPass2026!",
+	})
+	reqUserLogin := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewBuffer(userLoginBody))
+	recUserLogin := httptest.NewRecorder()
+	h.HandleAuthLogin(recUserLogin, reqUserLogin)
+
+	if recUserLogin.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 Unauthorized for unprovisioned worker, got %d", recUserLogin.Code)
+	}
+	var errResp2 LoginErrorResponse
+	if err := json.NewDecoder(recUserLogin.Body).Decode(&errResp2); err != nil {
+		t.Fatalf("failed to decode login error: %v", err)
+	}
+	if !errResp2.CompanyRegistered {
+		t.Errorf("expected company_registered to be true for existing company domain, got false")
+	}
+	if errResp2.Reason != "user_not_found" {
+		t.Errorf("expected reason 'user_not_found', got '%s'", errResp2.Reason)
+	}
+	if errResp2.CompanyName != "Cocoa Growers Cooperative" {
+		t.Errorf("expected company name 'Cocoa Growers Cooperative', got '%s'", errResp2.CompanyName)
+	}
+
+	// 4. Request access from company admin
+	reqAccessBody, _ := json.Marshal(map[string]string{
+		"email":        "unregistered-field-worker@cocoa-coop.org",
+		"name":         "Field Worker",
+		"company_name": errResp2.CompanyName,
+		"tenant_id":    errResp2.TenantID,
+	})
+	reqAccess := httptest.NewRequest(http.MethodPost, "/api/v1/auth/request-access", bytes.NewBuffer(reqAccessBody))
+	recAccess := httptest.NewRecorder()
+	h.HandleRequestAccess(recAccess, reqAccess)
+	if recAccess.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK from request-access, got %d", recAccess.Code)
+	}
+}
+
+
 
 

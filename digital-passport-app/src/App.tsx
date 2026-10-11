@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Shell } from './components/layout/Shell';
+import { AuthGuard } from './components/auth/AuthGuard';
 
 import { LoginView } from './components/views/LoginView';
 import { RegistrationView } from './components/views/RegistrationView';
@@ -27,54 +28,56 @@ export function App() {
     <BrowserRouter>
       <Routes>
         {/* Full screen auth & onboarding starting entry points */}
-        <Route path="/" element={<LoginView />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginView />} />
         <Route path="/registration" element={<RegistrationView />} />
 
-        {/* Views wrapped in main layout shell */}
-        <Route path="/dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
-        <Route path="/company-dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
-        <Route path="/executive-dashboard" element={<Shell><ExecutiveDashboard /></Shell>} />
-        <Route path="/products" element={<Shell><ProductSetup /></Shell>} />
-        <Route path="/products/new" element={<Shell><ProductSetup /></Shell>} />
-        <Route path="/product-setup" element={<Shell><ProductSetup /></Shell>} />
-        
-        {/* MRV Verification Routes */}
-        <Route path="/mrv" element={<Shell><MRVWorkflow /></Shell>} />
-        <Route path="/mrv/:tab" element={<Shell><MRVWorkflow /></Shell>} />
+        {/* Protected views wrapped in AuthGuard and main layout shell */}
+        <Route element={<AuthGuard />}>
+          <Route path="/dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
+          <Route path="/company-dashboard" element={<Shell><CompanyDashboardView /></Shell>} />
+          <Route path="/executive-dashboard" element={<Shell><ExecutiveDashboard /></Shell>} />
+          <Route path="/products" element={<Shell><ProductSetup /></Shell>} />
+          <Route path="/products/new" element={<Shell><ProductSetup /></Shell>} />
+          <Route path="/product-setup" element={<Shell><ProductSetup /></Shell>} />
+          
+          {/* MRV Verification Routes */}
+          <Route path="/mrv" element={<Shell><MRVWorkflow /></Shell>} />
+          <Route path="/mrv/:tab" element={<Shell><MRVWorkflow /></Shell>} />
 
-        <Route path="/evidence" element={<Shell><EvidenceVerification /></Shell>} />
-        <Route path="/emissions" element={<Shell><EmissionsCalculation /></Shell>} />
-        
-        {/* Digital Passport Routes */}
-        <Route path="/passport" element={<Shell><DigitalPassportOutput /></Shell>} />
-        <Route path="/passport/:tab" element={<Shell><DigitalPassportOutput /></Shell>} />
-        <Route path="/passport/:tab/:passportId" element={<Shell><DigitalPassportOutput /></Shell>} />
+          <Route path="/evidence" element={<Shell><EvidenceVerification /></Shell>} />
+          <Route path="/emissions" element={<Shell><EmissionsCalculation /></Shell>} />
+          
+          {/* Digital Passport Routes */}
+          <Route path="/passport" element={<Shell><DigitalPassportOutput /></Shell>} />
+          <Route path="/passport/:tab" element={<Shell><DigitalPassportOutput /></Shell>} />
+          <Route path="/passport/:tab/:passportId" element={<Shell><DigitalPassportOutput /></Shell>} />
 
-        {/* Trace Carbon Lineage View */}
-        <Route path="/trace" element={<Shell><TraceCarbonView /></Shell>} />
+          {/* Trace Carbon Lineage View */}
+          <Route path="/trace" element={<Shell><TraceCarbonView /></Shell>} />
 
-        {/* Modules & Reports */}
-        <Route path="/organisation" element={<Shell><OrganisationView /></Shell>} />
-        <Route path="/data" element={<Shell><IntegrationHubView /></Shell>} />
-        
-        {/* Carbon Accounting tab -> Product Carbon Footprint */}
-        <Route path="/carbon-accounting" element={<Shell><PCFView /></Shell>} />
-        <Route path="/pcf" element={<Shell><PCFView /></Shell>} />
-        <Route path="/ghg" element={<Shell><GHGInventoryView /></Shell>} />
+          {/* Modules & Reports */}
+          <Route path="/organisation" element={<Shell><OrganisationView /></Shell>} />
+          <Route path="/data" element={<Shell><IntegrationHubView /></Shell>} />
+          
+          {/* Carbon Accounting tab -> Product Carbon Footprint */}
+          <Route path="/carbon-accounting" element={<Shell><PCFView /></Shell>} />
+          <Route path="/pcf" element={<Shell><PCFView /></Shell>} />
+          <Route path="/ghg" element={<Shell><GHGInventoryView /></Shell>} />
 
-        {/* Value Chain tab -> Supplier & Customer Network */}
-        <Route path="/value-chain" element={<Shell><SuppliersView /></Shell>} />
-        <Route path="/suppliers" element={<Shell><SuppliersView /></Shell>} />
+          {/* Value Chain tab -> Supplier & Customer Network */}
+          <Route path="/value-chain" element={<Shell><SuppliersView /></Shell>} />
+          <Route path="/suppliers" element={<Shell><SuppliersView /></Shell>} />
 
-        <Route path="/cbam" element={<Shell><CBAMView /></Shell>} />
-        <Route path="/analytics" element={<Shell><AnalyticsView /></Shell>} />
-        <Route path="/government" element={<Shell><GovernmentView /></Shell>} />
-        <Route path="/paris-alignment" element={<Shell><ParisAlignmentView /></Shell>} />
-        <Route path="/admin" element={<Shell><AdminView /></Shell>} />
+          <Route path="/cbam" element={<Shell><CBAMView /></Shell>} />
+          <Route path="/analytics" element={<Shell><AnalyticsView /></Shell>} />
+          <Route path="/government" element={<Shell><GovernmentView /></Shell>} />
+          <Route path="/paris-alignment" element={<Shell><ParisAlignmentView /></Shell>} />
+          <Route path="/admin" element={<Shell><AdminView /></Shell>} />
+        </Route>
 
-        {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Fallback routes -> redirect to /login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

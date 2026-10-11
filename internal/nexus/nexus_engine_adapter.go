@@ -487,6 +487,65 @@ func (e *NexusGraphEngine) SaveTenantProfile(ctx context.Context, profile *Tenan
 	return nil
 }
 
+// FindTenantByEmailOrDomain searches for a registered company in tenant profiles and Nexus datamodel
+// that matches an email domain or company name.
+func (e *NexusGraphEngine) FindTenantByEmailOrDomain(ctx context.Context, email string) (*TenantProfileModel, bool) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return nil, false
+	}
+	domain := parts[1]
+	domainSlug := strings.Split(domain, ".")[0]
+	domainSlug = strings.ReplaceAll(domainSlug, "-", "_")
+
+	// 1. Check in-memory registered tenant profiles
+	e.opMu.RLock()
+	for tID, prof := range e.tenantProfiles {
+		if prof == nil {
+			continue
+		}
+		tIDLower := strings.ToLower(tID)
+		if strings.Contains(tIDLower, domainSlug) {
+			e.opMu.RUnlock()
+			return prof, true
+		}
+		if prof.Website != "" && strings.Contains(strings.ToLower(prof.Website), domain) {
+			e.opMu.RUnlock()
+			return prof, true
+		}
+		cleanLegal := strings.ToLower(strings.ReplaceAll(prof.LegalName, " ", ""))
+		cleanDomain := strings.ReplaceAll(domainSlug, "_", "")
+		if cleanLegal != "" && cleanDomain != "" && (strings.Contains(cleanLegal, cleanDomain) || strings.Contains(cleanDomain, cleanLegal)) {
+			e.opMu.RUnlock()
+			return prof, true
+		}
+	}
+	e.opMu.RUnlock()
+
+	// 2. Check if ANY user exists in the Nexus datamodel with this email domain
+	client := GetNexusClient()
+	if client != nil {
+		allUsers, err := ListUserNodes(ctx, client, "")
+		if err == nil {
+			for _, u := range allUsers {
+				if u != nil && strings.HasSuffix(strings.ToLower(u.Spec.Email), "@"+domain) {
+					tCtx := tenant.WithTenant(ctx, u.Spec.TenantID)
+					if prof, err := e.GetTenantProfile(tCtx); err == nil && prof != nil {
+						return prof, true
+					}
+					return &TenantProfileModel{
+						TenantID:  u.Spec.TenantID,
+						LegalName: u.Spec.TenantID,
+					}, true
+				}
+			}
+		}
+	}
+
+	return nil, false
+}
+
 // --- Facility Operations ---
 
 func (e *NexusGraphEngine) ListFacilities(ctx context.Context) ([]*FacilityModel, error) {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Navigate } from 'react-router-dom';
 import { 
   Home, 
   Building2, 
@@ -27,6 +27,22 @@ interface ShellProps {
 }
 
 export const Shell: React.FC<ShellProps> = ({ children }) => {
+  const token = localStorage.getItem('saurient_auth_token');
+  const storedEmail = localStorage.getItem('saurient_user_email');
+  const isAuthenticated = Boolean(
+    token && 
+    token !== 'undefined' && 
+    token !== 'null' && 
+    token.trim() !== '' &&
+    storedEmail && 
+    storedEmail.trim() !== ''
+  );
+
+  if (!isAuthenticated) {
+    const redirectParam = encodeURIComponent(window.location.pathname + window.location.search);
+    return <Navigate to={`/login?redirect=${redirectParam}`} replace />;
+  }
+
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -40,7 +56,7 @@ export const Shell: React.FC<ShellProps> = ({ children }) => {
   const isOfficer = userRole.toLowerCase().includes('officer');
   const isOperator = !isVerifier && !isOfficer && !isOwnerOrAdmin;
 
-  const userEmail = localStorage.getItem('saurient_user_email') || (
+  const userEmail = storedEmail || (
     isVerifier ? 'auditor@bureau-veritas.com' : isOfficer ? 'officer@saurient.com' : 'operator@asante-cocoa.com'
   );
   const userName = localStorage.getItem('saurient_user_name') || (
