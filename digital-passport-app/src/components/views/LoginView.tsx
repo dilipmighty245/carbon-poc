@@ -57,15 +57,16 @@ export const LoginView: React.FC = () => {
     },
   };
 
-  const [role, setRole] = useState('Company Operator');
-  const [email, setEmail] = useState(DEMO_ACCOUNTS['Company Operator'].email);
-  const [password, setPassword] = useState(DEMO_ACCOUNTS['Company Operator'].pass);
+  const [role, setRole] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     const isRegistered = searchParams.get('registered') === 'true';
     const emailParam = searchParams.get('email');
 
     if (isRegistered || emailParam) {
+      setRole('Company Operator');
       if (emailParam) {
         setEmail(emailParam);
         const registered = getRegisteredCompany();
@@ -144,13 +145,14 @@ export const LoginView: React.FC = () => {
     try {
       const resp = await loginUser(email.trim(), password);
       if (resp && resp.token && resp.user) {
+        const assignedRole = resp.user.role || role || 'Company Operator';
         localStorage.setItem('saurient_auth_token', resp.token);
-        localStorage.setItem('saurient_user_role', resp.user.role || role);
-        localStorage.setItem('auth_role', resp.user.role || role);
+        localStorage.setItem('saurient_user_role', assignedRole);
+        localStorage.setItem('auth_role', assignedRole);
         localStorage.setItem('saurient_user_email', resp.user.email);
         localStorage.setItem('saurient_user_name', resp.user.name);
         localStorage.setItem('saurient_user_id', resp.user.id);
-        const effectiveRole = resp.user.role || role;
+        const effectiveRole = assignedRole;
         const isIndep = effectiveRole.toLowerCase().includes('verifier') || effectiveRole.toLowerCase().includes('officer') || effectiveRole.toLowerCase().includes('auditor');
         const resolvedTenant = isIndep ? 'all' : (resp.user.tenant_id || resp.tenant_id || 'org_asante_cocoa');
         localStorage.setItem('saurient_tenant_id', resolvedTenant);
@@ -164,7 +166,7 @@ export const LoginView: React.FC = () => {
         const rLower = (resp.user.role || '').toLowerCase().replace(/[\s_]/g, '');
         const targetRoute = (rLower === 'organisationowner' || rLower === 'organisationadmin' || rLower === 'companyoperator')
           ? '/company-dashboard'
-          : DEMO_ACCOUNTS[resp.user.role]?.route || DEMO_ACCOUNTS[role]?.route || '/company-dashboard';
+          : (resp.user.role && DEMO_ACCOUNTS[resp.user.role]?.route) || (role && DEMO_ACCOUNTS[role]?.route) || '/company-dashboard';
         navigate(targetRoute);
       }
     } catch (err: any) {
