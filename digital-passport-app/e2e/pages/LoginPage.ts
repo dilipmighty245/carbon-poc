@@ -38,11 +38,25 @@ export class LoginPage extends BasePage {
     const body = await loginResp.json();
     expect(body.token).toBeDefined();
 
-    await expect(this.page).toHaveURL(/.*dashboard/);
+    await expect(this.page).toHaveURL(/.*organisation/);
   }
 
   async assertDashboardLoaded(legalName?: string) {
+    if (this.page.url().includes('/organisation')) {
+      await expect(this.page).toHaveURL(/.*organisation/);
+      if (legalName) {
+        await expect(this.page.getByText(legalName).first()).toBeVisible();
+      }
+      return;
+    }
     await expect(this.page.getByRole('heading', { name: /company dashboard/i })).toBeVisible();
+    if (legalName) {
+      await expect(this.page.getByText(legalName).first()).toBeVisible();
+    }
+  }
+
+  async assertOrganisationLoaded(legalName?: string) {
+    await expect(this.page).toHaveURL(/.*organisation/);
     if (legalName) {
       await expect(this.page.getByText(legalName).first()).toBeVisible();
     }

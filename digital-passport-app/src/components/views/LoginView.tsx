@@ -24,12 +24,12 @@ export const LoginView: React.FC = () => {
 
   const DEMO_ACCOUNTS: Record<string, { name: string; email: string; pass: string; route: string; desc: string; tenantId: string }> = {
     'Company Operator': {
-      name: 'Santosh Samudrala',
-      email: registeredCompany?.ownerEmail || 'operator@asante-cocoa.com',
-      pass: registeredCompany?.ownerPassword || 'DemoPassword2026!',
-      route: '/company-dashboard',
+      name: 'Company Operator',
+      email: '',
+      pass: '',
+      route: '/organisation',
       desc: 'Facility & ESG Operations',
-      tenantId: registeredCompany?.tenantId || 'org_asante_cocoa',
+      tenantId: '',
     },
     'Verifier': {
       name: 'Sarah Jenkins',
@@ -75,12 +75,6 @@ export const LoginView: React.FC = () => {
         } else {
           setPassword(registered?.ownerPassword || '');
         }
-      } else {
-        const registered = getRegisteredCompany();
-        if (registered?.ownerEmail) {
-          setEmail(registered.ownerEmail);
-          setPassword(registered.ownerPassword || '');
-        }
       }
       setSuccessMsg('Organisation registered successfully. Sign in with your account credentials.');
     }
@@ -113,6 +107,12 @@ export const LoginView: React.FC = () => {
     setRole(r.title);
     setLoginError(null);
     setSuccessMsg(null);
+    if (r.title === 'Company Operator') {
+      // Never autofill mock email/password for corporate login
+      setEmail('');
+      setPassword('');
+      return;
+    }
     const acc = DEMO_ACCOUNTS[r.title];
     if (acc) {
       setEmail(acc.email);
@@ -154,19 +154,19 @@ export const LoginView: React.FC = () => {
         localStorage.setItem('saurient_user_id', resp.user.id);
         const effectiveRole = assignedRole;
         const isIndep = effectiveRole.toLowerCase().includes('verifier') || effectiveRole.toLowerCase().includes('officer') || effectiveRole.toLowerCase().includes('auditor');
-        const resolvedTenant = isIndep ? 'all' : (resp.user.tenant_id || resp.tenant_id || 'org_asante_cocoa');
+        const resolvedTenant = isIndep ? 'all' : (resp.user.tenant_id || resp.tenant_id || (registeredCompany?.tenantId && registeredCompany.tenantId !== 'org_asante_cocoa' ? registeredCompany.tenantId : ''));
         localStorage.setItem('saurient_tenant_id', resolvedTenant);
 
         const redirect = searchParams.get('redirect');
-        if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+        if (redirect && redirect.startsWith('/') && !redirect.startsWith('//') && redirect !== '/dashboard' && redirect !== '/company-dashboard') {
           navigate(redirect);
           return;
         }
 
         const rLower = (resp.user.role || '').toLowerCase().replace(/[\s_]/g, '');
         const targetRoute = (rLower === 'organisationowner' || rLower === 'organisationadmin' || rLower === 'companyoperator')
-          ? '/company-dashboard'
-          : (resp.user.role && DEMO_ACCOUNTS[resp.user.role]?.route) || (role && DEMO_ACCOUNTS[role]?.route) || '/company-dashboard';
+          ? '/organisation'
+          : (resp.user.role && DEMO_ACCOUNTS[resp.user.role]?.route) || (role && DEMO_ACCOUNTS[role]?.route) || '/organisation';
         navigate(targetRoute);
       }
     } catch (err: any) {

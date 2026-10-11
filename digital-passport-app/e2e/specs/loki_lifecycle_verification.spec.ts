@@ -91,7 +91,7 @@ test.describe('Live Lifecycle Verification (org_loki)', () => {
       localStorage.setItem('saurient_tenant_id', 'org_loki');
     });
 
-    await expect(page).toHaveURL(/.*dashboard/);
+    await expect(page).toHaveURL(/.*organisation/);
 
     // =========================================================================
     // STEP 4: Product Batch Creation under X-Tenant-ID: org_loki
