@@ -37,21 +37,40 @@ export const DigitalPassportOutput: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const tenantId = getActiveTenantId();
 
-  const loadData = async () => {
-    setLoading(true);
-    const listRes = await getAllPassportsWithMeta(tenantId);
-    setPassportsResult(listRes);
-    setLoading(false);
+  const refreshData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const tid = getActiveTenantId();
+      const listRes = await getAllPassportsWithMeta(tid);
+      setPassportsResult(listRes);
+    } catch (err) {
+      console.warn('Failed to refresh passports list:', err);
+    } finally {
+      if (!silent) setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadData();
+    refreshData(false);
   }, [tenantId]);
+
+  useEffect(() => {
+    // Silently refresh behind the scenes when active sub-tab changes (e.g., navigating to /passport/registry after sign & issue)
+    refreshData(true);
+  }, [tab]);
 
   const validTabs = ['registry', 'readiness', 'preview', 'sign-issue', 'detail', 'passport-detail', 'qr', 'sharing', 'versions'];
   const activeTabId = validTabs.includes(tab.toLowerCase()) ? tab.toLowerCase() : 'registry';
 
-  const visibleTabs = PASSPORT_TABS;
+  const visibleTabs = isVerifier
+    ? PASSPORT_TABS.filter((t) => t.id !== 'sign-issue')
+    : PASSPORT_TABS;
+
+  useEffect(() => {
+    if (isVerifier && activeTabId === 'sign-issue') {
+      navigate('/passport/registry', { replace: true });
+    }
+  }, [isVerifier, activeTabId, navigate]);
 
   const handleTabChange = (newTabId: string) => {
     navigate(`/passport/${newTabId}`);
@@ -101,12 +120,12 @@ export const DigitalPassportOutput: React.FC = () => {
       </div>
 
       {/* Render Active Sub-View */}
-      {activeTabId === 'registry' && <PassportRegistryTab passports={passports} tenantId={tenantId} onRefresh={loadData} />}
-      {activeTabId === 'readiness' && <PassportReadinessTab passports={passports} />}
+      {activeTabId === 'registry' && <PassportRegistryTab passports={passports} tenantId={tenantId} onRefresh={() => refreshData(true)} />}
+      {activeTabId === 'readiness' && <PassportReadinessTab passports={passports} onRefresh={() => refreshData(true)} />}
       {activeTabId === 'preview' && <PassportPreviewTab passports={passports} />}
-      {activeTabId === 'sign-issue' && <SignAndIssueTab passports={passports} />}
+      {activeTabId === 'sign-issue' && <SignAndIssueTab passports={passports} onRefresh={() => refreshData(true)} />}
       {(activeTabId === 'detail' || activeTabId === 'passport-detail') && (
-        <PassportDetailTab passports={passports} onRefresh={loadData} />
+        <PassportDetailTab passports={passports} onRefresh={() => refreshData(true)} />
       )}
       {activeTabId === 'qr' && <QrVerificationTab passports={passports} />}
       {activeTabId === 'sharing' && <PassportSharingTab passports={passports} />}

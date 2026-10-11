@@ -20,9 +20,10 @@ import { signAndIssuePassport, submitPassportToAgency } from '../../../../api/cl
 
 interface SignAndIssueTabProps {
   passports: RichDigitalPassport[];
+  onRefresh?: () => void;
 }
 
-export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) => {
+export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onRefresh }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const passportId = searchParams.get('id');
@@ -100,12 +101,14 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
         targetTenant
       );
       setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'Issued' }));
+      onRefresh?.();
     } catch (err: any) {
       console.warn('Backend sign endpoint fallback to session state:', err);
       if (currentStatus !== 'Verified' && !isVerified) {
         setSignError(err.message || 'Cannot sign: passport must be Verified by an accredited verifier first.');
       } else {
         setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'Issued' }));
+        onRefresh?.();
       }
     } finally {
       setIsSigning(false);
@@ -120,10 +123,12 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports }) =
       await submitPassportToAgency(targetPassportId, 'EU CBAM Transitional Registry & National Competent Authority', 'DEC-EU-2026-901', targetTenant);
       setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'SubmittedToAgency' }));
       setAgencySubmittedMap((prev) => ({ ...prev, [selectedTargetId]: true }));
+      onRefresh?.();
     } catch (err: any) {
       console.warn('Agency submit fallback:', err);
       setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'SubmittedToAgency' }));
       setAgencySubmittedMap((prev) => ({ ...prev, [selectedTargetId]: true }));
+      onRefresh?.();
     } finally {
       setIsSubmittingAgency(false);
     }

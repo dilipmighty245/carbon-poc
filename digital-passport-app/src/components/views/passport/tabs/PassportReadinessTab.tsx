@@ -6,9 +6,10 @@ import { submitPassportForVerification, getActiveTenantId } from '../../../../ap
 
 interface PassportReadinessTabProps {
   passports: RichDigitalPassport[];
+  onRefresh?: () => void;
 }
 
-export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ passports }) => {
+export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ passports, onRefresh }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlId = searchParams.get('id') || searchParams.get('batch');
@@ -69,15 +70,17 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
     setIsSubmitting(true);
     setSubmitMsg(null);
     try {
-      const email = localStorage.getItem('saurient_user_email') || 'operator@asante-cocoa.com';
+      const email = localStorage.getItem('saurient_user_email') || 'operator@company.com';
       const tid = getActiveTenantId();
       await submitPassportForVerification(targetId, email, 'Completed primary energy logs and supplier BOM', tid);
       setLocalStatus('Submitted');
       setSubmitMsg('Passport completed data and evidence successfully submitted for independent verification!');
+      onRefresh?.();
     } catch (err: any) {
       console.error(err);
       setLocalStatus('Submitted');
       setSubmitMsg('Passport submitted for verification (simulated session mode).');
+      onRefresh?.();
     } finally {
       setIsSubmitting(false);
     }
@@ -143,12 +146,14 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
             <Send className="w-4 h-4 text-sky-600" />
             <span>{submitMsg}</span>
           </div>
-          <button
-            onClick={() => navigate('/mrv')}
-            className="px-3 py-1 bg-sky-600 text-white rounded-lg text-[11px] font-bold hover:bg-sky-700"
-          >
-            Open Verifier Workspace →
-          </button>
+          {isVerifier && (
+            <button
+              onClick={() => navigate('/mrv')}
+              className="px-3 py-1 bg-sky-600 text-white rounded-lg text-[11px] font-bold hover:bg-sky-700"
+            >
+              Open Verifier Workspace →
+            </button>
+          )}
         </div>
       )}
 
