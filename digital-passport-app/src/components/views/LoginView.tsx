@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, AlertTriangle, Building, LogIn, Loader2, CheckCircle2, Eye, EyeOff, ShieldCheck, Factory, Award, QrCode } from 'lucide-react';
 import { loginUser } from '../../api/client';
+import { clearLegacyRegistrationPasswords } from '../../utils/registration';
 
 export const LoginView: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export const LoginView: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const getRegisteredCompany = () => {
+    clearLegacyRegistrationPasswords();
     try {
       const reg = localStorage.getItem('saurient_registered_company');
       return reg ? JSON.parse(reg) : null;
@@ -69,12 +71,7 @@ export const LoginView: React.FC = () => {
       setRole('Company Operator');
       if (emailParam) {
         setEmail(emailParam);
-        const registered = getRegisteredCompany();
-        if (registered && registered.ownerEmail?.toLowerCase() === emailParam.toLowerCase() && registered.ownerPassword) {
-          setPassword(registered.ownerPassword);
-        } else {
-          setPassword(registered?.ownerPassword || '');
-        }
+        setPassword('');
       }
       setSuccessMsg('Organisation registered successfully. Sign in with your account credentials.');
     }

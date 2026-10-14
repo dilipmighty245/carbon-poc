@@ -20,26 +20,16 @@ export class ProductSetupPage extends BasePage {
   }
 
   async createBatch(data: ProductBatchData) {
-    // Select commodity if available
-    const commoditySelect = this.page.locator('div:has(> label:has-text("Commodity Type")) select');
-    if (await commoditySelect.isVisible()) {
-      await commoditySelect.selectOption({ label: data.commodity }).catch(() => {});
-    }
+    const commoditySelect = this.page.locator('div:has(> label:has-text("Commodity *")) select');
+    await commoditySelect.selectOption({ label: data.commodity });
 
     // Fill Product Name
     const productNameInput = this.page.locator('div:has(> label:has-text("Product Name")) input');
     await productNameInput.fill(data.productName);
 
     // Select or Fill Facility
-    const facilitySelect = this.page.locator('div:has(> label:has-text("Plant / Facility")) select');
-    const facilityInput = this.page.locator('div:has(> label:has-text("Plant / Facility")) input');
-    if (await facilitySelect.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await facilitySelect.selectOption({ label: new RegExp(data.facilityName, 'i') }).catch(async () => {
-        await facilitySelect.selectOption(data.facilityName).catch(() => {});
-      });
-    } else if (await facilityInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await facilityInput.fill(data.facilityName);
-    }
+    const facilitySelect = this.page.locator('label').filter({ hasText: 'Plant / Facility' }).locator('..').locator('..').locator('select');
+    await facilitySelect.selectOption({ value: data.facilityName });
 
     // Fill Batch ID
     const batchInput = this.page.locator('div:has(> label:has-text("Batch / Lot Number")) input');

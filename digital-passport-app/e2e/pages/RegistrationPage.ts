@@ -7,7 +7,7 @@ export class RegistrationPage extends BasePage {
   }
 
   async goto() {
-    await this.page.goto('/registration');
+    await this.page.goto('/registration?new=true');
   }
 
   async completeAccountOwnerStep(name: string, phone: string, password: string, email?: string) {
@@ -22,38 +22,49 @@ export class RegistrationPage extends BasePage {
     await this.page.getByRole('button', { name: /continue/i }).click();
   }
 
-  async completeLegalIdentityStep(legalName: string, regNumber: string) {
+  async completeLegalIdentityStep(legalName: string, regNumber: string, country = 'India') {
     await this.page.locator('div:has(> label:has-text("Legal Entity Name")) input').fill(legalName);
     await this.page.locator('div:has(> label:has-text("Company Registration No")) input').fill(regNumber);
+    await this.page.locator('div:has(> label:has-text("Country of Registration")) input').fill(country);
   }
 
   async jumpToReviewAndSubmit() {
-    // Click on Review & Submit step in stepper sidebar
-    await this.page.getByRole('button', { name: /Review & Submit/i }).click();
+    await this.page.getByRole('button', { name: /Declarations/i }).click();
+    await this.acceptDeclarations();
+    await this.page.getByRole('button', { name: /continue/i }).click();
+  }
+
+  async acceptDeclarations() {
+    await this.page.getByRole('checkbox', { name: 'Confirm organisation details' }).check();
+    await this.page.getByRole('checkbox', { name: 'Confirm data accuracy' }).check();
+  }
+
+  async completeRemainingSteps() {
+    for (let step = 1; step < 8; step++) {
+      await this.page.getByRole('button', { name: /continue/i }).click();
+    }
+    await this.acceptDeclarations();
+    await this.page.getByRole('button', { name: /continue/i }).click();
   }
 
   async submitRegistration(): Promise<void> {
     const submitBtn = this.page.getByRole('button', { name: /submit company registration/i });
     await expect(submitBtn).toBeVisible();
 
-    // Set up network listeners for real Go API Gateway calls (Profile + Auth User registration)
-    const profileResponsePromise = this.page.waitForResponse(
-      (resp) => resp.url().includes('/api/v1/organisation/profile') && resp.request().method() === 'PUT'
+    const responsePromise = this.page.waitForResponse(
+      resp => resp.url().endsWith('/api/v1/organisation/register') && resp.request().method() === 'POST'
     );
-    const authRegPromise = this.page.waitForResponse(
-      (resp) => resp.url().includes('/api/v1/auth/register') && resp.request().method() === 'POST'
-    ).catch(() => null);
 
     await submitBtn.click();
 
-    // Verify real backend returned 200 OK (no mock)
-    const profileResponse = await profileResponsePromise;
-    expect(profileResponse.status()).toBe(200);
-
-    const authRegResp = await authRegPromise;
-    if (authRegResp) {
-      expect([200, 201, 409]).toContain(authRegResp.status());
-    }
+    const response = await responsePromise;
+    expect(response.status(), await response.text()).toBe(201);
+    const body = await response.json();
+    expect(body.token).toBeTruthy();
+    expect(body.user.tenant_id).toBe(body.tenant_id);
+    expect(body.profile.tenant_id).toBe(body.tenant_id);
+    expect(body.profile.status).toBe('Pending Verification');
+    expect(await this.page.evaluate(() => localStorage.getItem('saurient_tenant_id'))).toBe(body.tenant_id);
 
     // Confirm success modal is displayed
     await expect(this.page.getByText('REGISTRATION SUCCESSFUL')).toBeVisible();

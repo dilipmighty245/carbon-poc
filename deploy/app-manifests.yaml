@@ -15,6 +15,18 @@ kind: ClusterRole
 metadata:
   name: saurient-controller-role
 rules:
+  - apiGroups: ["root.saurient.io"]
+    resources: ["roots"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["inventory.saurient.io"]
+    resources: ["inventories", "tenants", "users", "facilities", "meters", "products", "suppliers", "declarations", "logisticslegs", "acvagencies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["config.saurient.io"]
+    resources: ["configs", "rulebooks", "cbambenchmarks", "storyboardscenes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["runtime.saurient.io"]
+    resources: ["runtimes", "carbonpassports", "auditrecords", "acvengagements", "telemetryreadings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["saurient.io"]
     resources: ["carbonpassports", "carbonpassports/status", "calculationrulebooks", "products", "products/status"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

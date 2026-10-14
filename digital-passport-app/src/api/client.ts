@@ -1,6 +1,6 @@
 import type { ProductCreateRequest, ProductCreateResponse, RichDigitalPassport, RulebookCreateRequest, RulebookItem } from '../types';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/$/, '');
 export const DEFAULT_TENANT_ID = '';
 
 export interface ApiFetchResult<T> {
@@ -544,6 +544,35 @@ export async function registerUser(payload: {
   return await res.json();
 }
 
+export interface OrganisationRegistrationResponse extends AuthResponse {
+  tenant_id: string;
+  profile: Record<string, unknown> & { tenant_id: string };
+}
+
+export async function registerOrganisation(payload: {
+  profile: Record<string, unknown>;
+  owner: { name: string; email: string; password: string };
+  declarations: { organisationDetails: boolean; dataAccuracy: boolean };
+}): Promise<OrganisationRegistrationResponse> {
+  const res = await fetch(`${API_BASE_URL}/organisation/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    throw new Error(errorBody.error || `Registration failed (${res.status})`);
+  }
+  const response = await res.json();
+  if (!response.token || !response.user || !response.tenant_id ||
+      response.user.tenant_id !== response.tenant_id || response.profile?.tenant_id !== response.tenant_id ||
+      response.user.role !== 'Organisation Owner' || response.user.email?.toLowerCase() !== payload.owner.email.toLowerCase() ||
+      !response.user.id || response.profile.status !== 'Pending Verification') {
+    throw new Error('Registration could not be confirmed. Please contact support before retrying.');
+  }
+  return response;
+}
+
 export async function getCurrentUser(): Promise<AuthUser> {
   const token = localStorage.getItem('saurient_auth_token');
   const res = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -585,6 +614,7 @@ export async function saveOrgProfile(profile: any, tenantId?: string) {
     headers: {
       'Content-Type': 'application/json',
       'X-Tenant-ID': tid,
+      'Authorization': `Bearer ${localStorage.getItem('saurient_auth_token') || ''}`,
     },
     body: JSON.stringify(profile),
   });

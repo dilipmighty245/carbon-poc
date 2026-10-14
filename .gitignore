@@ -27,6 +27,9 @@ High-level Design Template.md
 coverage.txt
 coverage.out
 profile.out
+digital-passport-app/playwright-results/
+/tenants.json
+/users.json
 
 # Local environment variables and secrets
 .env

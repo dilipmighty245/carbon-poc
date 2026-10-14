@@ -405,6 +405,8 @@ func TestOrganisationHandler_SystemReset(t *testing.T) {
 	reqSave := httptest.NewRequest(http.MethodPut, "/api/v1/organisation/profile", bytes.NewBuffer(body))
 	reqSave.Header.Set("Content-Type", "application/json")
 	reqSave.Header.Set("X-Tenant-ID", "tenant-to-reset")
+	profileToken, _ := GenerateToken(&nexus.OrganisationUserModel{TenantID: "tenant-to-reset", Role: "Organisation Owner"})
+	reqSave.Header.Set("Authorization", "Bearer "+profileToken)
 	recSave := httptest.NewRecorder()
 	mux.ServeHTTP(recSave, reqSave)
 	if recSave.Code != http.StatusOK {
@@ -767,6 +769,8 @@ func TestOrganisationHandler_CompanyRegistrationAndAccessRequest(t *testing.T) {
 	})
 	reqProf := httptest.NewRequest(http.MethodPut, "/api/v1/organisation/profile", bytes.NewBuffer(profBody))
 	reqProf.Header.Set("X-Tenant-ID", coopTenant)
+	profileToken, _ := GenerateToken(&nexus.OrganisationUserModel{TenantID: coopTenant, Role: "Organisation Owner"})
+	reqProf.Header.Set("Authorization", "Bearer "+profileToken)
 	recProf := httptest.NewRecorder()
 	h.HandleProfile(recProf, reqProf)
 	if recProf.Code != http.StatusOK {
@@ -827,7 +831,3 @@ func TestOrganisationHandler_CompanyRegistrationAndAccessRequest(t *testing.T) {
 		t.Fatalf("expected 200 OK from request-access, got %d", recAccess.Code)
 	}
 }
-
-
-
-

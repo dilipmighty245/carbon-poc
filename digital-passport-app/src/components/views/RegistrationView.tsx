@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Upload, User, Users, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw, Loader2, ShieldCheck, LogIn } from 'lucide-react';
-import { saveOrgProfile, registerUser, loginUser } from '../../api/client';
+import { CheckCircle2, Upload, User, Building, Globe, Shield, Activity, Mail, FileText, Check, ArrowLeft, ArrowRight, Save, AlertTriangle, RotateCcw, Loader2, ShieldCheck, LogIn } from 'lucide-react';
+import { registerOrganisation } from '../../api/client';
+import { withoutRegistrationPasswords, clearLegacyRegistrationPasswords } from '../../utils/registration';
 import type { OrgProfileData } from './organisation/OrgProfileTab';
 
 export function generateSaurientEmail(fullName: string): string {
@@ -22,6 +23,8 @@ export const INITIAL_FORM_DATA = {
   ownerRole: 'Organisation Owner',
   ownerPassword: '',
   confirmPassword: '',
+  organisationDetailsAccepted: false,
+  dataAccuracyAccepted: false,
   // Legal Identity
   legalName: '',
   tradingName: '',
@@ -56,10 +59,10 @@ export const INITIAL_FORM_DATA = {
   renewableShare: '',
   auditStatus: 'Pending Verification',
   // ERP & Telemetry
-  primaryErp: 'SAP S/4HANA Cloud',
-  iotMeters: '24 Digital Telemetry Meters (Modbus TCP)',
-  dataCoverage: '88% Verified Sensor Telemetry',
-  apiGateway: 'REST API / MQTT Connected',
+  primaryErp: '',
+  iotMeters: '',
+  dataCoverage: '',
+  apiGateway: '',
   // Contacts
   sustainabilityLead: '',
   complianceOfficer: '',
@@ -96,6 +99,7 @@ export const RegistrationView: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isAutosaved, setIsAutosaved] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   // Controlled form state for registration wizard
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
@@ -104,12 +108,14 @@ export const RegistrationView: React.FC = () => {
 
   // Restore saved draft or reset on initial page mount
   useEffect(() => {
+    clearLegacyRegistrationPasswords();
     if (isNew) {
       localStorage.removeItem('saurient_registration_draft');
       setFormData(INITIAL_FORM_DATA);
       setStepStatuses(INITIAL_STEP_STATUSES);
       setActiveStep(0);
       setIsAutosaved(false);
+      setDraftRestored(true);
       return;
     }
 
@@ -118,7 +124,7 @@ export const RegistrationView: React.FC = () => {
       try {
         const parsed = JSON.parse(savedDraftStr);
         if (parsed.formData && (parsed.formData.ownerName || parsed.formData.legalName)) {
-          setFormData((prev) => ({ ...prev, ...parsed.formData }));
+          setFormData((prev) => ({ ...prev, ...withoutRegistrationPasswords(parsed.formData), ownerPassword: '', confirmPassword: '' }));
           setIsAutosaved(true);
         }
         if (stepParam !== null) {
@@ -127,8 +133,8 @@ export const RegistrationView: React.FC = () => {
             setActiveStep(s);
           }
         } else {
-          // Default to Step 0 (Account Owner) on initial landing so the user always starts at the beginning
-          setActiveStep(0);
+          const savedStep = Number(parsed.activeStep);
+          setActiveStep(Number.isInteger(savedStep) && savedStep >= 0 && savedStep < 10 ? savedStep : 0);
         }
         if (Array.isArray(parsed.stepStatuses)) {
           setStepStatuses(parsed.stepStatuses);
@@ -142,7 +148,16 @@ export const RegistrationView: React.FC = () => {
         setActiveStep(s);
       }
     }
+    setDraftRestored(true);
   }, [stepParam, isNew]);
+
+  useEffect(() => {
+    if (!draftRestored || !isAutosaved || submitSuccess) return;
+    localStorage.setItem('saurient_registration_draft', JSON.stringify({
+      formData: withoutRegistrationPasswords(formData), activeStep, stepStatuses,
+      updatedAt: new Date().toISOString(),
+    }));
+  }, [formData, activeStep, stepStatuses, draftRestored, isAutosaved, submitSuccess]);
 
   const handleResetForm = () => {
     localStorage.removeItem('saurient_registration_draft');
@@ -153,104 +168,45 @@ export const RegistrationView: React.FC = () => {
     setErrorMsg(null);
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setErrorMsg(null);
     setIsAutosaved(true);
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
-      if (field === 'ownerName') {
-        updated.ownerEmail = generateSaurientEmail(value);
-      }
-      localStorage.setItem('saurient_registration_draft', JSON.stringify({
-        formData: updated,
-        activeStep,
-        stepStatuses,
-        updatedAt: new Date().toISOString()
-      }));
       return updated;
     });
   };
 
-  const validateStep = (stepIndex: number): boolean => {
-    setErrorMsg(null);
-
+  const stepError = (stepIndex: number): string | null => {
     if (stepIndex === 0) {
-      if (!formData.ownerName || !formData.ownerName.trim()) {
-        setErrorMsg('Primary Account Owner Name is required in Step 1 (Account Owner).');
-        return false;
-      }
-      if (!formData.ownerEmail || !formData.ownerEmail.trim()) {
-        setErrorMsg('Corporate Work Email is required in Step 1 (Account Owner).');
-        return false;
-      }
-      if (!formData.ownerPassword) {
-        setErrorMsg('Account Password is required in Step 1 (Account Owner).');
-        return false;
-      }
-      if (!formData.confirmPassword) {
-        setErrorMsg('Please confirm your account password in Step 1 (Account Owner).');
-        return false;
-      }
-      if (formData.ownerPassword !== formData.confirmPassword) {
-        setErrorMsg('Account Password and Confirm Password do not match.');
-        return false;
-      }
+      if (!formData.ownerName.trim()) return 'Primary Account Owner Name is required.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.ownerEmail.trim())) return 'Enter a valid Corporate Work Email.';
+      if (!formData.ownerPhone.trim()) return 'Direct Phone Number is required.';
+      if (formData.ownerPassword.length < 6 || !formData.ownerPassword.trim()) return 'Account Password must be at least 6 characters.';
+      if (formData.ownerPassword !== formData.confirmPassword) return 'Account Password and Confirm Password do not match.';
     }
-
     if (stepIndex === 1) {
-      if (!formData.legalName || !formData.legalName.trim()) {
-        setErrorMsg('Legal Entity Name is required in Step 2 (Legal Identity).');
-        return false;
-      }
-      if (!formData.registrationNumber || !formData.registrationNumber.trim()) {
-        setErrorMsg('Company Registration Number is required in Step 2 (Legal Identity).');
-        return false;
-      }
+      if (!formData.legalName.trim()) return 'Legal Entity Name is required.';
+      if (!formData.registrationNumber.trim()) return 'Company Registration Number is required.';
+      if (!formData.countryOfRegistration.trim()) return 'Country of Registration is required.';
     }
+    if (stepIndex === 8 && (!formData.organisationDetailsAccepted || !formData.dataAccuracyAccepted)) {
+      return 'Please accept both registration declarations before submitting.';
+    }
+    return null;
+  };
 
-    return true;
+  const validateStep = (stepIndex: number): boolean => {
+    const error = stepError(stepIndex);
+    setErrorMsg(error);
+    return !error;
   };
 
   const validateAllPriorSteps = (targetStep: number): boolean => {
-    if (!formData.ownerName || !formData.ownerName.trim()) {
-      setActiveStep(0);
-      setErrorMsg('Primary Account Owner Name is required in Step 1 (Account Owner).');
-      return false;
+    for (let step = 0; step < targetStep; step++) {
+      const error = stepError(step);
+      if (error) { setActiveStep(step); setErrorMsg(error); return false; }
     }
-    if (!formData.ownerEmail || !formData.ownerEmail.trim()) {
-      setActiveStep(0);
-      setErrorMsg('Corporate Work Email is required in Step 1 (Account Owner).');
-      return false;
-    }
-    if (!formData.ownerPassword) {
-      setActiveStep(0);
-      setErrorMsg('Account Password is required in Step 1 (Account Owner).');
-      return false;
-    }
-    if (!formData.confirmPassword) {
-      setActiveStep(0);
-      setErrorMsg('Please confirm your account password in Step 1 (Account Owner).');
-      return false;
-    }
-    if (formData.ownerPassword !== formData.confirmPassword) {
-      setActiveStep(0);
-      setErrorMsg('Account Password and Confirm Password do not match.');
-      return false;
-    }
-
-    if (targetStep > 1) {
-      if (!formData.legalName || !formData.legalName.trim()) {
-        setActiveStep(1);
-        setErrorMsg('Legal Entity Name is required in Step 2 (Legal Identity).');
-        return false;
-      }
-      if (!formData.registrationNumber || !formData.registrationNumber.trim()) {
-        setActiveStep(1);
-        setErrorMsg('Company Registration Number is required in Step 2 (Legal Identity).');
-        return false;
-      }
-    }
-
     return true;
   };
 
@@ -291,17 +247,12 @@ export const RegistrationView: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const cleanOrgKey = (formData.tradingName || formData.legalName || 'org')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '_')
-        .replace(/^_+|_+$/g, '');
-      const tenantId = `org_${cleanOrgKey || 'company'}`;
-      const userEmail = (formData.ownerEmail && formData.ownerEmail.trim()) || generateSaurientEmail(formData.ownerName);
+      const userEmail = formData.ownerEmail.trim().toLowerCase();
 
       const profilePayload: OrgProfileData = {
         legalName: formData.legalName,
         tradingName: formData.tradingName || formData.legalName,
-        organisationId: `ORG-CP-${formData.registrationNumber || '2026-001'}`,
+        organisationId: '',
         registrationNumber: formData.registrationNumber,
         countryOfIncorporation: formData.countryOfRegistration || formData.country,
         registeredAddress: [formData.addressLine1, formData.addressLine2, formData.city, formData.region, formData.country].filter(Boolean).join(', '),
@@ -309,7 +260,7 @@ export const RegistrationView: React.FC = () => {
         industry: formData.primarySector || 'Manufacturing',
         naceCode: 'C 24.10 · Industry Sector',
         primaryProducts: formData.hsTariffCode,
-        website: `https://www.${(formData.tradingName || formData.legalName || 'saurient').toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+        website: '',
         taxId: formData.taxId,
         lei: formData.leiNumber,
         primaryContact: {
@@ -332,82 +283,42 @@ export const RegistrationView: React.FC = () => {
           ghgStandard: formData.ghgStandard,
           reportingPeriod: 'Calendar Year (Jan – Dec)',
         },
-        status: 'Verified (Registered)',
+        status: 'Pending Verification',
         verification: {
-          provider: 'Bureau Veritas Assurance UK Ltd.',
-          accreditorId: 'UKAS 0009 · ISO 14065 & ISO/IEC 17029',
-          standard: 'ISAE 3410 / ISO 14064-3',
-          assuranceLevel: 'Reasonable Assurance',
-          certificateHash: '0x8f3a9c2e7b1d4f6a0c5e9b8d2a1f7c4e9910283b',
-          verifiedDate: new Date().toISOString().split('T')[0],
-          expiryDate: '2027-12-31',
+          provider: '', accreditorId: '', standard: '', assuranceLevel: '',
+          certificateHash: '', verifiedDate: '', expiryDate: '',
         },
       };
 
-      try {
-        await saveOrgProfile(profilePayload, tenantId);
-      } catch (err) {
-        console.warn('Backend save profile failed, updating local state:', err);
-      }
-
-      try {
-        const regResp = await registerUser({
-          tenant_id: tenantId,
-          email: userEmail,
-          password: formData.ownerPassword || 'password123',
-          name: formData.ownerName || `${formData.ownerFirstName || 'Org'} ${formData.ownerLastName || 'Owner'}`.trim(),
-          role: 'Organisation Owner',
-        });
-        if (regResp && regResp.token) {
-          localStorage.setItem('saurient_auth_token', regResp.token);
-          localStorage.setItem('saurient_user_role', 'Organisation Owner');
-          localStorage.setItem('auth_role', 'Organisation Owner');
-          localStorage.setItem('saurient_user_email', userEmail);
-          localStorage.setItem('saurient_user_name', regResp.user?.name || formData.ownerName || 'Owner');
-          localStorage.setItem('saurient_user_id', regResp.user?.id || 'usr-owner');
-          localStorage.setItem('saurient_tenant_id', tenantId);
-        }
-      } catch (err: any) {
-        console.warn('Backend user registration note:', err);
-        // If user is already registered in datamodel, authenticate to obtain token
-        let loginSucceeded = false;
-        try {
-          const loginResp = await loginUser(userEmail, formData.ownerPassword || 'password123', tenantId);
-          if (loginResp && loginResp.token) {
-            localStorage.setItem('saurient_auth_token', loginResp.token);
-            localStorage.setItem('saurient_user_role', 'Organisation Owner');
-            localStorage.setItem('auth_role', 'Organisation Owner');
-            localStorage.setItem('saurient_user_email', userEmail);
-            localStorage.setItem('saurient_user_name', loginResp.user?.name || formData.ownerName || 'Owner');
-            localStorage.setItem('saurient_user_id', loginResp.user?.id || 'usr-owner');
-            localStorage.setItem('saurient_tenant_id', loginResp.tenant_id || tenantId);
-            loginSucceeded = true;
-          }
-        } catch (loginErr) {
-          console.warn('Fallback login note:', loginErr);
-        }
-        if (!loginSucceeded && err?.message && !err.message.includes('already exists')) {
-          throw new Error(err.message || 'Failed to register account with backend');
-        }
-      }
-
+      const { organisationDetailsAccepted, dataAccuracyAccepted, ...onboarding } = withoutRegistrationPasswords(formData);
+      const result = await registerOrganisation({
+        profile: { ...profilePayload, onboarding },
+        owner: { name: formData.ownerName.trim(), email: userEmail, password: formData.ownerPassword },
+        declarations: { organisationDetails: organisationDetailsAccepted, dataAccuracy: dataAccuracyAccepted },
+      });
+      localStorage.setItem('saurient_auth_token', result.token);
+      localStorage.setItem('saurient_user_role', result.user.role);
+      localStorage.setItem('auth_role', result.user.role);
+      localStorage.setItem('saurient_user_email', result.user.email);
+      localStorage.setItem('saurient_user_name', result.user.name);
+      localStorage.setItem('saurient_user_id', result.user.id);
+      localStorage.setItem('saurient_tenant_id', result.tenant_id);
       localStorage.removeItem('saurient_registration_draft');
       localStorage.setItem('saurient_company_registered', 'true');
-      localStorage.setItem('saurient_tenant_id', tenantId);
       localStorage.setItem('saurient_registered_company', JSON.stringify({
-        ...formData,
-        ownerEmail: userEmail,
-        ownerRole: 'Organisation Owner',
-        ownerPassword: formData.ownerPassword || 'password123',
-        tenantId: tenantId,
+        ...withoutRegistrationPasswords(formData), ownerEmail: result.user.email,
+        ownerRole: result.user.role, tenantId: result.tenant_id, profile: result.profile,
         registrationDate: new Date().toISOString(),
       }));
+      setFormData(prev => ({ ...prev, ownerPassword: '', confirmPassword: '' }));
 
       setSubmitSuccess(true);
       setShowSuccessModal(true);
     } catch (outerErr: any) {
       console.error('Registration submission failed:', outerErr);
-      setErrorMsg(outerErr?.message || 'Registration submission failed. Please verify fields and retry.');
+      setErrorMsg(outerErr instanceof TypeError
+        ? 'Could not reach the registration service. Check your connection and try again. Your draft has been kept.'
+        : outerErr?.message || 'Registration submission failed. Please verify fields and retry.');
     } finally {
       setIsSubmitting(false);
     }
@@ -415,7 +326,7 @@ export const RegistrationView: React.FC = () => {
 
   const handleSaveDraft = () => {
     localStorage.setItem('saurient_registration_draft', JSON.stringify({
-      formData,
+      formData: withoutRegistrationPasswords(formData),
       activeStep,
       stepStatuses,
       updatedAt: new Date().toISOString(),
@@ -627,11 +538,11 @@ export const RegistrationView: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Role / Executive Position *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">System Role</label>
                     <input
                       type="text"
-                      value={formData.ownerRole}
-                      onChange={(e) => handleChange('ownerRole', e.target.value)}
+                      value="Organisation Owner"
+                      readOnly
                       className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50"
                     />
                   </div>
@@ -706,7 +617,7 @@ export const RegistrationView: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Incorporation Date *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Incorporation Date</label>
                     <input
                       type="date"
                       value={formData.incorporationDate}
@@ -783,7 +694,7 @@ export const RegistrationView: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Address Line 1 *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Address Line 1</label>
                     <input type="text" value={formData.addressLine1} onChange={(e) => handleChange('addressLine1', e.target.value)} placeholder="e.g. 14 Independence Avenue" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
@@ -791,31 +702,31 @@ export const RegistrationView: React.FC = () => {
                     <input type="text" value={formData.addressLine2} onChange={(e) => handleChange('addressLine2', e.target.value)} placeholder="e.g. Industrial Area" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">City *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">City</label>
                     <input type="text" value={formData.city} onChange={(e) => handleChange('city', e.target.value)} placeholder="e.g. Tema" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Region *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Region</label>
                     <input type="text" value={formData.region} onChange={(e) => handleChange('region', e.target.value)} placeholder="e.g. Greater Accra" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Postal Code *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Postal Code</label>
                     <input type="text" value={formData.postalCode} onChange={(e) => handleChange('postalCode', e.target.value)} placeholder="e.g. GT-020-4821" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Country *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Country</label>
                     <input type="text" value={formData.country} onChange={(e) => handleChange('country', e.target.value)} placeholder="e.g. Ghana" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tax Residency *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tax Residency</label>
                     <input type="text" value={formData.taxResidency} onChange={(e) => handleChange('taxResidency', e.target.value)} placeholder="e.g. Ghana" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Reporting Currency *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Reporting Currency</label>
                     <input type="text" value={formData.reportingCurrency} onChange={(e) => handleChange('reportingCurrency', e.target.value)} placeholder="e.g. EUR (€)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tax Identification Number *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Tax Identification Number</label>
                     <input type="text" value={formData.taxId} onChange={(e) => handleChange('taxId', e.target.value)} placeholder="e.g. C0012345678" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
                   </div>
                   <div>
@@ -823,7 +734,7 @@ export const RegistrationView: React.FC = () => {
                     <input type="text" value={formData.vatNumber} onChange={(e) => handleChange('vatNumber', e.target.value)} placeholder="e.g. VAT-GH-2400882" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Fiscal Year Start *</label>
+                    <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Fiscal Year Start</label>
                     <input type="text" value={formData.fiscalYearStart} onChange={(e) => handleChange('fiscalYearStart', e.target.value)} placeholder="e.g. 01 January" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
@@ -834,7 +745,7 @@ export const RegistrationView: React.FC = () => {
 
                 <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-xs text-slate-500 space-y-1 hover:bg-slate-50 cursor-pointer">
                   <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-                  <p className="font-semibold text-slate-700">Upload proof of registered-office address</p>
+                  <p className="font-semibold text-slate-700">Registered-office evidence is collected during verification</p>
                   <p className="text-[10px] text-slate-400">PDF, PNG, JPG up to 10MB</p>
                 </div>
               </div>
@@ -850,19 +761,19 @@ export const RegistrationView: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">EORI Number (EU Customs) *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">EORI Number (EU Customs)</label>
                     <input type="text" value={formData.eoriNumber} onChange={(e) => handleChange('eoriNumber', e.target.value)} placeholder="e.g. GB123456789000" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 font-mono bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Primary HS Code Tariff Chapter *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Primary HS Code Tariff Chapter</label>
                     <input type="text" value={formData.hsTariffCode} onChange={(e) => handleChange('hsTariffCode', e.target.value)} placeholder="e.g. 7208 39 00 — Flat-rolled products of iron/steel" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Primary Export Departure Ports *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Primary Export Departure Ports</label>
                     <input type="text" value={formData.departurePorts} onChange={(e) => handleChange('departurePorts', e.target.value)} placeholder="e.g. Tema Sea Port, Takoradi Commercial Hub" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Destination Target Markets *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Destination Target Markets</label>
                     <input type="text" value={formData.targetMarkets} onChange={(e) => handleChange('targetMarkets', e.target.value)} placeholder="e.g. European Union (CBAM Zone)" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                 </div>
@@ -879,15 +790,15 @@ export const RegistrationView: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Primary Sector *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Primary Sector</label>
                     <input type="text" value={formData.primarySector} onChange={(e) => handleChange('primarySector', e.target.value)} placeholder="e.g. Steel & Heavy Industry Manufacturing" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Annual Production Volume *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Annual Production Volume</label>
                     <input type="text" value={formData.annualProduction} onChange={(e) => handleChange('annualProduction', e.target.value)} placeholder="e.g. 45,000 Metric Tons / Year" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Active Processing Facilities *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Active Processing Facilities</label>
                     <input type="text" value={formData.facilitiesCount} onChange={(e) => handleChange('facilitiesCount', e.target.value)} placeholder="e.g. 3 Plants" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
@@ -916,7 +827,7 @@ export const RegistrationView: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Primary ERP System *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Primary ERP System</label>
                     <input type="text" value={formData.primaryErp} onChange={(e) => handleChange('primaryErp', e.target.value)} placeholder="e.g. SAP S/4HANA Cloud" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
@@ -924,7 +835,7 @@ export const RegistrationView: React.FC = () => {
                     <input type="text" value={formData.iotMeters} onChange={(e) => handleChange('iotMeters', e.target.value)} placeholder="e.g. 24 Digital Telemetry Meters" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Primary Data Coverage *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Primary Data Coverage</label>
                     <input type="text" value={formData.dataCoverage} onChange={(e) => handleChange('dataCoverage', e.target.value)} placeholder="e.g. 88% Verified Sensor Telemetry" className="w-full rounded-xl border border-slate-200 p-2.5 text-xs text-slate-900 bg-slate-50" />
                   </div>
                   <div>
@@ -945,7 +856,7 @@ export const RegistrationView: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Sustainability Lead *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Sustainability Lead</label>
                     <input 
                       type="text" 
                       value={formData.sustainabilityLead} 
@@ -955,7 +866,7 @@ export const RegistrationView: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Compliance Officer *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Compliance Officer</label>
                     <input 
                       type="text" 
                       value={formData.complianceOfficer} 
@@ -965,7 +876,7 @@ export const RegistrationView: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Customs & Logistics Contact *</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Customs & Logistics Contact</label>
                     <input 
                       type="text" 
                       value={formData.financeDirector} 
@@ -986,24 +897,9 @@ export const RegistrationView: React.FC = () => {
                   <h3 className="font-bold text-slate-900 text-sm">Required Verification Certificates & Permits</h3>
                 </div>
 
-                <div className="space-y-3 text-xs">
-                  {[
-                    { name: 'Certificate of Incorporation (Form 3)', status: 'Uploaded', file: 'cert_inc_cs102948.pdf' },
-                    { name: 'EPA Ghana Environmental Operating Permit', status: 'Uploaded', file: 'epa_permit_2026.pdf' },
-                    { name: 'GRA Tax Clearance Certificate', status: 'Uploaded', file: 'tax_clearance_2026.pdf' },
-                    { name: 'ISO 14067 Verification Report (TÜV)', status: 'Uploaded', file: 'tuv_iso14067_report.pdf' },
-                  ].map((doc, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
-                      <div>
-                        <p className="font-bold text-slate-900">{doc.name}</p>
-                        <p className="text-[10px] text-slate-500 font-mono">{doc.file}</p>
-                      </div>
-                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <Check className="w-3 h-3 text-emerald-600" />
-                        {doc.status}
-                      </span>
-                    </div>
-                  ))}
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-700">
+                  <p className="font-bold">Documents are collected during verification</p>
+                  <p className="mt-2">No documents have been uploaded. Register your organisation first, then arrange document submission with your verifier. Registration does not certify your organisation.</p>
                 </div>
               </div>
             )}
@@ -1018,18 +914,18 @@ export const RegistrationView: React.FC = () => {
 
                 <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <div className="flex items-start gap-3">
-                    <input type="checkbox" defaultChecked className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                    <input aria-label="Confirm organisation details" type="checkbox" checked={formData.organisationDetailsAccepted} onChange={e => handleChange('organisationDetailsAccepted', e.target.checked)} className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                     <div>
-                      <p className="font-bold text-slate-900">EU CBAM & Heavy Industry Compliance Declaration</p>
-                      <p className="text-slate-600">We declare that all steel coil batches exported carry verified blast furnace / EAF telemetry with EU CBAM Annex IV compliant direct/indirect carbon intensity breakdowns.</p>
+                      <p className="font-bold text-slate-900">Organisation Details Declaration</p>
+                      <p className="text-slate-600">I confirm that the organisation details provided are accurate and that I am authorised to register this organisation.</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <input type="checkbox" defaultChecked className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                    <input aria-label="Confirm data accuracy" type="checkbox" checked={formData.dataAccuracyAccepted} onChange={e => handleChange('dataAccuracyAccepted', e.target.checked)} className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                     <div>
-                      <p className="font-bold text-slate-900">EU CBAM Embedded Carbon Telemetry Accuracy</p>
-                      <p className="text-slate-600">We declare that Scope 1-3 greenhouse gas calculation rules use verified primary industrial activity data.</p>
+                      <p className="font-bold text-slate-900">Data Accuracy Declaration</p>
+                      <p className="text-slate-600">I agree to provide accurate supporting data and documents during verification. Registration does not constitute independent verification.</p>
                     </div>
                   </div>
                 </div>
@@ -1177,7 +1073,7 @@ export const RegistrationView: React.FC = () => {
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left text-xs space-y-2.5">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <span className="font-bold text-slate-700">Account Owner</span>
-                <span className="font-bold text-slate-900">{formData.ownerName || `${formData.ownerFirstName} ${formData.ownerLastName}`.trim()}</span>
+                <span className="font-bold text-slate-900">{formData.ownerName}</span>
               </div>
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <span className="font-bold text-slate-700">Work Email</span>

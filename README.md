@@ -63,6 +63,26 @@ make dev-setup-seed
 
 ## 🧪 Testing & Automation
 
+### Organisation registration
+
+The wizard submits one `POST /api/v1/organisation/register` request containing `profile`, `owner` credentials, and explicit `declarations`. The API generates the tenant ID, rejects duplicate emails and duplicate registration-number/country pairs, and returns a matching owner, tenant, profile, and token. New organisations start as `Pending Verification`; documents are collected during verification.
+
+Profiles are stored as `spec.profileRaw` in the Tenant resource. Deploy the updated Tenant CRD and API together. Kubernetes-backed data survives API restarts; the development FakeClient remains intentionally in memory and loses all data when its process stops. Apply the compiler-generated CRDs in `build/crds` for a Nexus deployment.
+
+Tenant and User writes use compensating rollback because Kubernetes cannot transact across both resources. Duplicate checks are serialized within one API process. Multi-replica registration requires a shared lock or transactional uniqueness store before enabling concurrent registration writers. Interrupted registrations remain marked `Registration Pending` for review.
+
+### Review existing registrations
+
+Export the deployed records and audit them without modifying any data:
+
+```bash
+kubectl get tenants.inventory.saurient.io -o json > tenants.json
+kubectl get users.inventory.saurient.io -o json > users.json
+node scripts/audit_registrations.mjs tenants.json users.json
+```
+
+The audit flags incomplete legacy profiles, missing active owners, duplicate identities, and interrupted registrations. Exit code 2 means findings exist. Legacy fields lost before this change must be recovered from an existing company export or re-entered by its owner; do not invent verification details or passwords. Review each interrupted registration before retrying or deleting it. User exports contain credential hashes: keep them private and do not commit them.
+
 ### Run Unit Tests
 ```bash
 make test

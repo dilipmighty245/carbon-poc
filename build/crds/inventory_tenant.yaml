@@ -24,6 +24,19 @@ spec:
     - name: v1
       served: true
       storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+              properties:
+                profileRaw:
+                  type: string
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
       subresources:
         status: {}
 status:

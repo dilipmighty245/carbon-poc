@@ -18,7 +18,7 @@ export const TEST_SPECIMEN = {
   },
   product: {
     productName: 'Manufactured Component A',
-    commodity: 'Metals',
+    commodity: 'Metals & Minerals',
     fuelLiters: 20,
     electricityKwh: 1000,
   },

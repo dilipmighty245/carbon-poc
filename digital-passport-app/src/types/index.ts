@@ -22,6 +22,7 @@ export interface RulebookItem {
 }
 
 export interface RulebookCreateRequest {
+  tenant_id?: string;
   name: string;
   namespace?: string;
   commodity_type: string;
@@ -83,6 +84,7 @@ export type PassportLifecycleStatus =
 
 export interface RichDigitalPassport {
   passport_metadata: {
+    tenant_id?: string;
     passport_id: string;
     unique_qr_code: string;
     cryptographic_hash: string;
@@ -90,6 +92,7 @@ export interface RichDigitalPassport {
     status: string;
   };
   product_summary: {
+    tenant_id?: string;
     commodity: string;
     product_name: string;
     batch_number: string;

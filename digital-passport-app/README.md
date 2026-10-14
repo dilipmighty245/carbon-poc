@@ -29,11 +29,32 @@ By default, the UI will be accessible at:
 👉 **`http://localhost:5173`**
 
 ### 3. API Gateway Configuration
-The app connects to the Saurient Go REST API Gateway (`http://localhost:8080/api/v1`) by default. To point to a custom API Gateway endpoint, create a `.env.local` file:
+The browser uses same-origin `/api/v1` requests. Vite proxies `/api` to the local Go gateway on port 8080 during development. Start the gateway from the repository root with `go run ./cmd/api`.
+
+For a different development gateway, set the proxy target before starting Vite:
+
+```bash
+VITE_API_PROXY_TARGET=http://127.0.0.1:18080 npm run dev
+```
+
+For production, configure your web server to proxy `/api/` to the Go gateway and serve the SPA for other routes. `deploy/nginx.conf` provides a Kubernetes example. Alternatively, set a reachable HTTPS API URL in `.env.production` **before building**:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8080/api/v1
+VITE_API_BASE_URL=https://api.example.com/api/v1
 ```
+
+Do not use a localhost API URL in a remotely served build: localhost refers to the visitor's machine. A separate API origin must allow the frontend origin through CORS and use HTTPS when the frontend uses HTTPS.
+
+`Failed to fetch` means the browser did not receive an HTTP response. Check the browser Network panel for the request URL, gateway reachability, TLS, and CORS. Registration now keeps the draft and displays a service-connectivity error on such failures. Passwords are never saved in the draft.
+
+### Browser tests
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+The suite starts isolated API and UI servers on ports 18080 and 15173, using the in-memory datastore. Set `E2E_API_PORT` / `E2E_UI_PORT` to change those ports, or `E2E_API_URL` / `E2E_BASE_URL` to use an existing test deployment. The deployed UI must proxy its API calls to that test gateway. Tests create organisations and products, so use a test environment.
 
 ---
 
@@ -41,6 +62,7 @@ VITE_API_BASE_URL=http://localhost:8080/api/v1
 
 - **`npm run dev`**: Starts Vite dev server with Hot Module Replacement (HMR).
 - **`npm run build`**: Compiles TypeScript and builds production bundles into `dist/`.
+- **`npm run typecheck`**: Checks both referenced TypeScript projects with `tsc -b`. Existing project-wide type errors still require cleanup; the current build script does not check those references.
 - **`npm run preview`**: Previews the built production app locally.
 
 ---

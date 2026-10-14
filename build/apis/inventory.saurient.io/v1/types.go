@@ -154,6 +154,7 @@ func (c *Tenant) DisplayName() string {
 
 // +k8s:openapi-gen=true
 type TenantSpec struct {
+	ProfileRaw    string           `json:"profileRaw,omitempty" mapstructure:"profileRaw,omitempty" yaml:"profileRaw,omitempty"`
 	TenantID      string           `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty" yaml:"tenantID,omitempty"`
 	LegalName     string           `json:"legalName,omitempty" mapstructure:"legalName,omitempty" yaml:"legalName,omitempty"`
 	Country       string           `json:"country,omitempty" mapstructure:"country,omitempty" yaml:"country,omitempty"`

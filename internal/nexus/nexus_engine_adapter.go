@@ -418,94 +418,83 @@ func (e *NexusGraphEngine) ListRulebooks(ctx context.Context) ([]*RulebookModel,
 // --- Tenant Profile Operations ---
 
 func (e *NexusGraphEngine) GetTenantProfile(ctx context.Context) (*TenantProfileModel, error) {
+	return e.GetTenantProfileWithClient(ctx, GetNexusClient())
+}
+
+func (e *NexusGraphEngine) GetTenantProfileWithClient(ctx context.Context, client *nexus_client.Clientset) (*TenantProfileModel, error) {
 	tID, _ := tenant.GetTenant(ctx)
 	if tID == "" {
 		tID = "tenant-default"
 	}
-
-	e.opMu.RLock()
-	p, ok := e.tenantProfiles[tID]
-	e.opMu.RUnlock()
-
-	if ok && p != nil {
-		return p, nil
-	}
-
-	// Create from Tenant CRD node
-	client := GetNexusClient()
 	tNode, err := EnsureTenantNode(ctx, client, tID)
-	if err == nil && tNode != nil {
-		legalName := tNode.Spec.LegalName
-		if legalName == "" || legalName == tID {
-			if strings.HasPrefix(tID, "org_") {
-				clean := strings.TrimPrefix(tID, "org_")
-				clean = strings.ReplaceAll(clean, "_", " ")
-				legalName = strings.Title(clean)
-			} else {
-				legalName = "Enterprise Manufacturer"
-			}
-		}
-		country := tNode.Spec.Country
-		if country == "" {
-			country = "India"
-		}
-		ind := tNode.Spec.Industry
-		if ind == "" {
-			ind = "Basic Metals & Steel Manufacturing"
-		}
-
-		profile := &TenantProfileModel{
-			TenantID:               tID,
-			LegalName:              legalName,
-			TradingName:            legalName,
-			CountryOfIncorporation: country,
-			Industry:               ind,
-			Status:                 "Active",
-			CreatedAt:              time.Now(),
-			UpdatedAt:              time.Now(),
-		}
-		e.opMu.Lock()
-		e.tenantProfiles[tID] = profile
-		e.opMu.Unlock()
-		return profile, nil
+	if err != nil {
+		return nil, err
 	}
-
-	return nil, fmt.Errorf("profile for tenant %s not found", tID)
+	if tNode.Spec.ProfileRaw != "" {
+		var profile TenantProfileModel
+		if err := json.Unmarshal([]byte(tNode.Spec.ProfileRaw), &profile); err != nil {
+			return nil, fmt.Errorf("invalid stored profile for tenant %s: %w", tID, err)
+		}
+		profile.TenantID = tID
+		return &profile, nil
+	}
+	// Legacy tenants only contain these fields. Do not invent tax or verification data.
+	legalName := tNode.Spec.LegalName
+	if legalName == "" || legalName == tID {
+		if strings.HasPrefix(tID, "org_") {
+			legalName = strings.Title(strings.ReplaceAll(strings.TrimPrefix(tID, "org_"), "_", " "))
+		} else {
+			legalName = "Enterprise Manufacturer"
+		}
+	}
+	return &TenantProfileModel{TenantID: tID, LegalName: legalName, TradingName: legalName,
+		CountryOfIncorporation: tNode.Spec.Country, Industry: tNode.Spec.Industry, Status: "Pending Verification"}, nil
 }
 
 func (e *NexusGraphEngine) SaveTenantProfile(ctx context.Context, profile *TenantProfileModel) error {
+	return e.SaveTenantProfileWithClient(ctx, GetNexusClient(), profile)
+}
+
+func (e *NexusGraphEngine) SaveTenantProfileWithClient(ctx context.Context, client *nexus_client.Clientset, profile *TenantProfileModel) error {
+	if profile == nil {
+		return fmt.Errorf("profile is required")
+	}
 	tID, _ := tenant.GetTenant(ctx)
 	if tID != "" {
 		profile.TenantID = tID
 	} else if profile.TenantID == "" {
 		profile.TenantID = "tenant-default"
 	}
-
-	// Sync with Tenant CRD node in Nexus graph
-	client := GetNexusClient()
 	tNode, err := EnsureTenantNode(ctx, client, profile.TenantID)
-	if err == nil && tNode != nil {
-		if profile.LegalName != "" {
-			tNode.Spec.LegalName = profile.LegalName
-		}
-		if profile.CountryOfIncorporation != "" {
-			tNode.Spec.Country = profile.CountryOfIncorporation
-		}
-		if profile.Industry != "" {
-			tNode.Spec.Industry = profile.Industry
-		}
-		_ = tNode.Update(ctx)
+	if err != nil {
+		return fmt.Errorf("ensure tenant: %w", err)
 	}
-
-	profile.UpdatedAt = time.Now()
+	profile.UpdatedAt = time.Now().UTC()
 	if profile.CreatedAt.IsZero() {
-		profile.CreatedAt = time.Now()
+		profile.CreatedAt = profile.UpdatedAt
 	}
-
+	raw, err := json.Marshal(profile)
+	if err != nil {
+		return fmt.Errorf("encode profile: %w", err)
+	}
+	tNode.Spec.LegalName = profile.LegalName
+	tNode.Spec.Country = profile.CountryOfIncorporation
+	tNode.Spec.Industry = profile.Industry
+	tNode.Spec.ProfileRaw = string(raw)
+	if err := tNode.Update(ctx); err != nil {
+		return fmt.Errorf("persist tenant profile: %w", err)
+	}
 	e.opMu.Lock()
 	e.tenantProfiles[profile.TenantID] = profile
 	e.opMu.Unlock()
 	return nil
+}
+
+// ForgetTenantProfile removes the cache after a rolled-back registration.
+func (e *NexusGraphEngine) ForgetTenantProfile(tenantID string) {
+	e.opMu.Lock()
+	delete(e.tenantProfiles, tenantID)
+	e.opMu.Unlock()
 }
 
 // FindTenantByEmailOrDomain searches for a registered company in tenant profiles and Nexus datamodel

@@ -26,6 +26,7 @@ test.describe('Connected Saurient Core Journey: Org Registration -> Facility Tel
     const runId = Date.now();
     const batchId = `BATCH-E2E-${runId}`;
     const legalName = `${TEST_SPECIMEN.company.legalName} ${runId}`;
+    const ownerEmail = `elena.${runId}@example.test`;
 
     // =========================================================================
     // STEP 1: Organisation Registration (/registration)
@@ -35,17 +36,17 @@ test.describe('Connected Saurient Core Journey: Org Registration -> Facility Tel
       TEST_SPECIMEN.company.ownerName,
       TEST_SPECIMEN.company.ownerPhone,
       TEST_SPECIMEN.company.ownerPassword,
-      'elena.rostova@saurient.io'
+      ownerEmail
     );
-    await regPage.completeLegalIdentityStep(legalName, TEST_SPECIMEN.company.registrationNumber);
-    await regPage.jumpToReviewAndSubmit();
+    await regPage.completeLegalIdentityStep(legalName, `${TEST_SPECIMEN.company.registrationNumber}-${runId}`);
+    await regPage.completeRemainingSteps();
     await regPage.submitRegistration();
     await regPage.proceedToLogin();
 
     // =========================================================================
     // STEP 2: Authentication & Session (/login)
     // =========================================================================
-    await loginPage.login(TEST_SPECIMEN.company.ownerPassword, 'elena.rostova@saurient.io');
+    await loginPage.login(TEST_SPECIMEN.company.ownerPassword, ownerEmail);
     await loginPage.assertDashboardLoaded(legalName);
 
     // =========================================================================

@@ -12,8 +12,7 @@ import {
   Clock,
   Building2,
   Package,
-  Search,
-  QrCode
+  Search
 } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
 import { signAndIssuePassport, submitPassportToAgency } from '../../../../api/client';
@@ -117,19 +116,14 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
       setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'Issued' }));
       onRefresh?.();
     } catch (err: any) {
-      console.warn('Backend sign endpoint fallback to session state:', err);
-      if (currentStatus !== 'Verified' && !isVerified) {
-        setSignError(err.message || 'Cannot sign: passport must be Verified by an accredited verifier first.');
-      } else {
-        setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'Issued' }));
-        onRefresh?.();
-      }
+      setSignError(err.message || 'Passport issuance failed. Please retry.');
     } finally {
       setIsSigning(false);
     }
   };
 
   const handleAgencySubmit = async () => {
+    setSignError(null);
     setIsSubmittingAgency(true);
     const targetPassportId = passport?.passport_metadata?.passport_id || passportId || passport?.product_summary?.batch_number;
     const targetTenant = passport?.passport_metadata?.tenant_id || passport?.product_summary?.tenant_id;
@@ -143,14 +137,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
         navigate('/passport/registry');
       }, 1200);
     } catch (err: any) {
-      console.warn('Agency submit fallback:', err);
-      setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'SubmittedToAgency' }));
-      setAgencySubmittedMap((prev) => ({ ...prev, [selectedTargetId]: true }));
-      onRefresh?.();
-      setTimeout(() => {
-        setSearchParams({});
-        navigate('/passport/registry');
-      }, 1200);
+      setSignError(err.message || 'Agency submission failed. Please retry.');
     } finally {
       setIsSubmittingAgency(false);
     }

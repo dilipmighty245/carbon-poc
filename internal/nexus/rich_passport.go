@@ -107,10 +107,10 @@ type ComplianceExports struct {
 
 type RichDigitalCarbonPassportResponse struct {
 	PassportMetadata    PassportMetadata       `json:"passport_metadata"`
-	ProductSummary      ProductSummary          `json:"product_summary"`
-	CarbonFootprint     CarbonFootprintSummary  `json:"carbon_footprint"`
-	MethodologyAndAudit MethodologyAndAudit   `json:"methodology_and_audit"`
-	ComplianceExports   ComplianceExports       `json:"compliance_exports"`
+	ProductSummary      ProductSummary         `json:"product_summary"`
+	CarbonFootprint     CarbonFootprintSummary `json:"carbon_footprint"`
+	MethodologyAndAudit MethodologyAndAudit    `json:"methodology_and_audit"`
+	ComplianceExports   ComplianceExports      `json:"compliance_exports"`
 }
 
 func getEnv(key, fallback string) string {
@@ -176,8 +176,22 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	}
 
 	producerOrg := p.TenantID
+	// Tenant IDs are opaque identifiers. Resolve the registered legal name before
+	// falling back to legacy batch metadata or name-based tenant slugs.
+	if p.TenantID != "" && p.TenantID != "all" && p.TenantID != "public" {
+		ctx := context.Background()
+		if root, err := GetNexusClient().GetRootRoot(ctx); err == nil {
+			if inv, err := root.GetInventory(ctx); err == nil {
+				if registered, err := inv.GetTenants(ctx, p.TenantID); err == nil && registered.Spec.LegalName != "" && registered.Spec.LegalName != p.TenantID {
+					producerOrg = registered.Spec.LegalName
+				}
+			}
+		}
+	}
 	bdOrg, _ := batchData["producer_organization"].(string)
-	if bdOrg != "" && !strings.HasPrefix(bdOrg, "org_") && bdOrg != "all" {
+	if producerOrg != p.TenantID {
+		// The persisted legal identity takes precedence over client-supplied metadata.
+	} else if bdOrg != "" && !strings.HasPrefix(bdOrg, "org_") && bdOrg != "all" {
 		producerOrg = bdOrg
 	} else if strings.HasPrefix(producerOrg, "org_") {
 		clean := strings.TrimPrefix(producerOrg, "org_")

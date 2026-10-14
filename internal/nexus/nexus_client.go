@@ -741,17 +741,22 @@ func GetUserNode(ctx context.Context, client *nexus_client.Clientset, tenantID, 
 func GetUserNodeByEmail(ctx context.Context, client *nexus_client.Clientset, tenantID, email string) (*nexus_client.InventoryUser, error) {
 	if tenantID != "" {
 		users, err := ListUserNodes(ctx, client, tenantID)
-		if err == nil {
-			for _, u := range users {
-				if u != nil && strings.EqualFold(u.Spec.Email, email) {
-					return u, nil
-				}
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range users {
+			if u != nil && strings.EqualFold(u.Spec.Email, email) {
+				return u, nil
 			}
 		}
+		return nil, fmt.Errorf("user with email %s not found in tenant %s", email, tenantID)
 	}
 
 	// Search across all tenants in the Nexus datamodel
 	allUsers, err := ListUserNodes(ctx, client, "")
+	if err != nil {
+		return nil, err
+	}
 	if err == nil {
 		for _, u := range allUsers {
 			if u != nil && strings.EqualFold(u.Spec.Email, email) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Clock, Send, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, Clock, Send } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
 import { submitPassportForVerification, getActiveTenantId } from '../../../../api/client';
 
@@ -17,7 +17,6 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
   const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
   const isVerifier = userRole.toLowerCase().includes('verifier');
   const isOfficer = userRole.toLowerCase().includes('officer');
-  const isOperator = !isVerifier && !isOfficer;
 
   const initialBatch = (() => {
     if (urlId && passports.length > 0) {
@@ -34,6 +33,7 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
   const [selectedBatch, setSelectedBatch] = useState(initialBatch);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (urlId && passports.length > 0) {
@@ -69,6 +69,7 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
   const handleSubmitForVerification = async () => {
     setIsSubmitting(true);
     setSubmitMsg(null);
+    setSubmitError(null);
     try {
       const email = localStorage.getItem('saurient_user_email') || 'operator@company.com';
       const tid = getActiveTenantId();
@@ -78,9 +79,7 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
       onRefresh?.();
     } catch (err: any) {
       console.error(err);
-      setLocalStatus('Submitted');
-      setSubmitMsg('Passport submitted for verification (simulated session mode).');
-      onRefresh?.();
+      setSubmitError(err.message || 'Verification submission failed. Please retry.');
     } finally {
       setIsSubmitting(false);
     }
@@ -140,6 +139,7 @@ export const PassportReadinessTab: React.FC<PassportReadinessTabProps> = ({ pass
         </div>
       </div>
 
+      {submitError && <div role="alert" className="p-4 text-sm text-red-700">{submitError}</div>}
       {submitMsg && (
         <div className="p-4 bg-sky-50 border border-sky-200 text-sky-800 text-xs font-semibold rounded-2xl flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">

@@ -8530,6 +8530,7 @@ func (group *InventorySaurientV1) UpdateTenantByName(ctx context.Context,
 	logger.Debugf("[UpdateTenantByName] Received objToUpdate: %s", objToUpdate.GetName())
 
 	var patch Patch
+	patch = append(patch, PatchOp{Op: "add", Path: "/spec/profileRaw", Value: objToUpdate.Spec.ProfileRaw})
 
 	if objToUpdate.Annotations != nil || objToUpdate.Labels != nil {
 		current, err := group.client.Inventory().GetTenantByName(ctx, objToUpdate.Name)

@@ -120,10 +120,12 @@ type TenantProfileModel struct {
 	TaxID                  string          `json:"taxId"`
 	LEI                    string          `json:"lei"`
 	PrimaryContact         json.RawMessage `json:"primaryContact"`
-	SustainabilityContact json.RawMessage `json:"sustainabilityContact"`
+	SustainabilityContact  json.RawMessage `json:"sustainabilityContact"`
 	Boundary               json.RawMessage `json:"boundary"`
 	Status                 string          `json:"status"`
 	Verification           json.RawMessage `json:"verification"`
+	Onboarding             json.RawMessage `json:"onboarding,omitempty"`
+	Declarations           json.RawMessage `json:"declarations,omitempty"`
 	CreatedAt              time.Time       `json:"created_at"`
 	UpdatedAt              time.Time       `json:"updated_at"`
 }
@@ -244,7 +246,7 @@ type AgencyModel struct {
 	TenantID            string          `json:"tenant_id"`
 	Name                string          `json:"name"`
 	AccreditationNumber string          `json:"accreditation_number"`
-	AccreditationBody   string          `json:"accreditation_body"` // e.g. NABCB, DAkkS
+	AccreditationBody   string          `json:"accreditation_body"`   // e.g. NABCB, DAkkS
 	AccreditationStatus string          `json:"accreditation_status"` // Accredited, Suspended, Expired
 	AccreditationExpiry time.Time       `json:"accreditation_expiry,omitempty"`
 	Scopes              json.RawMessage `json:"scopes"` // e.g. ["Steel", "Cement", "Aluminium"]

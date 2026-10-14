@@ -77,7 +77,7 @@ fi
 
 echo "==> [6/7] Generating Nexus GraphQL server via gqlgen..."
 if [ -d "${BUILD_DIR}/nexus-gql" ]; then
-  (cd "${BUILD_DIR}/nexus-gql" && /Users/dt032761/go/bin/gqlgen generate)
+  (cd "${BUILD_DIR}/nexus-gql" && go run github.com/dilipmighty245/graph-framework-for-microservices/gqlgen generate)
 fi
 
 echo "==> [7/7] Verifying Go compilation of generated nexus-client and nexus-gql..."

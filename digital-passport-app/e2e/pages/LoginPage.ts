@@ -10,6 +10,16 @@ export class LoginPage extends BasePage {
     await this.page.goto('/login');
   }
 
+  async loginAsAuthority(role: 'Verifier' | 'Passport Officer') {
+    await this.goto();
+    await this.page.getByRole('button', { name: new RegExp(role, 'i') }).click();
+    const responsePromise = this.page.waitForResponse(resp => resp.url().endsWith('/api/v1/auth/login') && resp.request().method() === 'POST');
+    await this.page.getByRole('button', { name: /sign in to workspace/i }).click();
+    const response = await responsePromise;
+    expect(response.status(), await response.text()).toBe(200);
+    await expect(this.page).toHaveURL(role === 'Verifier' ? /\/mrv/ : /\/passport\/sign-issue/);
+  }
+
   async login(password = 'Password123!', email?: string) {
     if (email) {
       const emailInput = this.page.locator('input[type="email"]');

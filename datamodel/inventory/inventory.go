@@ -26,13 +26,14 @@ type ACVAgency struct {
 type Tenant struct {
 	nexus.Node
 
-	TenantID   string     `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty"`
-	LegalName  string     `json:"legalName,omitempty" mapstructure:"legalName,omitempty"`
-	Country    string     `json:"country,omitempty" mapstructure:"country,omitempty"`
-	Industry   string     `json:"industry,omitempty" mapstructure:"industry,omitempty"`
-	Facilities Facility   `nexus:"children"`
-	Products   Product    `nexus:"children"`
-	Users      User       `nexus:"children"`
+	TenantID   string   `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty"`
+	LegalName  string   `json:"legalName,omitempty" mapstructure:"legalName,omitempty"`
+	Country    string   `json:"country,omitempty" mapstructure:"country,omitempty"`
+	Industry   string   `json:"industry,omitempty" mapstructure:"industry,omitempty"`
+	ProfileRaw string   `json:"profileRaw,omitempty" mapstructure:"profileRaw,omitempty"`
+	Facilities Facility `nexus:"children"`
+	Products   Product  `nexus:"children"`
+	Users      User     `nexus:"children"`
 }
 
 var UserSecretSpec = nexus.SecretSpec{}

@@ -187,6 +187,16 @@ const getInitialProfile = (): OrgProfileData => {
   if (stored) {
     try {
       const c = JSON.parse(stored);
+      if (c.profile) {
+        return {
+          ...c.profile,
+          verification: {
+            provider: '', accreditorId: '', standard: '', assuranceLevel: '',
+            certificateHash: '', verifiedDate: '', expiryDate: '',
+            ...c.profile.verification,
+          },
+        };
+      }
       return {
         legalName: c.legalName || 'Saurient Registered Company',
         tradingName: c.tradingName || c.legalName || 'Saurient Registered Company',
@@ -198,9 +208,9 @@ const getInitialProfile = (): OrgProfileData => {
         industry: c.primarySector || 'Manufacturing & Industrial',
         naceCode: c.hsTariffCode || 'C 24.10 · Industry Sector',
         primaryProducts: c.primaryProducts || 'Industrial Products',
-        website: 'https://www.saurient.io',
-        taxId: c.taxId || 'TAX-ID-2026',
-        lei: c.leiNumber || 'LEI-2026-001',
+        website: c.website || '',
+        taxId: c.taxId || '',
+        lei: c.leiNumber || '',
         primaryContact: {
           name: c.ownerName || 'Account Administrator',
           title: c.ownerRole || 'Chief Executive Officer',
@@ -221,12 +231,12 @@ const getInitialProfile = (): OrgProfileData => {
           ghgStandard: c.ghgStandard || 'ISO 14067 / EU CBAM Regulation',
           reportingPeriod: 'Calendar Year (Jan – Dec)',
         },
-        status: 'Active',
+        status: 'Pending Verification',
         verification: {
-          provider: c.auditStatus || 'Pending Verification',
-          accreditorId: 'ISO 14065 & ISO/IEC 17029',
-          standard: 'ISO 14064-3 / ISO 14067',
-          assuranceLevel: 'Reasonable Assurance',
+          provider: '',
+          accreditorId: '',
+          standard: '',
+          assuranceLevel: '',
           certificateHash: '',
           verifiedDate: '',
           expiryDate: '',
@@ -241,6 +251,7 @@ const getInitialProfile = (): OrgProfileData => {
 
 export const OrgProfileTab: React.FC = () => {
   const [profile, setProfile] = useState<OrgProfileData>(getInitialProfile());
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [draftProfile, setDraftProfile] = useState<OrgProfileData>(getInitialProfile());
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -296,17 +307,20 @@ export const OrgProfileTab: React.FC = () => {
   }, []);
 
   const handleOpenEdit = () => {
+    setSaveError(null);
     setDraftProfile({ ...profile });
     setIsEditOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaveError(null);
     const targetTenant = getTargetTenant();
     try {
       await saveOrgProfile(draftProfile, targetTenant);
     } catch (err) {
-      console.warn('Backend save profile failed, updating local state:', err);
+      setSaveError(err instanceof Error ? err.message : 'Organisation profile could not be saved. Please retry.');
+      return;
     }
     setProfile(draftProfile);
     setIsEditOpen(false);
@@ -316,6 +330,7 @@ export const OrgProfileTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {saveError && !isEditOpen && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{saveError}</div>}
       {/* Toast Notification */}
       {savedSuccess && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs animate-in fade-in">
@@ -593,6 +608,7 @@ export const OrgProfileTab: React.FC = () => {
             </div>
 
             <form onSubmit={handleSave} className="p-6 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+              {saveError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">{saveError}</div>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Legal Entity Name</label>

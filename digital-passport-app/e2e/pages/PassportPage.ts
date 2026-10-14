@@ -1,5 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
+import { LoginPage } from './LoginPage';
 
 export class PassportPage extends BasePage {
   constructor(page: Page) {
@@ -10,17 +11,24 @@ export class PassportPage extends BasePage {
     await this.page.goto('/passport/readiness');
   }
 
-  async verifyReadinessAndProceed(batchId?: string): Promise<void> {
-    await this.page.goto('/passport/readiness');
-    if (batchId) {
-      const batchSelect = this.page.locator('select');
-      if (await batchSelect.isVisible()) {
-        await batchSelect.selectOption({ label: new RegExp(batchId, 'i') }).catch(() => {});
-      }
-    }
+  async verifyReadinessAndProceed(batchId: string): Promise<void> {
+    await this.page.goto(`/passport/readiness?id=${encodeURIComponent(batchId)}`);
+    const submitResponse = this.page.waitForResponse(resp => resp.url().includes('/submit') && resp.request().method() === 'POST');
+    await this.page.getByRole('button', { name: /submit for verification/i }).click();
+    expect((await submitResponse).status()).toBe(200);
+    await expect(this.page.getByText(/successfully submitted for independent verification/i)).toBeVisible();
+    const login = new LoginPage(this.page);
+    await login.loginAsAuthority('Verifier');
+    await this.page.goto(`/mrv/report?id=${encodeURIComponent(batchId)}`);
+    const verificationResponse = this.page.waitForResponse(resp => resp.url().includes('/verify') && resp.request().method() === 'POST');
+    await this.page.getByRole('button', { name: /approve & sign verification statement/i }).click();
+    expect((await verificationResponse).status()).toBe(200);
+    await expect(this.page.getByText(/Verification Statement Issued/i)).toBeVisible();
+    await login.loginAsAuthority('Passport Officer');
+    await this.page.goto(`/passport/readiness?id=${encodeURIComponent(batchId)}`);
     await expect(this.page.getByText('100%')).toBeVisible();
 
-    const proceedBtn = this.page.getByRole('button', { name: /proceed to sign & issue/i });
+    const proceedBtn = this.page.getByRole('button', { name: /authorize & issue passport/i });
     await expect(proceedBtn).toBeEnabled();
     await proceedBtn.click();
 
@@ -35,7 +43,9 @@ export class PassportPage extends BasePage {
     await keyInput.fill(keyId);
 
     const signBtn = this.page.getByRole('button', { name: /authorize digital signature & issue/i });
+    const responsePromise = this.page.waitForResponse(resp => resp.url().includes('/sign') && resp.request().method() === 'POST');
     await signBtn.click();
+    expect((await responsePromise).status()).toBe(200);
 
     // Verify cryptographic issuance success message
     await expect(this.page.getByText('Passport Successfully Signed & Published!')).toBeVisible({ timeout: 10000 });

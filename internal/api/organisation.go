@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
 	nexus_client "saurient-platform/build/nexus-client"
@@ -151,6 +152,7 @@ func (h *OrganisationHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/v1/auth/me", h.HandleAuthMe)
 	mux.HandleFunc("/api/v1/auth/request-access", h.HandleRequestAccess)
 	mux.HandleFunc("/api/v1/organisation/profile", h.HandleProfile)
+	mux.HandleFunc("/api/v1/organisation/register", h.HandleOrganisationRegister)
 	mux.HandleFunc("/api/v1/organisation/facilities", h.HandleFacilities)
 	mux.HandleFunc("/api/v1/organisation/facilities/", h.HandleFacilities)
 	mux.HandleFunc("/api/v1/organisation/processes", h.HandleProcesses)
@@ -194,8 +196,7 @@ func (h *OrganisationHandler) HandleAuthRegister(w http.ResponseWriter, r *http.
 
 	req.Email = strings.TrimSpace(req.Email)
 	req.Name = strings.TrimSpace(req.Name)
-	req.Password = strings.TrimSpace(req.Password)
-	if req.Email == "" || req.Password == "" || req.Name == "" {
+	if req.Email == "" || strings.TrimSpace(req.Password) == "" || req.Name == "" {
 		writeJSONError(w, "name, email, and password are required", http.StatusBadRequest)
 		return
 	}
@@ -213,12 +214,21 @@ func (h *OrganisationHandler) HandleAuthRegister(w http.ResponseWriter, r *http.
 		return
 	}
 	ctx := tenant.WithTenant(r.Context(), tenantID)
+	registrationMu.Lock()
+	defer registrationMu.Unlock()
 
 	// Check if user already exists in datamodel
 	if h.client != nil {
-		if existing, _ := nexus.GetUserNodeByEmail(ctx, h.client, tenantID, req.Email); existing != nil {
-			writeJSONError(w, "user with this email already exists", http.StatusConflict)
+		users, err := h.client.Inventory().ListUsers(ctx, metav1.ListOptions{})
+		if err != nil {
+			writeJSONError(w, "cannot check existing accounts", http.StatusServiceUnavailable)
 			return
+		}
+		for _, existing := range users {
+			if strings.EqualFold(existing.Spec.Email, req.Email) {
+				writeJSONError(w, "user with this email already exists", http.StatusConflict)
+				return
+			}
 		}
 	}
 
@@ -315,8 +325,7 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 	}
 
 	req.Email = strings.TrimSpace(req.Email)
-	req.Password = strings.TrimSpace(req.Password)
-	if req.Email == "" || req.Password == "" {
+	if req.Email == "" || strings.TrimSpace(req.Password) == "" {
 		writeJSONError(w, "email and password are required", http.StatusBadRequest)
 		return
 	}
@@ -374,6 +383,23 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 		}
 		writeLoginError(w, loginErr, http.StatusUnauthorized)
 		return
+	}
+
+	// Interrupted onboarding must not provision a usable login before the profile
+	// and owner have both been committed by the registration endpoint.
+	if h.client != nil && uNode.Spec.TenantID != "" {
+		root, rootErr := h.client.GetRootRoot(ctx)
+		if rootErr == nil {
+			if inv, invErr := root.GetInventory(ctx); invErr == nil {
+				if org, orgErr := inv.GetTenants(ctx, uNode.Spec.TenantID); orgErr == nil && org.Spec.ProfileRaw != "" {
+					var profile nexus.TenantProfileModel
+					if err := json.Unmarshal([]byte(org.Spec.ProfileRaw), &profile); err != nil || profile.Status == "Registration Pending" {
+						writeJSONError(w, "organisation registration is incomplete; please contact support", http.StatusServiceUnavailable)
+						return
+					}
+				}
+			}
+		}
 	}
 
 	// 2. Verify password hash against datamodel secret spec
@@ -558,7 +584,7 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 
 	switch r.Method {
 	case http.MethodGet:
-		p, err := h.engine.GetTenantProfile(ctx)
+		p, err := h.engine.GetTenantProfileWithClient(ctx, h.client)
 		if err != nil || p == nil {
 			writeJSONError(w, fmt.Sprintf("profile not found for tenant: %s", tenantID), http.StatusNotFound)
 			return
@@ -581,7 +607,10 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 			return
 		}
 		var p nexus.TenantProfileModel
-		_ = json.Unmarshal(rawBytes, &p)
+		if err := json.Unmarshal(rawBytes, &p); err != nil || string(rawBytes) == "null" {
+			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
+			return
+		}
 		var m map[string]interface{}
 		_ = json.Unmarshal(rawBytes, &m)
 
@@ -607,7 +636,21 @@ func (h *OrganisationHandler) HandleProfile(w http.ResponseWriter, r *http.Reque
 		}
 
 		p.TenantID = tenantID
-		if err := h.engine.SaveTenantProfile(ctx, &p); err != nil {
+		if strings.TrimSpace(p.LegalName) == "" {
+			writeJSONError(w, "legal entity name is required", http.StatusBadRequest)
+			return
+		}
+		claims, err := ValidateToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
+		if err != nil {
+			writeJSONError(w, "sign in to update an organisation profile", http.StatusUnauthorized)
+			return
+		}
+		role := strings.ToLower(strings.ReplaceAll(claims.Role, " ", ""))
+		if claims.TenantID != tenantID || (role != "organisationowner" && role != "organisationadmin") {
+			writeJSONError(w, "only this organisation's owner or admin can update its profile", http.StatusForbidden)
+			return
+		}
+		if err := h.engine.SaveTenantProfileWithClient(ctx, h.client, &p); err != nil {
 			writeJSONError(w, fmt.Sprintf("failed to save profile: %v", err), http.StatusInternalServerError)
 			return
 		}

@@ -7,6 +7,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "tsc && vite build",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:loki": "playwright test e2e/specs/loki_lifecycle_verification.spec.ts"

@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/handler"
 	gqlgraph "saurient-platform/build/nexus-gql/graph"
 	gqlgenerated "saurient-platform/build/nexus-gql/graph/generated"
-	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/handler"
 
 	"saurient-platform/internal/api"
 	"saurient-platform/internal/nexus"
@@ -110,6 +110,8 @@ func TestEndToEndPoCFlow(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/api/v1/organisation/profile", bytes.NewBuffer(bodyBytes))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Tenant-ID", tenantID)
+		profileToken, _ := api.GenerateToken(&nexus.OrganisationUserModel{TenantID: tenantID, Role: "Organisation Owner"})
+		req.Header.Set("Authorization", "Bearer "+profileToken)
 
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
