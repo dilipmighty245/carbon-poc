@@ -3,8 +3,8 @@
 ETCD_CONTAINER ?= saurient-etcd
 ETCD_IMAGE ?= quay.io/coreos/etcd:v3.5.10
 API_IMG ?= saurient-api:dev
-DEV_PROXY_CONTAINER := carbon-passport-dev-proxy
 DEV_PROXY_IMAGE ?= nginx:stable-alpine
+export ETCD_CONTAINER ETCD_IMAGE DEV_PROXY_IMAGE
 
 .PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed dev-host-setup clean clean-data check-prereqs etcd-start etcd-stop datamodel-build telemetry-server
 
@@ -101,38 +101,10 @@ etcd-stop:
 	-docker rm -f $(ETCD_CONTAINER) >/dev/null 2>&1
 
 dev-host-setup:
-	@bash scripts/setup_dev_host.sh
+	@node scripts/setup_dev_host.mjs
 
-dev-setup-nomock: check-prereqs dev-host-setup clean etcd-start build
-	@echo "==> Starting local proxy: http://carbon-passport.com -> http://localhost:5173..."
-	docker run -d --name $(DEV_PROXY_CONTAINER) \
-		-p 127.0.0.1:80:80 \
-		--add-host host.docker.internal:host-gateway \
-		-v "$(CURDIR)/deploy/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro" \
-		$(DEV_PROXY_IMAGE)
-	@echo "=========================================================================="
-	@echo "Starting Backend Services (API Gateway & Telemetry Server) [NO MOCK DATA]..."
-	@echo "=========================================================================="
-	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
-	@./bin/telemetry -port 8085 > telemetry.log 2>&1 & echo $$! > .telemetry.pid
-	@echo "==> Waiting for API Gateway (http://localhost:8080) & Telemetry (http://localhost:8085) to be ready..."
-	@for i in $$(seq 1 15); do \
-		if curl -s http://localhost:8080/healthz >/dev/null 2>&1 && curl -s http://localhost:8085/healthz >/dev/null 2>&1; then \
-			echo "   [OK] API Gateway (8080) & Telemetry Server (8085) are live!"; \
-			break; \
-		fi; \
-		sleep 1; \
-	done
-	@echo "=========================================================================="
-	@echo "Saurient Carbon Passport Platform local dev environment is UP & READY!"
-	@echo "=========================================================================="
-	@echo "etcd Endpoint:                 http://localhost:2379"
-	@echo "API Gateway Endpoint:          http://localhost:8080/api/v1"
-	@echo "Telemetry Server Endpoint:     http://localhost:8085 (EM6400 SSE / Raw Stream)"
-	@echo "Digital Passport UI:           http://carbon-passport.com (http://localhost:5173)"
-	@echo "=========================================================================="
-	@echo "==> Starting Digital Passport App (React / Vite)..."
-	cd digital-passport-app && npm run dev -- --port 5173 --strictPort
+dev-setup-nomock:
+	@node scripts/dev_environment.mjs start
 
 dev-setup-seed: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
@@ -184,21 +156,5 @@ clean-data:
 	-@curl -s -X POST http://localhost:8080/api/v1/system/reset | jq . 2>/dev/null || curl -s -X POST http://localhost:8080/api/v1/system/reset || true
 	@echo "   [OK] Platform data reset to clean initial state."
 
-clean: etcd-stop
-	-docker rm -f $(DEV_PROXY_CONTAINER) >/dev/null 2>&1
-	@echo "==> Calling API to clean all organisations, products, and passports if server is active..."
-	-@curl -s -X POST http://localhost:8080/api/v1/system/reset >/dev/null 2>&1 || true
-	@echo "==> Stopping UI frontend server, backend API Gateway, telemetry server, and etcd..."
-	-@if [ -f .api.pid ]; then kill -9 $$(cat .api.pid) >/dev/null 2>&1 || true; rm -f .api.pid; fi
-	-@if [ -f .telemetry.pid ]; then kill -9 $$(cat .telemetry.pid) >/dev/null 2>&1 || true; rm -f .telemetry.pid; fi
-	-@if [ -f .ui.pid ]; then kill -9 $$(cat .ui.pid) >/dev/null 2>&1 || true; rm -f .ui.pid; fi
-	-@pkill -f "./bin/api" >/dev/null 2>&1 || true
-	-@pkill -f "./bin/telemetry" >/dev/null 2>&1 || true
-	-@pkill -f "vite" >/dev/null 2>&1 || true
-	-@lsof -ti:8080 | xargs kill -9 >/dev/null 2>&1 || true
-	-@lsof -ti:8085 | xargs kill -9 >/dev/null 2>&1 || true
-	-@lsof -ti:5173 | xargs kill -9 >/dev/null 2>&1 || true
-	@echo "==> Cleaning up build artifacts and temporary log files..."
-	rm -rf bin/
-	rm -f api.log telemetry.log ui.log digital-passport-app/yarn.lock yarn.lock
-	@echo "Clean completed."
+clean:
+	@node scripts/dev_environment.mjs clean

@@ -50,13 +50,33 @@ Starts local etcd container, builds Go binaries, launches API Gateway and Contro
 make dev-setup-nomock
 ```
 
-Open **http://carbon-passport.com**. This target adds `127.0.0.1 carbon-passport.com`
-to `/etc/hosts` if absent (requesting `sudo` when needed), runs Vite on
-**http://localhost:5173**, and starts a Docker nginx proxy on `127.0.0.1:80`.
-Port 80 must be available. Conflicting hosts entries stop setup with instructions
-to fix them. The proxy supports Vite hot reload and forwards `/api` through Vite
-to the backend. `make clean` removes the proxy; the hosts entry remains for reuse.
-Other development and E2E targets continue to use port 5173.
+Open **http://carbon-passport.com**. This target runs on macOS, Linux, native
+Windows, and WSL using Node.js, Go, and Docker (Linux containers). It runs Vite on
+**http://localhost:5173** and a Docker nginx proxy on `127.0.0.1:80`; port 80 must
+be available. The proxy supports hot reload and forwards `/api` through Vite.
+
+Install UI dependencies once with `npm install` in `digital-passport-app`.
+Then run `make dev-setup-nomock` from the repository root. Without Make (including
+Windows PowerShell), the equivalent command is:
+
+```sh
+node scripts/dev_environment.mjs start
+```
+
+Setup adds `127.0.0.1 carbon-passport.com` to the OS hosts file if missing:
+`/etc/hosts` on macOS/Linux, or
+`%SystemRoot%\System32\drivers\etc\hosts` on Windows. It requests `sudo` on
+macOS/Linux or Windows UAC elevation only when a write needs administrator access.
+Conflicting entries stop setup with instructions to fix them. Under WSL it updates
+both Linux and Windows hosts files; Windows PowerShell interoperability must be
+enabled, and Docker must be available inside WSL.
+
+Stop the UI with Ctrl+C. Backend services and containers remain available until
+`make clean` or `node scripts/dev_environment.mjs clean`. Cleanup stops processes
+recorded in the repository PID files and removes the dev containers, binaries,
+and logs. The hosts entry remains for reuse. As before, starting this workflow
+resets the local development data. Other development and E2E Make targets still
+use their existing Unix shell commands.
 
 ### Option B: Development Setup With Live Seeded Data
 Starts local etcd, builds Go binaries, launches backend services, and automatically seeds live non-mock sample rulebooks, product batches, and passports via API Gateway HTTP calls:
