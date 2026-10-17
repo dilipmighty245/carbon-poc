@@ -3,8 +3,10 @@
 ETCD_CONTAINER ?= saurient-etcd
 ETCD_IMAGE ?= quay.io/coreos/etcd:v3.5.10
 API_IMG ?= saurient-api:dev
+DEV_PROXY_CONTAINER := carbon-passport-dev-proxy
+DEV_PROXY_IMAGE ?= nginx:stable-alpine
 
-.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed clean clean-data check-prereqs etcd-start etcd-stop datamodel-build telemetry-server
+.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed dev-host-setup clean clean-data check-prereqs etcd-start etcd-stop datamodel-build telemetry-server
 
 all: test build
 
@@ -98,7 +100,16 @@ etcd-stop:
 	@echo "==> Stopping local etcd container..."
 	-docker rm -f $(ETCD_CONTAINER) >/dev/null 2>&1
 
-dev-setup-nomock: check-prereqs clean etcd-start build
+dev-host-setup:
+	@bash scripts/setup_dev_host.sh
+
+dev-setup-nomock: check-prereqs dev-host-setup clean etcd-start build
+	@echo "==> Starting local proxy: http://carbon-passport.com -> http://localhost:5173..."
+	docker run -d --name $(DEV_PROXY_CONTAINER) \
+		-p 127.0.0.1:80:80 \
+		--add-host host.docker.internal:host-gateway \
+		-v "$(CURDIR)/deploy/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro" \
+		$(DEV_PROXY_IMAGE)
 	@echo "=========================================================================="
 	@echo "Starting Backend Services (API Gateway & Telemetry Server) [NO MOCK DATA]..."
 	@echo "=========================================================================="
@@ -118,9 +129,10 @@ dev-setup-nomock: check-prereqs clean etcd-start build
 	@echo "etcd Endpoint:                 http://localhost:2379"
 	@echo "API Gateway Endpoint:          http://localhost:8080/api/v1"
 	@echo "Telemetry Server Endpoint:     http://localhost:8085 (EM6400 SSE / Raw Stream)"
+	@echo "Digital Passport UI:           http://carbon-passport.com (http://localhost:5173)"
 	@echo "=========================================================================="
 	@echo "==> Starting Digital Passport App (React / Vite)..."
-	cd digital-passport-app && npm run dev
+	cd digital-passport-app && npm run dev -- --port 5173 --strictPort
 
 dev-setup-seed: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
@@ -173,6 +185,7 @@ clean-data:
 	@echo "   [OK] Platform data reset to clean initial state."
 
 clean: etcd-stop
+	-docker rm -f $(DEV_PROXY_CONTAINER) >/dev/null 2>&1
 	@echo "==> Calling API to clean all organisations, products, and passports if server is active..."
 	-@curl -s -X POST http://localhost:8080/api/v1/system/reset >/dev/null 2>&1 || true
 	@echo "==> Stopping UI frontend server, backend API Gateway, telemetry server, and etcd..."
