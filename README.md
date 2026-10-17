@@ -73,8 +73,13 @@ enabled, and Docker must be available inside WSL.
 
 Stop the UI with Ctrl+C. Backend services and containers remain available until
 `make clean` or `node scripts/dev_environment.mjs clean`. Cleanup stops processes
-recorded in the repository PID files and removes the dev containers, binaries,
-and logs. The hosts entry remains for reuse. As before, starting this workflow
+recorded in the repository PID files and any processes listening on development
+ports **8080, 8085, and 5173**, even without PID files. It waits for the ports to
+be released and force-stops remaining listeners if necessary. Windows uses
+PowerShell and `taskkill`; Unix uses `lsof` (or `ss` on Linux). Install `lsof` if
+neither is available. Cleanup also removes the dev containers, binaries,
+and logs. Port 80 is released by removing the app's proxy container; other
+services on port 80 are left running. The hosts entry remains for reuse. As before, starting this workflow
 resets the local development data. Other development and E2E Make targets still
 use their existing Unix shell commands.
 

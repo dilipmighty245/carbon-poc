@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { setupDevHost } from './setup_dev_host.mjs';
+import { stopDevPorts } from './stop_dev_ports.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 process.chdir(root);
@@ -40,14 +41,16 @@ async function clean() {
   try { await fetch('http://localhost:8080/api/v1/system/reset', { method: 'POST', signal: AbortSignal.timeout(2000) }); } catch { /* API may be stopped. */ }
   stopServices();
   run('docker', ['rm', '-f', proxy, etcd], true);
+  await stopDevPorts();
   fs.rmSync('bin', { recursive: true, force: true });
   for (const file of ['api.log', 'telemetry.log', 'ui.log']) fs.rmSync(file, { force: true });
 }
 
-async function start(name, command, args, cwd = root, foreground = false) {
+async function start(name, command, args, cwd = root, foreground = false, environment = {}) {
   const log = foreground ? null : fs.openSync(`${name}.log`, 'a');
   const child = spawn(command, args, {
-    cwd, detached: true, stdio: foreground ? 'inherit' : ['ignore', log, log],
+    cwd, detached: true, env: { ...process.env, ...environment },
+    stdio: foreground ? 'inherit' : ['ignore', log, log],
   });
   try {
     await new Promise((resolve, reject) => { child.once('spawn', resolve); child.once('error', reject); });
@@ -57,16 +60,34 @@ async function start(name, command, args, cwd = root, foreground = false) {
   return child;
 }
 
-async function waitFor(url) {
-  for (let attempt = 0; attempt < 30; attempt++) {
+function readinessError(url, service, detail) {
+  let message = `${service} did not become ready: ${url}\n${detail}`;
+  const logFile = `${service}.log`;
+  if (fs.existsSync(logFile)) {
+    const tail = fs.readFileSync(logFile, 'utf8').trim().split(/\r?\n/).slice(-30).join('\n');
+    message += `\nLast lines of ${logFile}:\n${tail || '(empty)'}`;
+  }
+  return new Error(message);
+}
+
+async function waitFor(url, { service = 'UI', child, timeoutMs = 60000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  let lastFailure = 'No successful response.';
+  while (Date.now() < deadline) {
+    if (child && (child.exitCode != null || child.signalCode != null)) {
+      throw readinessError(url, service, `Process exited: ${child.exitCode ?? child.signalCode}`);
+    }
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(1000) });
+      const response = await fetch(url, { signal: AbortSignal.timeout(Math.min(2000, Math.max(1, deadline - Date.now()))) });
       await response.arrayBuffer();
       if (response.ok) return;
-    } catch { /* Retry while the server starts. */ }
-    await new Promise(resolve => setTimeout(resolve, 500));
+      lastFailure = `HTTP ${response.status}`;
+    } catch (error) {
+      lastFailure = `${error.message}${error.cause ? `: ${error.cause.code || error.cause.message}` : ''}`;
+    }
+    await new Promise(resolve => setTimeout(resolve, Math.min(500, Math.max(0, deadline - Date.now()))));
   }
-  throw new Error(`Service did not become ready: ${url}`);
+  throw readinessError(url, service, `Timed out after ${timeoutMs / 1000}s. Last failure: ${lastFailure}`);
 }
 
 async function main() {
@@ -92,9 +113,12 @@ async function main() {
       '--add-host', 'host.docker.internal:host-gateway', proxyImage]);
     run('docker', ['cp', path.join(root, 'deploy/nginx.dev.conf'), `${proxy}:/etc/nginx/conf.d/default.conf`]);
     run('docker', ['start', proxy]);
-    await start('api', path.join(root, `bin/api${extension}`), []);
-    await start('telemetry', path.join(root, `bin/telemetry${extension}`), ['-port', '8085']);
-    await Promise.all([waitFor('http://localhost:8080/healthz'), waitFor('http://localhost:8085/healthz')]);
+    const api = await start('api', path.join(root, `bin/api${extension}`), [], root, false, { PORT: '8080' });
+    const telemetry = await start('telemetry', path.join(root, `bin/telemetry${extension}`), ['-port', '8085']);
+    await Promise.all([
+      waitFor('http://localhost:8080/healthz', { service: 'api', child: api }),
+      waitFor('http://localhost:8085/healthz', { service: 'telemetry', child: telemetry }),
+    ]);
     const ui = await start('ui', process.execPath, [vite, '--port', '5173', '--strictPort'], uiDirectory, true);
     let stoppingUI = false;
     const stopUI = () => {
