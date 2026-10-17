@@ -111,7 +111,7 @@ async function main() {
     // Attach a handler immediately, including while waiting for readiness.
     exited.catch(() => {});
     await Promise.race([waitFor('http://localhost:5173'), exited.then(() => { throw new Error('Vite stopped before becoming ready.'); })]);
-    console.log('Digital Passport UI: http://carbon-passport.com (http://localhost:5173)');
+    console.log('Digital Passport UI: http://carbon-passport-dev (http://localhost:5173)');
     console.log('API: http://localhost:8080/api/v1 | Telemetry: http://localhost:8085');
     await exited;
     fs.rmSync('.ui.pid', { force: true });

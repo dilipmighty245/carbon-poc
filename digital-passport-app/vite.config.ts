@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: 5173,
-      allowedHosts: ['carbon-passport.com'],
+      allowedHosts: ['carbon-passport-dev'],
       proxy,
     },
     preview: { proxy },

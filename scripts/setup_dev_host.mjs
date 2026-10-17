@@ -7,13 +7,13 @@ import { fileURLToPath } from 'node:url';
 export function addDevHost(content) {
   const addresses = content.split(/\r?\n/).flatMap(line => {
     const [address, ...names] = line.split('#')[0].trim().split(/\s+/);
-    return names.some(name => name.toLowerCase() === 'carbon-passport.com') ? [address] : [];
+    return names.some(name => name.toLowerCase() === 'carbon-passport-dev') ? [address] : [];
   });
   if (addresses.some(address => address !== '127.0.0.1')) {
-    throw new Error('Conflicting carbon-passport.com hosts entry. Set its address to 127.0.0.1 and retry.');
+    throw new Error('Conflicting carbon-passport-dev hosts entry. Set its address to 127.0.0.1 and retry.');
   }
   const newline = content.includes('\r\n') ? '\r\n' : '\n';
-  return addresses.length ? content : `${content}${newline}127.0.0.1 carbon-passport.com # carbon-poc local development${newline}`;
+  return addresses.length ? content : `${content}${newline}127.0.0.1 carbon-passport-dev # carbon-poc local development${newline}`;
 }
 
 function checked(command, args) {
@@ -30,13 +30,13 @@ $file = Join-Path $env:SystemRoot 'System32\\drivers\\etc\\hosts'
 $content = [IO.File]::ReadAllText($file)
 $addresses = @($content -split '\\r?\\n' | ForEach-Object {
   $fields = (($_ -split '#')[0]).Trim() -split '\\s+'
-  if ($fields.Length -gt 1 -and $fields[1..($fields.Length - 1)] -contains 'carbon-passport.com') { $fields[0] }
+  if ($fields.Length -gt 1 -and $fields[1..($fields.Length - 1)] -contains 'carbon-passport-dev') { $fields[0] }
 })
 if (@($addresses | Where-Object { $_ -ne '127.0.0.1' }).Count -gt 0) {
-  throw "Conflicting carbon-passport.com entry in $file. Set its address to 127.0.0.1 and retry."
+  throw "Conflicting carbon-passport-dev entry in $file. Set its address to 127.0.0.1 and retry."
 }
 if ($addresses.Count -eq 0) {
-  [IO.File]::AppendAllText($file, "\r\n127.0.0.1 carbon-passport.com # carbon-poc local development\r\n")
+  [IO.File]::AppendAllText($file, "\r\n127.0.0.1 carbon-passport-dev # carbon-poc local development\r\n")
 }
 `;
   const encodedBody = Buffer.from(body, 'utf16le').toString('base64');
@@ -72,7 +72,7 @@ export function setupDevHost({ localOnly = false } = {}) {
       windowsHosts('powershell.exe');
     }
   }
-  console.log('Hosts configured: 127.0.0.1 carbon-passport.com');
+  console.log('Hosts configured: 127.0.0.1 carbon-passport-dev');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

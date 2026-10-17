@@ -50,7 +50,7 @@ Starts local etcd container, builds Go binaries, launches API Gateway and Contro
 make dev-setup-nomock
 ```
 
-Open **http://carbon-passport.com**. This target runs on macOS, Linux, native
+Open **http://carbon-passport-dev**. This target runs on macOS, Linux, native
 Windows, and WSL using Node.js, Go, and Docker (Linux containers). It runs Vite on
 **http://localhost:5173** and a Docker nginx proxy on `127.0.0.1:80`; port 80 must
 be available. The proxy supports hot reload and forwards `/api` through Vite.
@@ -63,7 +63,7 @@ Windows PowerShell), the equivalent command is:
 node scripts/dev_environment.mjs start
 ```
 
-Setup adds `127.0.0.1 carbon-passport.com` to the OS hosts file if missing:
+Setup adds `127.0.0.1 carbon-passport-dev` to the OS hosts file if missing:
 `/etc/hosts` on macOS/Linux, or
 `%SystemRoot%\System32\drivers\etc\hosts` on Windows. It requests `sudo` on
 macOS/Linux or Windows UAC elevation only when a write needs administrator access.
