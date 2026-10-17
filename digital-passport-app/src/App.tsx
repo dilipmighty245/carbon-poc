@@ -1,3 +1,4 @@
+import { PublicPassportView } from './components/views/PublicPassportView';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Shell } from './components/layout/Shell';
 import { AuthGuard } from './components/auth/AuthGuard';
@@ -27,6 +28,7 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/verify/:passportId" element={<PublicPassportView />} />
         {/* Full screen auth & onboarding starting entry points */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginView />} />

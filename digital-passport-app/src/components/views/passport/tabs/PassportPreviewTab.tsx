@@ -1,4 +1,6 @@
 import React from 'react';
+import { PassportQrCode } from '../../../common/PassportQrCode';
+import { getPassportVerificationUrl } from '../../../../utils/passportQr';
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { Leaf, Award, ShieldCheck, QrCode, FileText, ArrowRight, Printer } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
@@ -220,6 +222,11 @@ export const PassportPreviewTab: React.FC<PassportPreviewTabProps> = ({ passport
           </div>
         </div>
 
+        <div className="text-center space-y-2">
+          <PassportQrCode value={getPassportVerificationUrl(passport.passport_metadata.passport_id)} size={192}
+            title="Scan to view this passport" className="mx-auto" />
+          <p className="text-xs text-slate-500">Scan to view the current passport record</p>
+        </div>
         {/* Footer Signature Seal */}
         <div className="flex items-center justify-between border-t border-slate-200 pt-6 text-xs">
           <div className="flex items-center gap-3">

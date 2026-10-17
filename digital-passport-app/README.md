@@ -76,3 +76,11 @@ The suite starts isolated API and UI servers on ports 18080 and 15173, using the
 5. **Product Batch Registration (`/products/new`)**: Registers new product batches by submitting `Product` CR payloads with telemetry activity data and dynamic organization facility selection.
 6. **MRV & Verification (`/mrv`)**: Monitoring, Reporting & Verification tracking and auditor assurance workflows.
 7. **CBAM & PCF Dashboards (`/cbam` & `/pcf`)**: EU Carbon Border Adjustment Mechanism exposure and Product Carbon Footprint calculation rulebook engine.
+
+## Passport QR codes on mobile
+
+The QR Verification tab and certificate preview encode `/verify/<passport-id>` on the current app origin. This read-only page opens without signing in and uses the gateway's existing public passport lookup. QR generation runs locally in the browser.
+
+For production or printed labels, set `VITE_PUBLIC_APP_URL=https://your-passport-domain.example` before building so codes use a stable address reachable by recipients. Serve `/verify/*` through the SPA fallback and proxy `/api/` to the gateway.
+
+For local phone testing, connect both devices to the same Wi-Fi and open `http://<computer-LAN-IP>:5173` on the computer before generating the QR. Vite already listens on all interfaces. Scan with the phone camera; allow port 5173 through your firewall if necessary. A QR containing `localhost` will point to the phone itself and cannot reach your computer. Clipboard access may be unavailable on LAN HTTP; the URL can also be selected manually. Download QR exports an SVG suitable for printing.

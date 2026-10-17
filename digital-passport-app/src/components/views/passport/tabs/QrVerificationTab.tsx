@@ -1,6 +1,8 @@
-import React from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { QrCode, ShieldCheck, Copy, CheckCircle2, Download, ExternalLink } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { PassportQrCode } from '../../../common/PassportQrCode';
+import { getPassportVerificationUrl } from '../../../../utils/passportQr';
+import { useSearchParams, useParams } from 'react-router-dom';
+import { QrCode, Copy, Download, ExternalLink } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
 
 interface QrVerificationTabProps {
@@ -9,7 +11,10 @@ interface QrVerificationTabProps {
 
 export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports }) => {
   const [searchParams] = useSearchParams();
-  const passportId = searchParams.get('id');
+  const { passportId: pathPassportId } = useParams();
+  const passportId = pathPassportId || searchParams.get('id');
+  const qrRef = useRef<SVGSVGElement>(null);
+  const [copyStatus, setCopyStatus] = useState('');
   const passport = passports.find((p) => p.passport_metadata?.passport_id === passportId || p.product_summary?.batch_number === passportId) || (passports.length > 0 && !passportId ? passports[0] : null);
 
   if (!passport) {
@@ -26,11 +31,28 @@ export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports 
     );
   }
 
-  const verificationUrl = `https://passport.saurient.org/verify/${passport?.passport_metadata?.passport_id || passportId || 'PASSPORT-2026-COCOA-001'}`;
+  const id = passport.passport_metadata.passport_id;
+  const verificationUrl = getPassportVerificationUrl(id);
+  const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(new URL(verificationUrl).hostname);
 
-  const copyUrl = () => {
-    navigator.clipboard.writeText(verificationUrl);
-    alert('Verification URL copied to clipboard!');
+  const copyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(verificationUrl);
+      setCopyStatus('Verification URL copied.');
+    } catch {
+      setCopyStatus('Copy unavailable. Select and copy the URL above.');
+    }
+  };
+
+  const downloadQr = () => {
+    if (!qrRef.current) return;
+    const blob = new Blob([new XMLSerializer().serializeToString(qrRef.current)], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `passport-${id.replace(/[^a-zA-Z0-9_-]/g, '_')}-qr.svg`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
@@ -41,56 +63,44 @@ export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports 
         </div>
         <h2 className="text-xl font-black text-slate-900">Customs & Public QR Verification</h2>
         <p className="text-xs text-slate-500">
-          Scan or share this cryptographically verifiable QR code for instant EU CBAM customs clearance.
+          Scan with your phone camera to view this passport and its recorded verification status.
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center space-y-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-8 shadow-sm text-center space-y-6">
         {/* QR Visual Card */}
-        <div className="p-6 bg-slate-900 rounded-3xl inline-block shadow-xl border-4 border-emerald-500/30">
-          {/* SVG QR Code Simulation */}
-          <svg className="w-56 h-56 bg-white p-4 rounded-2xl" viewBox="0 0 100 100">
-            <path
-              d="M10,10 h30 v30 h-30 z M15,15 h20 v20 h-20 z M22,22 h6 v6 h-6 z"
-              fill="#064e3b"
-            />
-            <path
-              d="M60,10 h30 v30 h-30 z M65,15 h20 v20 h-20 z M72,22 h6 v6 h-6 z"
-              fill="#064e3b"
-            />
-            <path
-              d="M10,60 h30 v30 h-30 z M15,65 h20 v20 h-20 z M22,72 h6 v6 h-6 z"
-              fill="#064e3b"
-            />
-            {/* Random Data Pattern */}
-            <rect x="50" y="50" width="10" height="10" fill="#064e3b" />
-            <rect x="65" y="50" width="8" height="8" fill="#064e3b" />
-            <rect x="80" y="60" width="10" height="10" fill="#064e3b" />
-            <rect x="50" y="70" width="15" height="8" fill="#064e3b" />
-            <rect x="70" y="80" width="15" height="10" fill="#064e3b" />
-            <rect x="45" y="20" width="8" height="20" fill="#064e3b" />
-          </svg>
-          <span className="text-[10px] font-mono text-slate-300 block mt-3 uppercase tracking-widest">
-            {passport?.passport_metadata?.passport_id || passportId || 'PASSPORT-2026-COCOA-001'}
+        <div className="p-4 sm:p-6 max-w-full bg-slate-900 rounded-3xl inline-block shadow-xl border-4 border-emerald-500/30">
+          <PassportQrCode ref={qrRef} value={verificationUrl} size={256}
+            title={`View carbon passport ${id}`}
+            data-testid="passport-qr" className="max-w-full h-auto" />
+          <span className="text-[10px] font-mono text-slate-300 break-all block mt-3 uppercase tracking-widest">
+            {id}
           </span>
         </div>
 
+        {isLoopback && <p className="text-xs text-amber-800 bg-amber-50 p-3 rounded-xl">
+          This link only opens on this computer. To scan from a phone, open the app using its shared website address or your computer’s network address on the same Wi-Fi.
+        </p>}
+        <div className="flex flex-wrap justify-center gap-4 text-xs font-bold text-emerald-700">
+          <a href={verificationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1"><ExternalLink size={16} /> Open passport</a>
+          <button onClick={downloadQr} className="inline-flex items-center gap-1"><Download size={16} /> Download QR (SVG)</button>
+        </div>
         {/* Info Box */}
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2 text-left">
           <div className="flex justify-between items-center border-b border-slate-200 pb-1.5">
             <span className="text-slate-500 font-medium">Product Name</span>
-            <span className="font-bold text-slate-900">{passport?.product_summary?.product_name || 'Hot-Rolled Steel Coil'}</span>
+            <span className="font-bold text-slate-900">{passport?.product_summary?.product_name || 'Not recorded'}</span>
           </div>
           <div className="flex justify-between items-center border-b border-slate-200 pb-1.5">
             <span className="text-slate-500 font-medium">Carbon Intensity</span>
             <span className="font-bold text-emerald-700">
-              {passport?.carbon_footprint?.intensity_per_unit?.value ?? 1.633} {passport?.carbon_footprint?.intensity_per_unit?.unit || 'kgCO2e'}
+              {passport?.carbon_footprint?.intensity_per_unit?.value ?? '—'} {passport?.carbon_footprint?.intensity_per_unit?.unit || 'kgCO2e'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-500 font-medium">Verification Status</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-              {passport?.passport_metadata?.status || 'VERIFIED'}
+              {passport?.passport_metadata?.status || 'Not recorded'}
             </span>
           </div>
         </div>
@@ -98,10 +108,11 @@ export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports 
         {/* Verification Link Input */}
         <div className="flex items-center gap-2">
           <input
+            aria-label="Verification URL"
             type="text"
             readOnly
             value={verificationUrl}
-            className="w-full text-xs font-mono bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-slate-700"
+            className="min-w-0 w-full text-xs font-mono bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-slate-700"
           />
           <button
             onClick={copyUrl}
@@ -111,6 +122,7 @@ export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports 
             <span>Copy</span>
           </button>
         </div>
+        <p role="status" className="text-xs text-slate-600">{copyStatus}</p>
       </div>
     </div>
   );

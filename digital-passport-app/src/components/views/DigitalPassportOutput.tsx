@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { QrCode, RefreshCw } from 'lucide-react';
 import { getAllPassportsWithMeta, DEFAULT_TENANT_ID, getActiveTenantId, type ApiFetchResult } from '../../api/client';
 import type { RichDigitalPassport } from '../../types';
@@ -27,6 +27,7 @@ const PASSPORT_TABS = [
 export const DigitalPassportOutput: React.FC = () => {
   const { tab = 'registry', passportId } = useParams<{ tab?: string; passportId?: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
   const isVerifier = userRole.toLowerCase().includes('verifier');
@@ -75,7 +76,8 @@ export const DigitalPassportOutput: React.FC = () => {
   }, [isVerifier, activeTabId, navigate]);
 
   const handleTabChange = (newTabId: string) => {
-    navigate(`/passport/${newTabId}`);
+    const selectedId = passportId || searchParams.get('id');
+    navigate(`/passport/${newTabId}${selectedId ? `?id=${encodeURIComponent(selectedId)}` : ''}`);
   };
 
   if (loading) {
