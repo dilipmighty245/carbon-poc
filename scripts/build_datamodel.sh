@@ -75,6 +75,8 @@ if [ -f "${BUILD_DIR}/nexus-client/client.go" ]; then
   sed -i '' -e 's|logger\.Fatalf("\[Get\([a-zA-Z]*\)ByName\] Getting version of Object: %s in write cache failed with error %v"|logger.Debugf("[Get\1ByName] Getting version of Object: %s in write cache failed with error %v"|g' "${BUILD_DIR}/nexus-client/client.go"
 fi
 
+cp "${REPO_ROOT}/scripts/templates/local_client.go.tmpl" "${BUILD_DIR}/nexus-client/local_client.go"
+
 echo "==> [6/7] Generating Nexus GraphQL server via gqlgen..."
 if [ -d "${BUILD_DIR}/nexus-gql" ]; then
   (cd "${BUILD_DIR}/nexus-gql" && go run github.com/dilipmighty245/graph-framework-for-microservices/gqlgen generate)

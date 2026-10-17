@@ -62,6 +62,13 @@ export const DigitalPassportOutput: React.FC = () => {
     }
   }, [tab, tenantId]);
 
+  useEffect(() => {
+    const refreshOnFocus = () => { void refreshData(true); };
+    const timer = window.setInterval(refreshOnFocus, 10000);
+    window.addEventListener('focus', refreshOnFocus);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refreshOnFocus); };
+  }, [tenantId]);
+
   const validTabs = ['registry', 'readiness', 'preview', 'sign-issue', 'detail', 'passport-detail', 'qr', 'sharing', 'versions'];
   const activeTabId = validTabs.includes(tab.toLowerCase()) ? tab.toLowerCase() : 'registry';
 

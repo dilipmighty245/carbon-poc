@@ -32,7 +32,7 @@ export default defineConfig({
       timeout: 120000,
     }] : []),
     ...(!process.env.E2E_BASE_URL ? [{
-      command: `npm run dev -- --host 127.0.0.1 --port ${uiPort} --strictPort`,
+      command: `npm run dev -- --host 0.0.0.0 --port ${uiPort} --strictPort`,
       url: uiURL,
       env: { VITE_API_PROXY_TARGET: apiURL, VITE_API_BASE_URL: '/api/v1' },
       reuseExistingServer: false,

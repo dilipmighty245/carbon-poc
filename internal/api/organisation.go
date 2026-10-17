@@ -213,6 +213,10 @@ func (h *OrganisationHandler) HandleAuthRegister(w http.ResponseWriter, r *http.
 		writeJSONError(w, "valid tenant_id is required", http.StatusBadRequest)
 		return
 	}
+	if isIndependentAuthorityRole(req.Role) {
+		writeJSONError(w, "Independent authority roles cannot be assigned through organisation registration", http.StatusForbidden)
+		return
+	}
 	ctx := tenant.WithTenant(r.Context(), tenantID)
 	registrationMu.Lock()
 	defer registrationMu.Unlock()
@@ -893,6 +897,10 @@ func (h *OrganisationHandler) HandleUsers(w http.ResponseWriter, r *http.Request
 			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
 		}
+		if isIndependentAuthorityRole(u.Role) {
+			writeJSONError(w, "Verifier and auditor roles belong to the independent authority workspace", http.StatusForbidden)
+			return
+		}
 		u.TenantID = tenantID
 		if u.ID == "" {
 			u.ID = "usr-" + uuid.New().String()[:8]
@@ -992,6 +1000,10 @@ func (h *OrganisationHandler) HandleUpdateUserRole(w http.ResponseWriter, r *htt
 		return
 	}
 
+	if isIndependentAuthorityRole(targetRole) {
+		writeJSONError(w, "Independent authority roles cannot be assigned through organisation RBAC", http.StatusForbidden)
+		return
+	}
 	var updateErr error
 	if h.client != nil {
 		updateErr = nexus.UpdateUserRoleNode(ctx, h.client, tenantID, targetUserID, targetRole)
@@ -1168,7 +1180,10 @@ func (h *OrganisationHandler) HandleSystemReset(w http.ResponseWriter, r *http.R
 	}
 
 	ctx := r.Context()
-	_ = nexus.ResetNexusClient(ctx)
+	if err := nexus.ResetNexusClient(ctx); err != nil {
+		writeJSONError(w, "unable to reset platform data", http.StatusInternalServerError)
+		return
+	}
 	if h.engine != nil {
 		h.engine.Reset()
 	}
@@ -1180,4 +1195,9 @@ func (h *OrganisationHandler) HandleSystemReset(w http.ResponseWriter, r *http.R
 		"message": "All organisations, facilities, products, and carbon passports have been completely wiped. Initialized clean platform baseline.",
 		"status":  "reset_successful",
 	})
+}
+
+func isIndependentAuthorityRole(role string) bool {
+	role = strings.ToLower(strings.TrimSpace(role))
+	return strings.Contains(role, "verifier") || strings.Contains(role, "auditor") || strings.Contains(role, "audited") || strings.Contains(role, "officer")
 }

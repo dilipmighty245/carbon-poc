@@ -301,8 +301,14 @@ func (r *ProductReconciler) ReconcileProductNode(ctx context.Context, prodNode *
 	}
 	defer r.unlockProduct(lockKey)
 
+	// Informer events can carry an older Pending object after verification has advanced.
+	if r.client != nil {
+		if current, err := GetProductNode(ctx, r.client, tenantID, prodNode.Spec.BatchID); err == nil && current != nil {
+			*prodNode = *current
+		}
+	}
 	// Idempotency: skip if already processed with a linked passport
-	if (prodNode.Spec.Phase == "Calculated" || prodNode.Spec.Phase == "Draft") && prodNode.Spec.PassportID != "" {
+	if prodNode.Spec.Phase != "Pending" && prodNode.Spec.PassportID != "" {
 		if r.client != nil {
 			if pNode, err := GetPassportNode(ctx, r.client, prodNode.Spec.PassportID); err == nil && pNode != nil {
 				return CarbonPassportModelFromNode(pNode), nil

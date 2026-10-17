@@ -97,21 +97,7 @@ export async function createProduct(req: ProductCreateRequest): Promise<ProductC
     resp = await res.json();
     return resp;
   } catch (err) {
-    console.warn("Backend API unavailable for createProduct, falling back to local creation:", err);
-    const generatedId = `PASS-2026-${Math.floor(100 + Math.random() * 900)}-v1.0`;
-    resp = {
-      name: req.batch_id || `BATCH-${Date.now()}`,
-      namespace: req.rulebook_ref?.namespace || 'default',
-      tenant_id: tid,
-      facility_id: req.facility_id,
-      batch_id: req.batch_id,
-      product_name: req.product_name,
-      commodity_type: req.commodity_type,
-      status: 'VERIFIED',
-      created_at: new Date().toISOString(),
-      passport_id: generatedId,
-    };
-    return resp;
+    throw err;
   }
 }
 

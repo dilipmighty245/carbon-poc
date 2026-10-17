@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SimpleWordsCard } from '../common/SimpleWordsCard';
-import { createProduct, createRulebook, getAllRules, getOrgFacilities, DEFAULT_TENANT_ID, getActiveTenantId } from '../../api/client';
+import { createProduct, createRulebook, getAllRules, getOrgFacilities } from '../../api/client';
 import type { RuleDefinition } from '../../types';
 import { Building, Factory, Leaf, Package, FileText, CheckCircle2, AlertCircle, Radio, ShieldCheck, Sliders, Check, Plus, X, BookPlus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +27,9 @@ export const ProductSetup: React.FC = () => {
   const [batchId, setBatchId] = useState(`CB-2026-${Math.floor(1000 + Math.random() * 9000)}`);
   const [supplier, setSupplier] = useState('Asunafo Farmers Cooperative');
   const [bom, setBom] = useState('Cocoa beans (raw), water, packaging');
+  const [rawMaterialKg, setRawMaterialKg] = useState<number>(0);
+  const [packagingQuantity, setPackagingQuantity] = useState<number>(0);
+  const [transportKm, setTransportKm] = useState<number>(0);
   const [packaging, setPackaging] = useState('60 kg jute bags');
   const [unitOfMeasure, setUnitOfMeasure] = useState('kg');
   const [batchQuantity, setBatchQuantity] = useState<number>(1000);
@@ -310,7 +313,7 @@ export const ProductSetup: React.FC = () => {
     localStorage.setItem('saurient_tenant_id', effectiveTenant);
 
     try {
-      const resp = await createProduct({
+      await createProduct({
         tenant_id: effectiveTenant,
         facility_id: selectedFac?.id || facility,
         batch_id: batchId,
@@ -334,7 +337,14 @@ export const ProductSetup: React.FC = () => {
         activity_data: {
           scope_1_direct: { fuel_consumed_liters: Number(fuelLiters) },
           scope_2_indirect: { electricity_consumed_kwh: Number(elecKwh) },
-          scope_3_upstream: { bill_of_materials: [{ name: bom, quantity: Number(batchQuantity) }] },
+          scope_3_upstream: {
+            bill_of_materials: [{ name: bom, quantity: Number(rawMaterialKg), unit: 'kg' }],
+            packaging: { name: packaging, quantity: Number(packagingQuantity) },
+            logistics: { distance_km: Number(transportKm) },
+          },
+          raw_material_kg: Number(rawMaterialKg),
+          packaging_qty: Number(packagingQuantity),
+          transport_km: Number(transportKm),
         },
       });
 
@@ -691,6 +701,28 @@ export const ProductSetup: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <fieldset className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <legend className="text-xs font-bold text-slate-800 px-1">Scope 3: Upstream Materials, Packaging & Transport</legend>
+              <p className="text-xs text-slate-500">Enter activity data for the selected calculation rulebook. Use zero where a source does not apply.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <label className="block text-slate-600">Raw materials consumed (kg)
+                  <input aria-label="Raw materials consumed (kg)" type="number" min="0" step="any" required value={rawMaterialKg}
+                    onChange={(e) => setRawMaterialKg(Number(e.target.value))}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-1.5 bg-white text-slate-900" />
+                </label>
+                <label className="block text-slate-600">Packaging quantity (items)
+                  <input aria-label="Packaging quantity (items)" type="number" min="0" step="any" required value={packagingQuantity}
+                    onChange={(e) => setPackagingQuantity(Number(e.target.value))}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-1.5 bg-white text-slate-900" />
+                </label>
+                <label className="block text-slate-600">Transport distance (km)
+                  <input aria-label="Transport distance (km)" type="number" min="0" step="any" required value={transportKm}
+                    onChange={(e) => setTransportKm(Number(e.target.value))}
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-1.5 bg-white text-slate-900" />
+                </label>
+              </div>
+            </fieldset>
 
             {/* Compliance & Rule Validation Checklist */}
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const passport = {
-  passport_metadata: { passport_id: 'CP-MOBILE-002', status: 'Issued', cryptographic_hash: 'abc123' },
+  passport_metadata: { passport_id: 'CP-MOBILE-002', status: 'SubmittedToAgency', cryptographic_hash: 'abc123' },
   product_summary: { product_name: 'Mobile test steel', batch_number: 'BATCH-002', producer_organization: 'Test producer', facility: { country_of_origin: 'India' } },
   carbon_footprint: { intensity_per_unit: { value: 0, unit: 'kgCO2e/kg' }, total_batch_footprint_kg_co2e: 0 },
 };
@@ -23,7 +23,7 @@ test('QR uses the selected passport and opens its public record on mobile', asyn
 
   const mobileContext = await context.browser()!.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
   const mobile = await mobileContext.newPage();
-  await mobile.route('**/api/v1/passports/CP-MOBILE-002', route => {
+  await mobile.route('**/api/v1/public/passport-records/CP-MOBILE-002', route => {
     expect(route.request().headers()['x-tenant-id']).toBe('public');
     return route.fulfill({ json: passport });
   });
@@ -36,8 +36,40 @@ test('QR uses the selected passport and opens its public record on mobile', asyn
 });
 
 test('public passport page reports missing records without signing in', async ({ page }) => {
-  await page.route('**/api/v1/passports/missing', route => route.fulfill({ status: 404 }));
+  await page.route('**/api/v1/public/passport-records/missing', route => route.fulfill({ status: 404 }));
   await page.goto('/verify/missing');
-  await expect(page.getByRole('alert')).toHaveText('Passport not found.');
+  await expect(page.getByRole('alert')).toHaveText('Passport not found or not yet released for public access.');
   await expect(page).toHaveURL(/\/verify\/missing$/);
+});
+
+for (const status of ['Draft', 'Submitted', 'Verified', 'Issued']) {
+  test(`QR remains unavailable for ${status} passports`, async ({page}) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('saurient_auth_token', 'test-session');
+      localStorage.setItem('saurient_user_email', 'qr@example.test');
+    });
+    await page.route('**/api/v1/passports', route => route.fulfill({json:[{...passport, passport_metadata:{...passport.passport_metadata,status}}]}));
+    await page.goto('/passport/qr/CP-MOBILE-002');
+    await expect(page.getByRole('heading', {name:'Passport not yet public'})).toBeVisible();
+    await expect(page.getByTestId('passport-qr')).toHaveCount(0);
+  });
+}
+
+
+test('verification queue displays verified and released lifecycle labels', async ({page}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('saurient_auth_token', 'test-session');
+    localStorage.setItem('saurient_user_email', 'verifier@example.test');
+    localStorage.setItem('saurient_user_role', 'Verifier');
+  });
+  await page.route('**/api/v1/passports', route => route.fulfill({json:
+    ['Verified', 'Issued', 'SubmittedToAgency'].map((status, i) => ({
+      ...passport, passport_metadata:{...passport.passport_metadata,passport_id:`CP-QUEUE-${i}`,status},
+    }))
+  }));
+  await page.goto('/mrv/queue');
+  await expect(page.getByText('Third-Party Verified', {exact:true})).toBeVisible();
+  await expect(page.getByText('Issued · Verified', {exact:true})).toBeVisible();
+  await expect(page.getByText('Submitted to Agency', {exact:true})).toBeVisible();
+  await expect(page.getByText('Draft In Preparation', {exact:true})).toHaveCount(0);
 });

@@ -126,6 +126,9 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 		_ = json.Unmarshal(p.CalculationDetails, &calcMap)
 	}
 
+	if calcMap == nil {
+		calcMap = make(map[string]interface{})
+	}
 	var batchData map[string]interface{}
 	if bd, ok := calcMap["batch_data"].(map[string]interface{}); ok {
 		batchData = bd
@@ -460,7 +463,10 @@ func BuildRichPassportResponse(p *CarbonPassportModel) RichDigitalCarbonPassport
 	}
 
 	verifyBaseURL := getEnv("VERIFY_BASE_URL", "https://verify.saurient.io")
-	qrCodeURL := fmt.Sprintf("%s/passport/%s", strings.TrimRight(verifyBaseURL, "/"), passportID)
+	qrCodeURL := ""
+	if IsPassportPublic(status) {
+		qrCodeURL = fmt.Sprintf("%s/verify/%s", strings.TrimRight(verifyBaseURL, "/"), passportID)
+	}
 
 	effectiveTenant := p.TenantID
 	if effectiveTenant == "all" || effectiveTenant == "" {
@@ -562,21 +568,21 @@ func PrepareActivityMapAliases(activityMap map[string]interface{}) {
 						}
 					}
 				}
-				if totalKg > 0 {
+				if totalKg >= 0 {
 					activityMap["raw_material_kg"] = totalKg
 				}
 			}
 		}
 		if _, hasPkg := activityMap["packaging_qty"]; !hasPkg {
 			if pkg, ok := s3["packaging"].(map[string]interface{}); ok {
-				if qty, ok := pkg["quantity"].(float64); ok && qty > 0 {
+				if qty, ok := pkg["quantity"].(float64); ok && qty >= 0 {
 					activityMap["packaging_qty"] = qty
 				}
 			}
 		}
 		if _, hasTrans := activityMap["transport_km"]; !hasTrans {
 			if log, ok := s3["logistics"].(map[string]interface{}); ok {
-				if dist, ok := log["distance_km"].(float64); ok && dist > 0 {
+				if dist, ok := log["distance_km"].(float64); ok && dist >= 0 {
 					activityMap["transport_km"] = dist
 				}
 			}
@@ -584,7 +590,7 @@ func PrepareActivityMapAliases(activityMap map[string]interface{}) {
 	}
 
 	if s1, ok := activityMap["scope_1_direct"].(map[string]interface{}); ok {
-		if liters, ok := s1["fuel_consumed_liters"].(float64); ok && liters > 0 {
+		if liters, ok := s1["fuel_consumed_liters"].(float64); ok && liters >= 0 {
 			if _, hasFuel := activityMap["fuel_consumed_liters"]; !hasFuel {
 				activityMap["fuel_consumed_liters"] = liters
 			}
@@ -592,7 +598,7 @@ func PrepareActivityMapAliases(activityMap map[string]interface{}) {
 	}
 
 	if s2, ok := activityMap["scope_2_indirect"].(map[string]interface{}); ok {
-		if kwh, ok := s2["electricity_consumed_kwh"].(float64); ok && kwh > 0 {
+		if kwh, ok := s2["electricity_consumed_kwh"].(float64); ok && kwh >= 0 {
 			if _, hasElec := activityMap["electricity_consumed_kwh"]; !hasElec {
 				activityMap["electricity_consumed_kwh"] = kwh
 			}
@@ -600,7 +606,7 @@ func PrepareActivityMapAliases(activityMap map[string]interface{}) {
 	}
 
 	if bd, ok := activityMap["batch_data"].(map[string]interface{}); ok {
-		if qty, ok := bd["batch_size_quantity"].(float64); ok && qty > 0 {
+		if qty, ok := bd["batch_size_quantity"].(float64); ok && qty >= 0 {
 			if _, hasB := activityMap["batch_quantity_kg"]; !hasB {
 				activityMap["batch_quantity_kg"] = qty
 			}
@@ -610,29 +616,29 @@ func PrepareActivityMapAliases(activityMap map[string]interface{}) {
 		}
 	}
 
-	if v, ok := activityMap["fuel_consumed_liters"].(float64); !ok || v <= 0 {
+	if v, ok := activityMap["fuel_consumed_liters"].(float64); !ok || v < 0 {
 		activityMap["fuel_consumed_liters"] = 150.0
 	}
-	if v, ok := activityMap["electricity_consumed_kwh"].(float64); !ok || v <= 0 {
+	if v, ok := activityMap["electricity_consumed_kwh"].(float64); !ok || v < 0 {
 		activityMap["electricity_consumed_kwh"] = 1200.0
 	}
-	if v, ok := activityMap["batch_quantity_kg"].(float64); !ok || v <= 0 {
+	if v, ok := activityMap["batch_quantity_kg"].(float64); !ok || v < 0 {
 		activityMap["batch_quantity_kg"] = 1000.0
 	}
-	if v, ok := activityMap["batch_quantity"].(float64); !ok || v <= 0 {
+	if v, ok := activityMap["batch_quantity"].(float64); !ok || v < 0 {
 		activityMap["batch_quantity"] = 1000.0
 	}
-	if v, ok := activityMap["raw_material_kg"].(float64); !ok || v <= 0 {
+	if v, ok := activityMap["raw_material_kg"].(float64); !ok || v < 0 {
 		if bq, ok := activityMap["batch_quantity_kg"].(float64); ok && bq > 0 {
 			activityMap["raw_material_kg"] = bq
 		} else {
 			activityMap["raw_material_kg"] = 1000.0
 		}
 	}
-	if v, ok := activityMap["packaging_qty"].(float64); !ok || v <= 0 {
+	if v, ok := activityMap["packaging_qty"].(float64); !ok || v < 0 {
 		activityMap["packaging_qty"] = 10.0
 	}
-	if v, ok := activityMap["transport_km"].(float64); !ok || v <= 0 {
+	if v, ok := activityMap["transport_km"].(float64); !ok || v < 0 {
 		activityMap["transport_km"] = 100.0
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -39,7 +40,11 @@ func GetNexusClient() *nexus_client.Clientset {
 	nexusClientMu.Lock()
 	defer nexusClientMu.Unlock()
 	if globalNexusClient == nil {
-		globalNexusClient, _ = NewNexusClient("")
+		var err error
+		globalNexusClient, err = NewNexusClient("")
+		if err != nil {
+			log.Printf("[NexusClient] Initialization failed: %v", err)
+		}
 		if globalNexusClient != nil {
 			ctx := context.Background()
 			_, _ = EnsureGraphRoots(ctx, globalNexusClient)
@@ -65,7 +70,17 @@ func SetNexusClient(c *nexus_client.Clientset) {
 func ResetNexusClient(ctx context.Context) error {
 	nexusClientMu.Lock()
 	defer nexusClientMu.Unlock()
-	globalNexusClient = nexus_client.NewFakeClient()
+	if activeLocalStore != nil {
+		if err := activeLocalStore.reset(); err != nil {
+			return err
+		}
+	} else if os.Getenv("NEXUS_REQUIRE_CLUSTER") == "true" {
+		if err := resetClusterGraph(ctx, globalNexusClient); err != nil {
+			return err
+		}
+	} else {
+		globalNexusClient = nexus_client.NewFakeClient()
+	}
 	_, err := EnsureGraphRoots(ctx, globalNexusClient)
 	if err != nil {
 		return err
@@ -107,6 +122,18 @@ func NewNexusClient(kubeconfigPath string) (*nexus_client.Clientset, error) {
 		log.Printf("[NexusClient] Failed to create Nexus client from cluster config: %v", clientErr)
 	}
 
+	if os.Getenv("NEXUS_REQUIRE_CLUSTER") == "true" {
+		return nil, fmt.Errorf("a Kubernetes Nexus connection is required; refusing to fall back to memory")
+	}
+	if dir := os.Getenv("LOCAL_DATA_DIR"); dir != "" {
+		client, store, err := newLocalGraphClient(filepath.Join(dir, "graph.json"))
+		if err != nil {
+			return nil, fmt.Errorf("open local graph: %w", err)
+		}
+		activeLocalStore = store
+		log.Printf("[NexusClient] Local graph persisted in %s", dir)
+		return client, nil
+	}
 	log.Printf("[NexusClient] Running with memory-backed Nexus FakeClient")
 	return nexus_client.NewFakeClient(), nil
 }

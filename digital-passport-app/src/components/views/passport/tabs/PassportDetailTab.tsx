@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Leaf,
   Award,
@@ -17,6 +17,7 @@ import {
   X,
   ExternalLink,
 } from 'lucide-react';
+import { isPassportPublic } from '../../../../utils/passportQr';
 import type { RichDigitalPassport } from '../../../../types';
 import {
   getPassportWithMeta,
@@ -30,7 +31,9 @@ interface PassportDetailTabProps {
 }
 
 export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports, onRefresh }) => {
-  const { passportId } = useParams<{ passportId: string }>();
+  const { passportId: pathPassportId } = useParams<{ passportId: string }>();
+  const [searchParams] = useSearchParams();
+  const passportId = pathPassportId || searchParams.get('id');
   const navigate = useNavigate();
 
   const userRole = localStorage.getItem('saurient_user_role') || localStorage.getItem('auth_role') || 'Company Operator';
@@ -124,7 +127,7 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
   }
 
   const rawStatus = passport.passport_metadata?.status || 'Draft';
-  const currentStatus = localStatus || rawStatus;
+  const currentStatus = rawStatus !== 'Draft' && rawStatus !== 'CorrectionsRequired' ? rawStatus : localStatus || rawStatus;
   const statusUpper = currentStatus.toUpperCase();
 
   const metadata = {
@@ -355,13 +358,13 @@ export const PassportDetailTab: React.FC<PassportDetailTabProps> = ({ passports,
             </button>
           )}
 
-          <button
+          {isPassportPublic(currentStatus) && (<button
             onClick={() => navigate(`/passport/qr?id=${metadata.passport_id}`)}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition-colors"
           >
             <QrCode className="w-4 h-4 text-emerald-600" />
             <span>View QR</span>
-          </button>
+          </button>)}
           <button
             onClick={() => navigate(`/passport/sharing?id=${metadata.passport_id}`)}
             className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl text-xs font-bold shadow-xs transition-colors"

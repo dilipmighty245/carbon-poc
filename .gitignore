@@ -39,3 +39,6 @@ digital-passport-app/playwright-results/
 
 # Local features and design plans
 features/
+
+# Persistent local development graph and workspace (contains account data)
+/.dev-data/

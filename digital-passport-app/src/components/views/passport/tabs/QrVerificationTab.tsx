@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { PassportQrCode } from '../../../common/PassportQrCode';
-import { getPassportVerificationUrl } from '../../../../utils/passportQr';
+import { getPassportVerificationUrl, isPassportPublic } from '../../../../utils/passportQr';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { QrCode, Copy, Download, ExternalLink } from 'lucide-react';
 import type { RichDigitalPassport } from '../../../../types';
@@ -29,6 +29,14 @@ export const QrVerificationTab: React.FC<QrVerificationTabProps> = ({ passports 
         <p className="text-xs text-slate-500">No carbon passports exist to generate QR verification code.</p>
       </div>
     );
+  }
+
+  if (!isPassportPublic(passport.passport_metadata?.status)) {
+    return <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-2">
+      <h2 className="text-lg font-bold text-slate-900">Passport not yet public</h2>
+      <p className="text-sm text-slate-600">QR codes and public sharing are available after independent verification, issuance, and submission to the agency.</p>
+      <p className="text-xs text-slate-500">Current status: {passport.passport_metadata?.status || 'Draft'}</p>
+    </div>;
   }
 
   const id = passport.passport_metadata.passport_id;

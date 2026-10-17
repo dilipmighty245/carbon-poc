@@ -6,7 +6,7 @@ API_IMG ?= saurient-api:dev
 DEV_PROXY_IMAGE ?= nginx:stable-alpine
 export ETCD_CONTAINER ETCD_IMAGE DEV_PROXY_IMAGE
 
-.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed dev-host-setup clean clean-data check-prereqs etcd-start etcd-stop datamodel-build telemetry-server
+.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed dev-host-setup kind-setup clean clean-data check-prereqs etcd-start etcd-stop datamodel-build telemetry-server
 
 all: test build
 
@@ -31,7 +31,7 @@ test-e2e-no-mocks: check-prereqs clean etcd-start build
 	@echo "==> Starting backend API Gateway background server [NO MOCK DATA]..."
 	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
 	@echo "==> Starting UI Frontend (digital-passport-app) dev server..."
-	@cd digital-passport-app && npm run dev -- --host 127.0.0.1 --port 5173 > ../ui.log 2>&1 & echo $$! > ../.ui.pid
+	@cd digital-passport-app && npm run dev -- --host 0.0.0.0 --port 5173 > ../ui.log 2>&1 & echo $$! > ../.ui.pid
 	@echo "==> Polling until API (http://localhost:8080) and UI (http://localhost:5173) are active..."
 	@for i in $$(seq 1 30); do \
 		if curl -s http://localhost:8080/healthz >/dev/null 2>&1 && curl -s http://localhost:5173 >/dev/null 2>&1; then \
@@ -51,7 +51,7 @@ test-e2e: check-prereqs clean etcd-start build
 	@echo "==> Starting backend API Gateway background server..."
 	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
 	@echo "==> Starting UI Frontend (digital-passport-app) dev server..."
-	@cd digital-passport-app && npm run dev -- --host 127.0.0.1 --port 5173 > ../ui.log 2>&1 & echo $$! > ../.ui.pid
+	@cd digital-passport-app && npm run dev -- --host 0.0.0.0 --port 5173 > ../ui.log 2>&1 & echo $$! > ../.ui.pid
 	@echo "==> Polling until API (http://localhost:8080) and UI (http://localhost:5173) are active..."
 	@for i in $$(seq 1 30); do \
 		if curl -s http://localhost:8080/healthz >/dev/null 2>&1 && curl -s http://localhost:5173 >/dev/null 2>&1; then \
@@ -151,10 +151,11 @@ dev-setup: check-prereqs clean etcd-start build
 	@echo "==> Starting Digital Passport App (React / Vite)..."
 	cd digital-passport-app && npm run dev
 
+kind-setup:
+	@node scripts/kind_environment.mjs
+
 clean-data:
-	@echo "==> Calling API to wipe all organisations, products, batches, and passports..."
-	-@curl -s -X POST http://localhost:8080/api/v1/system/reset | jq . 2>/dev/null || curl -s -X POST http://localhost:8080/api/v1/system/reset || true
-	@echo "   [OK] Platform data reset to clean initial state."
+	@node scripts/kind_environment.mjs reset
 
 clean:
 	@node scripts/dev_environment.mjs clean

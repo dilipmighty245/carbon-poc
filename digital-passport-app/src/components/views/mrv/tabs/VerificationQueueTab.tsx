@@ -8,7 +8,6 @@ import {
   ArrowRight, 
   Search, 
   RefreshCw, 
-  ShieldCheck, 
   Building2, 
   FileCheck,
   Eye,
@@ -24,8 +23,8 @@ export const VerificationQueueTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SUBMITTED' | 'DRAFT' | 'VERIFIED' | 'CORRECTIONS'>('ALL');
 
-  const loadQueue = async () => {
-    setLoading(true);
+  const loadQueue = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await getAllPassportsWithMeta('all');
       if (res && res.data) {
@@ -39,7 +38,11 @@ export const VerificationQueueTab: React.FC = () => {
   };
 
   useEffect(() => {
-    loadQueue();
+    void loadQueue();
+    const refresh = () => { void loadQueue(true); };
+    const timer = window.setInterval(refresh, 10000);
+    window.addEventListener('focus', refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); };
   }, []);
 
   const filteredPassports = passports.filter((p) => {
@@ -75,7 +78,7 @@ export const VerificationQueueTab: React.FC = () => {
 
   const verifiedCount = passports.filter(p => {
     const s = (p.passport_metadata?.status || '').toUpperCase();
-    return s === 'VERIFIED' || s === 'ISSUED';
+    return s === 'VERIFIED' || s === 'ISSUED' || s === 'SUBMITTEDTOAGENCY';
   }).length;
 
   const getStatusBadge = (status: string) => {
@@ -88,11 +91,11 @@ export const VerificationQueueTab: React.FC = () => {
         </span>
       );
     }
-    if (s === 'VERIFIED') {
+    if (s === 'VERIFIED' || s === 'ISSUED' || s === 'SUBMITTEDTOAGENCY') {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-          Third-Party Verified
+          {s === 'SUBMITTEDTOAGENCY' ? 'Submitted to Agency' : s === 'ISSUED' ? 'Issued · Verified' : 'Third-Party Verified'}
         </span>
       );
     }
@@ -167,7 +170,7 @@ export const VerificationQueueTab: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={loadQueue}
+              onClick={() => { void loadQueue(); }}
               className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />

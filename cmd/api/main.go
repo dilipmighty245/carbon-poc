@@ -461,12 +461,30 @@ func main() {
 		log.Fatalf("Fatal: Nexus client cannot be nil")
 	}
 	if _, err := nexus.EnsureGraphRoots(context.Background(), nClient); err != nil {
+		if os.Getenv("NEXUS_REQUIRE_CLUSTER") == "true" {
+			log.Fatalf("Nexus cluster storage is unavailable: %v", err)
+		}
 		log.Printf("Warning: failed to ensure Nexus graph roots: %v", err)
 	}
 
 	server := &VerificationServer{
 		nexusClient: nClient,
 		nexusEngine: nexus.GetNexusEngine(),
+	}
+
+	var apiHandler http.Handler = http.DefaultServeMux
+	if os.Getenv("NEXUS_REQUIRE_CLUSTER") == "true" {
+		var err error
+		apiHandler, err = nexus.ClusterPersistenceHandler(nClient, getEnv("KUBE_WORKSPACE_NAMESPACE", "saurient-system"), server.nexusEngine, apiHandler)
+		if err != nil {
+			log.Fatalf("Cluster workspace initialization failed: %v", err)
+		}
+	} else if dir := os.Getenv("LOCAL_DATA_DIR"); dir != "" {
+		var err error
+		apiHandler, err = nexus.LocalPersistenceHandler(dir, server.nexusEngine, apiHandler)
+		if err != nil {
+			log.Fatalf("Local persistence initialization failed: %v", err)
+		}
 	}
 
 	// Initialize and start Nexus Product Reconciler background worker
@@ -569,6 +587,7 @@ func main() {
 	http.HandleFunc("/api/v1/rules/", server.handleRules)
 
 	// 7. Digital Carbon Passport REST CRUD & Verification API
+	http.HandleFunc("/api/v1/public/passport-records/", server.handlePublicPassport)
 	http.HandleFunc("/api/v1/passports", server.handlePassports)
 	http.HandleFunc("/api/v1/passports/", server.handlePassports)
 
@@ -606,7 +625,7 @@ func main() {
 	log.Printf("Swagger UI interactive API documentation available at http://localhost:%s/swagger/", port)
 	log.Printf("GraphQL Playground available at http://localhost:%s/graphql/playground", port)
 	log.Printf("GraphQL Voyager node visualizer available at http://localhost:%s/graphql/voyager", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := http.ListenAndServe(":"+port, apiHandler); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }

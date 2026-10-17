@@ -48,6 +48,7 @@ export interface ProductCreateRequest {
   };
   batch_data?: {
     product_name: string;
+    producer_organization?: string;
     commodity: string;
     batch_id: string;
     facility_name: string;

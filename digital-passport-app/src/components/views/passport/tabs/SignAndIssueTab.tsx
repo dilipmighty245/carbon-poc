@@ -73,14 +73,8 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
     ? passports.find((p) => p.passport_metadata?.passport_id === passportId || p.product_summary?.batch_number === passportId)
     : null;
 
-  const candidateId = candidatePassport?.passport_metadata?.passport_id || candidatePassport?.product_summary?.batch_number || '';
-  const candidateStatus = candidatePassport
-    ? (localStatusMap[candidateId] || candidatePassport.passport_metadata?.status || '').toUpperCase()
-    : '';
-  const isCandidateSubmitted = candidateStatus === 'SUBMITTEDTOAGENCY' || candidateStatus === 'SUBMITTED_TO_AGENCY' || Boolean(candidatePassport && agencySubmittedMap[candidateId]);
-
-  // If candidate is already submitted to agency, we do not show it as target in Sign & Issue
-  const passport = (!isCandidateSubmitted ? candidatePassport : null) || defaultPassport;
+  // Keep an explicitly selected passport visible as a receipt after agency submission.
+  const passport = candidatePassport || defaultPassport;
 
   const selectedTargetId = passport?.passport_metadata?.passport_id || passport?.product_summary?.batch_number || '';
 
@@ -89,8 +83,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
   const isVerified = statusUpper === 'VERIFIED';
   const isIssued = statusUpper === 'ISSUED' || statusUpper === 'SUBMITTEDTOAGENCY' || statusUpper === 'SUBMITTED_TO_AGENCY';
   const isSubmittedToAgency = statusUpper === 'SUBMITTEDTOAGENCY' || statusUpper === 'SUBMITTED_TO_AGENCY' || Boolean(agencySubmittedMap[selectedTargetId]);
-  const justSubmitted = Boolean(agencySubmittedMap[selectedTargetId]);
-  const shouldShowWorkspace = Boolean(passport && (!isSubmittedToAgency || justSubmitted));
+  const shouldShowWorkspace = Boolean(passport);
 
   const handleSelectPassport = (p: RichDigitalPassport) => {
     const pId = p.passport_metadata?.passport_id || p.product_summary?.batch_number;
@@ -132,10 +125,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
       setLocalStatusMap((prev) => ({ ...prev, [selectedTargetId]: 'SubmittedToAgency' }));
       setAgencySubmittedMap((prev) => ({ ...prev, [selectedTargetId]: true }));
       onRefresh?.();
-      setTimeout(() => {
-        setSearchParams({});
-        navigate('/passport/registry');
-      }, 1200);
+
     } catch (err: any) {
       setSignError(err.message || 'Agency submission failed. Please retry.');
     } finally {
@@ -515,9 +505,9 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
                 <span className="inline-block px-3 py-1 bg-emerald-200/80 text-emerald-950 font-mono font-bold text-xs rounded-full uppercase tracking-wider mb-2">
                   Status: {isSubmittedToAgency ? 'Submitted to Agency' : 'Issued & Sealed'}
                 </span>
-                <h3 className="text-base font-bold text-emerald-950">Passport Successfully Signed & Published!</h3>
+                <h3 className="text-base font-bold text-emerald-950">Passport Successfully Signed & Issued!</h3>
                 <p className="text-xs text-emerald-800 mt-1">
-                  Digital Carbon Passport ID <span className="font-mono font-bold">{passport?.passport_metadata?.passport_id || passportId || 'N/A'}</span> is live on the public registry.
+                  Digital Carbon Passport ID <span className="font-mono font-bold">{passport?.passport_metadata?.passport_id || passportId || 'N/A'}</span> {isSubmittedToAgency ? 'is live on the public registry.' : 'is issued. Submit it to the agency to release the public passport and QR.'}
                 </p>
               </div>
 
@@ -532,7 +522,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
                 >
                   View Passport Details
                 </button>
-                <button
+                {isSubmittedToAgency && (<button
                   onClick={() => {
                     const targetId = passport?.passport_metadata?.passport_id || passportId;
                     if (targetId) navigate(`/passport/qr?id=${targetId}`);
@@ -541,7 +531,7 @@ export const SignAndIssueTab: React.FC<SignAndIssueTabProps> = ({ passports, onR
                   className="px-4 py-2 bg-white text-emerald-900 border border-emerald-300 font-bold text-xs rounded-xl hover:bg-emerald-100 transition-colors"
                 >
                   Get Verification QR
-                </button>
+                </button>)}
 
                 {!isSubmittedToAgency ? (
                   <button

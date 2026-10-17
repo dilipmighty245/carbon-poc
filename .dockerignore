@@ -1,0 +1,15 @@
+.git
+.dev-data
+node_modules
+**/node_modules
+**/dist
+**/playwright-results
+**/test-results
+*.log
+*.jpeg
+*.jpg
+*.png
+*.docx
+*.zip
+bin/*
+!bin/api-kind

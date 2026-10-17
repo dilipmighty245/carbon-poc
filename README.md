@@ -50,38 +50,51 @@ Starts local etcd container, builds Go binaries, launches API Gateway and Contro
 make dev-setup-nomock
 ```
 
-Open **http://carbon-passport-dev**. This target runs on macOS, Linux, native
-Windows, and WSL using Node.js, Go, and Docker (Linux containers). It runs Vite on
-**http://localhost:5173** and a Docker nginx proxy on `127.0.0.1:80`; port 80 must
-be available. The proxy supports hot reload and forwards `/api` through Vite.
+Open **http://carbon-passport-dev**. This workflow requires Docker, kind,
+kubectl, Go, Node.js, and installed UI dependencies (`npm install` in
+`digital-passport-app`). It creates or reuses the `saurient-dev` kind cluster,
+installs the generated Nexus CRDs, builds and deploys the API pod, and runs the
+UI and telemetry service on the laptop. The UI proxies requests to the kind
+NodePort at **http://127.0.0.1:18080**. Vite listens on port **5173** and the
+Docker nginx proxy uses `127.0.0.1:80`.
 
-Install UI dependencies once with `npm install` in `digital-passport-app`.
-Then run `make dev-setup-nomock` from the repository root. Without Make (including
-Windows PowerShell), the equivalent command is:
+Without Make, run `node scripts/dev_environment.mjs start`. Use `make kind-setup`
+to deploy only the cluster backend. The kind kubeconfig is saved privately in
+`.dev-data/kind-kubeconfig`; deployment commands use an explicit cluster context.
+
+Setup adds `127.0.0.1 carbon-passport-dev` to the OS hosts file if missing,
+requesting administrator access only when needed. Connect phones through the
+Wi-Fi address printed by Vite; QR links automatically use the laptop’s LAN IP.
+
+Nexus business records (organisations, accounts, facilities, products, passports,
+and audit records) are Kubernetes custom resources stored in the kind cluster’s
+etcd. Remaining workspace settings use the `saurient-workspace` ConfigMap.
+The API refuses to fall back to an in-memory store in this workflow. No separate
+standalone etcd container is started.
+
+Existing `.dev-data/graph.json` and `workspace.json` snapshots are imported once
+into a new cluster without overwriting existing objects. A cluster marker prevents
+old files from restoring records again after an explicit reset. Those files are
+migration inputs, not the active database.
+
+Stopping the UI or rerunning setup preserves the cluster and its records.
+`make clean` stops host services and removes the dev proxy, binaries, and logs;
+it leaves the kind cluster and backend running. `make clean-data` explicitly
+resets records in the running kind API. Deleting the kind cluster deletes its
+etcd data; recreate it only when intentionally starting over.
+
+Inspect storage and deployment with:
 
 ```sh
-node scripts/dev_environment.mjs start
+kubectl --context kind-saurient-dev -n saurient-system get pods
+kubectl --context kind-saurient-dev get tenants.inventory.saurient.io
+kubectl --context kind-saurient-dev get carbonpassports.runtime.saurient.io
+kubectl --context kind-saurient-dev -n saurient-system get configmap saurient-workspace
 ```
 
-Setup adds `127.0.0.1 carbon-passport-dev` to the OS hosts file if missing:
-`/etc/hosts` on macOS/Linux, or
-`%SystemRoot%\System32\drivers\etc\hosts` on Windows. It requests `sudo` on
-macOS/Linux or Windows UAC elevation only when a write needs administrator access.
-Conflicting entries stop setup with instructions to fix them. Under WSL it updates
-both Linux and Windows hosts files; Windows PowerShell interoperability must be
-enabled, and Docker must be available inside WSL.
-
-Stop the UI with Ctrl+C. Backend services and containers remain available until
-`make clean` or `node scripts/dev_environment.mjs clean`. Cleanup stops processes
-recorded in the repository PID files and any processes listening on development
-ports **8080, 8085, and 5173**, even without PID files. It waits for the ports to
-be released and force-stops remaining listeners if necessary. Windows uses
-PowerShell and `taskkill`; Unix uses `lsof` (or `ss` on Linux). Install `lsof` if
-neither is available. Cleanup also removes the dev containers, binaries,
-and logs. Port 80 is released by removing the app's proxy container; other
-services on port 80 are left running. The hosts entry remains for reuse. As before, starting this workflow
-resets the local development data. Other development and E2E Make targets still
-use their existing Unix shell commands.
+Only one API replica is configured: workspace settings currently use a single
+ConfigMap snapshot (subject to Kubernetes’ ConfigMap size limit). Other legacy
+Make targets retain their existing workflows.
 
 ### Option B: Development Setup With Live Seeded Data
 Starts local etcd, builds Go binaries, launches backend services, and automatically seeds live non-mock sample rulebooks, product batches, and passports via API Gateway HTTP calls:

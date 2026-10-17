@@ -15,10 +15,10 @@ export function PublicPassportView() {
     setLoading(true);
     setPassport(null);
     setError('');
-    fetch(`${API_BASE_URL}/passports/${encodeURIComponent(passportId || '')}`, {
+    fetch(`${API_BASE_URL}/public/passport-records/${encodeURIComponent(passportId || '')}`, {
       headers: { 'X-Tenant-ID': 'public' }, signal: controller.signal,
     }).then(async response => {
-      if (!response.ok) throw new Error(response.status === 404 ? 'Passport not found.' : 'The passport service is unavailable. Please try again later.');
+      if (!response.ok) throw new Error(response.status === 404 ? 'Passport not found or not yet released for public access.' : 'The passport service is unavailable. Please try again later.');
       const data = await response.json() as RichDigitalPassport;
       if (!data.passport_metadata?.passport_id) throw new Error('The service returned an invalid passport.');
       setPassport(data);

@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: saurient-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: saurient-api
+  namespace: saurient-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: saurient-nexus-api
+rules:
+  - apiGroups: [root.saurient.io, config.saurient.io, inventory.saurient.io, runtime.saurient.io]
+    resources: ['*']
+    verbs: [get, list, watch, create, update, patch, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: saurient-nexus-api
+subjects:
+  - kind: ServiceAccount
+    name: saurient-api
+    namespace: saurient-system
+roleRef:
+  kind: ClusterRole
+  name: saurient-nexus-api
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: saurient-workspace
+  namespace: saurient-system
+rules:
+  - apiGroups: ['']
+    resources: [configmaps]
+    verbs: [get, create, update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: saurient-workspace
+  namespace: saurient-system
+subjects:
+  - kind: ServiceAccount
+    name: saurient-api
+    namespace: saurient-system
+roleRef:
+  kind: Role
+  name: saurient-workspace
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saurient-api
+  namespace: saurient-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: saurient-api
+  template:
+    metadata:
+      labels:
+        app: saurient-api
+    spec:
+      serviceAccountName: saurient-api
+      containers:
+        - name: api
+          image: saurient-api:kind-dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NEXUS_REQUIRE_CLUSTER
+              value: 'true'
+            - name: KUBE_WORKSPACE_NAMESPACE
+              value: saurient-system
+            - name: PORT
+              value: '8080'
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: saurient-api
+  namespace: saurient-system
+spec:
+  type: NodePort
+  selector:
+    app: saurient-api
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080

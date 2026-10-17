@@ -10,7 +10,6 @@ process.chdir(root);
 const windows = process.platform === 'win32';
 const etcd = process.env.ETCD_CONTAINER || 'saurient-etcd';
 const proxy = 'carbon-passport-dev-proxy';
-const etcdImage = process.env.ETCD_IMAGE || 'quay.io/coreos/etcd:v3.5.10';
 const proxyImage = process.env.DEV_PROXY_IMAGE || 'nginx:stable-alpine';
 
 function run(command, args, optional = false) {
@@ -37,8 +36,7 @@ function stopServices() {
 }
 
 async function clean() {
-  // Keep the existing clean-state behavior, with a bounded request.
-  try { await fetch('http://localhost:8080/api/v1/system/reset', { method: 'POST', signal: AbortSignal.timeout(2000) }); } catch { /* API may be stopped. */ }
+  // Stop services without resetting saved development data.
   stopServices();
   run('docker', ['rm', '-f', proxy, etcd], true);
   await stopDevPorts();
@@ -102,24 +100,20 @@ async function main() {
   await clean();
   const extension = windows ? '.exe' : '';
   try {
-    run('docker', ['run', '-d', '--name', etcd, '-p', '2379:2379', '-p', '2380:2380',
-      '-e', 'ALLOW_NONE_AUTHENTICATION=yes', etcdImage, 'etcd',
-      '--listen-client-urls', 'http://0.0.0.0:2379', '--advertise-client-urls', 'http://0.0.0.0:2379']);
+    run(process.execPath, ['scripts/kind_environment.mjs']);
     fs.mkdirSync('bin', { recursive: true });
-    run('go', ['build', '-o', `bin/api${extension}`, './cmd/api']);
     run('go', ['build', '-o', `bin/telemetry${extension}`, './cmd/telemetry']);
     // Copy config rather than mounting a host path: works with Windows paths and WSL.
     run('docker', ['create', '--name', proxy, '-p', '127.0.0.1:80:80',
       '--add-host', 'host.docker.internal:host-gateway', proxyImage]);
     run('docker', ['cp', path.join(root, 'deploy/nginx.dev.conf'), `${proxy}:/etc/nginx/conf.d/default.conf`]);
     run('docker', ['start', proxy]);
-    const api = await start('api', path.join(root, `bin/api${extension}`), [], root, false, { PORT: '8080' });
     const telemetry = await start('telemetry', path.join(root, `bin/telemetry${extension}`), ['-port', '8085']);
     await Promise.all([
-      waitFor('http://localhost:8080/healthz', { service: 'api', child: api }),
+      waitFor('http://localhost:18080/healthz', { service: 'api' }),
       waitFor('http://localhost:8085/healthz', { service: 'telemetry', child: telemetry }),
     ]);
-    const ui = await start('ui', process.execPath, [vite, '--port', '5173', '--strictPort'], uiDirectory, true);
+    const ui = await start('ui', process.execPath, [vite, '--port', '5173', '--strictPort'], uiDirectory, true, { VITE_API_PROXY_TARGET: 'http://127.0.0.1:18080' });
     let stoppingUI = false;
     const stopUI = () => {
       stoppingUI = true;
@@ -136,7 +130,8 @@ async function main() {
     exited.catch(() => {});
     await Promise.race([waitFor('http://localhost:5173'), exited.then(() => { throw new Error('Vite stopped before becoming ready.'); })]);
     console.log('Digital Passport UI: http://carbon-passport-dev (http://localhost:5173)');
-    console.log('API: http://localhost:8080/api/v1 | Telemetry: http://localhost:8085');
+    console.log('API (kind): http://localhost:18080/api/v1 | Telemetry: http://localhost:8085');
+    console.log('Data is stored by Nexus in the kind cluster (etcd). Restart and make clean preserve the cluster.');
     await exited;
     fs.rmSync('.ui.pid', { force: true });
   } catch (error) {

@@ -1,0 +1,4 @@
+FROM scratch
+COPY bin/api-kind /api
+EXPOSE 8080
+ENTRYPOINT ["/api"]

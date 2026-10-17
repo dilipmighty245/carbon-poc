@@ -1,3 +1,4 @@
+import { isPassportPublic } from '../../../../utils/passportQr';
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Share2, Lock, Eye, Globe, Shield, CheckCircle2, UserPlus } from 'lucide-react';
@@ -30,6 +31,14 @@ export const PassportSharingTab: React.FC<PassportSharingTabProps> = ({ passport
         </p>
       </div>
     );
+  }
+
+  if (!isPassportPublic(passport.passport_metadata?.status)) {
+    return <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-2">
+      <h2 className="text-lg font-bold text-slate-900">Passport not yet public</h2>
+      <p className="text-sm text-slate-600">QR codes and public sharing are available after independent verification, issuance, and submission to the agency.</p>
+      <p className="text-xs text-slate-500">Current status: {passport.passport_metadata?.status || 'Draft'}</p>
+    </div>;
   }
 
   const handleSave = (e: React.FormEvent) => {

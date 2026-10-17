@@ -146,7 +146,7 @@ func TestOrganisationHandler_AuthLogin_And_Users(t *testing.T) {
 	// 5. Update User Role via POST /api/v1/organisation/users/role
 	roleReq := map[string]string{
 		"userId":  userID,
-		"newRole": "Lead Auditor",
+		"newRole": "Carbon Manager",
 	}
 	roleBody, _ := json.Marshal(roleReq)
 	reqRole := httptest.NewRequest(http.MethodPost, "/api/v1/organisation/users/role", bytes.NewBuffer(roleBody))
@@ -161,8 +161,8 @@ func TestOrganisationHandler_AuthLogin_And_Users(t *testing.T) {
 
 	// Verify role updated in graph
 	updatedNode, _ := nexus.GetUserNode(context.Background(), client, "tenant-org-test", userID)
-	if updatedNode == nil || updatedNode.Spec.Role != "Lead Auditor" {
-		t.Errorf("expected role Lead Auditor, got %+v", updatedNode)
+	if updatedNode == nil || updatedNode.Spec.Role != "Carbon Manager" {
+		t.Errorf("expected role Carbon Manager, got %+v", updatedNode)
 	}
 }
 
@@ -829,5 +829,32 @@ func TestOrganisationHandler_CompanyRegistrationAndAccessRequest(t *testing.T) {
 	h.HandleRequestAccess(recAccess, reqAccess)
 	if recAccess.Code != http.StatusOK {
 		t.Fatalf("expected 200 OK from request-access, got %d", recAccess.Code)
+	}
+}
+
+func TestOrganisationCannotAssignAuthorityRoles(t *testing.T) {
+	client := nexus_client.NewFakeClient()
+	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
+	handler := NewOrganisationHandlerWithClient(client, nexus.GetNexusEngine())
+	for _, role := range []string{"Verifier", "Auditor", "Lead Auditor", "Audited", "Passport Officer"} {
+		t.Run(role, func(t *testing.T) {
+			for _, route := range []string{"/api/v1/organisation/users", "/api/v1/organisation/users/role", "/api/v1/auth/register"} {
+				body, _ := json.Marshal(map[string]string{"name": "Test User", "email": "role@example.test", "password": "secret123", "role": role, "newRole": role, "userId": "test", "tenant_id": "org-role"})
+				request := httptest.NewRequest(http.MethodPost, route, bytes.NewReader(body))
+				request.Header.Set("X-Tenant-ID", "org-role")
+				response := httptest.NewRecorder()
+				switch route {
+				case "/api/v1/organisation/users":
+					handler.HandleUsers(response, request)
+				case "/api/v1/organisation/users/role":
+					handler.HandleUpdateUserRole(response, request)
+				default:
+					handler.HandleAuthRegister(response, request)
+				}
+				if response.Code != http.StatusForbidden {
+					t.Fatalf("%s allowed %s: %d", route, role, response.Code)
+				}
+			}
+		})
 	}
 }

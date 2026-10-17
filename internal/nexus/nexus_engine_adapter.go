@@ -993,6 +993,9 @@ func (e *NexusGraphEngine) GetPublicPassportSummary(ctx context.Context, passpor
 		return nil, fmt.Errorf("passport not found: %s", passportID)
 	}
 
+	if !IsPassportPublic(pNode.Spec.VerificationStatus) {
+		return nil, fmt.Errorf("passport not released for public access")
+	}
 	p := CarbonPassportModelFromNode(pNode)
 	opinion := "Unqualified"
 	tID, _ := tenant.GetTenant(ctx)

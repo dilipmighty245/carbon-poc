@@ -340,3 +340,8 @@ type PublicPassportSummaryModel struct {
 	ReviewOpinion      string    `json:"reviewOpinion"`
 	IssuedAt           time.Time `json:"issued_at"`
 }
+
+// IsPassportPublic allows release only after the verified passport is issued and lodged with the agency.
+func IsPassportPublic(status string) bool {
+	return status == StatusSubmittedToAgency
+}

@@ -60,15 +60,7 @@ export const initialUsers: UserMember[] = [
     lastLogin: '2026-09-26 09:30',
     status: 'Active',
   },
-  {
-    id: 'USR-005',
-    name: 'Bureau Veritas Lead',
-    email: 'auditor@bureauveritas.com',
-    role: 'Verifier',
-    facilityScope: 'Tema & Kumasi Sites',
-    lastLogin: '2026-09-18 16:00',
-    status: 'Active',
-  },
+
 ];
 
 export const rolesList = [
@@ -78,21 +70,18 @@ export const rolesList = [
   { name: 'Facility Manager', desc: 'Oversees site telemetry, process lines, and facility data completeness.' },
   { name: 'Carbon Manager', desc: 'Configures GHG calculation rulebooks, emission factors, and PCF models.' },
   { name: 'Data Operator', desc: 'Uploads activity data, CSV logs, and resolves minor unit anomalies.' },
-  { name: 'Verifier', desc: 'External accredited third-party auditor with review and sign-off rights.' },
-  { name: 'Auditor', desc: 'Read-only access to immutable audit trails, SHA256 manifests, and certificates.' },
   { name: 'Viewer', desc: 'Read-only dashboard access for general stakeholders.' },
 ];
 
 export const permissionsMatrix = [
-  { key: 'view', label: 'View Data', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator', 'Verifier', 'Auditor', 'Viewer'] },
+  { key: 'view', label: 'View Data', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator', 'Viewer'] },
   { key: 'create', label: 'Create Records', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator'] },
   { key: 'edit', label: 'Edit Drafts', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Data Operator'] },
   { key: 'submit', label: 'Submit for Review', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager'] },
-  { key: 'verify', label: 'Verify / Sign-off', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Verifier'] },
   { key: 'approve', label: 'Approve & Close Period', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager'] },
   { key: 'issue', label: 'Issue Passport', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager'] },
   { key: 'revoke', label: 'Revoke Passport', allowedRoles: ['Organisation Owner', 'Organisation Admin'] },
-  { key: 'export', label: 'Export Dossiers', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager', 'Verifier', 'Auditor'] },
+  { key: 'export', label: 'Export Dossiers', allowedRoles: ['Organisation Owner', 'Organisation Admin', 'Compliance Manager', 'Facility Manager', 'Carbon Manager'] },
 ];
 
 const getActiveOrgTenant = () => {

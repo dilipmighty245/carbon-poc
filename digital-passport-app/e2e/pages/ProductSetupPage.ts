@@ -43,6 +43,10 @@ export class ProductSetupPage extends BasePage {
     const elecInput = this.page.locator('div:has(> label:has-text("Scope 2: Grid Electricity")) input');
     await elecInput.fill(String(data.electricityKwh));
 
+    await this.page.getByRole('spinbutton', {name:'Raw materials consumed (kg)'}).fill('500');
+    await this.page.getByRole('spinbutton', {name:'Packaging quantity (items)'}).fill('10');
+    await this.page.getByRole('spinbutton', {name:'Transport distance (km)'}).fill('50');
+
     // Network assertion: Catch real Go API Gateway creation response
     const productResponsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes('/api/v1/products') && resp.request().method() === 'POST'
@@ -53,6 +57,10 @@ export class ProductSetupPage extends BasePage {
 
     const productResp = await productResponsePromise;
     expect(productResp.status()).toBe(201);
+    const activity = productResp.request().postDataJSON().activity_data;
+    expect(activity.scope_3_upstream.bill_of_materials[0].quantity).toBe(500);
+    expect(activity.packaging_qty).toBe(10);
+    expect(activity.transport_km).toBe(50);
 
     const body = await productResp.json();
     expect(['Pending', 'VERIFIED']).toContain(body.status);

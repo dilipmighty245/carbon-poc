@@ -48,10 +48,13 @@ export class PassportPage extends BasePage {
     expect((await responsePromise).status()).toBe(200);
 
     // Verify cryptographic issuance success message
-    await expect(this.page.getByText('Passport Successfully Signed & Published!')).toBeVisible({ timeout: 10000 });
+    await expect(this.page.getByText('Passport Successfully Signed & Issued!')).toBeVisible({ timeout: 10000 });
   }
 
   async verifyQrVerification(): Promise<void> {
+    const submitResponse = this.page.waitForResponse(resp => resp.url().includes('/submit-agency') && resp.request().method() === 'POST');
+    await this.page.getByRole('button', {name: /submit to eu cbam agency/i}).click();
+    expect((await submitResponse).status()).toBe(200);
     const qrBtn = this.page.getByRole('button', { name: /get verification qr/i });
     await qrBtn.click();
 
