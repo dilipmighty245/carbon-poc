@@ -352,7 +352,7 @@ func (h *OrganisationHandler) HandleAuthLogin(w http.ResponseWriter, r *http.Req
 	if err != nil || uNode == nil {
 		// User does not exist in datamodel! No synthetic user generation!
 		if h.engine != nil {
-			if prof, found := h.engine.FindTenantByEmailOrDomain(ctx, req.Email); found && prof != nil {
+			if prof, found := h.engine.FindTenantByEmailOrDomainWithClient(ctx, h.client, req.Email); found && prof != nil {
 				companyName := prof.LegalName
 				if companyName == "" {
 					companyName = prof.TradingName

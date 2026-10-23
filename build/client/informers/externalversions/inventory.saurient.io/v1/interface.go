@@ -12,24 +12,46 @@ import (
 type Interface interface {
 	// ACVAgencies returns a ACVAgencyInformer.
 	ACVAgencies() ACVAgencyInformer
+	// Approvals returns a ApprovalInformer.
+	Approvals() ApprovalInformer
+	// COIDeclarations returns a COIDeclarationInformer.
+	COIDeclarations() COIDeclarationInformer
 	// Declarations returns a DeclarationInformer.
 	Declarations() DeclarationInformer
+	// EngagementTeamMembers returns a EngagementTeamMemberInformer.
+	EngagementTeamMembers() EngagementTeamMemberInformer
 	// Facilities returns a FacilityInformer.
 	Facilities() FacilityInformer
+	// Findings returns a FindingInformer.
+	Findings() FindingInformer
+	// InputCorrections returns a InputCorrectionInformer.
+	InputCorrections() InputCorrectionInformer
 	// Inventories returns a InventoryInformer.
 	Inventories() InventoryInformer
+	// Localisations returns a LocalisationInformer.
+	Localisations() LocalisationInformer
 	// LogisticsLegs returns a LogisticsLegInformer.
 	LogisticsLegs() LogisticsLegInformer
 	// Meters returns a MeterInformer.
 	Meters() MeterInformer
+	// Processes returns a ProcessInformer.
+	Processes() ProcessInformer
 	// Products returns a ProductInformer.
 	Products() ProductInformer
+	// ReportingPeriods returns a ReportingPeriodInformer.
+	ReportingPeriods() ReportingPeriodInformer
+	// ReviewVerdicts returns a ReviewVerdictInformer.
+	ReviewVerdicts() ReviewVerdictInformer
 	// Suppliers returns a SupplierInformer.
 	Suppliers() SupplierInformer
 	// Tenants returns a TenantInformer.
 	Tenants() TenantInformer
 	// Users returns a UserInformer.
 	Users() UserInformer
+	// VerificationAgencies returns a VerificationAgencyInformer.
+	VerificationAgencies() VerificationAgencyInformer
+	// VerificationEngagements returns a VerificationEngagementInformer.
+	VerificationEngagements() VerificationEngagementInformer
 }
 
 type version struct {
@@ -48,9 +70,24 @@ func (v *version) ACVAgencies() ACVAgencyInformer {
 	return &aCVAgencyInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
+// Approvals returns a ApprovalInformer.
+func (v *version) Approvals() ApprovalInformer {
+	return &approvalInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// COIDeclarations returns a COIDeclarationInformer.
+func (v *version) COIDeclarations() COIDeclarationInformer {
+	return &cOIDeclarationInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // Declarations returns a DeclarationInformer.
 func (v *version) Declarations() DeclarationInformer {
 	return &declarationInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// EngagementTeamMembers returns a EngagementTeamMemberInformer.
+func (v *version) EngagementTeamMembers() EngagementTeamMemberInformer {
+	return &engagementTeamMemberInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Facilities returns a FacilityInformer.
@@ -58,9 +95,24 @@ func (v *version) Facilities() FacilityInformer {
 	return &facilityInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
+// Findings returns a FindingInformer.
+func (v *version) Findings() FindingInformer {
+	return &findingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// InputCorrections returns a InputCorrectionInformer.
+func (v *version) InputCorrections() InputCorrectionInformer {
+	return &inputCorrectionInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // Inventories returns a InventoryInformer.
 func (v *version) Inventories() InventoryInformer {
 	return &inventoryInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// Localisations returns a LocalisationInformer.
+func (v *version) Localisations() LocalisationInformer {
+	return &localisationInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // LogisticsLegs returns a LogisticsLegInformer.
@@ -73,9 +125,24 @@ func (v *version) Meters() MeterInformer {
 	return &meterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
+// Processes returns a ProcessInformer.
+func (v *version) Processes() ProcessInformer {
+	return &processInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // Products returns a ProductInformer.
 func (v *version) Products() ProductInformer {
 	return &productInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ReportingPeriods returns a ReportingPeriodInformer.
+func (v *version) ReportingPeriods() ReportingPeriodInformer {
+	return &reportingPeriodInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ReviewVerdicts returns a ReviewVerdictInformer.
+func (v *version) ReviewVerdicts() ReviewVerdictInformer {
+	return &reviewVerdictInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Suppliers returns a SupplierInformer.
@@ -91,4 +158,14 @@ func (v *version) Tenants() TenantInformer {
 // Users returns a UserInformer.
 func (v *version) Users() UserInformer {
 	return &userInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// VerificationAgencies returns a VerificationAgencyInformer.
+func (v *version) VerificationAgencies() VerificationAgencyInformer {
+	return &verificationAgencyInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// VerificationEngagements returns a VerificationEngagementInformer.
+func (v *version) VerificationEngagements() VerificationEngagementInformer {
+	return &verificationEngagementInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

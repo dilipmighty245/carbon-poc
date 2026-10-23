@@ -67,15 +67,23 @@ requesting administrator access only when needed. Connect phones through the
 Wi-Fi address printed by Vite; QR links automatically use the laptop’s LAN IP.
 
 Nexus business records (organisations, accounts, facilities, products, passports,
-and audit records) are Kubernetes custom resources stored in the kind cluster’s
-etcd. Remaining workspace settings use the `saurient-workspace` ConfigMap.
+audit records, processes, reporting periods, localisation, approvals, verification
+agencies, engagements, team assignments, conflict declarations, findings, signoffs,
+and supplier corrections) are Kubernetes custom resources stored in the kind
+cluster’s etcd. The engine holds only disposable projections and calculation caches.
+Datamodel subscriptions restore the graph relationship index before the API accepts
+requests and maintain it from subsequent events.
 The API refuses to fall back to an in-memory store in this workflow. No separate
 standalone etcd container is started.
 
 Existing `.dev-data/graph.json` and `workspace.json` snapshots are imported once
 into a new cluster without overwriting existing objects. A cluster marker prevents
 old files from restoring records again after an explicit reset. Those files are
-migration inputs, not the active database.
+migration inputs, not the active database. Existing `saurient-workspace` ConfigMaps
+are migrated into tenant-owned Nexus records at API startup, without overwriting
+existing records. Successful migration marks the ConfigMap and retains its content
+as a backup; later requests do not read or write workspace snapshots. Local-only
+startup similarly marks `workspace.json` after importing it into `graph.json`.
 
 Stopping the UI or rerunning setup preserves the cluster and its records.
 `make clean` stops host services and removes the dev proxy, binaries, and logs;
@@ -89,12 +97,14 @@ Inspect storage and deployment with:
 kubectl --context kind-saurient-dev -n saurient-system get pods
 kubectl --context kind-saurient-dev get tenants.inventory.saurient.io
 kubectl --context kind-saurient-dev get carbonpassports.runtime.saurient.io
-kubectl --context kind-saurient-dev -n saurient-system get configmap saurient-workspace
+kubectl --context kind-saurient-dev get processes.inventory.saurient.io
+kubectl --context kind-saurient-dev get verificationengagements.inventory.saurient.io
 ```
 
-Only one API replica is configured: workspace settings currently use a single
-ConfigMap snapshot (subject to Kubernetes’ ConfigMap size limit). Other legacy
-Make targets retain their existing workflows.
+One API replica is configured for local development. Workspace mutations persist
+individual Nexus records with resource-version conflict retries. This removes the
+shared ConfigMap snapshot dependency; other legacy Make targets retain their
+existing workflows.
 
 ### Option B: Development Setup With Live Seeded Data
 Starts local etcd, builds Go binaries, launches backend services, and automatically seeds live non-mock sample rulebooks, product batches, and passports via API Gateway HTTP calls:

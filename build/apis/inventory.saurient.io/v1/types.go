@@ -154,14 +154,25 @@ func (c *Tenant) DisplayName() string {
 
 // +k8s:openapi-gen=true
 type TenantSpec struct {
-	ProfileRaw    string           `json:"profileRaw,omitempty" mapstructure:"profileRaw,omitempty" yaml:"profileRaw,omitempty"`
-	TenantID      string           `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty" yaml:"tenantID,omitempty"`
-	LegalName     string           `json:"legalName,omitempty" mapstructure:"legalName,omitempty" yaml:"legalName,omitempty"`
-	Country       string           `json:"country,omitempty" mapstructure:"country,omitempty" yaml:"country,omitempty"`
-	Industry      string           `json:"industry,omitempty" mapstructure:"industry,omitempty" yaml:"industry,omitempty"`
-	FacilitiesGvk map[string]Child `json:"facilitiesGvk,omitempty" yaml:"facilitiesGvk,omitempty" nexus:"children"`
-	ProductsGvk   map[string]Child `json:"productsGvk,omitempty" yaml:"productsGvk,omitempty" nexus:"children"`
-	UsersGvk      map[string]Child `json:"usersGvk,omitempty" yaml:"usersGvk,omitempty" nexus:"children"`
+	TenantID                   string           `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty" yaml:"tenantID,omitempty"`
+	LegalName                  string           `json:"legalName,omitempty" mapstructure:"legalName,omitempty" yaml:"legalName,omitempty"`
+	Country                    string           `json:"country,omitempty" mapstructure:"country,omitempty" yaml:"country,omitempty"`
+	Industry                   string           `json:"industry,omitempty" mapstructure:"industry,omitempty" yaml:"industry,omitempty"`
+	ProfileRaw                 string           `json:"profileRaw,omitempty" mapstructure:"profileRaw,omitempty" yaml:"profileRaw,omitempty"`
+	FacilitiesGvk              map[string]Child `json:"facilitiesGvk,omitempty" yaml:"facilitiesGvk,omitempty" nexus:"children"`
+	ProcessesGvk               map[string]Child `json:"processesGvk,omitempty" yaml:"processesGvk,omitempty" nexus:"children"`
+	ReportingPeriodsGvk        map[string]Child `json:"reportingPeriodsGvk,omitempty" yaml:"reportingPeriodsGvk,omitempty" nexus:"children"`
+	LocalisationGvk            map[string]Child `json:"localisationGvk,omitempty" yaml:"localisationGvk,omitempty" nexus:"children"`
+	ApprovalsGvk               map[string]Child `json:"approvalsGvk,omitempty" yaml:"approvalsGvk,omitempty" nexus:"children"`
+	VerificationAgenciesGvk    map[string]Child `json:"verificationAgenciesGvk,omitempty" yaml:"verificationAgenciesGvk,omitempty" nexus:"children"`
+	VerificationEngagementsGvk map[string]Child `json:"verificationEngagementsGvk,omitempty" yaml:"verificationEngagementsGvk,omitempty" nexus:"children"`
+	EngagementTeamMembersGvk   map[string]Child `json:"engagementTeamMembersGvk,omitempty" yaml:"engagementTeamMembersGvk,omitempty" nexus:"children"`
+	COIDeclarationsGvk         map[string]Child `json:"cOIDeclarationsGvk,omitempty" yaml:"cOIDeclarationsGvk,omitempty" nexus:"children"`
+	FindingsGvk                map[string]Child `json:"findingsGvk,omitempty" yaml:"findingsGvk,omitempty" nexus:"children"`
+	ReviewSignoffsGvk          map[string]Child `json:"reviewSignoffsGvk,omitempty" yaml:"reviewSignoffsGvk,omitempty" nexus:"children"`
+	InputCorrectionsGvk        map[string]Child `json:"inputCorrectionsGvk,omitempty" yaml:"inputCorrectionsGvk,omitempty" nexus:"children"`
+	ProductsGvk                map[string]Child `json:"productsGvk,omitempty" yaml:"productsGvk,omitempty" nexus:"children"`
+	UsersGvk                   map[string]Child `json:"usersGvk,omitempty" yaml:"usersGvk,omitempty" nexus:"children"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -494,4 +505,560 @@ type DeclarationList struct {
 	metav1.TypeMeta `json:",inline" yaml:",inline"`
 	metav1.ListMeta `json:"metadata" yaml:"metadata"`
 	Items           []Declaration `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type Process struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              ProcessSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            ProcessNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type ProcessNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *Process) CRDName() string {
+	return "processes.inventory.saurient.io"
+}
+
+func (c *Process) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type ProcessSpec struct {
+	RecordID       string `json:"recordID,omitempty" mapstructure:"recordID,omitempty" yaml:"recordID,omitempty"`
+	TenantID       string `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	FacilityID     string `json:"facility_id,omitempty" mapstructure:"facility_id,omitempty" yaml:"facility_id,omitempty"`
+	FacilityName   string `json:"facility_name,omitempty" mapstructure:"facility_name,omitempty" yaml:"facility_name,omitempty"`
+	Name           string `json:"name,omitempty" mapstructure:"name,omitempty" yaml:"name,omitempty"`
+	ProductionLine string `json:"production_line,omitempty" mapstructure:"production_line,omitempty" yaml:"production_line,omitempty"`
+	EnergySource   string `json:"energy_source,omitempty" mapstructure:"energy_source,omitempty" yaml:"energy_source,omitempty"`
+	Inputs         string `json:"inputs,omitempty" mapstructure:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs        string `json:"outputs,omitempty" mapstructure:"outputs,omitempty" yaml:"outputs,omitempty"`
+	Meters         string `json:"meters,omitempty" mapstructure:"meters,omitempty" yaml:"meters,omitempty"`
+	Scopes         string `json:"scopes,omitempty" mapstructure:"scopes,omitempty" yaml:"scopes,omitempty"`
+	Status         string `json:"status,omitempty" mapstructure:"status,omitempty" yaml:"status,omitempty"`
+	Description    string `json:"description,omitempty" mapstructure:"description,omitempty" yaml:"description,omitempty"`
+	PCFTrace       string `json:"pcf_trace,omitempty" mapstructure:"pcf_trace,omitempty" yaml:"pcf_trace,omitempty"`
+	CreatedAt      string `json:"created_at,omitempty" mapstructure:"created_at,omitempty" yaml:"created_at,omitempty"`
+	UpdatedAt      string `json:"updated_at,omitempty" mapstructure:"updated_at,omitempty" yaml:"updated_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type ProcessList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []Process `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type ReportingPeriod struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              ReportingPeriodSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            ReportingPeriodNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type ReportingPeriodNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *ReportingPeriod) CRDName() string {
+	return "reportingperiods.inventory.saurient.io"
+}
+
+func (c *ReportingPeriod) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type ReportingPeriodSpec struct {
+	RecordID           string  `json:"recordID,omitempty" mapstructure:"recordID,omitempty" yaml:"recordID,omitempty"`
+	TenantID           string  `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	Name               string  `json:"name,omitempty" mapstructure:"name,omitempty" yaml:"name,omitempty"`
+	Year               int     `json:"year,omitempty" mapstructure:"year,omitempty" yaml:"year,omitempty"`
+	Quarter            string  `json:"quarter,omitempty" mapstructure:"quarter,omitempty" yaml:"quarter,omitempty"`
+	StartDate          string  `json:"start_date,omitempty" mapstructure:"start_date,omitempty" yaml:"start_date,omitempty"`
+	EndDate            string  `json:"end_date,omitempty" mapstructure:"end_date,omitempty" yaml:"end_date,omitempty"`
+	Status             string  `json:"status,omitempty" mapstructure:"status,omitempty" yaml:"status,omitempty"`
+	EmissionsTotal     float64 `json:"emissions_total,omitempty" mapstructure:"emissions_total,omitempty" yaml:"emissions_total,omitempty"`
+	DataCompleteness   float64 `json:"data_completeness,omitempty" mapstructure:"data_completeness,omitempty" yaml:"data_completeness,omitempty"`
+	VerificationStatus string  `json:"verification_status,omitempty" mapstructure:"verification_status,omitempty" yaml:"verification_status,omitempty"`
+	CreatedAt          string  `json:"created_at,omitempty" mapstructure:"created_at,omitempty" yaml:"created_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type ReportingPeriodList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []ReportingPeriod `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type Localisation struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              LocalisationSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            LocalisationNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type LocalisationNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *Localisation) CRDName() string {
+	return "localisations.inventory.saurient.io"
+}
+
+func (c *Localisation) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type LocalisationSpec struct {
+	TenantID            string `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	Country             string `json:"country,omitempty" mapstructure:"country,omitempty" yaml:"country,omitempty"`
+	Currency            string `json:"currency,omitempty" mapstructure:"currency,omitempty" yaml:"currency,omitempty"`
+	Timezone            string `json:"timezone,omitempty" mapstructure:"timezone,omitempty" yaml:"timezone,omitempty"`
+	Language            string `json:"language,omitempty" mapstructure:"language,omitempty" yaml:"language,omitempty"`
+	Units               string `json:"units,omitempty" mapstructure:"units,omitempty" yaml:"units,omitempty"`
+	Regulatory          string `json:"regulatory,omitempty" mapstructure:"regulatory,omitempty" yaml:"regulatory,omitempty"`
+	DefaultLanguage     string `json:"default_language,omitempty" mapstructure:"default_language,omitempty" yaml:"default_language,omitempty"`
+	DefaultCurrency     string `json:"default_currency,omitempty" mapstructure:"default_currency,omitempty" yaml:"default_currency,omitempty"`
+	DefaultTimezone     string `json:"default_timezone,omitempty" mapstructure:"default_timezone,omitempty" yaml:"default_timezone,omitempty"`
+	DefaultEmissionUnit string `json:"default_emission_unit,omitempty" mapstructure:"default_emission_unit,omitempty" yaml:"default_emission_unit,omitempty"`
+	NumberFormat        string `json:"number_format,omitempty" mapstructure:"number_format,omitempty" yaml:"number_format,omitempty"`
+	DateFormat          string `json:"date_format,omitempty" mapstructure:"date_format,omitempty" yaml:"date_format,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type LocalisationList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []Localisation `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type Approval struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              ApprovalSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            ApprovalNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type ApprovalNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *Approval) CRDName() string {
+	return "approvals.inventory.saurient.io"
+}
+
+func (c *Approval) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type ApprovalSpec struct {
+	RecordID        string `json:"recordID,omitempty" mapstructure:"recordID,omitempty" yaml:"recordID,omitempty"`
+	TenantID        string `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	PassportID      string `json:"passport_id,omitempty" mapstructure:"passport_id,omitempty" yaml:"passport_id,omitempty"`
+	BatchNumber     string `json:"batch_number,omitempty" mapstructure:"batch_number,omitempty" yaml:"batch_number,omitempty"`
+	RequestedBy     string `json:"requested_by,omitempty" mapstructure:"requested_by,omitempty" yaml:"requested_by,omitempty"`
+	Role            string `json:"role,omitempty" mapstructure:"role,omitempty" yaml:"role,omitempty"`
+	Status          string `json:"status,omitempty" mapstructure:"status,omitempty" yaml:"status,omitempty"`
+	ApproverComment string `json:"approver_comment,omitempty" mapstructure:"approver_comment,omitempty" yaml:"approver_comment,omitempty"`
+	SubmittedAt     string `json:"submitted_at,omitempty" mapstructure:"submitted_at,omitempty" yaml:"submitted_at,omitempty"`
+	ResolvedAt      string `json:"resolved_at,omitempty" mapstructure:"resolved_at,omitempty" yaml:"resolved_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type ApprovalList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []Approval `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type VerificationAgency struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              VerificationAgencySpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            VerificationAgencyNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type VerificationAgencyNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *VerificationAgency) CRDName() string {
+	return "verificationagencies.inventory.saurient.io"
+}
+
+func (c *VerificationAgency) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type VerificationAgencySpec struct {
+	AgencyID            string `json:"agency_id,omitempty" mapstructure:"agency_id,omitempty" yaml:"agency_id,omitempty"`
+	TenantID            string `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	Name                string `json:"name,omitempty" mapstructure:"name,omitempty" yaml:"name,omitempty"`
+	AccreditationNumber string `json:"accreditation_number,omitempty" mapstructure:"accreditation_number,omitempty" yaml:"accreditation_number,omitempty"`
+	AccreditationBody   string `json:"accreditation_body,omitempty" mapstructure:"accreditation_body,omitempty" yaml:"accreditation_body,omitempty"`
+	AccreditationStatus string `json:"accreditation_status,omitempty" mapstructure:"accreditation_status,omitempty" yaml:"accreditation_status,omitempty"`
+	AccreditationExpiry string `json:"accreditation_expiry,omitempty" mapstructure:"accreditation_expiry,omitempty" yaml:"accreditation_expiry,omitempty"`
+	Scopes              string `json:"scopes,omitempty" mapstructure:"scopes,omitempty" yaml:"scopes,omitempty"`
+	ValidFrom           string `json:"valid_from,omitempty" mapstructure:"valid_from,omitempty" yaml:"valid_from,omitempty"`
+	ValidTo             string `json:"valid_to,omitempty" mapstructure:"valid_to,omitempty" yaml:"valid_to,omitempty"`
+	ContactEmail        string `json:"contact_email,omitempty" mapstructure:"contact_email,omitempty" yaml:"contact_email,omitempty"`
+	ContactPhone        string `json:"contact_phone,omitempty" mapstructure:"contact_phone,omitempty" yaml:"contact_phone,omitempty"`
+	LeadAuditor         string `json:"lead_auditor,omitempty" mapstructure:"lead_auditor,omitempty" yaml:"lead_auditor,omitempty"`
+	CreatedAt           string `json:"created_at,omitempty" mapstructure:"created_at,omitempty" yaml:"created_at,omitempty"`
+	UpdatedAt           string `json:"updated_at,omitempty" mapstructure:"updated_at,omitempty" yaml:"updated_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type VerificationAgencyList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []VerificationAgency `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type VerificationEngagement struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              VerificationEngagementSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            VerificationEngagementNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type VerificationEngagementNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *VerificationEngagement) CRDName() string {
+	return "verificationengagements.inventory.saurient.io"
+}
+
+func (c *VerificationEngagement) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type VerificationEngagementSpec struct {
+	EngagementID     string `json:"engagement_id,omitempty" mapstructure:"engagement_id,omitempty" yaml:"engagement_id,omitempty"`
+	TenantID         string `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	AgencyID         string `json:"agency_id,omitempty" mapstructure:"agency_id,omitempty" yaml:"agency_id,omitempty"`
+	PassportID       string `json:"passport_id,omitempty" mapstructure:"passport_id,omitempty" yaml:"passport_id,omitempty"`
+	BatchID          string `json:"batch_id,omitempty" mapstructure:"batch_id,omitempty" yaml:"batch_id,omitempty"`
+	Period           string `json:"period,omitempty" mapstructure:"period,omitempty" yaml:"period,omitempty"`
+	Methodology      string `json:"methodology,omitempty" mapstructure:"methodology,omitempty" yaml:"methodology,omitempty"`
+	SnapshotHash     string `json:"snapshot_hash,omitempty" mapstructure:"snapshot_hash,omitempty" yaml:"snapshot_hash,omitempty"`
+	Status           string `json:"status,omitempty" mapstructure:"status,omitempty" yaml:"status,omitempty"`
+	AssignedVerifier string `json:"assigned_verifier,omitempty" mapstructure:"assigned_verifier,omitempty" yaml:"assigned_verifier,omitempty"`
+	ScopeMatch       bool   `json:"scope_match,omitempty" mapstructure:"scope_match,omitempty" yaml:"scope_match,omitempty"`
+	FindingsCount    int    `json:"findings_count,omitempty" mapstructure:"findings_count,omitempty" yaml:"findings_count,omitempty"`
+	Timeline         string `json:"timeline,omitempty" mapstructure:"timeline,omitempty" yaml:"timeline,omitempty"`
+	CreatedAt        string `json:"created_at,omitempty" mapstructure:"created_at,omitempty" yaml:"created_at,omitempty"`
+	UpdatedAt        string `json:"updated_at,omitempty" mapstructure:"updated_at,omitempty" yaml:"updated_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type VerificationEngagementList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []VerificationEngagement `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type EngagementTeamMember struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              EngagementTeamMemberSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            EngagementTeamMemberNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type EngagementTeamMemberNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *EngagementTeamMember) CRDName() string {
+	return "engagementteammembers.inventory.saurient.io"
+}
+
+func (c *EngagementTeamMember) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type EngagementTeamMemberSpec struct {
+	MemberID     string `json:"member_id,omitempty" mapstructure:"member_id,omitempty" yaml:"member_id,omitempty"`
+	EngagementID string `json:"engagement_id,omitempty" mapstructure:"engagement_id,omitempty" yaml:"engagement_id,omitempty"`
+	TenantID     string `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	Name         string `json:"name,omitempty" mapstructure:"name,omitempty" yaml:"name,omitempty"`
+	Role         string `json:"role,omitempty" mapstructure:"role,omitempty" yaml:"role,omitempty"`
+	Email        string `json:"email,omitempty" mapstructure:"email,omitempty" yaml:"email,omitempty"`
+	AssignedAt   string `json:"assigned_at,omitempty" mapstructure:"assigned_at,omitempty" yaml:"assigned_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type EngagementTeamMemberList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []EngagementTeamMember `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type COIDeclaration struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              COIDeclarationSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            COIDeclarationNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type COIDeclarationNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *COIDeclaration) CRDName() string {
+	return "coideclarations.inventory.saurient.io"
+}
+
+func (c *COIDeclaration) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type COIDeclarationSpec struct {
+	DeclarationID string `json:"declaration_id,omitempty" mapstructure:"declaration_id,omitempty" yaml:"declaration_id,omitempty"`
+	EngagementID  string `json:"engagement_id,omitempty" mapstructure:"engagement_id,omitempty" yaml:"engagement_id,omitempty"`
+	TenantID      string `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	AuditorName   string `json:"auditor_name,omitempty" mapstructure:"auditor_name,omitempty" yaml:"auditor_name,omitempty"`
+	AuditorEmail  string `json:"auditor_email,omitempty" mapstructure:"auditor_email,omitempty" yaml:"auditor_email,omitempty"`
+	HasConflict   bool   `json:"has_conflict,omitempty" mapstructure:"has_conflict,omitempty" yaml:"has_conflict,omitempty"`
+	Explanation   string `json:"explanation,omitempty" mapstructure:"explanation,omitempty" yaml:"explanation,omitempty"`
+	DeclaredAt    string `json:"declared_at,omitempty" mapstructure:"declared_at,omitempty" yaml:"declared_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type COIDeclarationList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []COIDeclaration `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type Finding struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              FindingSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            FindingNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type FindingNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *Finding) CRDName() string {
+	return "findings.inventory.saurient.io"
+}
+
+func (c *Finding) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type FindingSpec struct {
+	FindingID    string  `json:"finding_id,omitempty" mapstructure:"finding_id,omitempty" yaml:"finding_id,omitempty"`
+	EngagementID string  `json:"engagement_id,omitempty" mapstructure:"engagement_id,omitempty" yaml:"engagement_id,omitempty"`
+	TenantID     string  `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	Category     string  `json:"category,omitempty" mapstructure:"category,omitempty" yaml:"category,omitempty"`
+	Severity     string  `json:"severity,omitempty" mapstructure:"severity,omitempty" yaml:"severity,omitempty"`
+	Status       string  `json:"status,omitempty" mapstructure:"status,omitempty" yaml:"status,omitempty"`
+	Description  string  `json:"description,omitempty" mapstructure:"description,omitempty" yaml:"description,omitempty"`
+	Discrepancy  float64 `json:"discrepancy_pct,omitempty" mapstructure:"discrepancy_pct,omitempty" yaml:"discrepancy_pct,omitempty"`
+	RaisedBy     string  `json:"raised_by,omitempty" mapstructure:"raised_by,omitempty" yaml:"raised_by,omitempty"`
+	ResolvedBy   string  `json:"resolved_by,omitempty" mapstructure:"resolved_by,omitempty" yaml:"resolved_by,omitempty"`
+	CreatedAt    string  `json:"created_at,omitempty" mapstructure:"created_at,omitempty" yaml:"created_at,omitempty"`
+	UpdatedAt    string  `json:"updated_at,omitempty" mapstructure:"updated_at,omitempty" yaml:"updated_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type FindingList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []Finding `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type ReviewVerdict struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              ReviewVerdictSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            ReviewVerdictNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type ReviewVerdictNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *ReviewVerdict) CRDName() string {
+	return "reviewverdicts.inventory.saurient.io"
+}
+
+func (c *ReviewVerdict) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type ReviewVerdictSpec struct {
+	SignoffID    string `json:"signoff_id,omitempty" mapstructure:"signoff_id,omitempty" yaml:"signoff_id,omitempty"`
+	EngagementID string `json:"engagement_id,omitempty" mapstructure:"engagement_id,omitempty" yaml:"engagement_id,omitempty"`
+	TenantID     string `json:"tenant_id,omitempty" mapstructure:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	PassportID   string `json:"passport_id,omitempty" mapstructure:"passport_id,omitempty" yaml:"passport_id,omitempty"`
+	LeadAuditor  string `json:"lead_auditor,omitempty" mapstructure:"lead_auditor,omitempty" yaml:"lead_auditor,omitempty"`
+	PeerReviewer string `json:"peer_reviewer,omitempty" mapstructure:"peer_reviewer,omitempty" yaml:"peer_reviewer,omitempty"`
+	Opinion      string `json:"opinion,omitempty" mapstructure:"opinion,omitempty" yaml:"opinion,omitempty"`
+	StatementRef string `json:"statement_ref,omitempty" mapstructure:"statement_ref,omitempty" yaml:"statement_ref,omitempty"`
+	Frozen       bool   `json:"frozen,omitempty" mapstructure:"frozen,omitempty" yaml:"frozen,omitempty"`
+	SignedAt     string `json:"signed_at,omitempty" mapstructure:"signed_at,omitempty" yaml:"signed_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type ReviewVerdictList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []ReviewVerdict `json:"items" yaml:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+type InputCorrection struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec              InputCorrectionSpec        `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Status            InputCorrectionNexusStatus `json:"status,omitempty" yaml:"status,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+type InputCorrectionNexusStatus struct {
+	Nexus NexusStatus `json:"nexus,omitempty" yaml:"nexus,omitempty"`
+}
+
+func (c *InputCorrection) CRDName() string {
+	return "inputcorrections.inventory.saurient.io"
+}
+
+func (c *InputCorrection) DisplayName() string {
+	if c.GetLabels() != nil {
+		return c.GetLabels()[common.DisplayNameLabel]
+	}
+	return ""
+}
+
+// +k8s:openapi-gen=true
+type InputCorrectionSpec struct {
+	CorrectionID string  `json:"correction_id,omitempty" yaml:"correction_id,omitempty"`
+	TenantID     string  `json:"tenant_id,omitempty" yaml:"tenant_id,omitempty"`
+	InputNodeID  string  `json:"input_node_id,omitempty" yaml:"input_node_id,omitempty"`
+	NewValue     float64 `json:"new_value,omitempty" yaml:"new_value,omitempty"`
+	Reason       string  `json:"reason,omitempty" yaml:"reason,omitempty"`
+	ResultRaw    string  `json:"result_raw,omitempty" yaml:"result_raw,omitempty"`
+	NodesRaw     string  `json:"nodes_raw,omitempty" yaml:"nodes_raw,omitempty"`
+	EdgesRaw     string  `json:"edges_raw,omitempty" yaml:"edges_raw,omitempty"`
+	CreatedAt    string  `json:"created_at,omitempty" yaml:"created_at,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type InputCorrectionList struct {
+	metav1.TypeMeta `json:",inline" yaml:",inline"`
+	metav1.ListMeta `json:"metadata" yaml:"metadata"`
+	Items           []InputCorrection `json:"items" yaml:"items"`
 }

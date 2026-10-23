@@ -116,6 +116,9 @@ func NewNexusClient(kubeconfigPath string) (*nexus_client.Clientset, error) {
 	if err == nil && cfg != nil {
 		client, clientErr := nexus_client.NewForConfig(cfg)
 		if clientErr == nil {
+			if err := subscribeGraphRelationships(context.Background(), client); err != nil {
+				return nil, err
+			}
 			log.Printf("[NexusClient] Connected to Nexus cluster at %s", cfg.Host)
 			return client, nil
 		}
@@ -129,6 +132,9 @@ func NewNexusClient(kubeconfigPath string) (*nexus_client.Clientset, error) {
 		client, store, err := newLocalGraphClient(filepath.Join(dir, "graph.json"))
 		if err != nil {
 			return nil, fmt.Errorf("open local graph: %w", err)
+		}
+		if err := subscribeGraphRelationships(context.Background(), client); err != nil {
+			return nil, err
 		}
 		activeLocalStore = store
 		log.Printf("[NexusClient] Local graph persisted in %s", dir)
@@ -1130,7 +1136,7 @@ func FacilityModelFromNode(fNode *nexus_client.InventoryFacility) *FacilityModel
 
 	return &FacilityModel{
 		ID:               id,
-		TenantID:         spec.FacilityID,
+		TenantID:         fNode.Labels["tenants.inventory.saurient.io"],
 		Name:             name,
 		Address:          spec.Location,
 		Country:          spec.CountryCode,

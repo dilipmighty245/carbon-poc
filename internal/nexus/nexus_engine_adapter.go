@@ -113,25 +113,6 @@ func (e *NexusGraphEngine) SavePassportAndAudit(ctx context.Context, p *CarbonPa
 		})
 	}
 
-	// Synchronize with Lineage DAG topology
-	e.mu.Lock()
-	e.nodes[p.PassportID] = LineageNode{
-		NodeID:      p.PassportID,
-		NodeType:    "PASSPORT",
-		ReferenceID: p.BatchNumber,
-		Label:       fmt.Sprintf("Carbon Passport %s", p.BatchNumber),
-		Properties: map[string]interface{}{
-			"tenant_id":           p.TenantID,
-			"facility_id":         p.FacilityID,
-			"commodity":           p.CommodityType,
-			"verification_status": p.VerificationStatus,
-			"total_footprint_kg":  p.TotalFootprintKg,
-			"data_hash":           p.DataHash,
-		},
-		CreatedAt: p.IssuedAt,
-	}
-	e.mu.Unlock()
-
 	return nil
 }
 
@@ -224,21 +205,21 @@ func (e *NexusGraphEngine) SaveProduct(ctx context.Context, prod *ProductModel) 
 	}
 
 	spec := inventoryv1.ProductSpec{
-		ProductID:       prodID,
-		ProductName:     prod.ProductName,
-		CommodityType:   prod.CommodityType,
-		BatchID:         batchID,
-		CnCode:          prod.CnCode,
-		HsCode:          prod.HsCode,
-		TenantID:        prod.TenantID,
-		FacilityID:      prod.FacilityID,
-		ActivityDataRaw: prod.ActivityDataRaw,
-		RulebookRef:     prod.RulebookRefName,
-		Phase:           prod.Phase,
-		PassportID:      prod.PassportID,
+		ProductID:        prodID,
+		ProductName:      prod.ProductName,
+		CommodityType:    prod.CommodityType,
+		BatchID:          batchID,
+		CnCode:           prod.CnCode,
+		HsCode:           prod.HsCode,
+		TenantID:         prod.TenantID,
+		FacilityID:       prod.FacilityID,
+		ActivityDataRaw:  prod.ActivityDataRaw,
+		RulebookRef:      prod.RulebookRefName,
+		Phase:            prod.Phase,
+		PassportID:       prod.PassportID,
 		TotalFootprintKg: prod.TotalFootprintKg,
-		DataHash:        prod.DataHash,
-		LastUpdated:     prod.LastUpdated.UTC().Format(time.RFC3339),
+		DataHash:         prod.DataHash,
+		LastUpdated:      prod.LastUpdated.UTC().Format(time.RFC3339),
 	}
 
 	_, err := CreateProductNode(ctx, client, prod.TenantID, spec)
@@ -272,22 +253,22 @@ func (e *NexusGraphEngine) GetProduct(ctx context.Context, productID string) (*P
 
 	spec := pNode.Spec
 	return &ProductModel{
-		Name:            pNode.DisplayName(),
-		TenantID:        spec.TenantID,
-		FacilityID:      spec.FacilityID,
-		BatchID:         spec.BatchID,
-		ProductName:     spec.ProductName,
-		CommodityType:   spec.CommodityType,
-		CnCode:          spec.CnCode,
-		HsCode:          spec.HsCode,
-		ActivityDataRaw: spec.ActivityDataRaw,
-		RulebookRefName: spec.RulebookRef,
-		Phase:           spec.Phase,
-		PassportID:      spec.PassportID,
+		Name:             pNode.DisplayName(),
+		TenantID:         spec.TenantID,
+		FacilityID:       spec.FacilityID,
+		BatchID:          spec.BatchID,
+		ProductName:      spec.ProductName,
+		CommodityType:    spec.CommodityType,
+		CnCode:           spec.CnCode,
+		HsCode:           spec.HsCode,
+		ActivityDataRaw:  spec.ActivityDataRaw,
+		RulebookRefName:  spec.RulebookRef,
+		Phase:            spec.Phase,
+		PassportID:       spec.PassportID,
 		TotalFootprintKg: spec.TotalFootprintKg,
-		DataHash:        spec.DataHash,
-		CreatedAt:       time.Now(),
-		LastUpdated:     time.Now(),
+		DataHash:         spec.DataHash,
+		CreatedAt:        time.Now(),
+		LastUpdated:      time.Now(),
 	}, nil
 }
 
@@ -309,22 +290,22 @@ func (e *NexusGraphEngine) ListProducts(ctx context.Context, tenantID string) ([
 		}
 		spec := pNode.Spec
 		res = append(res, &ProductModel{
-			Name:            pNode.DisplayName(),
-			TenantID:        spec.TenantID,
-			FacilityID:      spec.FacilityID,
-			BatchID:         spec.BatchID,
-			ProductName:     spec.ProductName,
-			CommodityType:   spec.CommodityType,
-			CnCode:          spec.CnCode,
-			HsCode:          spec.HsCode,
-			ActivityDataRaw: spec.ActivityDataRaw,
-			RulebookRefName: spec.RulebookRef,
-			Phase:           spec.Phase,
-			PassportID:      spec.PassportID,
+			Name:             pNode.DisplayName(),
+			TenantID:         spec.TenantID,
+			FacilityID:       spec.FacilityID,
+			BatchID:          spec.BatchID,
+			ProductName:      spec.ProductName,
+			CommodityType:    spec.CommodityType,
+			CnCode:           spec.CnCode,
+			HsCode:           spec.HsCode,
+			ActivityDataRaw:  spec.ActivityDataRaw,
+			RulebookRefName:  spec.RulebookRef,
+			Phase:            spec.Phase,
+			PassportID:       spec.PassportID,
 			TotalFootprintKg: spec.TotalFootprintKg,
-			DataHash:        spec.DataHash,
-			CreatedAt:       time.Now(),
-			LastUpdated:     time.Now(),
+			DataHash:         spec.DataHash,
+			CreatedAt:        time.Now(),
+			LastUpdated:      time.Now(),
 		})
 	}
 	return res, nil
@@ -484,22 +465,21 @@ func (e *NexusGraphEngine) SaveTenantProfileWithClient(ctx context.Context, clie
 	if err := tNode.Update(ctx); err != nil {
 		return fmt.Errorf("persist tenant profile: %w", err)
 	}
-	e.opMu.Lock()
-	e.tenantProfiles[profile.TenantID] = profile
-	e.opMu.Unlock()
 	return nil
 }
 
 // ForgetTenantProfile removes the cache after a rolled-back registration.
 func (e *NexusGraphEngine) ForgetTenantProfile(tenantID string) {
-	e.opMu.Lock()
-	delete(e.tenantProfiles, tenantID)
-	e.opMu.Unlock()
+	// Profiles are read directly from their persisted Tenant nodes.
 }
 
 // FindTenantByEmailOrDomain searches for a registered company in tenant profiles and Nexus datamodel
 // that matches an email domain or company name.
 func (e *NexusGraphEngine) FindTenantByEmailOrDomain(ctx context.Context, email string) (*TenantProfileModel, bool) {
+	return e.FindTenantByEmailOrDomainWithClient(ctx, GetNexusClient(), email)
+}
+
+func (e *NexusGraphEngine) FindTenantByEmailOrDomainWithClient(ctx context.Context, client *nexus_client.Clientset, email string) (*TenantProfileModel, bool) {
 	email = strings.TrimSpace(strings.ToLower(email))
 	parts := strings.Split(email, "@")
 	if len(parts) != 2 {
@@ -509,39 +489,29 @@ func (e *NexusGraphEngine) FindTenantByEmailOrDomain(ctx context.Context, email 
 	domainSlug := strings.Split(domain, ".")[0]
 	domainSlug = strings.ReplaceAll(domainSlug, "-", "_")
 
-	// 1. Check in-memory registered tenant profiles
-	e.opMu.RLock()
-	for tID, prof := range e.tenantProfiles {
-		if prof == nil {
-			continue
-		}
-		tIDLower := strings.ToLower(tID)
-		if strings.Contains(tIDLower, domainSlug) {
-			e.opMu.RUnlock()
-			return prof, true
-		}
-		if prof.Website != "" && strings.Contains(strings.ToLower(prof.Website), domain) {
-			e.opMu.RUnlock()
-			return prof, true
-		}
-		cleanLegal := strings.ToLower(strings.ReplaceAll(prof.LegalName, " ", ""))
-		cleanDomain := strings.ReplaceAll(domainSlug, "_", "")
-		if cleanLegal != "" && cleanDomain != "" && (strings.Contains(cleanLegal, cleanDomain) || strings.Contains(cleanDomain, cleanLegal)) {
-			e.opMu.RUnlock()
-			return prof, true
+	// Discover companies from persisted profiles, independent of which API replica handled registration.
+	if nodes, err := client.Inventory().ListTenants(ctx, metav1.ListOptions{}); err == nil {
+		for _, node := range nodes {
+			prof, err := e.GetTenantProfileWithClient(tenant.WithTenant(ctx, node.Spec.TenantID), client)
+			if err != nil || prof == nil {
+				continue
+			}
+			tIDLower := strings.ToLower(prof.TenantID)
+			cleanLegal := strings.ToLower(strings.ReplaceAll(prof.LegalName, " ", ""))
+			cleanDomain := strings.ReplaceAll(domainSlug, "_", "")
+			if strings.Contains(tIDLower, domainSlug) || (prof.Website != "" && strings.Contains(strings.ToLower(prof.Website), domain)) || (cleanLegal != "" && cleanDomain != "" && (strings.Contains(cleanLegal, cleanDomain) || strings.Contains(cleanDomain, cleanLegal))) {
+				return prof, true
+			}
 		}
 	}
-	e.opMu.RUnlock()
-
 	// 2. Check if ANY user exists in the Nexus datamodel with this email domain
-	client := GetNexusClient()
 	if client != nil {
 		allUsers, err := ListUserNodes(ctx, client, "")
 		if err == nil {
 			for _, u := range allUsers {
 				if u != nil && strings.HasSuffix(strings.ToLower(u.Spec.Email), "@"+domain) {
 					tCtx := tenant.WithTenant(ctx, u.Spec.TenantID)
-					if prof, err := e.GetTenantProfile(tCtx); err == nil && prof != nil {
+					if prof, err := e.GetTenantProfileWithClient(tCtx, client); err == nil && prof != nil {
 						return prof, true
 					}
 					return &TenantProfileModel{
@@ -606,65 +576,15 @@ func (e *NexusGraphEngine) DeleteFacility(ctx context.Context, facilityID string
 // --- Process Operations ---
 
 func (e *NexusGraphEngine) ListProcesses(ctx context.Context) ([]*ProcessModel, error) {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
-	}
-	e.opMu.RLock()
-	defer e.opMu.RUnlock()
-	procs := e.processes[tID]
-	if procs == nil {
-		procs = []*ProcessModel{}
-	}
-	return procs, nil
+	return listProcessRecords(ctx, GetNexusClient())
 }
 
 func (e *NexusGraphEngine) SaveProcess(ctx context.Context, proc *ProcessModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		proc.TenantID = tID
-	} else if proc.TenantID == "" {
-		proc.TenantID = "tenant-default"
-	}
-	if proc.CreatedAt.IsZero() {
-		proc.CreatedAt = time.Now()
-	}
-	proc.UpdatedAt = time.Now()
-
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	list := e.processes[proc.TenantID]
-	updated := false
-	for i, existing := range list {
-		if existing.ID == proc.ID {
-			list[i] = proc
-			updated = true
-			break
-		}
-	}
-	if !updated {
-		list = append(list, proc)
-	}
-	e.processes[proc.TenantID] = list
-	return nil
+	return saveProcessRecord(ctx, GetNexusClient(), proc, false)
 }
 
 func (e *NexusGraphEngine) DeleteProcess(ctx context.Context, processID string) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
-	}
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	list := e.processes[tID]
-	filtered := make([]*ProcessModel, 0, len(list))
-	for _, p := range list {
-		if p.ID != processID {
-			filtered = append(filtered, p)
-		}
-	}
-	e.processes[tID] = filtered
-	return nil
+	return deleteProcessRecord(ctx, GetNexusClient(), processID)
 }
 
 // --- User Operations ---
@@ -723,236 +643,88 @@ func (e *NexusGraphEngine) UpdateUserRole(ctx context.Context, userID, newRole s
 // --- Reporting Period Operations ---
 
 func (e *NexusGraphEngine) ListReportingPeriods(ctx context.Context) ([]*ReportingPeriodModel, error) {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
-	}
-	e.opMu.RLock()
-	defer e.opMu.RUnlock()
-	return e.reportingPeriods[tID], nil
+	return listReportingPeriodRecords(ctx, GetNexusClient())
 }
 
 func (e *NexusGraphEngine) SaveReportingPeriod(ctx context.Context, rp *ReportingPeriodModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		rp.TenantID = tID
-	} else if rp.TenantID == "" {
-		rp.TenantID = "tenant-default"
-	}
-	if rp.CreatedAt.IsZero() {
-		rp.CreatedAt = time.Now()
-	}
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	e.reportingPeriods[rp.TenantID] = append(e.reportingPeriods[rp.TenantID], rp)
-	return nil
+	return saveReportingPeriodRecord(ctx, GetNexusClient(), rp, false)
 }
 
 // --- Localisation Operations ---
 
 func (e *NexusGraphEngine) GetLocalisation(ctx context.Context) (*LocalisationModel, error) {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
+	records, err := listLocalisationRecords(ctx, GetNexusClient())
+	if err != nil {
+		return nil, err
 	}
-	e.opMu.RLock()
-	defer e.opMu.RUnlock()
-	loc, ok := e.localisations[tID]
-	if !ok {
-		return &LocalisationModel{
-			TenantID:            tID,
-			DefaultLanguage:     "en-GB",
-			DefaultCurrency:     "EUR",
-			DefaultTimezone:     "UTC+01:00 (CET/Brussels)",
-			DefaultEmissionUnit: "kgCO2e",
-			NumberFormat:        "1,234.56",
-			DateFormat:          "YYYY-MM-DD",
-		}, nil
+	if len(records) > 0 {
+		return records[0], nil
 	}
-	return loc, nil
+	return &LocalisationModel{TenantID: workspaceTenant(ctx, ""), DefaultLanguage: "en-GB", DefaultCurrency: "EUR", DefaultTimezone: "UTC+01:00 (CET/Brussels)", DefaultEmissionUnit: "kgCO2e", NumberFormat: "1,234.56", DateFormat: "YYYY-MM-DD"}, nil
 }
 
 func (e *NexusGraphEngine) SaveLocalisation(ctx context.Context, loc *LocalisationModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		loc.TenantID = tID
-	} else if loc.TenantID == "" {
-		loc.TenantID = "tenant-default"
-	}
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	e.localisations[loc.TenantID] = loc
-	return nil
+	return saveLocalisationRecord(ctx, GetNexusClient(), loc, false)
 }
 
 // --- Approvals Operations ---
 
 func (e *NexusGraphEngine) ListApprovals(ctx context.Context) ([]*ApprovalModel, error) {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
-	}
-	e.opMu.RLock()
-	defer e.opMu.RUnlock()
-	return e.approvals[tID], nil
+	return listApprovalRecords(ctx, GetNexusClient())
 }
 
 func (e *NexusGraphEngine) SaveApproval(ctx context.Context, a *ApprovalModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		a.TenantID = tID
-	} else if a.TenantID == "" {
-		a.TenantID = "tenant-default"
-	}
-	if a.SubmittedAt.IsZero() {
-		a.SubmittedAt = time.Now()
-	}
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	e.approvals[a.TenantID] = append(e.approvals[a.TenantID], a)
-	return nil
+	return saveApprovalRecord(ctx, GetNexusClient(), a, false)
 }
 
 // --- ACV Verification Operations ---
 
 func (e *NexusGraphEngine) CreateAgency(ctx context.Context, agency *AgencyModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		agency.TenantID = tID
-	} else if agency.TenantID == "" {
-		agency.TenantID = "tenant-default"
-	}
-	if agency.CreatedAt.IsZero() {
-		agency.CreatedAt = time.Now()
-	}
-	agency.UpdatedAt = time.Now()
-
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	e.agencies[agency.TenantID] = append(e.agencies[agency.TenantID], agency)
-	return nil
+	return saveVerificationAgencyRecord(ctx, GetNexusClient(), agency, false)
 }
 
 func (e *NexusGraphEngine) ListAgencies(ctx context.Context) ([]*AgencyModel, error) {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
-	}
-	e.opMu.RLock()
-	defer e.opMu.RUnlock()
-	return e.agencies[tID], nil
+	return listVerificationAgencyRecords(ctx, GetNexusClient())
 }
 
 func (e *NexusGraphEngine) CreateEngagement(ctx context.Context, eng *VerificationEngagementModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		eng.TenantID = tID
-	} else if eng.TenantID == "" {
-		eng.TenantID = "tenant-default"
-	}
-	if eng.CreatedAt.IsZero() {
-		eng.CreatedAt = time.Now()
-	}
-	eng.UpdatedAt = time.Now()
-
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	e.engagements[eng.TenantID] = append(e.engagements[eng.TenantID], eng)
-	return nil
+	return saveVerificationEngagementRecord(ctx, GetNexusClient(), eng, false)
 }
 
 func (e *NexusGraphEngine) ListEngagements(ctx context.Context) ([]*VerificationEngagementModel, error) {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
-	}
-	e.opMu.RLock()
-	defer e.opMu.RUnlock()
-	return e.engagements[tID], nil
+	return listVerificationEngagementRecords(ctx, GetNexusClient())
 }
 
 func (e *NexusGraphEngine) AssignTeamMember(ctx context.Context, m *EngagementTeamMemberModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		m.TenantID = tID
-	} else if m.TenantID == "" {
-		m.TenantID = "tenant-default"
-	}
-	if m.AssignedAt.IsZero() {
-		m.AssignedAt = time.Now()
-	}
-
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	e.teamMembers[m.TenantID] = append(e.teamMembers[m.TenantID], m)
-	return nil
+	return saveEngagementTeamMemberRecord(ctx, GetNexusClient(), m, false)
 }
 
 func (e *NexusGraphEngine) SubmitCOIDeclaration(ctx context.Context, c *COIDeclarationModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		c.TenantID = tID
-	} else if c.TenantID == "" {
-		c.TenantID = "tenant-default"
-	}
-	if c.DeclaredAt.IsZero() {
-		c.DeclaredAt = time.Now()
-	}
-
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	e.coiDeclarations[c.TenantID] = append(e.coiDeclarations[c.TenantID], c)
-	return nil
+	return saveCOIDeclarationRecord(ctx, GetNexusClient(), c, false)
 }
 
 func (e *NexusGraphEngine) CreateFinding(ctx context.Context, f *FindingModel) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		f.TenantID = tID
-	} else if f.TenantID == "" {
-		f.TenantID = "tenant-default"
-	}
-	if f.CreatedAt.IsZero() {
-		f.CreatedAt = time.Now()
-	}
-	f.UpdatedAt = time.Now()
-
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	e.findings[f.TenantID] = append(e.findings[f.TenantID], f)
-	return nil
+	return saveFindingRecord(ctx, GetNexusClient(), f, false)
 }
 
 func (e *NexusGraphEngine) ListFindings(ctx context.Context, engagementID string) ([]*FindingModel, error) {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
+	records, err := listFindingRecords(ctx, GetNexusClient())
+	if err != nil {
+		return nil, err
 	}
-	e.opMu.RLock()
-	defer e.opMu.RUnlock()
-	var res []*FindingModel
-	for _, f := range e.findings[tID] {
-		if engagementID == "" || f.EngagementID == engagementID {
-			res = append(res, f)
+	result := make([]*FindingModel, 0, len(records))
+	for _, record := range records {
+		if engagementID == "" || record.EngagementID == engagementID {
+			result = append(result, record)
 		}
 	}
-	return res, nil
+	return result, nil
 }
 
 func (e *NexusGraphEngine) SignoffEngagement(ctx context.Context, s *ReviewSignoffModel, frozenBy string) error {
-	tID, _ := tenant.GetTenant(ctx)
-	if tID != "" {
-		s.TenantID = tID
-	} else if s.TenantID == "" {
-		s.TenantID = "tenant-default"
+	if err := saveReviewVerdictRecord(ctx, GetNexusClient(), s, false); err != nil {
+		return err
 	}
-	if s.SignedAt.IsZero() {
-		s.SignedAt = time.Now()
-	}
-
-	e.opMu.Lock()
-	e.signoffs[s.TenantID] = append(e.signoffs[s.TenantID], s)
-	e.opMu.Unlock()
 
 	// Update RuntimeCarbonPassport node in Nexus graph
 	client := GetNexusClient()
@@ -998,19 +770,17 @@ func (e *NexusGraphEngine) GetPublicPassportSummary(ctx context.Context, passpor
 	}
 	p := CarbonPassportModelFromNode(pNode)
 	opinion := "Unqualified"
-	tID, _ := tenant.GetTenant(ctx)
-	if tID == "" {
-		tID = "tenant-default"
-	}
 
-	e.opMu.RLock()
-	for _, sign := range e.signoffs[tID] {
-		if sign.PassportID == passportID {
+	signs, err := listReviewVerdictRecords(tenant.WithTenant(ctx, p.TenantID), client)
+	if err != nil {
+		return nil, err
+	}
+	for _, sign := range signs {
+		if sign.PassportID == p.PassportID {
 			opinion = sign.Opinion
 			break
 		}
 	}
-	e.opMu.RUnlock()
 
 	return &PublicPassportSummaryModel{
 		PassportID:         p.PassportID,

@@ -3,9 +3,6 @@ package nexus
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"time"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,55 +12,42 @@ import (
 	nexusclient "saurient-platform/build/nexus-client"
 )
 
-// Typed Nexus CRDs hold business records. This namespaced ConfigMap holds the
-// remaining workspace settings, so both are stored by Kubernetes in etcd.
-func ClusterPersistenceHandler(client *nexusclient.Clientset, namespace string, engine *NexusGraphEngine, next http.Handler) (http.Handler, error) {
+const workspaceMigrationAnnotation = "saurient.io/workspace-migration"
+
+// MigrateClusterWorkspace reads the old ConfigMap only during migration. Once
+// marked, it is retained as a backup and never used to serve or save records.
+func MigrateClusterWorkspace(ctx context.Context, client *nexusclient.Clientset, namespace string) error {
 	resource := client.DynamicClient.Resource(schema.GroupVersionResource{Version: "v1", Resource: "configmaps"}).Namespace(namespace)
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	state, err := resource.Get(ctx, "saurient-workspace", metav1.GetOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, err
-	}
-	if err == nil {
-		data, _, _ := unstructured.NestedString(state.Object, "data", "workspace.json")
-		if data == "" {
-			return nil, fmt.Errorf("cluster workspace snapshot is empty")
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		snapshot, err := resource.Get(ctx, "saurient-workspace", metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return nil
 		}
-		if err := engine.unmarshalWorkspace([]byte(data)); err != nil {
-			return nil, err
-		}
-	}
-	save := func() error {
-		data, err := engine.marshalWorkspace()
 		if err != nil {
 			return err
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			current, err := resource.Get(ctx, "saurient-workspace", metav1.GetOptions{})
-			if apierrors.IsNotFound(err) {
-				_, err = resource.Create(ctx, &unstructured.Unstructured{Object: map[string]interface{}{
-					"apiVersion": "v1", "kind": "ConfigMap", "metadata": map[string]interface{}{"name": "saurient-workspace", "namespace": namespace},
-					"data": map[string]interface{}{"workspace.json": string(data)},
-				}}, metav1.CreateOptions{})
-				return err
-			}
-			if err != nil {
-				return err
-			}
-			if err := unstructured.SetNestedField(current.Object, string(data), "data", "workspace.json"); err != nil {
-				return err
-			}
-			_, err = resource.Update(ctx, current, metav1.UpdateOptions{})
+		if snapshot.GetAnnotations()[workspaceMigrationAnnotation] == "nexus-v1" {
+			return nil
+		}
+		data, _, err := unstructured.NestedString(snapshot.Object, "data", "workspace.json")
+		if err != nil {
 			return err
-		})
-	}
-	if err := save(); err != nil {
-		return nil, err
-	}
-	return workspacePersistenceHandler(next, save), nil
+		}
+		if data == "" {
+			return fmt.Errorf("legacy cluster workspace is empty")
+		}
+		if err := migrateLegacyWorkspace(ctx, client, []byte(data)); err != nil {
+			return err
+		}
+		annotations := snapshot.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		annotations[workspaceMigrationAnnotation] = "nexus-v1"
+		snapshot.SetAnnotations(annotations)
+		_, err = resource.Update(ctx, snapshot, metav1.UpdateOptions{})
+		return err
+	})
 }
 
 func resetClusterGraph(ctx context.Context, client *nexusclient.Clientset) error {

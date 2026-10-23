@@ -79,6 +79,8 @@ cp "${REPO_ROOT}/scripts/templates/local_client.go.tmpl" "${BUILD_DIR}/nexus-cli
 
 echo "==> [6/7] Generating Nexus GraphQL server via gqlgen..."
 if [ -d "${BUILD_DIR}/nexus-gql" ]; then
+  # The installed gqlgen fork does not accept the compiler's legacy resolver flag.
+  sed -i '' '/^  nexus: true$/d' "${BUILD_DIR}/nexus-gql/gqlgen.yml"
   (cd "${BUILD_DIR}/nexus-gql" && go run github.com/dilipmighty245/graph-framework-for-microservices/gqlgen generate)
 fi
 

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/golang/protobuf/proto" // nolint: staticcheck
 	"github.com/dilipmighty245/graph-framework-for-microservices/nexus/generated/graphql"
 	qm "github.com/dilipmighty245/graph-framework-for-microservices/nexus/generated/query-manager"
 	"github.com/dilipmighty245/graph-framework-for-microservices/nexus/nexus"
+	"github.com/golang/protobuf/proto" // nolint: staticcheck
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 

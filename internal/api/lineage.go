@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"saurient-platform/internal/nexus"
+	"saurient-platform/internal/tenant"
 )
 
 type LineageHandler struct {
@@ -42,7 +43,8 @@ func (h *LineageHandler) HandleTraceLineage(w http.ResponseWriter, r *http.Reque
 		passportID = "PASS-2026-981-v1.0"
 	}
 
-	dag, err := h.engine.GetLineageDAG(r.Context(), passportID)
+	ctx := tenant.WithTenant(r.Context(), getTenantID(r))
+	dag, err := h.engine.GetLineageDAG(ctx, passportID)
 	if err != nil {
 		writeJSONError(w, err.Error(), http.StatusNotFound)
 		return
@@ -75,7 +77,8 @@ func (h *LineageHandler) HandleCorrectInput(w http.ResponseWriter, r *http.Reque
 		req.InputNodeID = "NODE_IN_SUP_409"
 	}
 
-	result, err := h.engine.CorrectSupplierInput(r.Context(), req)
+	ctx := tenant.WithTenant(r.Context(), getTenantID(r))
+	result, err := h.engine.CorrectSupplierInput(ctx, req)
 	if err != nil {
 		writeJSONError(w, err.Error(), http.StatusInternalServerError)
 		return

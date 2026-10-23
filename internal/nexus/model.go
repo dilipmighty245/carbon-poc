@@ -11,25 +11,36 @@ import (
 
 // Re-export Datamodel Node Types adhering strictly to Nexus DSL Specifications
 type (
-	RootNode             = root.Root
-	ConfigNode           = config.Config
-	RulebookNode         = config.Rulebook
-	CbamBenchmarkNode    = config.CbamBenchmark
-	StoryboardSceneNode  = config.StoryboardScene
-	InventoryNode        = inventory.Inventory
-	ACVAgencyNode        = inventory.ACVAgency
-	TenantNode           = inventory.Tenant
-	FacilityNode         = inventory.Facility
-	MeterNode            = inventory.Meter
-	ProductNode          = inventory.Product
-	LogisticsLegNode     = inventory.LogisticsLeg
-	SupplierNode         = inventory.Supplier
-	DeclarationNode      = inventory.Declaration
-	RuntimeNode          = runtime.Runtime
-	TelemetryReadingNode = runtime.TelemetryReading
-	ACVEngagementNode    = runtime.ACVEngagement
-	CarbonPassportNode   = runtime.CarbonPassport
-	AuditRecordNode      = runtime.AuditRecord
+	RootNode                   = root.Root
+	ConfigNode                 = config.Config
+	RulebookNode               = config.Rulebook
+	CbamBenchmarkNode          = config.CbamBenchmark
+	StoryboardSceneNode        = config.StoryboardScene
+	InventoryNode              = inventory.Inventory
+	ACVAgencyNode              = inventory.ACVAgency
+	TenantNode                 = inventory.Tenant
+	FacilityNode               = inventory.Facility
+	ProcessNode                = inventory.Process
+	ReportingPeriodNode        = inventory.ReportingPeriod
+	LocalisationNode           = inventory.Localisation
+	ApprovalNode               = inventory.Approval
+	VerificationAgencyNode     = inventory.VerificationAgency
+	VerificationEngagementNode = inventory.VerificationEngagement
+	EngagementTeamMemberNode   = inventory.EngagementTeamMember
+	COIDeclarationNode         = inventory.COIDeclaration
+	FindingNode                = inventory.Finding
+	ReviewVerdictNode          = inventory.ReviewVerdict
+	InputCorrectionNode        = inventory.InputCorrection
+	MeterNode                  = inventory.Meter
+	ProductNode                = inventory.Product
+	LogisticsLegNode           = inventory.LogisticsLeg
+	SupplierNode               = inventory.Supplier
+	DeclarationNode            = inventory.Declaration
+	RuntimeNode                = runtime.Runtime
+	TelemetryReadingNode       = runtime.TelemetryReading
+	ACVEngagementNode          = runtime.ACVEngagement
+	CarbonPassportNode         = runtime.CarbonPassport
+	AuditRecordNode            = runtime.AuditRecord
 
 	// Core Nexus Base Node Types
 	NexusNode          = nexusSDK.Node

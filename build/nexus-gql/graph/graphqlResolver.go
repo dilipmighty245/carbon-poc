@@ -595,6 +595,7 @@ vTenantID := string(vTenant.Spec.TenantID)
 vLegalName := string(vTenant.Spec.LegalName)
 vCountry := string(vTenant.Spec.Country)
 vIndustry := string(vTenant.Spec.Industry)
+vProfileRaw := string(vTenant.Spec.ProfileRaw)
 
         for k, v := range obj.ParentLabels {
             parentLabels[k] = v
@@ -606,6 +607,7 @@ vIndustry := string(vTenant.Spec.Industry)
 	LegalName: &vLegalName,
 	Country: &vCountry,
 	Industry: &vIndustry,
+	ProfileRaw: &vProfileRaw,
 	}
 		vInventoryTenantList = append(vInventoryTenantList, ret)
 
@@ -638,6 +640,7 @@ vTenantID := string(vTenant.Spec.TenantID)
 vLegalName := string(vTenant.Spec.LegalName)
 vCountry := string(vTenant.Spec.Country)
 vIndustry := string(vTenant.Spec.Industry)
+vProfileRaw := string(vTenant.Spec.ProfileRaw)
 
 		for k, v := range obj.ParentLabels {
             parentLabels[k] = v
@@ -649,6 +652,7 @@ vIndustry := string(vTenant.Spec.Industry)
 	LegalName: &vLegalName,
 	Country: &vCountry,
 	Industry: &vIndustry,
+	ProfileRaw: &vProfileRaw,
 	}
 		vInventoryTenantList = append(vInventoryTenantList, ret)
 	}
@@ -826,6 +830,1251 @@ vCountryCode := string(vFacility.Spec.CountryCode)
 
 //////////////////////////////////////
 // CHILDREN RESOLVER
+// FieldName: Processes Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantProcessesResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryProcess, error) {
+	log.Debugf("[getInventoryTenantProcessesResolver]Parent Object %+v", obj)
+	var vInventoryProcessList []*model.InventoryProcess
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantProcessesResolver]Id %q", *id)
+		vProcess, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetProcesses(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantProcessesResolver]Error getting Processes node %q : %s", *id, err)
+            return vInventoryProcessList, nil
+        }
+		dn := vProcess.DisplayName()
+parentLabels := map[string]interface{}{"processes.inventory.saurient.io":dn}
+vRecordID := string(vProcess.Spec.RecordID)
+vTenantID := string(vProcess.Spec.TenantID)
+vFacilityID := string(vProcess.Spec.FacilityID)
+vFacilityName := string(vProcess.Spec.FacilityName)
+vName := string(vProcess.Spec.Name)
+vProductionLine := string(vProcess.Spec.ProductionLine)
+vEnergySource := string(vProcess.Spec.EnergySource)
+vInputs := string(vProcess.Spec.Inputs)
+vOutputs := string(vProcess.Spec.Outputs)
+vMeters := string(vProcess.Spec.Meters)
+vScopes := string(vProcess.Spec.Scopes)
+vStatus := string(vProcess.Spec.Status)
+vDescription := string(vProcess.Spec.Description)
+vPCFTrace := string(vProcess.Spec.PCFTrace)
+vCreatedAt := string(vProcess.Spec.CreatedAt)
+vUpdatedAt := string(vProcess.Spec.UpdatedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryProcess {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	RecordID: &vRecordID,
+	TenantID: &vTenantID,
+	FacilityID: &vFacilityID,
+	FacilityName: &vFacilityName,
+	Name: &vName,
+	ProductionLine: &vProductionLine,
+	EnergySource: &vEnergySource,
+	Inputs: &vInputs,
+	Outputs: &vOutputs,
+	Meters: &vMeters,
+	Scopes: &vScopes,
+	Status: &vStatus,
+	Description: &vDescription,
+	PCFTrace: &vPCFTrace,
+	CreatedAt: &vCreatedAt,
+	UpdatedAt: &vUpdatedAt,
+	}
+		vInventoryProcessList = append(vInventoryProcessList, ret)
+
+		log.Debugf("[getInventoryTenantProcessesResolver]Output Processes objects %v", vInventoryProcessList)
+
+		return vInventoryProcessList, nil
+	}
+
+	log.Debug("[getInventoryTenantProcessesResolver]Id is empty, process all Processess")
+
+	vProcessParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantProcessesResolver]Error getting parent node %s", err)
+        return vInventoryProcessList, nil
+    }
+	vProcessAllObj, err := vProcessParent.GetAllProcesses(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantProcessesResolver]Error getting Processes objects %s", err)
+        return vInventoryProcessList, nil
+    }
+	for _, i := range vProcessAllObj {
+		vProcess, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetProcesses(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantProcessesResolver]Error getting Processes node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vProcess.DisplayName()
+parentLabels := map[string]interface{}{"processes.inventory.saurient.io":dn}
+vRecordID := string(vProcess.Spec.RecordID)
+vTenantID := string(vProcess.Spec.TenantID)
+vFacilityID := string(vProcess.Spec.FacilityID)
+vFacilityName := string(vProcess.Spec.FacilityName)
+vName := string(vProcess.Spec.Name)
+vProductionLine := string(vProcess.Spec.ProductionLine)
+vEnergySource := string(vProcess.Spec.EnergySource)
+vInputs := string(vProcess.Spec.Inputs)
+vOutputs := string(vProcess.Spec.Outputs)
+vMeters := string(vProcess.Spec.Meters)
+vScopes := string(vProcess.Spec.Scopes)
+vStatus := string(vProcess.Spec.Status)
+vDescription := string(vProcess.Spec.Description)
+vPCFTrace := string(vProcess.Spec.PCFTrace)
+vCreatedAt := string(vProcess.Spec.CreatedAt)
+vUpdatedAt := string(vProcess.Spec.UpdatedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryProcess {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	RecordID: &vRecordID,
+	TenantID: &vTenantID,
+	FacilityID: &vFacilityID,
+	FacilityName: &vFacilityName,
+	Name: &vName,
+	ProductionLine: &vProductionLine,
+	EnergySource: &vEnergySource,
+	Inputs: &vInputs,
+	Outputs: &vOutputs,
+	Meters: &vMeters,
+	Scopes: &vScopes,
+	Status: &vStatus,
+	Description: &vDescription,
+	PCFTrace: &vPCFTrace,
+	CreatedAt: &vCreatedAt,
+	UpdatedAt: &vUpdatedAt,
+	}
+		vInventoryProcessList = append(vInventoryProcessList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantProcessesResolver]Output Processes objects %v", vInventoryProcessList)
+
+	return vInventoryProcessList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: ReportingPeriods Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantReportingPeriodsResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryReportingPeriod, error) {
+	log.Debugf("[getInventoryTenantReportingPeriodsResolver]Parent Object %+v", obj)
+	var vInventoryReportingPeriodList []*model.InventoryReportingPeriod
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantReportingPeriodsResolver]Id %q", *id)
+		vReportingPeriod, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetReportingPeriods(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantReportingPeriodsResolver]Error getting ReportingPeriods node %q : %s", *id, err)
+            return vInventoryReportingPeriodList, nil
+        }
+		dn := vReportingPeriod.DisplayName()
+parentLabels := map[string]interface{}{"reportingperiods.inventory.saurient.io":dn}
+vRecordID := string(vReportingPeriod.Spec.RecordID)
+vTenantID := string(vReportingPeriod.Spec.TenantID)
+vName := string(vReportingPeriod.Spec.Name)
+vYear := int(vReportingPeriod.Spec.Year)
+vQuarter := string(vReportingPeriod.Spec.Quarter)
+vStartDate := string(vReportingPeriod.Spec.StartDate)
+vEndDate := string(vReportingPeriod.Spec.EndDate)
+vStatus := string(vReportingPeriod.Spec.Status)
+vEmissionsTotal := float64(vReportingPeriod.Spec.EmissionsTotal)
+vDataCompleteness := float64(vReportingPeriod.Spec.DataCompleteness)
+vVerificationStatus := string(vReportingPeriod.Spec.VerificationStatus)
+vCreatedAt := string(vReportingPeriod.Spec.CreatedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryReportingPeriod {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	RecordID: &vRecordID,
+	TenantID: &vTenantID,
+	Name: &vName,
+	Year: &vYear,
+	Quarter: &vQuarter,
+	StartDate: &vStartDate,
+	EndDate: &vEndDate,
+	Status: &vStatus,
+	EmissionsTotal: &vEmissionsTotal,
+	DataCompleteness: &vDataCompleteness,
+	VerificationStatus: &vVerificationStatus,
+	CreatedAt: &vCreatedAt,
+	}
+		vInventoryReportingPeriodList = append(vInventoryReportingPeriodList, ret)
+
+		log.Debugf("[getInventoryTenantReportingPeriodsResolver]Output ReportingPeriods objects %v", vInventoryReportingPeriodList)
+
+		return vInventoryReportingPeriodList, nil
+	}
+
+	log.Debug("[getInventoryTenantReportingPeriodsResolver]Id is empty, process all ReportingPeriodss")
+
+	vReportingPeriodParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantReportingPeriodsResolver]Error getting parent node %s", err)
+        return vInventoryReportingPeriodList, nil
+    }
+	vReportingPeriodAllObj, err := vReportingPeriodParent.GetAllReportingPeriods(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantReportingPeriodsResolver]Error getting ReportingPeriods objects %s", err)
+        return vInventoryReportingPeriodList, nil
+    }
+	for _, i := range vReportingPeriodAllObj {
+		vReportingPeriod, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetReportingPeriods(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantReportingPeriodsResolver]Error getting ReportingPeriods node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vReportingPeriod.DisplayName()
+parentLabels := map[string]interface{}{"reportingperiods.inventory.saurient.io":dn}
+vRecordID := string(vReportingPeriod.Spec.RecordID)
+vTenantID := string(vReportingPeriod.Spec.TenantID)
+vName := string(vReportingPeriod.Spec.Name)
+vYear := int(vReportingPeriod.Spec.Year)
+vQuarter := string(vReportingPeriod.Spec.Quarter)
+vStartDate := string(vReportingPeriod.Spec.StartDate)
+vEndDate := string(vReportingPeriod.Spec.EndDate)
+vStatus := string(vReportingPeriod.Spec.Status)
+vEmissionsTotal := float64(vReportingPeriod.Spec.EmissionsTotal)
+vDataCompleteness := float64(vReportingPeriod.Spec.DataCompleteness)
+vVerificationStatus := string(vReportingPeriod.Spec.VerificationStatus)
+vCreatedAt := string(vReportingPeriod.Spec.CreatedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryReportingPeriod {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	RecordID: &vRecordID,
+	TenantID: &vTenantID,
+	Name: &vName,
+	Year: &vYear,
+	Quarter: &vQuarter,
+	StartDate: &vStartDate,
+	EndDate: &vEndDate,
+	Status: &vStatus,
+	EmissionsTotal: &vEmissionsTotal,
+	DataCompleteness: &vDataCompleteness,
+	VerificationStatus: &vVerificationStatus,
+	CreatedAt: &vCreatedAt,
+	}
+		vInventoryReportingPeriodList = append(vInventoryReportingPeriodList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantReportingPeriodsResolver]Output ReportingPeriods objects %v", vInventoryReportingPeriodList)
+
+	return vInventoryReportingPeriodList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: Localisation Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantLocalisationResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryLocalisation, error) {
+	log.Debugf("[getInventoryTenantLocalisationResolver]Parent Object %+v", obj)
+	var vInventoryLocalisationList []*model.InventoryLocalisation
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantLocalisationResolver]Id %q", *id)
+		vLocalisation, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetLocalisation(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantLocalisationResolver]Error getting Localisation node %q : %s", *id, err)
+            return vInventoryLocalisationList, nil
+        }
+		dn := vLocalisation.DisplayName()
+parentLabels := map[string]interface{}{"localisations.inventory.saurient.io":dn}
+vTenantID := string(vLocalisation.Spec.TenantID)
+vCountry := string(vLocalisation.Spec.Country)
+vCurrency := string(vLocalisation.Spec.Currency)
+vTimezone := string(vLocalisation.Spec.Timezone)
+vLanguage := string(vLocalisation.Spec.Language)
+vUnits := string(vLocalisation.Spec.Units)
+vRegulatory := string(vLocalisation.Spec.Regulatory)
+vDefaultLanguage := string(vLocalisation.Spec.DefaultLanguage)
+vDefaultCurrency := string(vLocalisation.Spec.DefaultCurrency)
+vDefaultTimezone := string(vLocalisation.Spec.DefaultTimezone)
+vDefaultEmissionUnit := string(vLocalisation.Spec.DefaultEmissionUnit)
+vNumberFormat := string(vLocalisation.Spec.NumberFormat)
+vDateFormat := string(vLocalisation.Spec.DateFormat)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryLocalisation {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	TenantID: &vTenantID,
+	Country: &vCountry,
+	Currency: &vCurrency,
+	Timezone: &vTimezone,
+	Language: &vLanguage,
+	Units: &vUnits,
+	Regulatory: &vRegulatory,
+	DefaultLanguage: &vDefaultLanguage,
+	DefaultCurrency: &vDefaultCurrency,
+	DefaultTimezone: &vDefaultTimezone,
+	DefaultEmissionUnit: &vDefaultEmissionUnit,
+	NumberFormat: &vNumberFormat,
+	DateFormat: &vDateFormat,
+	}
+		vInventoryLocalisationList = append(vInventoryLocalisationList, ret)
+
+		log.Debugf("[getInventoryTenantLocalisationResolver]Output Localisation objects %v", vInventoryLocalisationList)
+
+		return vInventoryLocalisationList, nil
+	}
+
+	log.Debug("[getInventoryTenantLocalisationResolver]Id is empty, process all Localisations")
+
+	vLocalisationParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantLocalisationResolver]Error getting parent node %s", err)
+        return vInventoryLocalisationList, nil
+    }
+	vLocalisationAllObj, err := vLocalisationParent.GetAllLocalisation(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantLocalisationResolver]Error getting Localisation objects %s", err)
+        return vInventoryLocalisationList, nil
+    }
+	for _, i := range vLocalisationAllObj {
+		vLocalisation, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetLocalisation(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantLocalisationResolver]Error getting Localisation node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vLocalisation.DisplayName()
+parentLabels := map[string]interface{}{"localisations.inventory.saurient.io":dn}
+vTenantID := string(vLocalisation.Spec.TenantID)
+vCountry := string(vLocalisation.Spec.Country)
+vCurrency := string(vLocalisation.Spec.Currency)
+vTimezone := string(vLocalisation.Spec.Timezone)
+vLanguage := string(vLocalisation.Spec.Language)
+vUnits := string(vLocalisation.Spec.Units)
+vRegulatory := string(vLocalisation.Spec.Regulatory)
+vDefaultLanguage := string(vLocalisation.Spec.DefaultLanguage)
+vDefaultCurrency := string(vLocalisation.Spec.DefaultCurrency)
+vDefaultTimezone := string(vLocalisation.Spec.DefaultTimezone)
+vDefaultEmissionUnit := string(vLocalisation.Spec.DefaultEmissionUnit)
+vNumberFormat := string(vLocalisation.Spec.NumberFormat)
+vDateFormat := string(vLocalisation.Spec.DateFormat)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryLocalisation {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	TenantID: &vTenantID,
+	Country: &vCountry,
+	Currency: &vCurrency,
+	Timezone: &vTimezone,
+	Language: &vLanguage,
+	Units: &vUnits,
+	Regulatory: &vRegulatory,
+	DefaultLanguage: &vDefaultLanguage,
+	DefaultCurrency: &vDefaultCurrency,
+	DefaultTimezone: &vDefaultTimezone,
+	DefaultEmissionUnit: &vDefaultEmissionUnit,
+	NumberFormat: &vNumberFormat,
+	DateFormat: &vDateFormat,
+	}
+		vInventoryLocalisationList = append(vInventoryLocalisationList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantLocalisationResolver]Output Localisation objects %v", vInventoryLocalisationList)
+
+	return vInventoryLocalisationList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: Approvals Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantApprovalsResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryApproval, error) {
+	log.Debugf("[getInventoryTenantApprovalsResolver]Parent Object %+v", obj)
+	var vInventoryApprovalList []*model.InventoryApproval
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantApprovalsResolver]Id %q", *id)
+		vApproval, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetApprovals(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantApprovalsResolver]Error getting Approvals node %q : %s", *id, err)
+            return vInventoryApprovalList, nil
+        }
+		dn := vApproval.DisplayName()
+parentLabels := map[string]interface{}{"approvals.inventory.saurient.io":dn}
+vRecordID := string(vApproval.Spec.RecordID)
+vTenantID := string(vApproval.Spec.TenantID)
+vPassportID := string(vApproval.Spec.PassportID)
+vBatchNumber := string(vApproval.Spec.BatchNumber)
+vRequestedBy := string(vApproval.Spec.RequestedBy)
+vRole := string(vApproval.Spec.Role)
+vStatus := string(vApproval.Spec.Status)
+vApproverComment := string(vApproval.Spec.ApproverComment)
+vSubmittedAt := string(vApproval.Spec.SubmittedAt)
+vResolvedAt := string(vApproval.Spec.ResolvedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryApproval {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	RecordID: &vRecordID,
+	TenantID: &vTenantID,
+	PassportID: &vPassportID,
+	BatchNumber: &vBatchNumber,
+	RequestedBy: &vRequestedBy,
+	Role: &vRole,
+	Status: &vStatus,
+	ApproverComment: &vApproverComment,
+	SubmittedAt: &vSubmittedAt,
+	ResolvedAt: &vResolvedAt,
+	}
+		vInventoryApprovalList = append(vInventoryApprovalList, ret)
+
+		log.Debugf("[getInventoryTenantApprovalsResolver]Output Approvals objects %v", vInventoryApprovalList)
+
+		return vInventoryApprovalList, nil
+	}
+
+	log.Debug("[getInventoryTenantApprovalsResolver]Id is empty, process all Approvalss")
+
+	vApprovalParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantApprovalsResolver]Error getting parent node %s", err)
+        return vInventoryApprovalList, nil
+    }
+	vApprovalAllObj, err := vApprovalParent.GetAllApprovals(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantApprovalsResolver]Error getting Approvals objects %s", err)
+        return vInventoryApprovalList, nil
+    }
+	for _, i := range vApprovalAllObj {
+		vApproval, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetApprovals(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantApprovalsResolver]Error getting Approvals node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vApproval.DisplayName()
+parentLabels := map[string]interface{}{"approvals.inventory.saurient.io":dn}
+vRecordID := string(vApproval.Spec.RecordID)
+vTenantID := string(vApproval.Spec.TenantID)
+vPassportID := string(vApproval.Spec.PassportID)
+vBatchNumber := string(vApproval.Spec.BatchNumber)
+vRequestedBy := string(vApproval.Spec.RequestedBy)
+vRole := string(vApproval.Spec.Role)
+vStatus := string(vApproval.Spec.Status)
+vApproverComment := string(vApproval.Spec.ApproverComment)
+vSubmittedAt := string(vApproval.Spec.SubmittedAt)
+vResolvedAt := string(vApproval.Spec.ResolvedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryApproval {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	RecordID: &vRecordID,
+	TenantID: &vTenantID,
+	PassportID: &vPassportID,
+	BatchNumber: &vBatchNumber,
+	RequestedBy: &vRequestedBy,
+	Role: &vRole,
+	Status: &vStatus,
+	ApproverComment: &vApproverComment,
+	SubmittedAt: &vSubmittedAt,
+	ResolvedAt: &vResolvedAt,
+	}
+		vInventoryApprovalList = append(vInventoryApprovalList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantApprovalsResolver]Output Approvals objects %v", vInventoryApprovalList)
+
+	return vInventoryApprovalList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: VerificationAgencies Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantVerificationAgenciesResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryVerificationAgency, error) {
+	log.Debugf("[getInventoryTenantVerificationAgenciesResolver]Parent Object %+v", obj)
+	var vInventoryVerificationAgencyList []*model.InventoryVerificationAgency
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantVerificationAgenciesResolver]Id %q", *id)
+		vVerificationAgency, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetVerificationAgencies(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantVerificationAgenciesResolver]Error getting VerificationAgencies node %q : %s", *id, err)
+            return vInventoryVerificationAgencyList, nil
+        }
+		dn := vVerificationAgency.DisplayName()
+parentLabels := map[string]interface{}{"verificationagencies.inventory.saurient.io":dn}
+vAgencyID := string(vVerificationAgency.Spec.AgencyID)
+vTenantID := string(vVerificationAgency.Spec.TenantID)
+vName := string(vVerificationAgency.Spec.Name)
+vAccreditationNumber := string(vVerificationAgency.Spec.AccreditationNumber)
+vAccreditationBody := string(vVerificationAgency.Spec.AccreditationBody)
+vAccreditationStatus := string(vVerificationAgency.Spec.AccreditationStatus)
+vAccreditationExpiry := string(vVerificationAgency.Spec.AccreditationExpiry)
+vScopes := string(vVerificationAgency.Spec.Scopes)
+vValidFrom := string(vVerificationAgency.Spec.ValidFrom)
+vValidTo := string(vVerificationAgency.Spec.ValidTo)
+vContactEmail := string(vVerificationAgency.Spec.ContactEmail)
+vContactPhone := string(vVerificationAgency.Spec.ContactPhone)
+vLeadAuditor := string(vVerificationAgency.Spec.LeadAuditor)
+vCreatedAt := string(vVerificationAgency.Spec.CreatedAt)
+vUpdatedAt := string(vVerificationAgency.Spec.UpdatedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryVerificationAgency {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	AgencyID: &vAgencyID,
+	TenantID: &vTenantID,
+	Name: &vName,
+	AccreditationNumber: &vAccreditationNumber,
+	AccreditationBody: &vAccreditationBody,
+	AccreditationStatus: &vAccreditationStatus,
+	AccreditationExpiry: &vAccreditationExpiry,
+	Scopes: &vScopes,
+	ValidFrom: &vValidFrom,
+	ValidTo: &vValidTo,
+	ContactEmail: &vContactEmail,
+	ContactPhone: &vContactPhone,
+	LeadAuditor: &vLeadAuditor,
+	CreatedAt: &vCreatedAt,
+	UpdatedAt: &vUpdatedAt,
+	}
+		vInventoryVerificationAgencyList = append(vInventoryVerificationAgencyList, ret)
+
+		log.Debugf("[getInventoryTenantVerificationAgenciesResolver]Output VerificationAgencies objects %v", vInventoryVerificationAgencyList)
+
+		return vInventoryVerificationAgencyList, nil
+	}
+
+	log.Debug("[getInventoryTenantVerificationAgenciesResolver]Id is empty, process all VerificationAgenciess")
+
+	vVerificationAgencyParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantVerificationAgenciesResolver]Error getting parent node %s", err)
+        return vInventoryVerificationAgencyList, nil
+    }
+	vVerificationAgencyAllObj, err := vVerificationAgencyParent.GetAllVerificationAgencies(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantVerificationAgenciesResolver]Error getting VerificationAgencies objects %s", err)
+        return vInventoryVerificationAgencyList, nil
+    }
+	for _, i := range vVerificationAgencyAllObj {
+		vVerificationAgency, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetVerificationAgencies(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantVerificationAgenciesResolver]Error getting VerificationAgencies node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vVerificationAgency.DisplayName()
+parentLabels := map[string]interface{}{"verificationagencies.inventory.saurient.io":dn}
+vAgencyID := string(vVerificationAgency.Spec.AgencyID)
+vTenantID := string(vVerificationAgency.Spec.TenantID)
+vName := string(vVerificationAgency.Spec.Name)
+vAccreditationNumber := string(vVerificationAgency.Spec.AccreditationNumber)
+vAccreditationBody := string(vVerificationAgency.Spec.AccreditationBody)
+vAccreditationStatus := string(vVerificationAgency.Spec.AccreditationStatus)
+vAccreditationExpiry := string(vVerificationAgency.Spec.AccreditationExpiry)
+vScopes := string(vVerificationAgency.Spec.Scopes)
+vValidFrom := string(vVerificationAgency.Spec.ValidFrom)
+vValidTo := string(vVerificationAgency.Spec.ValidTo)
+vContactEmail := string(vVerificationAgency.Spec.ContactEmail)
+vContactPhone := string(vVerificationAgency.Spec.ContactPhone)
+vLeadAuditor := string(vVerificationAgency.Spec.LeadAuditor)
+vCreatedAt := string(vVerificationAgency.Spec.CreatedAt)
+vUpdatedAt := string(vVerificationAgency.Spec.UpdatedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryVerificationAgency {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	AgencyID: &vAgencyID,
+	TenantID: &vTenantID,
+	Name: &vName,
+	AccreditationNumber: &vAccreditationNumber,
+	AccreditationBody: &vAccreditationBody,
+	AccreditationStatus: &vAccreditationStatus,
+	AccreditationExpiry: &vAccreditationExpiry,
+	Scopes: &vScopes,
+	ValidFrom: &vValidFrom,
+	ValidTo: &vValidTo,
+	ContactEmail: &vContactEmail,
+	ContactPhone: &vContactPhone,
+	LeadAuditor: &vLeadAuditor,
+	CreatedAt: &vCreatedAt,
+	UpdatedAt: &vUpdatedAt,
+	}
+		vInventoryVerificationAgencyList = append(vInventoryVerificationAgencyList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantVerificationAgenciesResolver]Output VerificationAgencies objects %v", vInventoryVerificationAgencyList)
+
+	return vInventoryVerificationAgencyList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: VerificationEngagements Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantVerificationEngagementsResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryVerificationEngagement, error) {
+	log.Debugf("[getInventoryTenantVerificationEngagementsResolver]Parent Object %+v", obj)
+	var vInventoryVerificationEngagementList []*model.InventoryVerificationEngagement
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantVerificationEngagementsResolver]Id %q", *id)
+		vVerificationEngagement, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetVerificationEngagements(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantVerificationEngagementsResolver]Error getting VerificationEngagements node %q : %s", *id, err)
+            return vInventoryVerificationEngagementList, nil
+        }
+		dn := vVerificationEngagement.DisplayName()
+parentLabels := map[string]interface{}{"verificationengagements.inventory.saurient.io":dn}
+vEngagementID := string(vVerificationEngagement.Spec.EngagementID)
+vTenantID := string(vVerificationEngagement.Spec.TenantID)
+vAgencyID := string(vVerificationEngagement.Spec.AgencyID)
+vPassportID := string(vVerificationEngagement.Spec.PassportID)
+vBatchID := string(vVerificationEngagement.Spec.BatchID)
+vPeriod := string(vVerificationEngagement.Spec.Period)
+vMethodology := string(vVerificationEngagement.Spec.Methodology)
+vSnapshotHash := string(vVerificationEngagement.Spec.SnapshotHash)
+vStatus := string(vVerificationEngagement.Spec.Status)
+vAssignedVerifier := string(vVerificationEngagement.Spec.AssignedVerifier)
+vScopeMatch := bool(vVerificationEngagement.Spec.ScopeMatch)
+vFindingsCount := int(vVerificationEngagement.Spec.FindingsCount)
+vTimeline := string(vVerificationEngagement.Spec.Timeline)
+vCreatedAt := string(vVerificationEngagement.Spec.CreatedAt)
+vUpdatedAt := string(vVerificationEngagement.Spec.UpdatedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryVerificationEngagement {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	AgencyID: &vAgencyID,
+	PassportID: &vPassportID,
+	BatchID: &vBatchID,
+	Period: &vPeriod,
+	Methodology: &vMethodology,
+	SnapshotHash: &vSnapshotHash,
+	Status: &vStatus,
+	AssignedVerifier: &vAssignedVerifier,
+	ScopeMatch: &vScopeMatch,
+	FindingsCount: &vFindingsCount,
+	Timeline: &vTimeline,
+	CreatedAt: &vCreatedAt,
+	UpdatedAt: &vUpdatedAt,
+	}
+		vInventoryVerificationEngagementList = append(vInventoryVerificationEngagementList, ret)
+
+		log.Debugf("[getInventoryTenantVerificationEngagementsResolver]Output VerificationEngagements objects %v", vInventoryVerificationEngagementList)
+
+		return vInventoryVerificationEngagementList, nil
+	}
+
+	log.Debug("[getInventoryTenantVerificationEngagementsResolver]Id is empty, process all VerificationEngagementss")
+
+	vVerificationEngagementParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantVerificationEngagementsResolver]Error getting parent node %s", err)
+        return vInventoryVerificationEngagementList, nil
+    }
+	vVerificationEngagementAllObj, err := vVerificationEngagementParent.GetAllVerificationEngagements(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantVerificationEngagementsResolver]Error getting VerificationEngagements objects %s", err)
+        return vInventoryVerificationEngagementList, nil
+    }
+	for _, i := range vVerificationEngagementAllObj {
+		vVerificationEngagement, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetVerificationEngagements(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantVerificationEngagementsResolver]Error getting VerificationEngagements node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vVerificationEngagement.DisplayName()
+parentLabels := map[string]interface{}{"verificationengagements.inventory.saurient.io":dn}
+vEngagementID := string(vVerificationEngagement.Spec.EngagementID)
+vTenantID := string(vVerificationEngagement.Spec.TenantID)
+vAgencyID := string(vVerificationEngagement.Spec.AgencyID)
+vPassportID := string(vVerificationEngagement.Spec.PassportID)
+vBatchID := string(vVerificationEngagement.Spec.BatchID)
+vPeriod := string(vVerificationEngagement.Spec.Period)
+vMethodology := string(vVerificationEngagement.Spec.Methodology)
+vSnapshotHash := string(vVerificationEngagement.Spec.SnapshotHash)
+vStatus := string(vVerificationEngagement.Spec.Status)
+vAssignedVerifier := string(vVerificationEngagement.Spec.AssignedVerifier)
+vScopeMatch := bool(vVerificationEngagement.Spec.ScopeMatch)
+vFindingsCount := int(vVerificationEngagement.Spec.FindingsCount)
+vTimeline := string(vVerificationEngagement.Spec.Timeline)
+vCreatedAt := string(vVerificationEngagement.Spec.CreatedAt)
+vUpdatedAt := string(vVerificationEngagement.Spec.UpdatedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryVerificationEngagement {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	AgencyID: &vAgencyID,
+	PassportID: &vPassportID,
+	BatchID: &vBatchID,
+	Period: &vPeriod,
+	Methodology: &vMethodology,
+	SnapshotHash: &vSnapshotHash,
+	Status: &vStatus,
+	AssignedVerifier: &vAssignedVerifier,
+	ScopeMatch: &vScopeMatch,
+	FindingsCount: &vFindingsCount,
+	Timeline: &vTimeline,
+	CreatedAt: &vCreatedAt,
+	UpdatedAt: &vUpdatedAt,
+	}
+		vInventoryVerificationEngagementList = append(vInventoryVerificationEngagementList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantVerificationEngagementsResolver]Output VerificationEngagements objects %v", vInventoryVerificationEngagementList)
+
+	return vInventoryVerificationEngagementList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: EngagementTeamMembers Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantEngagementTeamMembersResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryEngagementTeamMember, error) {
+	log.Debugf("[getInventoryTenantEngagementTeamMembersResolver]Parent Object %+v", obj)
+	var vInventoryEngagementTeamMemberList []*model.InventoryEngagementTeamMember
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantEngagementTeamMembersResolver]Id %q", *id)
+		vEngagementTeamMember, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetEngagementTeamMembers(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantEngagementTeamMembersResolver]Error getting EngagementTeamMembers node %q : %s", *id, err)
+            return vInventoryEngagementTeamMemberList, nil
+        }
+		dn := vEngagementTeamMember.DisplayName()
+parentLabels := map[string]interface{}{"engagementteammembers.inventory.saurient.io":dn}
+vMemberID := string(vEngagementTeamMember.Spec.MemberID)
+vEngagementID := string(vEngagementTeamMember.Spec.EngagementID)
+vTenantID := string(vEngagementTeamMember.Spec.TenantID)
+vName := string(vEngagementTeamMember.Spec.Name)
+vRole := string(vEngagementTeamMember.Spec.Role)
+vEmail := string(vEngagementTeamMember.Spec.Email)
+vAssignedAt := string(vEngagementTeamMember.Spec.AssignedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryEngagementTeamMember {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	MemberID: &vMemberID,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	Name: &vName,
+	Role: &vRole,
+	Email: &vEmail,
+	AssignedAt: &vAssignedAt,
+	}
+		vInventoryEngagementTeamMemberList = append(vInventoryEngagementTeamMemberList, ret)
+
+		log.Debugf("[getInventoryTenantEngagementTeamMembersResolver]Output EngagementTeamMembers objects %v", vInventoryEngagementTeamMemberList)
+
+		return vInventoryEngagementTeamMemberList, nil
+	}
+
+	log.Debug("[getInventoryTenantEngagementTeamMembersResolver]Id is empty, process all EngagementTeamMemberss")
+
+	vEngagementTeamMemberParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantEngagementTeamMembersResolver]Error getting parent node %s", err)
+        return vInventoryEngagementTeamMemberList, nil
+    }
+	vEngagementTeamMemberAllObj, err := vEngagementTeamMemberParent.GetAllEngagementTeamMembers(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantEngagementTeamMembersResolver]Error getting EngagementTeamMembers objects %s", err)
+        return vInventoryEngagementTeamMemberList, nil
+    }
+	for _, i := range vEngagementTeamMemberAllObj {
+		vEngagementTeamMember, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetEngagementTeamMembers(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantEngagementTeamMembersResolver]Error getting EngagementTeamMembers node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vEngagementTeamMember.DisplayName()
+parentLabels := map[string]interface{}{"engagementteammembers.inventory.saurient.io":dn}
+vMemberID := string(vEngagementTeamMember.Spec.MemberID)
+vEngagementID := string(vEngagementTeamMember.Spec.EngagementID)
+vTenantID := string(vEngagementTeamMember.Spec.TenantID)
+vName := string(vEngagementTeamMember.Spec.Name)
+vRole := string(vEngagementTeamMember.Spec.Role)
+vEmail := string(vEngagementTeamMember.Spec.Email)
+vAssignedAt := string(vEngagementTeamMember.Spec.AssignedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryEngagementTeamMember {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	MemberID: &vMemberID,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	Name: &vName,
+	Role: &vRole,
+	Email: &vEmail,
+	AssignedAt: &vAssignedAt,
+	}
+		vInventoryEngagementTeamMemberList = append(vInventoryEngagementTeamMemberList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantEngagementTeamMembersResolver]Output EngagementTeamMembers objects %v", vInventoryEngagementTeamMemberList)
+
+	return vInventoryEngagementTeamMemberList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: COIDeclarations Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantCOIDeclarationsResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryCOIDeclaration, error) {
+	log.Debugf("[getInventoryTenantCOIDeclarationsResolver]Parent Object %+v", obj)
+	var vInventoryCOIDeclarationList []*model.InventoryCOIDeclaration
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantCOIDeclarationsResolver]Id %q", *id)
+		vCOIDeclaration, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetCOIDeclarations(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantCOIDeclarationsResolver]Error getting COIDeclarations node %q : %s", *id, err)
+            return vInventoryCOIDeclarationList, nil
+        }
+		dn := vCOIDeclaration.DisplayName()
+parentLabels := map[string]interface{}{"coideclarations.inventory.saurient.io":dn}
+vDeclarationID := string(vCOIDeclaration.Spec.DeclarationID)
+vEngagementID := string(vCOIDeclaration.Spec.EngagementID)
+vTenantID := string(vCOIDeclaration.Spec.TenantID)
+vAuditorName := string(vCOIDeclaration.Spec.AuditorName)
+vAuditorEmail := string(vCOIDeclaration.Spec.AuditorEmail)
+vHasConflict := bool(vCOIDeclaration.Spec.HasConflict)
+vExplanation := string(vCOIDeclaration.Spec.Explanation)
+vDeclaredAt := string(vCOIDeclaration.Spec.DeclaredAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryCOIDeclaration {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	DeclarationID: &vDeclarationID,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	AuditorName: &vAuditorName,
+	AuditorEmail: &vAuditorEmail,
+	HasConflict: &vHasConflict,
+	Explanation: &vExplanation,
+	DeclaredAt: &vDeclaredAt,
+	}
+		vInventoryCOIDeclarationList = append(vInventoryCOIDeclarationList, ret)
+
+		log.Debugf("[getInventoryTenantCOIDeclarationsResolver]Output COIDeclarations objects %v", vInventoryCOIDeclarationList)
+
+		return vInventoryCOIDeclarationList, nil
+	}
+
+	log.Debug("[getInventoryTenantCOIDeclarationsResolver]Id is empty, process all COIDeclarationss")
+
+	vCOIDeclarationParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantCOIDeclarationsResolver]Error getting parent node %s", err)
+        return vInventoryCOIDeclarationList, nil
+    }
+	vCOIDeclarationAllObj, err := vCOIDeclarationParent.GetAllCOIDeclarations(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantCOIDeclarationsResolver]Error getting COIDeclarations objects %s", err)
+        return vInventoryCOIDeclarationList, nil
+    }
+	for _, i := range vCOIDeclarationAllObj {
+		vCOIDeclaration, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetCOIDeclarations(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantCOIDeclarationsResolver]Error getting COIDeclarations node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vCOIDeclaration.DisplayName()
+parentLabels := map[string]interface{}{"coideclarations.inventory.saurient.io":dn}
+vDeclarationID := string(vCOIDeclaration.Spec.DeclarationID)
+vEngagementID := string(vCOIDeclaration.Spec.EngagementID)
+vTenantID := string(vCOIDeclaration.Spec.TenantID)
+vAuditorName := string(vCOIDeclaration.Spec.AuditorName)
+vAuditorEmail := string(vCOIDeclaration.Spec.AuditorEmail)
+vHasConflict := bool(vCOIDeclaration.Spec.HasConflict)
+vExplanation := string(vCOIDeclaration.Spec.Explanation)
+vDeclaredAt := string(vCOIDeclaration.Spec.DeclaredAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryCOIDeclaration {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	DeclarationID: &vDeclarationID,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	AuditorName: &vAuditorName,
+	AuditorEmail: &vAuditorEmail,
+	HasConflict: &vHasConflict,
+	Explanation: &vExplanation,
+	DeclaredAt: &vDeclaredAt,
+	}
+		vInventoryCOIDeclarationList = append(vInventoryCOIDeclarationList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantCOIDeclarationsResolver]Output COIDeclarations objects %v", vInventoryCOIDeclarationList)
+
+	return vInventoryCOIDeclarationList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: Findings Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantFindingsResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryFinding, error) {
+	log.Debugf("[getInventoryTenantFindingsResolver]Parent Object %+v", obj)
+	var vInventoryFindingList []*model.InventoryFinding
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantFindingsResolver]Id %q", *id)
+		vFinding, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetFindings(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantFindingsResolver]Error getting Findings node %q : %s", *id, err)
+            return vInventoryFindingList, nil
+        }
+		dn := vFinding.DisplayName()
+parentLabels := map[string]interface{}{"findings.inventory.saurient.io":dn}
+vFindingID := string(vFinding.Spec.FindingID)
+vEngagementID := string(vFinding.Spec.EngagementID)
+vTenantID := string(vFinding.Spec.TenantID)
+vCategory := string(vFinding.Spec.Category)
+vSeverity := string(vFinding.Spec.Severity)
+vStatus := string(vFinding.Spec.Status)
+vDescription := string(vFinding.Spec.Description)
+vDiscrepancy := float64(vFinding.Spec.Discrepancy)
+vRaisedBy := string(vFinding.Spec.RaisedBy)
+vResolvedBy := string(vFinding.Spec.ResolvedBy)
+vCreatedAt := string(vFinding.Spec.CreatedAt)
+vUpdatedAt := string(vFinding.Spec.UpdatedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryFinding {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	FindingID: &vFindingID,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	Category: &vCategory,
+	Severity: &vSeverity,
+	Status: &vStatus,
+	Description: &vDescription,
+	Discrepancy: &vDiscrepancy,
+	RaisedBy: &vRaisedBy,
+	ResolvedBy: &vResolvedBy,
+	CreatedAt: &vCreatedAt,
+	UpdatedAt: &vUpdatedAt,
+	}
+		vInventoryFindingList = append(vInventoryFindingList, ret)
+
+		log.Debugf("[getInventoryTenantFindingsResolver]Output Findings objects %v", vInventoryFindingList)
+
+		return vInventoryFindingList, nil
+	}
+
+	log.Debug("[getInventoryTenantFindingsResolver]Id is empty, process all Findingss")
+
+	vFindingParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantFindingsResolver]Error getting parent node %s", err)
+        return vInventoryFindingList, nil
+    }
+	vFindingAllObj, err := vFindingParent.GetAllFindings(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantFindingsResolver]Error getting Findings objects %s", err)
+        return vInventoryFindingList, nil
+    }
+	for _, i := range vFindingAllObj {
+		vFinding, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetFindings(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantFindingsResolver]Error getting Findings node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vFinding.DisplayName()
+parentLabels := map[string]interface{}{"findings.inventory.saurient.io":dn}
+vFindingID := string(vFinding.Spec.FindingID)
+vEngagementID := string(vFinding.Spec.EngagementID)
+vTenantID := string(vFinding.Spec.TenantID)
+vCategory := string(vFinding.Spec.Category)
+vSeverity := string(vFinding.Spec.Severity)
+vStatus := string(vFinding.Spec.Status)
+vDescription := string(vFinding.Spec.Description)
+vDiscrepancy := float64(vFinding.Spec.Discrepancy)
+vRaisedBy := string(vFinding.Spec.RaisedBy)
+vResolvedBy := string(vFinding.Spec.ResolvedBy)
+vCreatedAt := string(vFinding.Spec.CreatedAt)
+vUpdatedAt := string(vFinding.Spec.UpdatedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryFinding {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	FindingID: &vFindingID,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	Category: &vCategory,
+	Severity: &vSeverity,
+	Status: &vStatus,
+	Description: &vDescription,
+	Discrepancy: &vDiscrepancy,
+	RaisedBy: &vRaisedBy,
+	ResolvedBy: &vResolvedBy,
+	CreatedAt: &vCreatedAt,
+	UpdatedAt: &vUpdatedAt,
+	}
+		vInventoryFindingList = append(vInventoryFindingList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantFindingsResolver]Output Findings objects %v", vInventoryFindingList)
+
+	return vInventoryFindingList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: ReviewSignoffs Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantReviewSignoffsResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryReviewVerdict, error) {
+	log.Debugf("[getInventoryTenantReviewSignoffsResolver]Parent Object %+v", obj)
+	var vInventoryReviewVerdictList []*model.InventoryReviewVerdict
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantReviewSignoffsResolver]Id %q", *id)
+		vReviewVerdict, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetReviewSignoffs(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantReviewSignoffsResolver]Error getting ReviewSignoffs node %q : %s", *id, err)
+            return vInventoryReviewVerdictList, nil
+        }
+		dn := vReviewVerdict.DisplayName()
+parentLabels := map[string]interface{}{"reviewverdicts.inventory.saurient.io":dn}
+vSignoffID := string(vReviewVerdict.Spec.SignoffID)
+vEngagementID := string(vReviewVerdict.Spec.EngagementID)
+vTenantID := string(vReviewVerdict.Spec.TenantID)
+vPassportID := string(vReviewVerdict.Spec.PassportID)
+vLeadAuditor := string(vReviewVerdict.Spec.LeadAuditor)
+vPeerReviewer := string(vReviewVerdict.Spec.PeerReviewer)
+vOpinion := string(vReviewVerdict.Spec.Opinion)
+vStatementRef := string(vReviewVerdict.Spec.StatementRef)
+vFrozen := bool(vReviewVerdict.Spec.Frozen)
+vSignedAt := string(vReviewVerdict.Spec.SignedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryReviewVerdict {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	SignoffID: &vSignoffID,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	PassportID: &vPassportID,
+	LeadAuditor: &vLeadAuditor,
+	PeerReviewer: &vPeerReviewer,
+	Opinion: &vOpinion,
+	StatementRef: &vStatementRef,
+	Frozen: &vFrozen,
+	SignedAt: &vSignedAt,
+	}
+		vInventoryReviewVerdictList = append(vInventoryReviewVerdictList, ret)
+
+		log.Debugf("[getInventoryTenantReviewSignoffsResolver]Output ReviewSignoffs objects %v", vInventoryReviewVerdictList)
+
+		return vInventoryReviewVerdictList, nil
+	}
+
+	log.Debug("[getInventoryTenantReviewSignoffsResolver]Id is empty, process all ReviewSignoffss")
+
+	vReviewVerdictParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantReviewSignoffsResolver]Error getting parent node %s", err)
+        return vInventoryReviewVerdictList, nil
+    }
+	vReviewVerdictAllObj, err := vReviewVerdictParent.GetAllReviewSignoffs(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantReviewSignoffsResolver]Error getting ReviewSignoffs objects %s", err)
+        return vInventoryReviewVerdictList, nil
+    }
+	for _, i := range vReviewVerdictAllObj {
+		vReviewVerdict, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetReviewSignoffs(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantReviewSignoffsResolver]Error getting ReviewSignoffs node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vReviewVerdict.DisplayName()
+parentLabels := map[string]interface{}{"reviewverdicts.inventory.saurient.io":dn}
+vSignoffID := string(vReviewVerdict.Spec.SignoffID)
+vEngagementID := string(vReviewVerdict.Spec.EngagementID)
+vTenantID := string(vReviewVerdict.Spec.TenantID)
+vPassportID := string(vReviewVerdict.Spec.PassportID)
+vLeadAuditor := string(vReviewVerdict.Spec.LeadAuditor)
+vPeerReviewer := string(vReviewVerdict.Spec.PeerReviewer)
+vOpinion := string(vReviewVerdict.Spec.Opinion)
+vStatementRef := string(vReviewVerdict.Spec.StatementRef)
+vFrozen := bool(vReviewVerdict.Spec.Frozen)
+vSignedAt := string(vReviewVerdict.Spec.SignedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryReviewVerdict {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	SignoffID: &vSignoffID,
+	EngagementID: &vEngagementID,
+	TenantID: &vTenantID,
+	PassportID: &vPassportID,
+	LeadAuditor: &vLeadAuditor,
+	PeerReviewer: &vPeerReviewer,
+	Opinion: &vOpinion,
+	StatementRef: &vStatementRef,
+	Frozen: &vFrozen,
+	SignedAt: &vSignedAt,
+	}
+		vInventoryReviewVerdictList = append(vInventoryReviewVerdictList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantReviewSignoffsResolver]Output ReviewSignoffs objects %v", vInventoryReviewVerdictList)
+
+	return vInventoryReviewVerdictList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
+// FieldName: InputCorrections Node: Tenant PKG: Inventory
+//////////////////////////////////////
+func getInventoryTenantInputCorrectionsResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryInputCorrection, error) {
+	log.Debugf("[getInventoryTenantInputCorrectionsResolver]Parent Object %+v", obj)
+	var vInventoryInputCorrectionList []*model.InventoryInputCorrection
+	if id != nil && *id != "" {
+		log.Debugf("[getInventoryTenantInputCorrectionsResolver]Id %q", *id)
+		vInputCorrection, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetInputCorrections(context.TODO(), *id)
+		if err != nil {
+			log.Errorf("[getInventoryTenantInputCorrectionsResolver]Error getting InputCorrections node %q : %s", *id, err)
+            return vInventoryInputCorrectionList, nil
+        }
+		dn := vInputCorrection.DisplayName()
+parentLabels := map[string]interface{}{"inputcorrections.inventory.saurient.io":dn}
+vCorrectionID := string(vInputCorrection.Spec.CorrectionID)
+vTenantID := string(vInputCorrection.Spec.TenantID)
+vInputNodeID := string(vInputCorrection.Spec.InputNodeID)
+vNewValue := float64(vInputCorrection.Spec.NewValue)
+vReason := string(vInputCorrection.Spec.Reason)
+vResultRaw := string(vInputCorrection.Spec.ResultRaw)
+vNodesRaw := string(vInputCorrection.Spec.NodesRaw)
+vEdgesRaw := string(vInputCorrection.Spec.EdgesRaw)
+vCreatedAt := string(vInputCorrection.Spec.CreatedAt)
+
+        for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryInputCorrection {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	CorrectionID: &vCorrectionID,
+	TenantID: &vTenantID,
+	InputNodeID: &vInputNodeID,
+	NewValue: &vNewValue,
+	Reason: &vReason,
+	ResultRaw: &vResultRaw,
+	NodesRaw: &vNodesRaw,
+	EdgesRaw: &vEdgesRaw,
+	CreatedAt: &vCreatedAt,
+	}
+		vInventoryInputCorrectionList = append(vInventoryInputCorrectionList, ret)
+
+		log.Debugf("[getInventoryTenantInputCorrectionsResolver]Output InputCorrections objects %v", vInventoryInputCorrectionList)
+
+		return vInventoryInputCorrectionList, nil
+	}
+
+	log.Debug("[getInventoryTenantInputCorrectionsResolver]Id is empty, process all InputCorrectionss")
+
+	vInputCorrectionParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
+	if err != nil {
+	    log.Errorf("[getInventoryTenantInputCorrectionsResolver]Error getting parent node %s", err)
+        return vInventoryInputCorrectionList, nil
+    }
+	vInputCorrectionAllObj, err := vInputCorrectionParent.GetAllInputCorrections(context.TODO())
+	if err != nil {
+	    log.Errorf("[getInventoryTenantInputCorrectionsResolver]Error getting InputCorrections objects %s", err)
+        return vInventoryInputCorrectionList, nil
+    }
+	for _, i := range vInputCorrectionAllObj {
+		vInputCorrection, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetInputCorrections(context.TODO(), i.DisplayName())
+		if err != nil {
+	        log.Errorf("[getInventoryTenantInputCorrectionsResolver]Error getting InputCorrections node %q : %s", i.DisplayName(), err)
+            continue
+		}
+		dn := vInputCorrection.DisplayName()
+parentLabels := map[string]interface{}{"inputcorrections.inventory.saurient.io":dn}
+vCorrectionID := string(vInputCorrection.Spec.CorrectionID)
+vTenantID := string(vInputCorrection.Spec.TenantID)
+vInputNodeID := string(vInputCorrection.Spec.InputNodeID)
+vNewValue := float64(vInputCorrection.Spec.NewValue)
+vReason := string(vInputCorrection.Spec.Reason)
+vResultRaw := string(vInputCorrection.Spec.ResultRaw)
+vNodesRaw := string(vInputCorrection.Spec.NodesRaw)
+vEdgesRaw := string(vInputCorrection.Spec.EdgesRaw)
+vCreatedAt := string(vInputCorrection.Spec.CreatedAt)
+
+		for k, v := range obj.ParentLabels {
+            parentLabels[k] = v
+        }
+		ret := &model.InventoryInputCorrection {
+	Id: &dn,
+	ParentLabels: parentLabels,
+	CorrectionID: &vCorrectionID,
+	TenantID: &vTenantID,
+	InputNodeID: &vInputNodeID,
+	NewValue: &vNewValue,
+	Reason: &vReason,
+	ResultRaw: &vResultRaw,
+	NodesRaw: &vNodesRaw,
+	EdgesRaw: &vEdgesRaw,
+	CreatedAt: &vCreatedAt,
+	}
+		vInventoryInputCorrectionList = append(vInventoryInputCorrectionList, ret)
+	}
+
+	log.Debugf("[getInventoryTenantInputCorrectionsResolver]Output InputCorrections objects %v", vInventoryInputCorrectionList)
+
+	return vInventoryInputCorrectionList, nil
+}
+
+//////////////////////////////////////
+// CHILDREN RESOLVER
 // FieldName: Products Node: Tenant PKG: Inventory
 //////////////////////////////////////
 func getInventoryTenantProductsResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryProduct, error) {
@@ -953,105 +2202,6 @@ vLastUpdated := string(vProduct.Spec.LastUpdated)
 	log.Debugf("[getInventoryTenantProductsResolver]Output Products objects %v", vInventoryProductList)
 
 	return vInventoryProductList, nil
-}
-
-//////////////////////////////////////
-// CHILDREN RESOLVER
-// FieldName: Users Node: Tenant PKG: Inventory
-//////////////////////////////////////
-func getInventoryTenantUsersResolver(obj *model.InventoryTenant, id *string) ([]*model.InventoryUser, error) {
-	log.Debugf("[getInventoryTenantUsersResolver]Parent Object %+v", obj)
-	var vInventoryUserList []*model.InventoryUser
-	if id != nil && *id != "" {
-		log.Debugf("[getInventoryTenantUsersResolver]Id %q", *id)
-		vUser, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetUsers(context.TODO(), *id)
-		if err != nil {
-			log.Errorf("[getInventoryTenantUsersResolver]Error getting Users node %q : %s", *id, err)
-            return vInventoryUserList, nil
-        }
-		dn := vUser.DisplayName()
-parentLabels := map[string]interface{}{"users.inventory.saurient.io":dn}
-vUserID := string(vUser.Spec.UserID)
-vTenantID := string(vUser.Spec.TenantID)
-vName := string(vUser.Spec.Name)
-vEmail := string(vUser.Spec.Email)
-vRole := string(vUser.Spec.Role)
-vFacilityScope := string(vUser.Spec.FacilityScope)
-vLastLogin := string(vUser.Spec.LastLogin)
-vStatus := string(vUser.Spec.Status)
-
-        for k, v := range obj.ParentLabels {
-            parentLabels[k] = v
-        }
-		ret := &model.InventoryUser {
-	Id: &dn,
-	ParentLabels: parentLabels,
-	UserID: &vUserID,
-	TenantID: &vTenantID,
-	Name: &vName,
-	Email: &vEmail,
-	Role: &vRole,
-	FacilityScope: &vFacilityScope,
-	LastLogin: &vLastLogin,
-	Status: &vStatus,
-	}
-		vInventoryUserList = append(vInventoryUserList, ret)
-
-		log.Debugf("[getInventoryTenantUsersResolver]Output Users objects %v", vInventoryUserList)
-
-		return vInventoryUserList, nil
-	}
-
-	log.Debug("[getInventoryTenantUsersResolver]Id is empty, process all Userss")
-
-	vUserParent, err := nc.RootRoot().Inventory().GetTenants(context.TODO(), getParentName(obj.ParentLabels, "tenants.inventory.saurient.io"))
-	if err != nil {
-	    log.Errorf("[getInventoryTenantUsersResolver]Error getting parent node %s", err)
-        return vInventoryUserList, nil
-    }
-	vUserAllObj, err := vUserParent.GetAllUsers(context.TODO())
-	if err != nil {
-	    log.Errorf("[getInventoryTenantUsersResolver]Error getting Users objects %s", err)
-        return vInventoryUserList, nil
-    }
-	for _, i := range vUserAllObj {
-		vUser, err := nc.RootRoot().Inventory().Tenants(getParentName(obj.ParentLabels, "tenants.inventory.saurient.io")).GetUsers(context.TODO(), i.DisplayName())
-		if err != nil {
-	        log.Errorf("[getInventoryTenantUsersResolver]Error getting Users node %q : %s", i.DisplayName(), err)
-            continue
-		}
-		dn := vUser.DisplayName()
-parentLabels := map[string]interface{}{"users.inventory.saurient.io":dn}
-vUserID := string(vUser.Spec.UserID)
-vTenantID := string(vUser.Spec.TenantID)
-vName := string(vUser.Spec.Name)
-vEmail := string(vUser.Spec.Email)
-vRole := string(vUser.Spec.Role)
-vFacilityScope := string(vUser.Spec.FacilityScope)
-vLastLogin := string(vUser.Spec.LastLogin)
-vStatus := string(vUser.Spec.Status)
-
-		for k, v := range obj.ParentLabels {
-            parentLabels[k] = v
-        }
-		ret := &model.InventoryUser {
-	Id: &dn,
-	ParentLabels: parentLabels,
-	UserID: &vUserID,
-	TenantID: &vTenantID,
-	Name: &vName,
-	Email: &vEmail,
-	Role: &vRole,
-	FacilityScope: &vFacilityScope,
-	LastLogin: &vLastLogin,
-	Status: &vStatus,
-	}
-		vInventoryUserList = append(vInventoryUserList, ret)
-	}
-
-	log.Debugf("[getInventoryTenantUsersResolver]Output Users objects %v", vInventoryUserList)
-
-	return vInventoryUserList, nil
 }
 
 //////////////////////////////////////

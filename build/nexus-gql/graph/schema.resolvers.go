@@ -64,14 +64,64 @@ func (r *inventory_TenantResolver) Facilities(ctx context.Context, obj *model.In
 	return getInventoryTenantFacilitiesResolver(obj, id)
 }
 
+// Processes is the resolver for the Processes field.
+func (r *inventory_TenantResolver) Processes(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryProcess, error) {
+	return getInventoryTenantProcessesResolver(obj, id)
+}
+
+// ReportingPeriods is the resolver for the ReportingPeriods field.
+func (r *inventory_TenantResolver) ReportingPeriods(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryReportingPeriod, error) {
+	return getInventoryTenantReportingPeriodsResolver(obj, id)
+}
+
+// Localisation is the resolver for the Localisation field.
+func (r *inventory_TenantResolver) Localisation(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryLocalisation, error) {
+	return getInventoryTenantLocalisationResolver(obj, id)
+}
+
+// Approvals is the resolver for the Approvals field.
+func (r *inventory_TenantResolver) Approvals(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryApproval, error) {
+	return getInventoryTenantApprovalsResolver(obj, id)
+}
+
+// VerificationAgencies is the resolver for the VerificationAgencies field.
+func (r *inventory_TenantResolver) VerificationAgencies(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryVerificationAgency, error) {
+	return getInventoryTenantVerificationAgenciesResolver(obj, id)
+}
+
+// VerificationEngagements is the resolver for the VerificationEngagements field.
+func (r *inventory_TenantResolver) VerificationEngagements(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryVerificationEngagement, error) {
+	return getInventoryTenantVerificationEngagementsResolver(obj, id)
+}
+
+// EngagementTeamMembers is the resolver for the EngagementTeamMembers field.
+func (r *inventory_TenantResolver) EngagementTeamMembers(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryEngagementTeamMember, error) {
+	return getInventoryTenantEngagementTeamMembersResolver(obj, id)
+}
+
+// COIDeclarations is the resolver for the COIDeclarations field.
+func (r *inventory_TenantResolver) COIDeclarations(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryCOIDeclaration, error) {
+	return getInventoryTenantCOIDeclarationsResolver(obj, id)
+}
+
+// Findings is the resolver for the Findings field.
+func (r *inventory_TenantResolver) Findings(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryFinding, error) {
+	return getInventoryTenantFindingsResolver(obj, id)
+}
+
+// ReviewSignoffs is the resolver for the ReviewSignoffs field.
+func (r *inventory_TenantResolver) ReviewSignoffs(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryReviewVerdict, error) {
+	return getInventoryTenantReviewSignoffsResolver(obj, id)
+}
+
+// InputCorrections is the resolver for the InputCorrections field.
+func (r *inventory_TenantResolver) InputCorrections(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryInputCorrection, error) {
+	return getInventoryTenantInputCorrectionsResolver(obj, id)
+}
+
 // Products is the resolver for the Products field.
 func (r *inventory_TenantResolver) Products(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryProduct, error) {
 	return getInventoryTenantProductsResolver(obj, id)
-}
-
-// Users is the resolver for the Users field.
-func (r *inventory_TenantResolver) Users(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryUser, error) {
-	return getInventoryTenantUsersResolver(obj, id)
 }
 
 // Config is the resolver for the Config field.

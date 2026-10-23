@@ -78,6 +78,34 @@ type InventoryACVAgency struct {
 	AccreditationExpiry *string                `json:"AccreditationExpiry"`
 }
 
+type InventoryApproval struct {
+	Id              *string                `json:"Id"`
+	ParentLabels    map[string]interface{} `json:"ParentLabels"`
+	RecordID        *string                `json:"RecordID"`
+	TenantID        *string                `json:"TenantID"`
+	PassportID      *string                `json:"PassportID"`
+	BatchNumber     *string                `json:"BatchNumber"`
+	RequestedBy     *string                `json:"RequestedBy"`
+	Role            *string                `json:"Role"`
+	Status          *string                `json:"Status"`
+	ApproverComment *string                `json:"ApproverComment"`
+	SubmittedAt     *string                `json:"SubmittedAt"`
+	ResolvedAt      *string                `json:"ResolvedAt"`
+}
+
+type InventoryCOIDeclaration struct {
+	Id            *string                `json:"Id"`
+	ParentLabels  map[string]interface{} `json:"ParentLabels"`
+	DeclarationID *string                `json:"DeclarationID"`
+	EngagementID  *string                `json:"EngagementID"`
+	TenantID      *string                `json:"TenantID"`
+	AuditorName   *string                `json:"AuditorName"`
+	AuditorEmail  *string                `json:"AuditorEmail"`
+	HasConflict   *bool                  `json:"HasConflict"`
+	Explanation   *string                `json:"Explanation"`
+	DeclaredAt    *string                `json:"DeclaredAt"`
+}
+
 type InventoryDeclaration struct {
 	Id                  *string                `json:"Id"`
 	ParentLabels        map[string]interface{} `json:"ParentLabels"`
@@ -86,6 +114,18 @@ type InventoryDeclaration struct {
 	ClaimedPcfIntensity *float64               `json:"ClaimedPcfIntensity"`
 	Unit                *string                `json:"Unit"`
 	DataClassification  *string                `json:"DataClassification"`
+}
+
+type InventoryEngagementTeamMember struct {
+	Id           *string                `json:"Id"`
+	ParentLabels map[string]interface{} `json:"ParentLabels"`
+	MemberID     *string                `json:"MemberID"`
+	EngagementID *string                `json:"EngagementID"`
+	TenantID     *string                `json:"TenantID"`
+	Name         *string                `json:"Name"`
+	Role         *string                `json:"Role"`
+	Email        *string                `json:"Email"`
+	AssignedAt   *string                `json:"AssignedAt"`
 }
 
 type InventoryFacility struct {
@@ -98,12 +138,61 @@ type InventoryFacility struct {
 	CountryCode  *string                `json:"CountryCode"`
 }
 
+type InventoryFinding struct {
+	Id           *string                `json:"Id"`
+	ParentLabels map[string]interface{} `json:"ParentLabels"`
+	FindingID    *string                `json:"FindingID"`
+	EngagementID *string                `json:"EngagementID"`
+	TenantID     *string                `json:"TenantID"`
+	Category     *string                `json:"Category"`
+	Severity     *string                `json:"Severity"`
+	Status       *string                `json:"Status"`
+	Description  *string                `json:"Description"`
+	Discrepancy  *float64               `json:"Discrepancy"`
+	RaisedBy     *string                `json:"RaisedBy"`
+	ResolvedBy   *string                `json:"ResolvedBy"`
+	CreatedAt    *string                `json:"CreatedAt"`
+	UpdatedAt    *string                `json:"UpdatedAt"`
+}
+
+type InventoryInputCorrection struct {
+	Id           *string                `json:"Id"`
+	ParentLabels map[string]interface{} `json:"ParentLabels"`
+	CorrectionID *string                `json:"CorrectionID"`
+	TenantID     *string                `json:"TenantID"`
+	InputNodeID  *string                `json:"InputNodeID"`
+	NewValue     *float64               `json:"NewValue"`
+	Reason       *string                `json:"Reason"`
+	ResultRaw    *string                `json:"ResultRaw"`
+	NodesRaw     *string                `json:"NodesRaw"`
+	EdgesRaw     *string                `json:"EdgesRaw"`
+	CreatedAt    *string                `json:"CreatedAt"`
+}
+
 type InventoryInventory struct {
 	Id           *string                `json:"Id"`
 	ParentLabels map[string]interface{} `json:"ParentLabels"`
 	Agencies     []*InventoryACVAgency  `json:"Agencies"`
 	Tenants      []*InventoryTenant     `json:"Tenants"`
 	Suppliers    []*InventorySupplier   `json:"Suppliers"`
+}
+
+type InventoryLocalisation struct {
+	Id                  *string                `json:"Id"`
+	ParentLabels        map[string]interface{} `json:"ParentLabels"`
+	TenantID            *string                `json:"TenantID"`
+	Country             *string                `json:"Country"`
+	Currency            *string                `json:"Currency"`
+	Timezone            *string                `json:"Timezone"`
+	Language            *string                `json:"Language"`
+	Units               *string                `json:"Units"`
+	Regulatory          *string                `json:"Regulatory"`
+	DefaultLanguage     *string                `json:"DefaultLanguage"`
+	DefaultCurrency     *string                `json:"DefaultCurrency"`
+	DefaultTimezone     *string                `json:"DefaultTimezone"`
+	DefaultEmissionUnit *string                `json:"DefaultEmissionUnit"`
+	NumberFormat        *string                `json:"NumberFormat"`
+	DateFormat          *string                `json:"DateFormat"`
 }
 
 type InventoryLogisticsLeg struct {
@@ -124,6 +213,27 @@ type InventoryMeter struct {
 	MeterID      *string                `json:"MeterID"`
 	MeterType    *string                `json:"MeterType"`
 	Manufacturer *string                `json:"Manufacturer"`
+}
+
+type InventoryProcess struct {
+	Id             *string                `json:"Id"`
+	ParentLabels   map[string]interface{} `json:"ParentLabels"`
+	RecordID       *string                `json:"RecordID"`
+	TenantID       *string                `json:"TenantID"`
+	FacilityID     *string                `json:"FacilityID"`
+	FacilityName   *string                `json:"FacilityName"`
+	Name           *string                `json:"Name"`
+	ProductionLine *string                `json:"ProductionLine"`
+	EnergySource   *string                `json:"EnergySource"`
+	Inputs         *string                `json:"Inputs"`
+	Outputs        *string                `json:"Outputs"`
+	Meters         *string                `json:"Meters"`
+	Scopes         *string                `json:"Scopes"`
+	Status         *string                `json:"Status"`
+	Description    *string                `json:"Description"`
+	PCFTrace       *string                `json:"PCFTrace"`
+	CreatedAt      *string                `json:"CreatedAt"`
+	UpdatedAt      *string                `json:"UpdatedAt"`
 }
 
 type InventoryProduct struct {
@@ -148,6 +258,38 @@ type InventoryProduct struct {
 	LastUpdated      *string                  `json:"LastUpdated"`
 }
 
+type InventoryReportingPeriod struct {
+	Id                 *string                `json:"Id"`
+	ParentLabels       map[string]interface{} `json:"ParentLabels"`
+	RecordID           *string                `json:"RecordID"`
+	TenantID           *string                `json:"TenantID"`
+	Name               *string                `json:"Name"`
+	Year               *int                   `json:"Year"`
+	Quarter            *string                `json:"Quarter"`
+	StartDate          *string                `json:"StartDate"`
+	EndDate            *string                `json:"EndDate"`
+	Status             *string                `json:"Status"`
+	EmissionsTotal     *float64               `json:"EmissionsTotal"`
+	DataCompleteness   *float64               `json:"DataCompleteness"`
+	VerificationStatus *string                `json:"VerificationStatus"`
+	CreatedAt          *string                `json:"CreatedAt"`
+}
+
+type InventoryReviewVerdict struct {
+	Id           *string                `json:"Id"`
+	ParentLabels map[string]interface{} `json:"ParentLabels"`
+	SignoffID    *string                `json:"SignoffID"`
+	EngagementID *string                `json:"EngagementID"`
+	TenantID     *string                `json:"TenantID"`
+	PassportID   *string                `json:"PassportID"`
+	LeadAuditor  *string                `json:"LeadAuditor"`
+	PeerReviewer *string                `json:"PeerReviewer"`
+	Opinion      *string                `json:"Opinion"`
+	StatementRef *string                `json:"StatementRef"`
+	Frozen       *bool                  `json:"Frozen"`
+	SignedAt     *string                `json:"SignedAt"`
+}
+
 type InventorySupplier struct {
 	Id           *string                 `json:"Id"`
 	ParentLabels map[string]interface{}  `json:"ParentLabels"`
@@ -159,28 +301,66 @@ type InventorySupplier struct {
 }
 
 type InventoryTenant struct {
-	Id           *string                `json:"Id"`
-	ParentLabels map[string]interface{} `json:"ParentLabels"`
-	Facilities   []*InventoryFacility   `json:"Facilities"`
-	Products     []*InventoryProduct    `json:"Products"`
-	Users        []*InventoryUser       `json:"Users"`
-	TenantID     *string                `json:"TenantID"`
-	LegalName    *string                `json:"LegalName"`
-	Country      *string                `json:"Country"`
-	Industry     *string                `json:"Industry"`
+	Id                      *string                            `json:"Id"`
+	ParentLabels            map[string]interface{}             `json:"ParentLabels"`
+	Facilities              []*InventoryFacility               `json:"Facilities"`
+	Processes               []*InventoryProcess                `json:"Processes"`
+	ReportingPeriods        []*InventoryReportingPeriod        `json:"ReportingPeriods"`
+	Localisation            []*InventoryLocalisation           `json:"Localisation"`
+	Approvals               []*InventoryApproval               `json:"Approvals"`
+	VerificationAgencies    []*InventoryVerificationAgency     `json:"VerificationAgencies"`
+	VerificationEngagements []*InventoryVerificationEngagement `json:"VerificationEngagements"`
+	EngagementTeamMembers   []*InventoryEngagementTeamMember   `json:"EngagementTeamMembers"`
+	COIDeclarations         []*InventoryCOIDeclaration         `json:"COIDeclarations"`
+	Findings                []*InventoryFinding                `json:"Findings"`
+	ReviewSignoffs          []*InventoryReviewVerdict          `json:"ReviewSignoffs"`
+	InputCorrections        []*InventoryInputCorrection        `json:"InputCorrections"`
+	Products                []*InventoryProduct                `json:"Products"`
+	TenantID                *string                            `json:"TenantID"`
+	LegalName               *string                            `json:"LegalName"`
+	Country                 *string                            `json:"Country"`
+	Industry                *string                            `json:"Industry"`
+	ProfileRaw              *string                            `json:"ProfileRaw"`
 }
 
-type InventoryUser struct {
-	Id            *string                `json:"Id"`
-	ParentLabels  map[string]interface{} `json:"ParentLabels"`
-	UserID        *string                `json:"UserID"`
-	TenantID      *string                `json:"TenantID"`
-	Name          *string                `json:"Name"`
-	Email         *string                `json:"Email"`
-	Role          *string                `json:"Role"`
-	FacilityScope *string                `json:"FacilityScope"`
-	LastLogin     *string                `json:"LastLogin"`
-	Status        *string                `json:"Status"`
+type InventoryVerificationAgency struct {
+	Id                  *string                `json:"Id"`
+	ParentLabels        map[string]interface{} `json:"ParentLabels"`
+	AgencyID            *string                `json:"AgencyID"`
+	TenantID            *string                `json:"TenantID"`
+	Name                *string                `json:"Name"`
+	AccreditationNumber *string                `json:"AccreditationNumber"`
+	AccreditationBody   *string                `json:"AccreditationBody"`
+	AccreditationStatus *string                `json:"AccreditationStatus"`
+	AccreditationExpiry *string                `json:"AccreditationExpiry"`
+	Scopes              *string                `json:"Scopes"`
+	ValidFrom           *string                `json:"ValidFrom"`
+	ValidTo             *string                `json:"ValidTo"`
+	ContactEmail        *string                `json:"ContactEmail"`
+	ContactPhone        *string                `json:"ContactPhone"`
+	LeadAuditor         *string                `json:"LeadAuditor"`
+	CreatedAt           *string                `json:"CreatedAt"`
+	UpdatedAt           *string                `json:"UpdatedAt"`
+}
+
+type InventoryVerificationEngagement struct {
+	Id               *string                `json:"Id"`
+	ParentLabels     map[string]interface{} `json:"ParentLabels"`
+	EngagementID     *string                `json:"EngagementID"`
+	TenantID         *string                `json:"TenantID"`
+	AgencyID         *string                `json:"AgencyID"`
+	PassportID       *string                `json:"PassportID"`
+	BatchID          *string                `json:"BatchID"`
+	Period           *string                `json:"Period"`
+	Methodology      *string                `json:"Methodology"`
+	SnapshotHash     *string                `json:"SnapshotHash"`
+	Status           *string                `json:"Status"`
+	AssignedVerifier *string                `json:"AssignedVerifier"`
+	ScopeMatch       *bool                  `json:"ScopeMatch"`
+	FindingsCount    *int                   `json:"FindingsCount"`
+	Timeline         *string                `json:"Timeline"`
+	CreatedAt        *string                `json:"CreatedAt"`
+	UpdatedAt        *string                `json:"UpdatedAt"`
 }
 
 type RootRoot struct {

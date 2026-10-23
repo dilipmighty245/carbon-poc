@@ -72,24 +72,23 @@ type Inventory_ACVAgency @nexus(group:"inventory.saurient.io",version:"v1",kind:
 type Inventory_Tenant @nexus(group:"inventory.saurient.io",version:"v1",kind:"Tenant",resource:"tenants",name:"Tenant",crdName:"tenants.inventory.saurient.io",singleton:"false"){
     id: ID
     facilities(id: ID): [Inventory_Facility!]
+    processes(id: ID): [Inventory_Process!]
+    reportingPeriods(id: ID): [Inventory_ReportingPeriod!]
+    localisation(id: ID): [Inventory_Localisation!]
+    approvals(id: ID): [Inventory_Approval!]
+    verificationAgencies(id: ID): [Inventory_VerificationAgency!]
+    verificationEngagements(id: ID): [Inventory_VerificationEngagement!]
+    engagementTeamMembers(id: ID): [Inventory_EngagementTeamMember!]
+    cOIDeclarations(id: ID): [Inventory_COIDeclaration!]
+    findings(id: ID): [Inventory_Finding!]
+    reviewSignoffs(id: ID): [Inventory_ReviewVerdict!]
+    inputCorrections(id: ID): [Inventory_InputCorrection!]
     products(id: ID): [Inventory_Product!]
-    users(id: ID): [Inventory_User!]
     tenantID: String
     legalName: String
     country: String
     industry: String
-}
-
-type Inventory_User @nexus(group:"inventory.saurient.io",version:"v1",kind:"User",resource:"users",name:"User",crdName:"users.inventory.saurient.io",singleton:"false"){
-    id: ID
-    userID: String
-    tenantID: String
-    name: String
-    email: String
-    role: String
-    facilityScope: String
-    lastLogin: String
-    status: String
+    profileRaw: String
 }
 
 type Inventory_Facility @nexus(group:"inventory.saurient.io",version:"v1",kind:"Facility",resource:"facilities",name:"Facility",crdName:"facilities.inventory.saurient.io",singleton:"false"){
@@ -156,6 +155,177 @@ type Inventory_Declaration @nexus(group:"inventory.saurient.io",version:"v1",kin
     claimedPcfIntensity: Float
     unit: String
     dataClassification: String
+}
+
+type Inventory_Process @nexus(group:"inventory.saurient.io",version:"v1",kind:"Process",resource:"processes",name:"Process",crdName:"processes.inventory.saurient.io",singleton:"false"){
+    id: ID
+    recordID: String
+    tenantID: String
+    facilityID: String
+    facilityName: String
+    name: String
+    productionLine: String
+    energySource: String
+    inputs: String
+    outputs: String
+    meters: String
+    scopes: String
+    status: String
+    description: String
+    pCFTrace: String
+    createdAt: String
+    updatedAt: String
+}
+
+type Inventory_ReportingPeriod @nexus(group:"inventory.saurient.io",version:"v1",kind:"ReportingPeriod",resource:"reportingperiods",name:"ReportingPeriod",crdName:"reportingperiods.inventory.saurient.io",singleton:"false"){
+    id: ID
+    recordID: String
+    tenantID: String
+    name: String
+    year: Int
+    quarter: String
+    startDate: String
+    endDate: String
+    status: String
+    emissionsTotal: Float
+    dataCompleteness: Float
+    verificationStatus: String
+    createdAt: String
+}
+
+type Inventory_Localisation @nexus(group:"inventory.saurient.io",version:"v1",kind:"Localisation",resource:"localisations",name:"Localisation",crdName:"localisations.inventory.saurient.io",singleton:"false"){
+    id: ID
+    tenantID: String
+    country: String
+    currency: String
+    timezone: String
+    language: String
+    units: String
+    regulatory: String
+    defaultLanguage: String
+    defaultCurrency: String
+    defaultTimezone: String
+    defaultEmissionUnit: String
+    numberFormat: String
+    dateFormat: String
+}
+
+type Inventory_Approval @nexus(group:"inventory.saurient.io",version:"v1",kind:"Approval",resource:"approvals",name:"Approval",crdName:"approvals.inventory.saurient.io",singleton:"false"){
+    id: ID
+    recordID: String
+    tenantID: String
+    passportID: String
+    batchNumber: String
+    requestedBy: String
+    role: String
+    status: String
+    approverComment: String
+    submittedAt: String
+    resolvedAt: String
+}
+
+type Inventory_VerificationAgency @nexus(group:"inventory.saurient.io",version:"v1",kind:"VerificationAgency",resource:"verificationagencies",name:"VerificationAgency",crdName:"verificationagencies.inventory.saurient.io",singleton:"false"){
+    id: ID
+    agencyID: String
+    tenantID: String
+    name: String
+    accreditationNumber: String
+    accreditationBody: String
+    accreditationStatus: String
+    accreditationExpiry: String
+    scopes: String
+    validFrom: String
+    validTo: String
+    contactEmail: String
+    contactPhone: String
+    leadAuditor: String
+    createdAt: String
+    updatedAt: String
+}
+
+type Inventory_VerificationEngagement @nexus(group:"inventory.saurient.io",version:"v1",kind:"VerificationEngagement",resource:"verificationengagements",name:"VerificationEngagement",crdName:"verificationengagements.inventory.saurient.io",singleton:"false"){
+    id: ID
+    engagementID: String
+    tenantID: String
+    agencyID: String
+    passportID: String
+    batchID: String
+    period: String
+    methodology: String
+    snapshotHash: String
+    status: String
+    assignedVerifier: String
+    scopeMatch: Boolean
+    findingsCount: Int
+    timeline: String
+    createdAt: String
+    updatedAt: String
+}
+
+type Inventory_EngagementTeamMember @nexus(group:"inventory.saurient.io",version:"v1",kind:"EngagementTeamMember",resource:"engagementteammembers",name:"EngagementTeamMember",crdName:"engagementteammembers.inventory.saurient.io",singleton:"false"){
+    id: ID
+    memberID: String
+    engagementID: String
+    tenantID: String
+    name: String
+    role: String
+    email: String
+    assignedAt: String
+}
+
+type Inventory_COIDeclaration @nexus(group:"inventory.saurient.io",version:"v1",kind:"COIDeclaration",resource:"coideclarations",name:"COIDeclaration",crdName:"coideclarations.inventory.saurient.io",singleton:"false"){
+    id: ID
+    declarationID: String
+    engagementID: String
+    tenantID: String
+    auditorName: String
+    auditorEmail: String
+    hasConflict: Boolean
+    explanation: String
+    declaredAt: String
+}
+
+type Inventory_Finding @nexus(group:"inventory.saurient.io",version:"v1",kind:"Finding",resource:"findings",name:"Finding",crdName:"findings.inventory.saurient.io",singleton:"false"){
+    id: ID
+    findingID: String
+    engagementID: String
+    tenantID: String
+    category: String
+    severity: String
+    status: String
+    description: String
+    discrepancy: Float
+    raisedBy: String
+    resolvedBy: String
+    createdAt: String
+    updatedAt: String
+}
+
+type Inventory_ReviewVerdict @nexus(group:"inventory.saurient.io",version:"v1",kind:"ReviewVerdict",resource:"reviewverdicts",name:"ReviewVerdict",crdName:"reviewverdicts.inventory.saurient.io",singleton:"false"){
+    id: ID
+    signoffID: String
+    engagementID: String
+    tenantID: String
+    passportID: String
+    leadAuditor: String
+    peerReviewer: String
+    opinion: String
+    statementRef: String
+    frozen: Boolean
+    signedAt: String
+}
+
+type Inventory_InputCorrection @nexus(group:"inventory.saurient.io",version:"v1",kind:"InputCorrection",resource:"inputcorrections",name:"InputCorrection",crdName:"inputcorrections.inventory.saurient.io",singleton:"false"){
+    id: ID
+    correctionID: String
+    tenantID: String
+    inputNodeID: String
+    newValue: Float
+    reason: String
+    resultRaw: String
+    nodesRaw: String
+    edgesRaw: String
+    createdAt: String
 }
 
 type Runtime_Runtime @nexus(group:"runtime.saurient.io",version:"v1",kind:"Runtime",resource:"runtimes",name:"Runtime",crdName:"runtimes.runtime.saurient.io",singleton:"true"){

@@ -6,20 +6,42 @@ package v1
 
 type ACVAgencyExpansion interface{}
 
+type ApprovalExpansion interface{}
+
+type COIDeclarationExpansion interface{}
+
 type DeclarationExpansion interface{}
+
+type EngagementTeamMemberExpansion interface{}
 
 type FacilityExpansion interface{}
 
+type FindingExpansion interface{}
+
+type InputCorrectionExpansion interface{}
+
 type InventoryExpansion interface{}
+
+type LocalisationExpansion interface{}
 
 type LogisticsLegExpansion interface{}
 
 type MeterExpansion interface{}
 
+type ProcessExpansion interface{}
+
 type ProductExpansion interface{}
+
+type ReportingPeriodExpansion interface{}
+
+type ReviewVerdictExpansion interface{}
 
 type SupplierExpansion interface{}
 
 type TenantExpansion interface{}
 
 type UserExpansion interface{}
+
+type VerificationAgencyExpansion interface{}
+
+type VerificationEngagementExpansion interface{}

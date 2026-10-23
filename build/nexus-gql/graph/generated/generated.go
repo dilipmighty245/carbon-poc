@@ -12,10 +12,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	gqlparser "github.com/vektah/gqlparser/v2"
-	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql"
 	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/introspection"
+	gqlparser "github.com/vektah/gqlparser/v2"
+	"github.com/vektah/gqlparser/v2/ast"
 )
 
 // region    ************************** generated!.gotpl **************************
@@ -137,6 +137,34 @@ type ComplexityRoot struct {
 		ParentLabels        func(childComplexity int) int
 	}
 
+	Inventory_Approval struct {
+		ApproverComment func(childComplexity int) int
+		BatchNumber     func(childComplexity int) int
+		Id              func(childComplexity int) int
+		ParentLabels    func(childComplexity int) int
+		PassportID      func(childComplexity int) int
+		RecordID        func(childComplexity int) int
+		RequestedBy     func(childComplexity int) int
+		ResolvedAt      func(childComplexity int) int
+		Role            func(childComplexity int) int
+		Status          func(childComplexity int) int
+		SubmittedAt     func(childComplexity int) int
+		TenantID        func(childComplexity int) int
+	}
+
+	Inventory_COIDeclaration struct {
+		AuditorEmail  func(childComplexity int) int
+		AuditorName   func(childComplexity int) int
+		DeclarationID func(childComplexity int) int
+		DeclaredAt    func(childComplexity int) int
+		EngagementID  func(childComplexity int) int
+		Explanation   func(childComplexity int) int
+		HasConflict   func(childComplexity int) int
+		Id            func(childComplexity int) int
+		ParentLabels  func(childComplexity int) int
+		TenantID      func(childComplexity int) int
+	}
+
 	Inventory_Declaration struct {
 		ClaimedPcfIntensity func(childComplexity int) int
 		DataClassification  func(childComplexity int) int
@@ -145,6 +173,18 @@ type ComplexityRoot struct {
 		MaterialName        func(childComplexity int) int
 		ParentLabels        func(childComplexity int) int
 		Unit                func(childComplexity int) int
+	}
+
+	Inventory_EngagementTeamMember struct {
+		AssignedAt   func(childComplexity int) int
+		Email        func(childComplexity int) int
+		EngagementID func(childComplexity int) int
+		Id           func(childComplexity int) int
+		MemberID     func(childComplexity int) int
+		Name         func(childComplexity int) int
+		ParentLabels func(childComplexity int) int
+		Role         func(childComplexity int) int
+		TenantID     func(childComplexity int) int
 	}
 
 	Inventory_Facility struct {
@@ -157,12 +197,61 @@ type ComplexityRoot struct {
 		ParentLabels func(childComplexity int) int
 	}
 
+	Inventory_Finding struct {
+		Category     func(childComplexity int) int
+		CreatedAt    func(childComplexity int) int
+		Description  func(childComplexity int) int
+		Discrepancy  func(childComplexity int) int
+		EngagementID func(childComplexity int) int
+		FindingID    func(childComplexity int) int
+		Id           func(childComplexity int) int
+		ParentLabels func(childComplexity int) int
+		RaisedBy     func(childComplexity int) int
+		ResolvedBy   func(childComplexity int) int
+		Severity     func(childComplexity int) int
+		Status       func(childComplexity int) int
+		TenantID     func(childComplexity int) int
+		UpdatedAt    func(childComplexity int) int
+	}
+
+	Inventory_InputCorrection struct {
+		CorrectionID func(childComplexity int) int
+		CreatedAt    func(childComplexity int) int
+		EdgesRaw     func(childComplexity int) int
+		Id           func(childComplexity int) int
+		InputNodeID  func(childComplexity int) int
+		NewValue     func(childComplexity int) int
+		NodesRaw     func(childComplexity int) int
+		ParentLabels func(childComplexity int) int
+		Reason       func(childComplexity int) int
+		ResultRaw    func(childComplexity int) int
+		TenantID     func(childComplexity int) int
+	}
+
 	Inventory_Inventory struct {
 		Agencies     func(childComplexity int, id *string) int
 		Id           func(childComplexity int) int
 		ParentLabels func(childComplexity int) int
 		Suppliers    func(childComplexity int, id *string) int
 		Tenants      func(childComplexity int, id *string) int
+	}
+
+	Inventory_Localisation struct {
+		Country             func(childComplexity int) int
+		Currency            func(childComplexity int) int
+		DateFormat          func(childComplexity int) int
+		DefaultCurrency     func(childComplexity int) int
+		DefaultEmissionUnit func(childComplexity int) int
+		DefaultLanguage     func(childComplexity int) int
+		DefaultTimezone     func(childComplexity int) int
+		Id                  func(childComplexity int) int
+		Language            func(childComplexity int) int
+		NumberFormat        func(childComplexity int) int
+		ParentLabels        func(childComplexity int) int
+		Regulatory          func(childComplexity int) int
+		TenantID            func(childComplexity int) int
+		Timezone            func(childComplexity int) int
+		Units               func(childComplexity int) int
 	}
 
 	Inventory_LogisticsLeg struct {
@@ -183,6 +272,27 @@ type ComplexityRoot struct {
 		MeterID      func(childComplexity int) int
 		MeterType    func(childComplexity int) int
 		ParentLabels func(childComplexity int) int
+	}
+
+	Inventory_Process struct {
+		CreatedAt      func(childComplexity int) int
+		Description    func(childComplexity int) int
+		EnergySource   func(childComplexity int) int
+		FacilityID     func(childComplexity int) int
+		FacilityName   func(childComplexity int) int
+		Id             func(childComplexity int) int
+		Inputs         func(childComplexity int) int
+		Meters         func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Outputs        func(childComplexity int) int
+		PCFTrace       func(childComplexity int) int
+		ParentLabels   func(childComplexity int) int
+		ProductionLine func(childComplexity int) int
+		RecordID       func(childComplexity int) int
+		Scopes         func(childComplexity int) int
+		Status         func(childComplexity int) int
+		TenantID       func(childComplexity int) int
+		UpdatedAt      func(childComplexity int) int
 	}
 
 	Inventory_Product struct {
@@ -207,6 +317,38 @@ type ComplexityRoot struct {
 		Unit             func(childComplexity int) int
 	}
 
+	Inventory_ReportingPeriod struct {
+		CreatedAt          func(childComplexity int) int
+		DataCompleteness   func(childComplexity int) int
+		EmissionsTotal     func(childComplexity int) int
+		EndDate            func(childComplexity int) int
+		Id                 func(childComplexity int) int
+		Name               func(childComplexity int) int
+		ParentLabels       func(childComplexity int) int
+		Quarter            func(childComplexity int) int
+		RecordID           func(childComplexity int) int
+		StartDate          func(childComplexity int) int
+		Status             func(childComplexity int) int
+		TenantID           func(childComplexity int) int
+		VerificationStatus func(childComplexity int) int
+		Year               func(childComplexity int) int
+	}
+
+	Inventory_ReviewVerdict struct {
+		EngagementID func(childComplexity int) int
+		Frozen       func(childComplexity int) int
+		Id           func(childComplexity int) int
+		LeadAuditor  func(childComplexity int) int
+		Opinion      func(childComplexity int) int
+		ParentLabels func(childComplexity int) int
+		PassportID   func(childComplexity int) int
+		PeerReviewer func(childComplexity int) int
+		SignedAt     func(childComplexity int) int
+		SignoffID    func(childComplexity int) int
+		StatementRef func(childComplexity int) int
+		TenantID     func(childComplexity int) int
+	}
+
 	Inventory_Supplier struct {
 		Country      func(childComplexity int) int
 		Declarations func(childComplexity int, id *string) int
@@ -218,28 +360,66 @@ type ComplexityRoot struct {
 	}
 
 	Inventory_Tenant struct {
-		Country      func(childComplexity int) int
-		Facilities   func(childComplexity int, id *string) int
-		Id           func(childComplexity int) int
-		Industry     func(childComplexity int) int
-		LegalName    func(childComplexity int) int
-		ParentLabels func(childComplexity int) int
-		Products     func(childComplexity int, id *string) int
-		TenantID     func(childComplexity int) int
-		Users        func(childComplexity int, id *string) int
+		Approvals               func(childComplexity int, id *string) int
+		COIDeclarations         func(childComplexity int, id *string) int
+		Country                 func(childComplexity int) int
+		EngagementTeamMembers   func(childComplexity int, id *string) int
+		Facilities              func(childComplexity int, id *string) int
+		Findings                func(childComplexity int, id *string) int
+		Id                      func(childComplexity int) int
+		Industry                func(childComplexity int) int
+		InputCorrections        func(childComplexity int, id *string) int
+		LegalName               func(childComplexity int) int
+		Localisation            func(childComplexity int, id *string) int
+		ParentLabels            func(childComplexity int) int
+		Processes               func(childComplexity int, id *string) int
+		Products                func(childComplexity int, id *string) int
+		ProfileRaw              func(childComplexity int) int
+		ReportingPeriods        func(childComplexity int, id *string) int
+		ReviewSignoffs          func(childComplexity int, id *string) int
+		TenantID                func(childComplexity int) int
+		VerificationAgencies    func(childComplexity int, id *string) int
+		VerificationEngagements func(childComplexity int, id *string) int
 	}
 
-	Inventory_User struct {
-		Email         func(childComplexity int) int
-		FacilityScope func(childComplexity int) int
-		Id            func(childComplexity int) int
-		LastLogin     func(childComplexity int) int
-		Name          func(childComplexity int) int
-		ParentLabels  func(childComplexity int) int
-		Role          func(childComplexity int) int
-		Status        func(childComplexity int) int
-		TenantID      func(childComplexity int) int
-		UserID        func(childComplexity int) int
+	Inventory_VerificationAgency struct {
+		AccreditationBody   func(childComplexity int) int
+		AccreditationExpiry func(childComplexity int) int
+		AccreditationNumber func(childComplexity int) int
+		AccreditationStatus func(childComplexity int) int
+		AgencyID            func(childComplexity int) int
+		ContactEmail        func(childComplexity int) int
+		ContactPhone        func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Id                  func(childComplexity int) int
+		LeadAuditor         func(childComplexity int) int
+		Name                func(childComplexity int) int
+		ParentLabels        func(childComplexity int) int
+		Scopes              func(childComplexity int) int
+		TenantID            func(childComplexity int) int
+		UpdatedAt           func(childComplexity int) int
+		ValidFrom           func(childComplexity int) int
+		ValidTo             func(childComplexity int) int
+	}
+
+	Inventory_VerificationEngagement struct {
+		AgencyID         func(childComplexity int) int
+		AssignedVerifier func(childComplexity int) int
+		BatchID          func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		EngagementID     func(childComplexity int) int
+		FindingsCount    func(childComplexity int) int
+		Id               func(childComplexity int) int
+		Methodology      func(childComplexity int) int
+		ParentLabels     func(childComplexity int) int
+		PassportID       func(childComplexity int) int
+		Period           func(childComplexity int) int
+		ScopeMatch       func(childComplexity int) int
+		SnapshotHash     func(childComplexity int) int
+		Status           func(childComplexity int) int
+		TenantID         func(childComplexity int) int
+		Timeline         func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
 	}
 
 	Root_Root struct {
@@ -341,8 +521,18 @@ type Inventory_SupplierResolver interface {
 }
 type Inventory_TenantResolver interface {
 	Facilities(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryFacility, error)
+	Processes(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryProcess, error)
+	ReportingPeriods(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryReportingPeriod, error)
+	Localisation(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryLocalisation, error)
+	Approvals(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryApproval, error)
+	VerificationAgencies(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryVerificationAgency, error)
+	VerificationEngagements(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryVerificationEngagement, error)
+	EngagementTeamMembers(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryEngagementTeamMember, error)
+	COIDeclarations(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryCOIDeclaration, error)
+	Findings(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryFinding, error)
+	ReviewSignoffs(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryReviewVerdict, error)
+	InputCorrections(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryInputCorrection, error)
 	Products(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryProduct, error)
-	Users(ctx context.Context, obj *model.InventoryTenant, id *string) ([]*model.InventoryUser, error)
 }
 type Root_RootResolver interface {
 	Config(ctx context.Context, obj *model.RootRoot) (*model.ConfigConfig, error)
@@ -786,6 +976,160 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Inventory_ACVAgency.ParentLabels(childComplexity), true
 
+	case "inventory_Approval.ApproverComment":
+		if e.complexity.Inventory_Approval.ApproverComment == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.ApproverComment(childComplexity), true
+
+	case "inventory_Approval.BatchNumber":
+		if e.complexity.Inventory_Approval.BatchNumber == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.BatchNumber(childComplexity), true
+
+	case "inventory_Approval.Id":
+		if e.complexity.Inventory_Approval.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.Id(childComplexity), true
+
+	case "inventory_Approval.ParentLabels":
+		if e.complexity.Inventory_Approval.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.ParentLabels(childComplexity), true
+
+	case "inventory_Approval.PassportID":
+		if e.complexity.Inventory_Approval.PassportID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.PassportID(childComplexity), true
+
+	case "inventory_Approval.RecordID":
+		if e.complexity.Inventory_Approval.RecordID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.RecordID(childComplexity), true
+
+	case "inventory_Approval.RequestedBy":
+		if e.complexity.Inventory_Approval.RequestedBy == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.RequestedBy(childComplexity), true
+
+	case "inventory_Approval.ResolvedAt":
+		if e.complexity.Inventory_Approval.ResolvedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.ResolvedAt(childComplexity), true
+
+	case "inventory_Approval.Role":
+		if e.complexity.Inventory_Approval.Role == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.Role(childComplexity), true
+
+	case "inventory_Approval.Status":
+		if e.complexity.Inventory_Approval.Status == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.Status(childComplexity), true
+
+	case "inventory_Approval.SubmittedAt":
+		if e.complexity.Inventory_Approval.SubmittedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.SubmittedAt(childComplexity), true
+
+	case "inventory_Approval.TenantID":
+		if e.complexity.Inventory_Approval.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Approval.TenantID(childComplexity), true
+
+	case "inventory_COIDeclaration.AuditorEmail":
+		if e.complexity.Inventory_COIDeclaration.AuditorEmail == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.AuditorEmail(childComplexity), true
+
+	case "inventory_COIDeclaration.AuditorName":
+		if e.complexity.Inventory_COIDeclaration.AuditorName == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.AuditorName(childComplexity), true
+
+	case "inventory_COIDeclaration.DeclarationID":
+		if e.complexity.Inventory_COIDeclaration.DeclarationID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.DeclarationID(childComplexity), true
+
+	case "inventory_COIDeclaration.DeclaredAt":
+		if e.complexity.Inventory_COIDeclaration.DeclaredAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.DeclaredAt(childComplexity), true
+
+	case "inventory_COIDeclaration.EngagementID":
+		if e.complexity.Inventory_COIDeclaration.EngagementID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.EngagementID(childComplexity), true
+
+	case "inventory_COIDeclaration.Explanation":
+		if e.complexity.Inventory_COIDeclaration.Explanation == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.Explanation(childComplexity), true
+
+	case "inventory_COIDeclaration.HasConflict":
+		if e.complexity.Inventory_COIDeclaration.HasConflict == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.HasConflict(childComplexity), true
+
+	case "inventory_COIDeclaration.Id":
+		if e.complexity.Inventory_COIDeclaration.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.Id(childComplexity), true
+
+	case "inventory_COIDeclaration.ParentLabels":
+		if e.complexity.Inventory_COIDeclaration.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.ParentLabels(childComplexity), true
+
+	case "inventory_COIDeclaration.TenantID":
+		if e.complexity.Inventory_COIDeclaration.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_COIDeclaration.TenantID(childComplexity), true
+
 	case "inventory_Declaration.ClaimedPcfIntensity":
 		if e.complexity.Inventory_Declaration.ClaimedPcfIntensity == nil {
 			break
@@ -834,6 +1178,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Inventory_Declaration.Unit(childComplexity), true
+
+	case "inventory_EngagementTeamMember.AssignedAt":
+		if e.complexity.Inventory_EngagementTeamMember.AssignedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.AssignedAt(childComplexity), true
+
+	case "inventory_EngagementTeamMember.Email":
+		if e.complexity.Inventory_EngagementTeamMember.Email == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.Email(childComplexity), true
+
+	case "inventory_EngagementTeamMember.EngagementID":
+		if e.complexity.Inventory_EngagementTeamMember.EngagementID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.EngagementID(childComplexity), true
+
+	case "inventory_EngagementTeamMember.Id":
+		if e.complexity.Inventory_EngagementTeamMember.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.Id(childComplexity), true
+
+	case "inventory_EngagementTeamMember.MemberID":
+		if e.complexity.Inventory_EngagementTeamMember.MemberID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.MemberID(childComplexity), true
+
+	case "inventory_EngagementTeamMember.Name":
+		if e.complexity.Inventory_EngagementTeamMember.Name == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.Name(childComplexity), true
+
+	case "inventory_EngagementTeamMember.ParentLabels":
+		if e.complexity.Inventory_EngagementTeamMember.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.ParentLabels(childComplexity), true
+
+	case "inventory_EngagementTeamMember.Role":
+		if e.complexity.Inventory_EngagementTeamMember.Role == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.Role(childComplexity), true
+
+	case "inventory_EngagementTeamMember.TenantID":
+		if e.complexity.Inventory_EngagementTeamMember.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_EngagementTeamMember.TenantID(childComplexity), true
 
 	case "inventory_Facility.CountryCode":
 		if e.complexity.Inventory_Facility.CountryCode == nil {
@@ -889,6 +1296,181 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Inventory_Facility.ParentLabels(childComplexity), true
 
+	case "inventory_Finding.Category":
+		if e.complexity.Inventory_Finding.Category == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.Category(childComplexity), true
+
+	case "inventory_Finding.CreatedAt":
+		if e.complexity.Inventory_Finding.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.CreatedAt(childComplexity), true
+
+	case "inventory_Finding.Description":
+		if e.complexity.Inventory_Finding.Description == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.Description(childComplexity), true
+
+	case "inventory_Finding.Discrepancy":
+		if e.complexity.Inventory_Finding.Discrepancy == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.Discrepancy(childComplexity), true
+
+	case "inventory_Finding.EngagementID":
+		if e.complexity.Inventory_Finding.EngagementID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.EngagementID(childComplexity), true
+
+	case "inventory_Finding.FindingID":
+		if e.complexity.Inventory_Finding.FindingID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.FindingID(childComplexity), true
+
+	case "inventory_Finding.Id":
+		if e.complexity.Inventory_Finding.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.Id(childComplexity), true
+
+	case "inventory_Finding.ParentLabels":
+		if e.complexity.Inventory_Finding.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.ParentLabels(childComplexity), true
+
+	case "inventory_Finding.RaisedBy":
+		if e.complexity.Inventory_Finding.RaisedBy == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.RaisedBy(childComplexity), true
+
+	case "inventory_Finding.ResolvedBy":
+		if e.complexity.Inventory_Finding.ResolvedBy == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.ResolvedBy(childComplexity), true
+
+	case "inventory_Finding.Severity":
+		if e.complexity.Inventory_Finding.Severity == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.Severity(childComplexity), true
+
+	case "inventory_Finding.Status":
+		if e.complexity.Inventory_Finding.Status == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.Status(childComplexity), true
+
+	case "inventory_Finding.TenantID":
+		if e.complexity.Inventory_Finding.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.TenantID(childComplexity), true
+
+	case "inventory_Finding.UpdatedAt":
+		if e.complexity.Inventory_Finding.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Finding.UpdatedAt(childComplexity), true
+
+	case "inventory_InputCorrection.CorrectionID":
+		if e.complexity.Inventory_InputCorrection.CorrectionID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.CorrectionID(childComplexity), true
+
+	case "inventory_InputCorrection.CreatedAt":
+		if e.complexity.Inventory_InputCorrection.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.CreatedAt(childComplexity), true
+
+	case "inventory_InputCorrection.EdgesRaw":
+		if e.complexity.Inventory_InputCorrection.EdgesRaw == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.EdgesRaw(childComplexity), true
+
+	case "inventory_InputCorrection.Id":
+		if e.complexity.Inventory_InputCorrection.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.Id(childComplexity), true
+
+	case "inventory_InputCorrection.InputNodeID":
+		if e.complexity.Inventory_InputCorrection.InputNodeID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.InputNodeID(childComplexity), true
+
+	case "inventory_InputCorrection.NewValue":
+		if e.complexity.Inventory_InputCorrection.NewValue == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.NewValue(childComplexity), true
+
+	case "inventory_InputCorrection.NodesRaw":
+		if e.complexity.Inventory_InputCorrection.NodesRaw == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.NodesRaw(childComplexity), true
+
+	case "inventory_InputCorrection.ParentLabels":
+		if e.complexity.Inventory_InputCorrection.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.ParentLabels(childComplexity), true
+
+	case "inventory_InputCorrection.Reason":
+		if e.complexity.Inventory_InputCorrection.Reason == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.Reason(childComplexity), true
+
+	case "inventory_InputCorrection.ResultRaw":
+		if e.complexity.Inventory_InputCorrection.ResultRaw == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.ResultRaw(childComplexity), true
+
+	case "inventory_InputCorrection.TenantID":
+		if e.complexity.Inventory_InputCorrection.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_InputCorrection.TenantID(childComplexity), true
+
 	case "inventory_Inventory.Agencies":
 		if e.complexity.Inventory_Inventory.Agencies == nil {
 			break
@@ -938,6 +1520,111 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Inventory_Inventory.Tenants(childComplexity, args["Id"].(*string)), true
+
+	case "inventory_Localisation.Country":
+		if e.complexity.Inventory_Localisation.Country == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.Country(childComplexity), true
+
+	case "inventory_Localisation.Currency":
+		if e.complexity.Inventory_Localisation.Currency == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.Currency(childComplexity), true
+
+	case "inventory_Localisation.DateFormat":
+		if e.complexity.Inventory_Localisation.DateFormat == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.DateFormat(childComplexity), true
+
+	case "inventory_Localisation.DefaultCurrency":
+		if e.complexity.Inventory_Localisation.DefaultCurrency == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.DefaultCurrency(childComplexity), true
+
+	case "inventory_Localisation.DefaultEmissionUnit":
+		if e.complexity.Inventory_Localisation.DefaultEmissionUnit == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.DefaultEmissionUnit(childComplexity), true
+
+	case "inventory_Localisation.DefaultLanguage":
+		if e.complexity.Inventory_Localisation.DefaultLanguage == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.DefaultLanguage(childComplexity), true
+
+	case "inventory_Localisation.DefaultTimezone":
+		if e.complexity.Inventory_Localisation.DefaultTimezone == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.DefaultTimezone(childComplexity), true
+
+	case "inventory_Localisation.Id":
+		if e.complexity.Inventory_Localisation.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.Id(childComplexity), true
+
+	case "inventory_Localisation.Language":
+		if e.complexity.Inventory_Localisation.Language == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.Language(childComplexity), true
+
+	case "inventory_Localisation.NumberFormat":
+		if e.complexity.Inventory_Localisation.NumberFormat == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.NumberFormat(childComplexity), true
+
+	case "inventory_Localisation.ParentLabels":
+		if e.complexity.Inventory_Localisation.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.ParentLabels(childComplexity), true
+
+	case "inventory_Localisation.Regulatory":
+		if e.complexity.Inventory_Localisation.Regulatory == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.Regulatory(childComplexity), true
+
+	case "inventory_Localisation.TenantID":
+		if e.complexity.Inventory_Localisation.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.TenantID(childComplexity), true
+
+	case "inventory_Localisation.Timezone":
+		if e.complexity.Inventory_Localisation.Timezone == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.Timezone(childComplexity), true
+
+	case "inventory_Localisation.Units":
+		if e.complexity.Inventory_Localisation.Units == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Localisation.Units(childComplexity), true
 
 	case "inventory_LogisticsLeg.CarrierName":
 		if e.complexity.Inventory_LogisticsLeg.CarrierName == nil {
@@ -1036,6 +1723,132 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Inventory_Meter.ParentLabels(childComplexity), true
+
+	case "inventory_Process.CreatedAt":
+		if e.complexity.Inventory_Process.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.CreatedAt(childComplexity), true
+
+	case "inventory_Process.Description":
+		if e.complexity.Inventory_Process.Description == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.Description(childComplexity), true
+
+	case "inventory_Process.EnergySource":
+		if e.complexity.Inventory_Process.EnergySource == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.EnergySource(childComplexity), true
+
+	case "inventory_Process.FacilityID":
+		if e.complexity.Inventory_Process.FacilityID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.FacilityID(childComplexity), true
+
+	case "inventory_Process.FacilityName":
+		if e.complexity.Inventory_Process.FacilityName == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.FacilityName(childComplexity), true
+
+	case "inventory_Process.Id":
+		if e.complexity.Inventory_Process.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.Id(childComplexity), true
+
+	case "inventory_Process.Inputs":
+		if e.complexity.Inventory_Process.Inputs == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.Inputs(childComplexity), true
+
+	case "inventory_Process.Meters":
+		if e.complexity.Inventory_Process.Meters == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.Meters(childComplexity), true
+
+	case "inventory_Process.Name":
+		if e.complexity.Inventory_Process.Name == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.Name(childComplexity), true
+
+	case "inventory_Process.Outputs":
+		if e.complexity.Inventory_Process.Outputs == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.Outputs(childComplexity), true
+
+	case "inventory_Process.PCFTrace":
+		if e.complexity.Inventory_Process.PCFTrace == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.PCFTrace(childComplexity), true
+
+	case "inventory_Process.ParentLabels":
+		if e.complexity.Inventory_Process.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.ParentLabels(childComplexity), true
+
+	case "inventory_Process.ProductionLine":
+		if e.complexity.Inventory_Process.ProductionLine == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.ProductionLine(childComplexity), true
+
+	case "inventory_Process.RecordID":
+		if e.complexity.Inventory_Process.RecordID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.RecordID(childComplexity), true
+
+	case "inventory_Process.Scopes":
+		if e.complexity.Inventory_Process.Scopes == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.Scopes(childComplexity), true
+
+	case "inventory_Process.Status":
+		if e.complexity.Inventory_Process.Status == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.Status(childComplexity), true
+
+	case "inventory_Process.TenantID":
+		if e.complexity.Inventory_Process.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.TenantID(childComplexity), true
+
+	case "inventory_Process.UpdatedAt":
+		if e.complexity.Inventory_Process.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Process.UpdatedAt(childComplexity), true
 
 	case "inventory_Product.ActivityDataRaw":
 		if e.complexity.Inventory_Product.ActivityDataRaw == nil {
@@ -1175,6 +1988,188 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Inventory_Product.Unit(childComplexity), true
 
+	case "inventory_ReportingPeriod.CreatedAt":
+		if e.complexity.Inventory_ReportingPeriod.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.CreatedAt(childComplexity), true
+
+	case "inventory_ReportingPeriod.DataCompleteness":
+		if e.complexity.Inventory_ReportingPeriod.DataCompleteness == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.DataCompleteness(childComplexity), true
+
+	case "inventory_ReportingPeriod.EmissionsTotal":
+		if e.complexity.Inventory_ReportingPeriod.EmissionsTotal == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.EmissionsTotal(childComplexity), true
+
+	case "inventory_ReportingPeriod.EndDate":
+		if e.complexity.Inventory_ReportingPeriod.EndDate == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.EndDate(childComplexity), true
+
+	case "inventory_ReportingPeriod.Id":
+		if e.complexity.Inventory_ReportingPeriod.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.Id(childComplexity), true
+
+	case "inventory_ReportingPeriod.Name":
+		if e.complexity.Inventory_ReportingPeriod.Name == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.Name(childComplexity), true
+
+	case "inventory_ReportingPeriod.ParentLabels":
+		if e.complexity.Inventory_ReportingPeriod.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.ParentLabels(childComplexity), true
+
+	case "inventory_ReportingPeriod.Quarter":
+		if e.complexity.Inventory_ReportingPeriod.Quarter == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.Quarter(childComplexity), true
+
+	case "inventory_ReportingPeriod.RecordID":
+		if e.complexity.Inventory_ReportingPeriod.RecordID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.RecordID(childComplexity), true
+
+	case "inventory_ReportingPeriod.StartDate":
+		if e.complexity.Inventory_ReportingPeriod.StartDate == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.StartDate(childComplexity), true
+
+	case "inventory_ReportingPeriod.Status":
+		if e.complexity.Inventory_ReportingPeriod.Status == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.Status(childComplexity), true
+
+	case "inventory_ReportingPeriod.TenantID":
+		if e.complexity.Inventory_ReportingPeriod.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.TenantID(childComplexity), true
+
+	case "inventory_ReportingPeriod.VerificationStatus":
+		if e.complexity.Inventory_ReportingPeriod.VerificationStatus == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.VerificationStatus(childComplexity), true
+
+	case "inventory_ReportingPeriod.Year":
+		if e.complexity.Inventory_ReportingPeriod.Year == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReportingPeriod.Year(childComplexity), true
+
+	case "inventory_ReviewVerdict.EngagementID":
+		if e.complexity.Inventory_ReviewVerdict.EngagementID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.EngagementID(childComplexity), true
+
+	case "inventory_ReviewVerdict.Frozen":
+		if e.complexity.Inventory_ReviewVerdict.Frozen == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.Frozen(childComplexity), true
+
+	case "inventory_ReviewVerdict.Id":
+		if e.complexity.Inventory_ReviewVerdict.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.Id(childComplexity), true
+
+	case "inventory_ReviewVerdict.LeadAuditor":
+		if e.complexity.Inventory_ReviewVerdict.LeadAuditor == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.LeadAuditor(childComplexity), true
+
+	case "inventory_ReviewVerdict.Opinion":
+		if e.complexity.Inventory_ReviewVerdict.Opinion == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.Opinion(childComplexity), true
+
+	case "inventory_ReviewVerdict.ParentLabels":
+		if e.complexity.Inventory_ReviewVerdict.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.ParentLabels(childComplexity), true
+
+	case "inventory_ReviewVerdict.PassportID":
+		if e.complexity.Inventory_ReviewVerdict.PassportID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.PassportID(childComplexity), true
+
+	case "inventory_ReviewVerdict.PeerReviewer":
+		if e.complexity.Inventory_ReviewVerdict.PeerReviewer == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.PeerReviewer(childComplexity), true
+
+	case "inventory_ReviewVerdict.SignedAt":
+		if e.complexity.Inventory_ReviewVerdict.SignedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.SignedAt(childComplexity), true
+
+	case "inventory_ReviewVerdict.SignoffID":
+		if e.complexity.Inventory_ReviewVerdict.SignoffID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.SignoffID(childComplexity), true
+
+	case "inventory_ReviewVerdict.StatementRef":
+		if e.complexity.Inventory_ReviewVerdict.StatementRef == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.StatementRef(childComplexity), true
+
+	case "inventory_ReviewVerdict.TenantID":
+		if e.complexity.Inventory_ReviewVerdict.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_ReviewVerdict.TenantID(childComplexity), true
+
 	case "inventory_Supplier.Country":
 		if e.complexity.Inventory_Supplier.Country == nil {
 			break
@@ -1229,12 +2224,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Inventory_Supplier.Tier(childComplexity), true
 
+	case "inventory_Tenant.Approvals":
+		if e.complexity.Inventory_Tenant.Approvals == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_Approvals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.Approvals(childComplexity, args["Id"].(*string)), true
+
+	case "inventory_Tenant.COIDeclarations":
+		if e.complexity.Inventory_Tenant.COIDeclarations == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_COIDeclarations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.COIDeclarations(childComplexity, args["Id"].(*string)), true
+
 	case "inventory_Tenant.Country":
 		if e.complexity.Inventory_Tenant.Country == nil {
 			break
 		}
 
 		return e.complexity.Inventory_Tenant.Country(childComplexity), true
+
+	case "inventory_Tenant.EngagementTeamMembers":
+		if e.complexity.Inventory_Tenant.EngagementTeamMembers == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_EngagementTeamMembers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.EngagementTeamMembers(childComplexity, args["Id"].(*string)), true
 
 	case "inventory_Tenant.Facilities":
 		if e.complexity.Inventory_Tenant.Facilities == nil {
@@ -1247,6 +2278,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Inventory_Tenant.Facilities(childComplexity, args["Id"].(*string)), true
+
+	case "inventory_Tenant.Findings":
+		if e.complexity.Inventory_Tenant.Findings == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_Findings_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.Findings(childComplexity, args["Id"].(*string)), true
 
 	case "inventory_Tenant.Id":
 		if e.complexity.Inventory_Tenant.Id == nil {
@@ -1262,6 +2305,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Inventory_Tenant.Industry(childComplexity), true
 
+	case "inventory_Tenant.InputCorrections":
+		if e.complexity.Inventory_Tenant.InputCorrections == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_InputCorrections_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.InputCorrections(childComplexity, args["Id"].(*string)), true
+
 	case "inventory_Tenant.LegalName":
 		if e.complexity.Inventory_Tenant.LegalName == nil {
 			break
@@ -1269,12 +2324,36 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Inventory_Tenant.LegalName(childComplexity), true
 
+	case "inventory_Tenant.Localisation":
+		if e.complexity.Inventory_Tenant.Localisation == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_Localisation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.Localisation(childComplexity, args["Id"].(*string)), true
+
 	case "inventory_Tenant.ParentLabels":
 		if e.complexity.Inventory_Tenant.ParentLabels == nil {
 			break
 		}
 
 		return e.complexity.Inventory_Tenant.ParentLabels(childComplexity), true
+
+	case "inventory_Tenant.Processes":
+		if e.complexity.Inventory_Tenant.Processes == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_Processes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.Processes(childComplexity, args["Id"].(*string)), true
 
 	case "inventory_Tenant.Products":
 		if e.complexity.Inventory_Tenant.Products == nil {
@@ -1288,6 +2367,37 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Inventory_Tenant.Products(childComplexity, args["Id"].(*string)), true
 
+	case "inventory_Tenant.ProfileRaw":
+		if e.complexity.Inventory_Tenant.ProfileRaw == nil {
+			break
+		}
+
+		return e.complexity.Inventory_Tenant.ProfileRaw(childComplexity), true
+
+	case "inventory_Tenant.ReportingPeriods":
+		if e.complexity.Inventory_Tenant.ReportingPeriods == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_ReportingPeriods_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.ReportingPeriods(childComplexity, args["Id"].(*string)), true
+
+	case "inventory_Tenant.ReviewSignoffs":
+		if e.complexity.Inventory_Tenant.ReviewSignoffs == nil {
+			break
+		}
+
+		args, err := ec.field_inventory_Tenant_ReviewSignoffs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Inventory_Tenant.ReviewSignoffs(childComplexity, args["Id"].(*string)), true
+
 	case "inventory_Tenant.TenantID":
 		if e.complexity.Inventory_Tenant.TenantID == nil {
 			break
@@ -1295,87 +2405,267 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Inventory_Tenant.TenantID(childComplexity), true
 
-	case "inventory_Tenant.Users":
-		if e.complexity.Inventory_Tenant.Users == nil {
+	case "inventory_Tenant.VerificationAgencies":
+		if e.complexity.Inventory_Tenant.VerificationAgencies == nil {
 			break
 		}
 
-		args, err := ec.field_inventory_Tenant_Users_args(context.TODO(), rawArgs)
+		args, err := ec.field_inventory_Tenant_VerificationAgencies_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Inventory_Tenant.Users(childComplexity, args["Id"].(*string)), true
+		return e.complexity.Inventory_Tenant.VerificationAgencies(childComplexity, args["Id"].(*string)), true
 
-	case "inventory_User.Email":
-		if e.complexity.Inventory_User.Email == nil {
+	case "inventory_Tenant.VerificationEngagements":
+		if e.complexity.Inventory_Tenant.VerificationEngagements == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.Email(childComplexity), true
+		args, err := ec.field_inventory_Tenant_VerificationEngagements_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
 
-	case "inventory_User.FacilityScope":
-		if e.complexity.Inventory_User.FacilityScope == nil {
+		return e.complexity.Inventory_Tenant.VerificationEngagements(childComplexity, args["Id"].(*string)), true
+
+	case "inventory_VerificationAgency.AccreditationBody":
+		if e.complexity.Inventory_VerificationAgency.AccreditationBody == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.FacilityScope(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.AccreditationBody(childComplexity), true
 
-	case "inventory_User.Id":
-		if e.complexity.Inventory_User.Id == nil {
+	case "inventory_VerificationAgency.AccreditationExpiry":
+		if e.complexity.Inventory_VerificationAgency.AccreditationExpiry == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.Id(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.AccreditationExpiry(childComplexity), true
 
-	case "inventory_User.LastLogin":
-		if e.complexity.Inventory_User.LastLogin == nil {
+	case "inventory_VerificationAgency.AccreditationNumber":
+		if e.complexity.Inventory_VerificationAgency.AccreditationNumber == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.LastLogin(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.AccreditationNumber(childComplexity), true
 
-	case "inventory_User.Name":
-		if e.complexity.Inventory_User.Name == nil {
+	case "inventory_VerificationAgency.AccreditationStatus":
+		if e.complexity.Inventory_VerificationAgency.AccreditationStatus == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.Name(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.AccreditationStatus(childComplexity), true
 
-	case "inventory_User.ParentLabels":
-		if e.complexity.Inventory_User.ParentLabels == nil {
+	case "inventory_VerificationAgency.AgencyID":
+		if e.complexity.Inventory_VerificationAgency.AgencyID == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.ParentLabels(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.AgencyID(childComplexity), true
 
-	case "inventory_User.Role":
-		if e.complexity.Inventory_User.Role == nil {
+	case "inventory_VerificationAgency.ContactEmail":
+		if e.complexity.Inventory_VerificationAgency.ContactEmail == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.Role(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.ContactEmail(childComplexity), true
 
-	case "inventory_User.Status":
-		if e.complexity.Inventory_User.Status == nil {
+	case "inventory_VerificationAgency.ContactPhone":
+		if e.complexity.Inventory_VerificationAgency.ContactPhone == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.Status(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.ContactPhone(childComplexity), true
 
-	case "inventory_User.TenantID":
-		if e.complexity.Inventory_User.TenantID == nil {
+	case "inventory_VerificationAgency.CreatedAt":
+		if e.complexity.Inventory_VerificationAgency.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.TenantID(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.CreatedAt(childComplexity), true
 
-	case "inventory_User.UserID":
-		if e.complexity.Inventory_User.UserID == nil {
+	case "inventory_VerificationAgency.Id":
+		if e.complexity.Inventory_VerificationAgency.Id == nil {
 			break
 		}
 
-		return e.complexity.Inventory_User.UserID(childComplexity), true
+		return e.complexity.Inventory_VerificationAgency.Id(childComplexity), true
+
+	case "inventory_VerificationAgency.LeadAuditor":
+		if e.complexity.Inventory_VerificationAgency.LeadAuditor == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationAgency.LeadAuditor(childComplexity), true
+
+	case "inventory_VerificationAgency.Name":
+		if e.complexity.Inventory_VerificationAgency.Name == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationAgency.Name(childComplexity), true
+
+	case "inventory_VerificationAgency.ParentLabels":
+		if e.complexity.Inventory_VerificationAgency.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationAgency.ParentLabels(childComplexity), true
+
+	case "inventory_VerificationAgency.Scopes":
+		if e.complexity.Inventory_VerificationAgency.Scopes == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationAgency.Scopes(childComplexity), true
+
+	case "inventory_VerificationAgency.TenantID":
+		if e.complexity.Inventory_VerificationAgency.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationAgency.TenantID(childComplexity), true
+
+	case "inventory_VerificationAgency.UpdatedAt":
+		if e.complexity.Inventory_VerificationAgency.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationAgency.UpdatedAt(childComplexity), true
+
+	case "inventory_VerificationAgency.ValidFrom":
+		if e.complexity.Inventory_VerificationAgency.ValidFrom == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationAgency.ValidFrom(childComplexity), true
+
+	case "inventory_VerificationAgency.ValidTo":
+		if e.complexity.Inventory_VerificationAgency.ValidTo == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationAgency.ValidTo(childComplexity), true
+
+	case "inventory_VerificationEngagement.AgencyID":
+		if e.complexity.Inventory_VerificationEngagement.AgencyID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.AgencyID(childComplexity), true
+
+	case "inventory_VerificationEngagement.AssignedVerifier":
+		if e.complexity.Inventory_VerificationEngagement.AssignedVerifier == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.AssignedVerifier(childComplexity), true
+
+	case "inventory_VerificationEngagement.BatchID":
+		if e.complexity.Inventory_VerificationEngagement.BatchID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.BatchID(childComplexity), true
+
+	case "inventory_VerificationEngagement.CreatedAt":
+		if e.complexity.Inventory_VerificationEngagement.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.CreatedAt(childComplexity), true
+
+	case "inventory_VerificationEngagement.EngagementID":
+		if e.complexity.Inventory_VerificationEngagement.EngagementID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.EngagementID(childComplexity), true
+
+	case "inventory_VerificationEngagement.FindingsCount":
+		if e.complexity.Inventory_VerificationEngagement.FindingsCount == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.FindingsCount(childComplexity), true
+
+	case "inventory_VerificationEngagement.Id":
+		if e.complexity.Inventory_VerificationEngagement.Id == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.Id(childComplexity), true
+
+	case "inventory_VerificationEngagement.Methodology":
+		if e.complexity.Inventory_VerificationEngagement.Methodology == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.Methodology(childComplexity), true
+
+	case "inventory_VerificationEngagement.ParentLabels":
+		if e.complexity.Inventory_VerificationEngagement.ParentLabels == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.ParentLabels(childComplexity), true
+
+	case "inventory_VerificationEngagement.PassportID":
+		if e.complexity.Inventory_VerificationEngagement.PassportID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.PassportID(childComplexity), true
+
+	case "inventory_VerificationEngagement.Period":
+		if e.complexity.Inventory_VerificationEngagement.Period == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.Period(childComplexity), true
+
+	case "inventory_VerificationEngagement.ScopeMatch":
+		if e.complexity.Inventory_VerificationEngagement.ScopeMatch == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.ScopeMatch(childComplexity), true
+
+	case "inventory_VerificationEngagement.SnapshotHash":
+		if e.complexity.Inventory_VerificationEngagement.SnapshotHash == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.SnapshotHash(childComplexity), true
+
+	case "inventory_VerificationEngagement.Status":
+		if e.complexity.Inventory_VerificationEngagement.Status == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.Status(childComplexity), true
+
+	case "inventory_VerificationEngagement.TenantID":
+		if e.complexity.Inventory_VerificationEngagement.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.TenantID(childComplexity), true
+
+	case "inventory_VerificationEngagement.Timeline":
+		if e.complexity.Inventory_VerificationEngagement.Timeline == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.Timeline(childComplexity), true
+
+	case "inventory_VerificationEngagement.UpdatedAt":
+		if e.complexity.Inventory_VerificationEngagement.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Inventory_VerificationEngagement.UpdatedAt(childComplexity), true
 
 	case "root_Root.Config":
 		if e.complexity.Root_Root.Config == nil {
@@ -1934,26 +3224,23 @@ type inventory_Tenant {
 	ParentLabels: Map
 
     Facilities(Id: ID): [inventory_Facility!]
+    Processes(Id: ID): [inventory_Process!]
+    ReportingPeriods(Id: ID): [inventory_ReportingPeriod!]
+    Localisation(Id: ID): [inventory_Localisation!]
+    Approvals(Id: ID): [inventory_Approval!]
+    VerificationAgencies(Id: ID): [inventory_VerificationAgency!]
+    VerificationEngagements(Id: ID): [inventory_VerificationEngagement!]
+    EngagementTeamMembers(Id: ID): [inventory_EngagementTeamMember!]
+    COIDeclarations(Id: ID): [inventory_COIDeclaration!]
+    Findings(Id: ID): [inventory_Finding!]
+    ReviewSignoffs(Id: ID): [inventory_ReviewVerdict!]
+    InputCorrections(Id: ID): [inventory_InputCorrection!]
     Products(Id: ID): [inventory_Product!]
-    Users(Id: ID): [inventory_User!]
     TenantID: String
     LegalName: String
     Country: String
     Industry: String
-}
-
-type inventory_User {
-    Id: ID
-	ParentLabels: Map
-
-    UserID: String
-    TenantID: String
-    Name: String
-    Email: String
-    Role: String
-    FacilityScope: String
-    LastLogin: String
-    Status: String
+    ProfileRaw: String
 }
 
 type inventory_Facility {
@@ -2032,6 +3319,199 @@ type inventory_Declaration {
     ClaimedPcfIntensity: Float
     Unit: String
     DataClassification: String
+}
+
+type inventory_Process {
+    Id: ID
+	ParentLabels: Map
+
+    RecordID: String
+    TenantID: String
+    FacilityID: String
+    FacilityName: String
+    Name: String
+    ProductionLine: String
+    EnergySource: String
+    Inputs: String
+    Outputs: String
+    Meters: String
+    Scopes: String
+    Status: String
+    Description: String
+    PCFTrace: String
+    CreatedAt: String
+    UpdatedAt: String
+}
+
+type inventory_ReportingPeriod {
+    Id: ID
+	ParentLabels: Map
+
+    RecordID: String
+    TenantID: String
+    Name: String
+    Year: Int
+    Quarter: String
+    StartDate: String
+    EndDate: String
+    Status: String
+    EmissionsTotal: Float
+    DataCompleteness: Float
+    VerificationStatus: String
+    CreatedAt: String
+}
+
+type inventory_Localisation {
+    Id: ID
+	ParentLabels: Map
+
+    TenantID: String
+    Country: String
+    Currency: String
+    Timezone: String
+    Language: String
+    Units: String
+    Regulatory: String
+    DefaultLanguage: String
+    DefaultCurrency: String
+    DefaultTimezone: String
+    DefaultEmissionUnit: String
+    NumberFormat: String
+    DateFormat: String
+}
+
+type inventory_Approval {
+    Id: ID
+	ParentLabels: Map
+
+    RecordID: String
+    TenantID: String
+    PassportID: String
+    BatchNumber: String
+    RequestedBy: String
+    Role: String
+    Status: String
+    ApproverComment: String
+    SubmittedAt: String
+    ResolvedAt: String
+}
+
+type inventory_VerificationAgency {
+    Id: ID
+	ParentLabels: Map
+
+    AgencyID: String
+    TenantID: String
+    Name: String
+    AccreditationNumber: String
+    AccreditationBody: String
+    AccreditationStatus: String
+    AccreditationExpiry: String
+    Scopes: String
+    ValidFrom: String
+    ValidTo: String
+    ContactEmail: String
+    ContactPhone: String
+    LeadAuditor: String
+    CreatedAt: String
+    UpdatedAt: String
+}
+
+type inventory_VerificationEngagement {
+    Id: ID
+	ParentLabels: Map
+
+    EngagementID: String
+    TenantID: String
+    AgencyID: String
+    PassportID: String
+    BatchID: String
+    Period: String
+    Methodology: String
+    SnapshotHash: String
+    Status: String
+    AssignedVerifier: String
+    ScopeMatch: Boolean
+    FindingsCount: Int
+    Timeline: String
+    CreatedAt: String
+    UpdatedAt: String
+}
+
+type inventory_EngagementTeamMember {
+    Id: ID
+	ParentLabels: Map
+
+    MemberID: String
+    EngagementID: String
+    TenantID: String
+    Name: String
+    Role: String
+    Email: String
+    AssignedAt: String
+}
+
+type inventory_COIDeclaration {
+    Id: ID
+	ParentLabels: Map
+
+    DeclarationID: String
+    EngagementID: String
+    TenantID: String
+    AuditorName: String
+    AuditorEmail: String
+    HasConflict: Boolean
+    Explanation: String
+    DeclaredAt: String
+}
+
+type inventory_Finding {
+    Id: ID
+	ParentLabels: Map
+
+    FindingID: String
+    EngagementID: String
+    TenantID: String
+    Category: String
+    Severity: String
+    Status: String
+    Description: String
+    Discrepancy: Float
+    RaisedBy: String
+    ResolvedBy: String
+    CreatedAt: String
+    UpdatedAt: String
+}
+
+type inventory_ReviewVerdict {
+    Id: ID
+	ParentLabels: Map
+
+    SignoffID: String
+    EngagementID: String
+    TenantID: String
+    PassportID: String
+    LeadAuditor: String
+    PeerReviewer: String
+    Opinion: String
+    StatementRef: String
+    Frozen: Boolean
+    SignedAt: String
+}
+
+type inventory_InputCorrection {
+    Id: ID
+	ParentLabels: Map
+
+    CorrectionID: String
+    TenantID: String
+    InputNodeID: String
+    NewValue: Float
+    Reason: String
+    ResultRaw: String
+    NodesRaw: String
+    EdgesRaw: String
+    CreatedAt: String
 }
 
 type runtime_Runtime {
@@ -2436,7 +3916,112 @@ func (ec *executionContext) field_inventory_Supplier_Declarations_args(ctx conte
 	return args, nil
 }
 
+func (ec *executionContext) field_inventory_Tenant_Approvals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_COIDeclarations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_EngagementTeamMembers_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_inventory_Tenant_Facilities_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_Findings_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_InputCorrections_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_Localisation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_Processes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -2466,7 +4051,52 @@ func (ec *executionContext) field_inventory_Tenant_Products_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_inventory_Tenant_Users_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_inventory_Tenant_ReportingPeriods_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_ReviewSignoffs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_VerificationAgencies_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["Id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["Id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_inventory_Tenant_VerificationEngagements_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -2832,7 +4462,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*introspection.Type)
 	fc.Result = res
-	return ec.marshalO__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
+	return ec.marshalO__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2906,7 +4536,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
-	return ec.marshalO__Schema2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+	return ec.marshalO__Schema2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3298,7 +4928,7 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 	}
 	res := resTmp.([]introspection.InputValue)
 	fc.Result = res
-	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
+	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Directive_args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3651,7 +5281,7 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.([]introspection.InputValue)
 	fc.Result = res
-	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
+	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Field_args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3705,7 +5335,7 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*introspection.Type)
 	fc.Result = res
-	return ec.marshalN__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
+	return ec.marshalN__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Field_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3941,7 +5571,7 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 	}
 	res := resTmp.(*introspection.Type)
 	fc.Result = res
-	return ec.marshalN__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
+	return ec.marshalN__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___InputValue_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4089,7 +5719,7 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]introspection.Type)
 	fc.Result = res
-	return ec.marshalN__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
+	return ec.marshalN__Type2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Schema_types(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4155,7 +5785,7 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 	}
 	res := resTmp.(*introspection.Type)
 	fc.Result = res
-	return ec.marshalN__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
+	return ec.marshalN__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Schema_queryType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4218,7 +5848,7 @@ func (ec *executionContext) ___Schema_mutationType(ctx context.Context, field gr
 	}
 	res := resTmp.(*introspection.Type)
 	fc.Result = res
-	return ec.marshalO__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
+	return ec.marshalO__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Schema_mutationType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4281,7 +5911,7 @@ func (ec *executionContext) ___Schema_subscriptionType(ctx context.Context, fiel
 	}
 	res := resTmp.(*introspection.Type)
 	fc.Result = res
-	return ec.marshalO__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
+	return ec.marshalO__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Schema_subscriptionType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4347,7 +5977,7 @@ func (ec *executionContext) ___Schema_directives(ctx context.Context, field grap
 	}
 	res := resTmp.([]introspection.Directive)
 	fc.Result = res
-	return ec.marshalN__Directive2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx, field.Selections, res)
+	return ec.marshalN__Directive2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Schema_directives(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4526,7 +6156,7 @@ func (ec *executionContext) ___Type_fields(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]introspection.Field)
 	fc.Result = res
-	return ec.marshalO__Field2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐFieldᚄ(ctx, field.Selections, res)
+	return ec.marshalO__Field2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐFieldᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Type_fields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4592,7 +6222,7 @@ func (ec *executionContext) ___Type_interfaces(ctx context.Context, field graphq
 	}
 	res := resTmp.([]introspection.Type)
 	fc.Result = res
-	return ec.marshalO__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
+	return ec.marshalO__Type2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Type_interfaces(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4655,7 +6285,7 @@ func (ec *executionContext) ___Type_possibleTypes(ctx context.Context, field gra
 	}
 	res := resTmp.([]introspection.Type)
 	fc.Result = res
-	return ec.marshalO__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
+	return ec.marshalO__Type2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Type_possibleTypes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4718,7 +6348,7 @@ func (ec *executionContext) ___Type_enumValues(ctx context.Context, field graphq
 	}
 	res := resTmp.([]introspection.EnumValue)
 	fc.Result = res
-	return ec.marshalO__EnumValue2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx, field.Selections, res)
+	return ec.marshalO__EnumValue2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Type_enumValues(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4780,7 +6410,7 @@ func (ec *executionContext) ___Type_inputFields(ctx context.Context, field graph
 	}
 	res := resTmp.([]introspection.InputValue)
 	fc.Result = res
-	return ec.marshalO__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
+	return ec.marshalO__InputValue2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Type_inputFields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4831,7 +6461,7 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(*introspection.Type)
 	fc.Result = res
-	return ec.marshalO__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
+	return ec.marshalO__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Type_ofType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6858,6 +8488,908 @@ func (ec *executionContext) fieldContext_inventory_ACVAgency_AccreditationExpiry
 	return fc, nil
 }
 
+func (ec *executionContext) _inventory_Approval_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_RecordID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_RecordID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecordID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_RecordID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_PassportID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_PassportID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PassportID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_PassportID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_BatchNumber(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_BatchNumber(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BatchNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_BatchNumber(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_RequestedBy(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_RequestedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_RequestedBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_Role(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_Role(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Role, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_Role(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_Status(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_Status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_Status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_ApproverComment(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_ApproverComment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApproverComment, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_ApproverComment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_SubmittedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_SubmittedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SubmittedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_SubmittedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Approval_ResolvedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryApproval) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Approval_ResolvedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResolvedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Approval_ResolvedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Approval",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_DeclarationID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_DeclarationID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeclarationID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_DeclarationID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_EngagementID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_EngagementID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EngagementID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_EngagementID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_AuditorName(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_AuditorName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuditorName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_AuditorName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_AuditorEmail(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_AuditorEmail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AuditorEmail, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_AuditorEmail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_HasConflict(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_HasConflict(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasConflict, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_HasConflict(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_Explanation(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_Explanation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Explanation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_Explanation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_COIDeclaration_DeclaredAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryCOIDeclaration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_COIDeclaration_DeclaredAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeclaredAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_COIDeclaration_DeclaredAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_COIDeclaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _inventory_Declaration_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryDeclaration) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_inventory_Declaration_Id(ctx, field)
 	if err != nil {
@@ -7135,6 +9667,375 @@ func (ec *executionContext) _inventory_Declaration_DataClassification(ctx contex
 func (ec *executionContext) fieldContext_inventory_Declaration_DataClassification(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "inventory_Declaration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_MemberID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_MemberID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MemberID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_MemberID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_EngagementID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_EngagementID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EngagementID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_EngagementID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_Name(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_Name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_Name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_Role(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_Role(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Role, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_Role(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_Email(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_Email(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Email, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_Email(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_EngagementTeamMember_AssignedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryEngagementTeamMember) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_EngagementTeamMember_AssignedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssignedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_EngagementTeamMember_AssignedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_EngagementTeamMember",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -7455,6 +10356,1031 @@ func (ec *executionContext) fieldContext_inventory_Facility_CountryCode(ctx cont
 	return fc, nil
 }
 
+func (ec *executionContext) _inventory_Finding_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_FindingID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_FindingID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FindingID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_FindingID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_EngagementID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_EngagementID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EngagementID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_EngagementID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_Category(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_Category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_Category(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_Severity(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_Severity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Severity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_Severity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_Status(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_Status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_Status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_Description(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_Description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_Description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_Discrepancy(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_Discrepancy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Discrepancy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_Discrepancy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_RaisedBy(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_RaisedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RaisedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_RaisedBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_ResolvedBy(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_ResolvedBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResolvedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_ResolvedBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_CreatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_CreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_CreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Finding_UpdatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Finding_UpdatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Finding_UpdatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Finding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_CorrectionID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_CorrectionID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CorrectionID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_CorrectionID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_InputNodeID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_InputNodeID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InputNodeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_InputNodeID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_NewValue(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_NewValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NewValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_NewValue(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_Reason(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_Reason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_Reason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_ResultRaw(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_ResultRaw(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResultRaw, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_ResultRaw(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_NodesRaw(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_NodesRaw(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodesRaw, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_NodesRaw(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_EdgesRaw(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_EdgesRaw(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EdgesRaw, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_EdgesRaw(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_InputCorrection_CreatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInputCorrection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_InputCorrection_CreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_InputCorrection_CreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_InputCorrection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _inventory_Inventory_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryInventory) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_inventory_Inventory_Id(ctx, field)
 	if err != nil {
@@ -7649,10 +11575,30 @@ func (ec *executionContext) fieldContext_inventory_Inventory_Tenants(ctx context
 				return ec.fieldContext_inventory_Tenant_ParentLabels(ctx, field)
 			case "Facilities":
 				return ec.fieldContext_inventory_Tenant_Facilities(ctx, field)
+			case "Processes":
+				return ec.fieldContext_inventory_Tenant_Processes(ctx, field)
+			case "ReportingPeriods":
+				return ec.fieldContext_inventory_Tenant_ReportingPeriods(ctx, field)
+			case "Localisation":
+				return ec.fieldContext_inventory_Tenant_Localisation(ctx, field)
+			case "Approvals":
+				return ec.fieldContext_inventory_Tenant_Approvals(ctx, field)
+			case "VerificationAgencies":
+				return ec.fieldContext_inventory_Tenant_VerificationAgencies(ctx, field)
+			case "VerificationEngagements":
+				return ec.fieldContext_inventory_Tenant_VerificationEngagements(ctx, field)
+			case "EngagementTeamMembers":
+				return ec.fieldContext_inventory_Tenant_EngagementTeamMembers(ctx, field)
+			case "COIDeclarations":
+				return ec.fieldContext_inventory_Tenant_COIDeclarations(ctx, field)
+			case "Findings":
+				return ec.fieldContext_inventory_Tenant_Findings(ctx, field)
+			case "ReviewSignoffs":
+				return ec.fieldContext_inventory_Tenant_ReviewSignoffs(ctx, field)
+			case "InputCorrections":
+				return ec.fieldContext_inventory_Tenant_InputCorrections(ctx, field)
 			case "Products":
 				return ec.fieldContext_inventory_Tenant_Products(ctx, field)
-			case "Users":
-				return ec.fieldContext_inventory_Tenant_Users(ctx, field)
 			case "TenantID":
 				return ec.fieldContext_inventory_Tenant_TenantID(ctx, field)
 			case "LegalName":
@@ -7661,6 +11607,8 @@ func (ec *executionContext) fieldContext_inventory_Inventory_Tenants(ctx context
 				return ec.fieldContext_inventory_Tenant_Country(ctx, field)
 			case "Industry":
 				return ec.fieldContext_inventory_Tenant_Industry(ctx, field)
+			case "ProfileRaw":
+				return ec.fieldContext_inventory_Tenant_ProfileRaw(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type inventory_Tenant", field.Name)
 		},
@@ -7743,6 +11691,621 @@ func (ec *executionContext) fieldContext_inventory_Inventory_Suppliers(ctx conte
 	if fc.Args, err = ec.field_inventory_Inventory_Suppliers_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_Country(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_Country(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Country, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_Country(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_Currency(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_Currency(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Currency, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_Currency(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_Timezone(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_Timezone(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timezone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_Timezone(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_Language(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_Language(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Language, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_Language(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_Units(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_Units(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Units, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_Units(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_Regulatory(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_Regulatory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Regulatory, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_Regulatory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_DefaultLanguage(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_DefaultLanguage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultLanguage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_DefaultLanguage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_DefaultCurrency(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_DefaultCurrency(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultCurrency, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_DefaultCurrency(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_DefaultTimezone(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_DefaultTimezone(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultTimezone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_DefaultTimezone(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_DefaultEmissionUnit(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_DefaultEmissionUnit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DefaultEmissionUnit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_DefaultEmissionUnit(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_NumberFormat(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_NumberFormat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NumberFormat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_NumberFormat(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Localisation_DateFormat(ctx context.Context, field graphql.CollectedField, obj *model.InventoryLocalisation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Localisation_DateFormat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DateFormat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Localisation_DateFormat(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Localisation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -8311,6 +12874,744 @@ func (ec *executionContext) _inventory_Meter_Manufacturer(ctx context.Context, f
 func (ec *executionContext) fieldContext_inventory_Meter_Manufacturer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "inventory_Meter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_RecordID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_RecordID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecordID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_RecordID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_FacilityID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_FacilityID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FacilityID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_FacilityID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_FacilityName(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_FacilityName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FacilityName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_FacilityName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_Name(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_Name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_Name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_ProductionLine(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_ProductionLine(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProductionLine, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_ProductionLine(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_EnergySource(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_EnergySource(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnergySource, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_EnergySource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_Inputs(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_Inputs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Inputs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_Inputs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_Outputs(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_Outputs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Outputs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_Outputs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_Meters(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_Meters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Meters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_Meters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_Scopes(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_Scopes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scopes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_Scopes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_Status(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_Status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_Status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_Description(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_Description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_Description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_PCFTrace(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_PCFTrace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PCFTrace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_PCFTrace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_CreatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_CreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_CreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Process_UpdatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryProcess) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Process_UpdatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Process_UpdatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Process",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -9131,6 +14432,1072 @@ func (ec *executionContext) fieldContext_inventory_Product_LastUpdated(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _inventory_ReportingPeriod_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_RecordID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_RecordID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecordID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_RecordID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_Name(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_Name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_Name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_Year(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_Year(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Year, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_Year(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_Quarter(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_Quarter(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Quarter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_Quarter(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_StartDate(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_StartDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_StartDate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_EndDate(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_EndDate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_EndDate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_Status(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_Status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_Status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_EmissionsTotal(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_EmissionsTotal(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EmissionsTotal, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_EmissionsTotal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_DataCompleteness(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_DataCompleteness(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataCompleteness, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_DataCompleteness(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_VerificationStatus(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_VerificationStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VerificationStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_VerificationStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReportingPeriod_CreatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReportingPeriod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReportingPeriod_CreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReportingPeriod_CreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReportingPeriod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_SignoffID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_SignoffID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SignoffID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_SignoffID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_EngagementID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_EngagementID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EngagementID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_EngagementID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_PassportID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_PassportID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PassportID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_PassportID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_LeadAuditor(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_LeadAuditor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LeadAuditor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_LeadAuditor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_PeerReviewer(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_PeerReviewer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PeerReviewer, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_PeerReviewer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_Opinion(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_Opinion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Opinion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_Opinion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_StatementRef(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_StatementRef(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StatementRef, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_StatementRef(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_Frozen(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_Frozen(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Frozen, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_Frozen(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_ReviewVerdict_SignedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryReviewVerdict) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_ReviewVerdict_SignedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SignedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_ReviewVerdict_SignedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_ReviewVerdict",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _inventory_Supplier_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventorySupplier) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_inventory_Supplier_Id(ctx, field)
 	if err != nil {
@@ -9595,6 +15962,898 @@ func (ec *executionContext) fieldContext_inventory_Tenant_Facilities(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _inventory_Tenant_Processes(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_Processes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().Processes(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryProcess)
+	fc.Result = res
+	return ec.marshalOinventory_Process2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryProcessᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_Processes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_Process_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_Process_ParentLabels(ctx, field)
+			case "RecordID":
+				return ec.fieldContext_inventory_Process_RecordID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_Process_TenantID(ctx, field)
+			case "FacilityID":
+				return ec.fieldContext_inventory_Process_FacilityID(ctx, field)
+			case "FacilityName":
+				return ec.fieldContext_inventory_Process_FacilityName(ctx, field)
+			case "Name":
+				return ec.fieldContext_inventory_Process_Name(ctx, field)
+			case "ProductionLine":
+				return ec.fieldContext_inventory_Process_ProductionLine(ctx, field)
+			case "EnergySource":
+				return ec.fieldContext_inventory_Process_EnergySource(ctx, field)
+			case "Inputs":
+				return ec.fieldContext_inventory_Process_Inputs(ctx, field)
+			case "Outputs":
+				return ec.fieldContext_inventory_Process_Outputs(ctx, field)
+			case "Meters":
+				return ec.fieldContext_inventory_Process_Meters(ctx, field)
+			case "Scopes":
+				return ec.fieldContext_inventory_Process_Scopes(ctx, field)
+			case "Status":
+				return ec.fieldContext_inventory_Process_Status(ctx, field)
+			case "Description":
+				return ec.fieldContext_inventory_Process_Description(ctx, field)
+			case "PCFTrace":
+				return ec.fieldContext_inventory_Process_PCFTrace(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_inventory_Process_CreatedAt(ctx, field)
+			case "UpdatedAt":
+				return ec.fieldContext_inventory_Process_UpdatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_Process", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_Processes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_ReportingPeriods(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_ReportingPeriods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().ReportingPeriods(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryReportingPeriod)
+	fc.Result = res
+	return ec.marshalOinventory_ReportingPeriod2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryReportingPeriodᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_ReportingPeriods(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_ReportingPeriod_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_ReportingPeriod_ParentLabels(ctx, field)
+			case "RecordID":
+				return ec.fieldContext_inventory_ReportingPeriod_RecordID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_ReportingPeriod_TenantID(ctx, field)
+			case "Name":
+				return ec.fieldContext_inventory_ReportingPeriod_Name(ctx, field)
+			case "Year":
+				return ec.fieldContext_inventory_ReportingPeriod_Year(ctx, field)
+			case "Quarter":
+				return ec.fieldContext_inventory_ReportingPeriod_Quarter(ctx, field)
+			case "StartDate":
+				return ec.fieldContext_inventory_ReportingPeriod_StartDate(ctx, field)
+			case "EndDate":
+				return ec.fieldContext_inventory_ReportingPeriod_EndDate(ctx, field)
+			case "Status":
+				return ec.fieldContext_inventory_ReportingPeriod_Status(ctx, field)
+			case "EmissionsTotal":
+				return ec.fieldContext_inventory_ReportingPeriod_EmissionsTotal(ctx, field)
+			case "DataCompleteness":
+				return ec.fieldContext_inventory_ReportingPeriod_DataCompleteness(ctx, field)
+			case "VerificationStatus":
+				return ec.fieldContext_inventory_ReportingPeriod_VerificationStatus(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_inventory_ReportingPeriod_CreatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_ReportingPeriod", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_ReportingPeriods_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_Localisation(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_Localisation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().Localisation(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryLocalisation)
+	fc.Result = res
+	return ec.marshalOinventory_Localisation2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryLocalisationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_Localisation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_Localisation_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_Localisation_ParentLabels(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_Localisation_TenantID(ctx, field)
+			case "Country":
+				return ec.fieldContext_inventory_Localisation_Country(ctx, field)
+			case "Currency":
+				return ec.fieldContext_inventory_Localisation_Currency(ctx, field)
+			case "Timezone":
+				return ec.fieldContext_inventory_Localisation_Timezone(ctx, field)
+			case "Language":
+				return ec.fieldContext_inventory_Localisation_Language(ctx, field)
+			case "Units":
+				return ec.fieldContext_inventory_Localisation_Units(ctx, field)
+			case "Regulatory":
+				return ec.fieldContext_inventory_Localisation_Regulatory(ctx, field)
+			case "DefaultLanguage":
+				return ec.fieldContext_inventory_Localisation_DefaultLanguage(ctx, field)
+			case "DefaultCurrency":
+				return ec.fieldContext_inventory_Localisation_DefaultCurrency(ctx, field)
+			case "DefaultTimezone":
+				return ec.fieldContext_inventory_Localisation_DefaultTimezone(ctx, field)
+			case "DefaultEmissionUnit":
+				return ec.fieldContext_inventory_Localisation_DefaultEmissionUnit(ctx, field)
+			case "NumberFormat":
+				return ec.fieldContext_inventory_Localisation_NumberFormat(ctx, field)
+			case "DateFormat":
+				return ec.fieldContext_inventory_Localisation_DateFormat(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_Localisation", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_Localisation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_Approvals(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_Approvals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().Approvals(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryApproval)
+	fc.Result = res
+	return ec.marshalOinventory_Approval2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryApprovalᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_Approvals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_Approval_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_Approval_ParentLabels(ctx, field)
+			case "RecordID":
+				return ec.fieldContext_inventory_Approval_RecordID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_Approval_TenantID(ctx, field)
+			case "PassportID":
+				return ec.fieldContext_inventory_Approval_PassportID(ctx, field)
+			case "BatchNumber":
+				return ec.fieldContext_inventory_Approval_BatchNumber(ctx, field)
+			case "RequestedBy":
+				return ec.fieldContext_inventory_Approval_RequestedBy(ctx, field)
+			case "Role":
+				return ec.fieldContext_inventory_Approval_Role(ctx, field)
+			case "Status":
+				return ec.fieldContext_inventory_Approval_Status(ctx, field)
+			case "ApproverComment":
+				return ec.fieldContext_inventory_Approval_ApproverComment(ctx, field)
+			case "SubmittedAt":
+				return ec.fieldContext_inventory_Approval_SubmittedAt(ctx, field)
+			case "ResolvedAt":
+				return ec.fieldContext_inventory_Approval_ResolvedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_Approval", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_Approvals_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_VerificationAgencies(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_VerificationAgencies(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().VerificationAgencies(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryVerificationAgency)
+	fc.Result = res
+	return ec.marshalOinventory_VerificationAgency2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryVerificationAgencyᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_VerificationAgencies(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_VerificationAgency_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_VerificationAgency_ParentLabels(ctx, field)
+			case "AgencyID":
+				return ec.fieldContext_inventory_VerificationAgency_AgencyID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_VerificationAgency_TenantID(ctx, field)
+			case "Name":
+				return ec.fieldContext_inventory_VerificationAgency_Name(ctx, field)
+			case "AccreditationNumber":
+				return ec.fieldContext_inventory_VerificationAgency_AccreditationNumber(ctx, field)
+			case "AccreditationBody":
+				return ec.fieldContext_inventory_VerificationAgency_AccreditationBody(ctx, field)
+			case "AccreditationStatus":
+				return ec.fieldContext_inventory_VerificationAgency_AccreditationStatus(ctx, field)
+			case "AccreditationExpiry":
+				return ec.fieldContext_inventory_VerificationAgency_AccreditationExpiry(ctx, field)
+			case "Scopes":
+				return ec.fieldContext_inventory_VerificationAgency_Scopes(ctx, field)
+			case "ValidFrom":
+				return ec.fieldContext_inventory_VerificationAgency_ValidFrom(ctx, field)
+			case "ValidTo":
+				return ec.fieldContext_inventory_VerificationAgency_ValidTo(ctx, field)
+			case "ContactEmail":
+				return ec.fieldContext_inventory_VerificationAgency_ContactEmail(ctx, field)
+			case "ContactPhone":
+				return ec.fieldContext_inventory_VerificationAgency_ContactPhone(ctx, field)
+			case "LeadAuditor":
+				return ec.fieldContext_inventory_VerificationAgency_LeadAuditor(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_inventory_VerificationAgency_CreatedAt(ctx, field)
+			case "UpdatedAt":
+				return ec.fieldContext_inventory_VerificationAgency_UpdatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_VerificationAgency", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_VerificationAgencies_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_VerificationEngagements(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_VerificationEngagements(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().VerificationEngagements(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryVerificationEngagement)
+	fc.Result = res
+	return ec.marshalOinventory_VerificationEngagement2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryVerificationEngagementᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_VerificationEngagements(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_VerificationEngagement_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_VerificationEngagement_ParentLabels(ctx, field)
+			case "EngagementID":
+				return ec.fieldContext_inventory_VerificationEngagement_EngagementID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_VerificationEngagement_TenantID(ctx, field)
+			case "AgencyID":
+				return ec.fieldContext_inventory_VerificationEngagement_AgencyID(ctx, field)
+			case "PassportID":
+				return ec.fieldContext_inventory_VerificationEngagement_PassportID(ctx, field)
+			case "BatchID":
+				return ec.fieldContext_inventory_VerificationEngagement_BatchID(ctx, field)
+			case "Period":
+				return ec.fieldContext_inventory_VerificationEngagement_Period(ctx, field)
+			case "Methodology":
+				return ec.fieldContext_inventory_VerificationEngagement_Methodology(ctx, field)
+			case "SnapshotHash":
+				return ec.fieldContext_inventory_VerificationEngagement_SnapshotHash(ctx, field)
+			case "Status":
+				return ec.fieldContext_inventory_VerificationEngagement_Status(ctx, field)
+			case "AssignedVerifier":
+				return ec.fieldContext_inventory_VerificationEngagement_AssignedVerifier(ctx, field)
+			case "ScopeMatch":
+				return ec.fieldContext_inventory_VerificationEngagement_ScopeMatch(ctx, field)
+			case "FindingsCount":
+				return ec.fieldContext_inventory_VerificationEngagement_FindingsCount(ctx, field)
+			case "Timeline":
+				return ec.fieldContext_inventory_VerificationEngagement_Timeline(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_inventory_VerificationEngagement_CreatedAt(ctx, field)
+			case "UpdatedAt":
+				return ec.fieldContext_inventory_VerificationEngagement_UpdatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_VerificationEngagement", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_VerificationEngagements_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_EngagementTeamMembers(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_EngagementTeamMembers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().EngagementTeamMembers(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryEngagementTeamMember)
+	fc.Result = res
+	return ec.marshalOinventory_EngagementTeamMember2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryEngagementTeamMemberᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_EngagementTeamMembers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_EngagementTeamMember_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_EngagementTeamMember_ParentLabels(ctx, field)
+			case "MemberID":
+				return ec.fieldContext_inventory_EngagementTeamMember_MemberID(ctx, field)
+			case "EngagementID":
+				return ec.fieldContext_inventory_EngagementTeamMember_EngagementID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_EngagementTeamMember_TenantID(ctx, field)
+			case "Name":
+				return ec.fieldContext_inventory_EngagementTeamMember_Name(ctx, field)
+			case "Role":
+				return ec.fieldContext_inventory_EngagementTeamMember_Role(ctx, field)
+			case "Email":
+				return ec.fieldContext_inventory_EngagementTeamMember_Email(ctx, field)
+			case "AssignedAt":
+				return ec.fieldContext_inventory_EngagementTeamMember_AssignedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_EngagementTeamMember", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_EngagementTeamMembers_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_COIDeclarations(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_COIDeclarations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().COIDeclarations(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryCOIDeclaration)
+	fc.Result = res
+	return ec.marshalOinventory_COIDeclaration2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryCOIDeclarationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_COIDeclarations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_COIDeclaration_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_COIDeclaration_ParentLabels(ctx, field)
+			case "DeclarationID":
+				return ec.fieldContext_inventory_COIDeclaration_DeclarationID(ctx, field)
+			case "EngagementID":
+				return ec.fieldContext_inventory_COIDeclaration_EngagementID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_COIDeclaration_TenantID(ctx, field)
+			case "AuditorName":
+				return ec.fieldContext_inventory_COIDeclaration_AuditorName(ctx, field)
+			case "AuditorEmail":
+				return ec.fieldContext_inventory_COIDeclaration_AuditorEmail(ctx, field)
+			case "HasConflict":
+				return ec.fieldContext_inventory_COIDeclaration_HasConflict(ctx, field)
+			case "Explanation":
+				return ec.fieldContext_inventory_COIDeclaration_Explanation(ctx, field)
+			case "DeclaredAt":
+				return ec.fieldContext_inventory_COIDeclaration_DeclaredAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_COIDeclaration", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_COIDeclarations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_Findings(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_Findings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().Findings(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryFinding)
+	fc.Result = res
+	return ec.marshalOinventory_Finding2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryFindingᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_Findings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_Finding_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_Finding_ParentLabels(ctx, field)
+			case "FindingID":
+				return ec.fieldContext_inventory_Finding_FindingID(ctx, field)
+			case "EngagementID":
+				return ec.fieldContext_inventory_Finding_EngagementID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_Finding_TenantID(ctx, field)
+			case "Category":
+				return ec.fieldContext_inventory_Finding_Category(ctx, field)
+			case "Severity":
+				return ec.fieldContext_inventory_Finding_Severity(ctx, field)
+			case "Status":
+				return ec.fieldContext_inventory_Finding_Status(ctx, field)
+			case "Description":
+				return ec.fieldContext_inventory_Finding_Description(ctx, field)
+			case "Discrepancy":
+				return ec.fieldContext_inventory_Finding_Discrepancy(ctx, field)
+			case "RaisedBy":
+				return ec.fieldContext_inventory_Finding_RaisedBy(ctx, field)
+			case "ResolvedBy":
+				return ec.fieldContext_inventory_Finding_ResolvedBy(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_inventory_Finding_CreatedAt(ctx, field)
+			case "UpdatedAt":
+				return ec.fieldContext_inventory_Finding_UpdatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_Finding", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_Findings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_ReviewSignoffs(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_ReviewSignoffs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().ReviewSignoffs(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryReviewVerdict)
+	fc.Result = res
+	return ec.marshalOinventory_ReviewVerdict2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryReviewVerdictᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_ReviewSignoffs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_ReviewVerdict_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_ReviewVerdict_ParentLabels(ctx, field)
+			case "SignoffID":
+				return ec.fieldContext_inventory_ReviewVerdict_SignoffID(ctx, field)
+			case "EngagementID":
+				return ec.fieldContext_inventory_ReviewVerdict_EngagementID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_ReviewVerdict_TenantID(ctx, field)
+			case "PassportID":
+				return ec.fieldContext_inventory_ReviewVerdict_PassportID(ctx, field)
+			case "LeadAuditor":
+				return ec.fieldContext_inventory_ReviewVerdict_LeadAuditor(ctx, field)
+			case "PeerReviewer":
+				return ec.fieldContext_inventory_ReviewVerdict_PeerReviewer(ctx, field)
+			case "Opinion":
+				return ec.fieldContext_inventory_ReviewVerdict_Opinion(ctx, field)
+			case "StatementRef":
+				return ec.fieldContext_inventory_ReviewVerdict_StatementRef(ctx, field)
+			case "Frozen":
+				return ec.fieldContext_inventory_ReviewVerdict_Frozen(ctx, field)
+			case "SignedAt":
+				return ec.fieldContext_inventory_ReviewVerdict_SignedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_ReviewVerdict", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_ReviewSignoffs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_Tenant_InputCorrections(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_InputCorrections(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inventory_Tenant().InputCorrections(rctx, obj, fc.Args["Id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InventoryInputCorrection)
+	fc.Result = res
+	return ec.marshalOinventory_InputCorrection2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryInputCorrectionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_InputCorrections(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "Id":
+				return ec.fieldContext_inventory_InputCorrection_Id(ctx, field)
+			case "ParentLabels":
+				return ec.fieldContext_inventory_InputCorrection_ParentLabels(ctx, field)
+			case "CorrectionID":
+				return ec.fieldContext_inventory_InputCorrection_CorrectionID(ctx, field)
+			case "TenantID":
+				return ec.fieldContext_inventory_InputCorrection_TenantID(ctx, field)
+			case "InputNodeID":
+				return ec.fieldContext_inventory_InputCorrection_InputNodeID(ctx, field)
+			case "NewValue":
+				return ec.fieldContext_inventory_InputCorrection_NewValue(ctx, field)
+			case "Reason":
+				return ec.fieldContext_inventory_InputCorrection_Reason(ctx, field)
+			case "ResultRaw":
+				return ec.fieldContext_inventory_InputCorrection_ResultRaw(ctx, field)
+			case "NodesRaw":
+				return ec.fieldContext_inventory_InputCorrection_NodesRaw(ctx, field)
+			case "EdgesRaw":
+				return ec.fieldContext_inventory_InputCorrection_EdgesRaw(ctx, field)
+			case "CreatedAt":
+				return ec.fieldContext_inventory_InputCorrection_CreatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type inventory_InputCorrection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_inventory_Tenant_InputCorrections_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _inventory_Tenant_Products(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_inventory_Tenant_Products(ctx, field)
 	if err != nil {
@@ -9681,80 +16940,6 @@ func (ec *executionContext) fieldContext_inventory_Tenant_Products(ctx context.C
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_inventory_Tenant_Products_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _inventory_Tenant_Users(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_Tenant_Users(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Inventory_Tenant().Users(rctx, obj, fc.Args["Id"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.InventoryUser)
-	fc.Result = res
-	return ec.marshalOinventory_User2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryUserᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_inventory_Tenant_Users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "inventory_Tenant",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "Id":
-				return ec.fieldContext_inventory_User_Id(ctx, field)
-			case "ParentLabels":
-				return ec.fieldContext_inventory_User_ParentLabels(ctx, field)
-			case "UserID":
-				return ec.fieldContext_inventory_User_UserID(ctx, field)
-			case "TenantID":
-				return ec.fieldContext_inventory_User_TenantID(ctx, field)
-			case "Name":
-				return ec.fieldContext_inventory_User_Name(ctx, field)
-			case "Email":
-				return ec.fieldContext_inventory_User_Email(ctx, field)
-			case "Role":
-				return ec.fieldContext_inventory_User_Role(ctx, field)
-			case "FacilityScope":
-				return ec.fieldContext_inventory_User_FacilityScope(ctx, field)
-			case "LastLogin":
-				return ec.fieldContext_inventory_User_LastLogin(ctx, field)
-			case "Status":
-				return ec.fieldContext_inventory_User_Status(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type inventory_User", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_inventory_Tenant_Users_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -9925,8 +17110,49 @@ func (ec *executionContext) fieldContext_inventory_Tenant_Industry(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_Id(ctx, field)
+func (ec *executionContext) _inventory_Tenant_ProfileRaw(ctx context.Context, field graphql.CollectedField, obj *model.InventoryTenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_Tenant_ProfileRaw(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProfileRaw, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_Tenant_ProfileRaw(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_Tenant",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationAgency_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_Id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9953,9 +17179,9 @@ func (ec *executionContext) _inventory_User_Id(ctx context.Context, field graphq
 	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -9966,8 +17192,8 @@ func (ec *executionContext) fieldContext_inventory_User_Id(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_ParentLabels(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_ParentLabels(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9994,9 +17220,9 @@ func (ec *executionContext) _inventory_User_ParentLabels(ctx context.Context, fi
 	return ec.marshalOMap2map(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10007,8 +17233,8 @@ func (ec *executionContext) fieldContext_inventory_User_ParentLabels(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_UserID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_UserID(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_AgencyID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_AgencyID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10021,7 +17247,7 @@ func (ec *executionContext) _inventory_User_UserID(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UserID, nil
+		return obj.AgencyID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10035,9 +17261,9 @@ func (ec *executionContext) _inventory_User_UserID(ctx context.Context, field gr
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_UserID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_AgencyID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10048,8 +17274,8 @@ func (ec *executionContext) fieldContext_inventory_User_UserID(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_TenantID(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_TenantID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10076,9 +17302,9 @@ func (ec *executionContext) _inventory_User_TenantID(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10089,8 +17315,8 @@ func (ec *executionContext) fieldContext_inventory_User_TenantID(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_Name(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_Name(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_Name(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_Name(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10117,9 +17343,9 @@ func (ec *executionContext) _inventory_User_Name(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_Name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_Name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10130,8 +17356,8 @@ func (ec *executionContext) fieldContext_inventory_User_Name(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_Email(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_Email(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_AccreditationNumber(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_AccreditationNumber(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10144,7 +17370,7 @@ func (ec *executionContext) _inventory_User_Email(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Email, nil
+		return obj.AccreditationNumber, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10158,9 +17384,9 @@ func (ec *executionContext) _inventory_User_Email(ctx context.Context, field gra
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_Email(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_AccreditationNumber(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10171,8 +17397,8 @@ func (ec *executionContext) fieldContext_inventory_User_Email(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_Role(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_Role(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_AccreditationBody(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_AccreditationBody(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10185,7 +17411,7 @@ func (ec *executionContext) _inventory_User_Role(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Role, nil
+		return obj.AccreditationBody, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10199,9 +17425,9 @@ func (ec *executionContext) _inventory_User_Role(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_Role(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_AccreditationBody(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10212,8 +17438,8 @@ func (ec *executionContext) fieldContext_inventory_User_Role(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_FacilityScope(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_FacilityScope(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_AccreditationStatus(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_AccreditationStatus(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10226,7 +17452,7 @@ func (ec *executionContext) _inventory_User_FacilityScope(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FacilityScope, nil
+		return obj.AccreditationStatus, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10240,9 +17466,9 @@ func (ec *executionContext) _inventory_User_FacilityScope(ctx context.Context, f
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_FacilityScope(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_AccreditationStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10253,8 +17479,8 @@ func (ec *executionContext) fieldContext_inventory_User_FacilityScope(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_LastLogin(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_LastLogin(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_AccreditationExpiry(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_AccreditationExpiry(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10267,7 +17493,7 @@ func (ec *executionContext) _inventory_User_LastLogin(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.LastLogin, nil
+		return obj.AccreditationExpiry, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10281,9 +17507,9 @@ func (ec *executionContext) _inventory_User_LastLogin(ctx context.Context, field
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_LastLogin(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_AccreditationExpiry(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationAgency",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10294,8 +17520,746 @@ func (ec *executionContext) fieldContext_inventory_User_LastLogin(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _inventory_User_Status(ctx context.Context, field graphql.CollectedField, obj *model.InventoryUser) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_inventory_User_Status(ctx, field)
+func (ec *executionContext) _inventory_VerificationAgency_Scopes(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_Scopes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scopes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_Scopes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationAgency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationAgency_ValidFrom(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_ValidFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ValidFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_ValidFrom(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationAgency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationAgency_ValidTo(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_ValidTo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ValidTo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_ValidTo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationAgency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationAgency_ContactEmail(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_ContactEmail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContactEmail, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_ContactEmail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationAgency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationAgency_ContactPhone(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_ContactPhone(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContactPhone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_ContactPhone(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationAgency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationAgency_LeadAuditor(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_LeadAuditor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LeadAuditor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_LeadAuditor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationAgency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationAgency_CreatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_CreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_CreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationAgency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationAgency_UpdatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationAgency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationAgency_UpdatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationAgency_UpdatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationAgency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_Id(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_Id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_Id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_ParentLabels(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_ParentLabels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_ParentLabels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_EngagementID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_EngagementID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EngagementID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_EngagementID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_TenantID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_TenantID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_TenantID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_AgencyID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_AgencyID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgencyID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_AgencyID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_PassportID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_PassportID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PassportID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_PassportID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_BatchID(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_BatchID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BatchID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_BatchID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_Period(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_Period(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Period, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_Period(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_Methodology(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_Methodology(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Methodology, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_Methodology(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_SnapshotHash(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_SnapshotHash(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SnapshotHash, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_SnapshotHash(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_Status(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_Status(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10322,9 +18286,255 @@ func (ec *executionContext) _inventory_User_Status(ctx context.Context, field gr
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_inventory_User_Status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_Status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "inventory_User",
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_AssignedVerifier(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_AssignedVerifier(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssignedVerifier, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_AssignedVerifier(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_ScopeMatch(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_ScopeMatch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScopeMatch, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_ScopeMatch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_FindingsCount(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_FindingsCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FindingsCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_FindingsCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_Timeline(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_Timeline(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timeline, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_Timeline(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_CreatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_CreatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_CreatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _inventory_VerificationEngagement_UpdatedAt(ctx context.Context, field graphql.CollectedField, obj *model.InventoryVerificationEngagement) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_inventory_VerificationEngagement_UpdatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_inventory_VerificationEngagement_UpdatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "inventory_VerificationEngagement",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -13728,6 +21938,136 @@ func (ec *executionContext) _inventory_ACVAgency(ctx context.Context, sel ast.Se
 	return out
 }
 
+var inventory_ApprovalImplementors = []string{"inventory_Approval"}
+
+func (ec *executionContext) _inventory_Approval(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryApproval) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_ApprovalImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_Approval")
+		case "Id":
+
+			out.Values[i] = ec._inventory_Approval_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_Approval_ParentLabels(ctx, field, obj)
+
+		case "RecordID":
+
+			out.Values[i] = ec._inventory_Approval_RecordID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_Approval_TenantID(ctx, field, obj)
+
+		case "PassportID":
+
+			out.Values[i] = ec._inventory_Approval_PassportID(ctx, field, obj)
+
+		case "BatchNumber":
+
+			out.Values[i] = ec._inventory_Approval_BatchNumber(ctx, field, obj)
+
+		case "RequestedBy":
+
+			out.Values[i] = ec._inventory_Approval_RequestedBy(ctx, field, obj)
+
+		case "Role":
+
+			out.Values[i] = ec._inventory_Approval_Role(ctx, field, obj)
+
+		case "Status":
+
+			out.Values[i] = ec._inventory_Approval_Status(ctx, field, obj)
+
+		case "ApproverComment":
+
+			out.Values[i] = ec._inventory_Approval_ApproverComment(ctx, field, obj)
+
+		case "SubmittedAt":
+
+			out.Values[i] = ec._inventory_Approval_SubmittedAt(ctx, field, obj)
+
+		case "ResolvedAt":
+
+			out.Values[i] = ec._inventory_Approval_ResolvedAt(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inventory_COIDeclarationImplementors = []string{"inventory_COIDeclaration"}
+
+func (ec *executionContext) _inventory_COIDeclaration(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryCOIDeclaration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_COIDeclarationImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_COIDeclaration")
+		case "Id":
+
+			out.Values[i] = ec._inventory_COIDeclaration_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_COIDeclaration_ParentLabels(ctx, field, obj)
+
+		case "DeclarationID":
+
+			out.Values[i] = ec._inventory_COIDeclaration_DeclarationID(ctx, field, obj)
+
+		case "EngagementID":
+
+			out.Values[i] = ec._inventory_COIDeclaration_EngagementID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_COIDeclaration_TenantID(ctx, field, obj)
+
+		case "AuditorName":
+
+			out.Values[i] = ec._inventory_COIDeclaration_AuditorName(ctx, field, obj)
+
+		case "AuditorEmail":
+
+			out.Values[i] = ec._inventory_COIDeclaration_AuditorEmail(ctx, field, obj)
+
+		case "HasConflict":
+
+			out.Values[i] = ec._inventory_COIDeclaration_HasConflict(ctx, field, obj)
+
+		case "Explanation":
+
+			out.Values[i] = ec._inventory_COIDeclaration_Explanation(ctx, field, obj)
+
+		case "DeclaredAt":
+
+			out.Values[i] = ec._inventory_COIDeclaration_DeclaredAt(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var inventory_DeclarationImplementors = []string{"inventory_Declaration"}
 
 func (ec *executionContext) _inventory_Declaration(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryDeclaration) graphql.Marshaler {
@@ -13765,6 +22105,63 @@ func (ec *executionContext) _inventory_Declaration(ctx context.Context, sel ast.
 		case "DataClassification":
 
 			out.Values[i] = ec._inventory_Declaration_DataClassification(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inventory_EngagementTeamMemberImplementors = []string{"inventory_EngagementTeamMember"}
+
+func (ec *executionContext) _inventory_EngagementTeamMember(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryEngagementTeamMember) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_EngagementTeamMemberImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_EngagementTeamMember")
+		case "Id":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_ParentLabels(ctx, field, obj)
+
+		case "MemberID":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_MemberID(ctx, field, obj)
+
+		case "EngagementID":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_EngagementID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_TenantID(ctx, field, obj)
+
+		case "Name":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_Name(ctx, field, obj)
+
+		case "Role":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_Role(ctx, field, obj)
+
+		case "Email":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_Email(ctx, field, obj)
+
+		case "AssignedAt":
+
+			out.Values[i] = ec._inventory_EngagementTeamMember_AssignedAt(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -13827,6 +22224,148 @@ func (ec *executionContext) _inventory_Facility(ctx context.Context, sel ast.Sel
 		case "CountryCode":
 
 			out.Values[i] = ec._inventory_Facility_CountryCode(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inventory_FindingImplementors = []string{"inventory_Finding"}
+
+func (ec *executionContext) _inventory_Finding(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryFinding) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_FindingImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_Finding")
+		case "Id":
+
+			out.Values[i] = ec._inventory_Finding_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_Finding_ParentLabels(ctx, field, obj)
+
+		case "FindingID":
+
+			out.Values[i] = ec._inventory_Finding_FindingID(ctx, field, obj)
+
+		case "EngagementID":
+
+			out.Values[i] = ec._inventory_Finding_EngagementID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_Finding_TenantID(ctx, field, obj)
+
+		case "Category":
+
+			out.Values[i] = ec._inventory_Finding_Category(ctx, field, obj)
+
+		case "Severity":
+
+			out.Values[i] = ec._inventory_Finding_Severity(ctx, field, obj)
+
+		case "Status":
+
+			out.Values[i] = ec._inventory_Finding_Status(ctx, field, obj)
+
+		case "Description":
+
+			out.Values[i] = ec._inventory_Finding_Description(ctx, field, obj)
+
+		case "Discrepancy":
+
+			out.Values[i] = ec._inventory_Finding_Discrepancy(ctx, field, obj)
+
+		case "RaisedBy":
+
+			out.Values[i] = ec._inventory_Finding_RaisedBy(ctx, field, obj)
+
+		case "ResolvedBy":
+
+			out.Values[i] = ec._inventory_Finding_ResolvedBy(ctx, field, obj)
+
+		case "CreatedAt":
+
+			out.Values[i] = ec._inventory_Finding_CreatedAt(ctx, field, obj)
+
+		case "UpdatedAt":
+
+			out.Values[i] = ec._inventory_Finding_UpdatedAt(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inventory_InputCorrectionImplementors = []string{"inventory_InputCorrection"}
+
+func (ec *executionContext) _inventory_InputCorrection(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryInputCorrection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_InputCorrectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_InputCorrection")
+		case "Id":
+
+			out.Values[i] = ec._inventory_InputCorrection_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_InputCorrection_ParentLabels(ctx, field, obj)
+
+		case "CorrectionID":
+
+			out.Values[i] = ec._inventory_InputCorrection_CorrectionID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_InputCorrection_TenantID(ctx, field, obj)
+
+		case "InputNodeID":
+
+			out.Values[i] = ec._inventory_InputCorrection_InputNodeID(ctx, field, obj)
+
+		case "NewValue":
+
+			out.Values[i] = ec._inventory_InputCorrection_NewValue(ctx, field, obj)
+
+		case "Reason":
+
+			out.Values[i] = ec._inventory_InputCorrection_Reason(ctx, field, obj)
+
+		case "ResultRaw":
+
+			out.Values[i] = ec._inventory_InputCorrection_ResultRaw(ctx, field, obj)
+
+		case "NodesRaw":
+
+			out.Values[i] = ec._inventory_InputCorrection_NodesRaw(ctx, field, obj)
+
+		case "EdgesRaw":
+
+			out.Values[i] = ec._inventory_InputCorrection_EdgesRaw(ctx, field, obj)
+
+		case "CreatedAt":
+
+			out.Values[i] = ec._inventory_InputCorrection_CreatedAt(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -13908,6 +22447,87 @@ func (ec *executionContext) _inventory_Inventory(ctx context.Context, sel ast.Se
 				return innerFunc(ctx)
 
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inventory_LocalisationImplementors = []string{"inventory_Localisation"}
+
+func (ec *executionContext) _inventory_Localisation(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryLocalisation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_LocalisationImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_Localisation")
+		case "Id":
+
+			out.Values[i] = ec._inventory_Localisation_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_Localisation_ParentLabels(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_Localisation_TenantID(ctx, field, obj)
+
+		case "Country":
+
+			out.Values[i] = ec._inventory_Localisation_Country(ctx, field, obj)
+
+		case "Currency":
+
+			out.Values[i] = ec._inventory_Localisation_Currency(ctx, field, obj)
+
+		case "Timezone":
+
+			out.Values[i] = ec._inventory_Localisation_Timezone(ctx, field, obj)
+
+		case "Language":
+
+			out.Values[i] = ec._inventory_Localisation_Language(ctx, field, obj)
+
+		case "Units":
+
+			out.Values[i] = ec._inventory_Localisation_Units(ctx, field, obj)
+
+		case "Regulatory":
+
+			out.Values[i] = ec._inventory_Localisation_Regulatory(ctx, field, obj)
+
+		case "DefaultLanguage":
+
+			out.Values[i] = ec._inventory_Localisation_DefaultLanguage(ctx, field, obj)
+
+		case "DefaultCurrency":
+
+			out.Values[i] = ec._inventory_Localisation_DefaultCurrency(ctx, field, obj)
+
+		case "DefaultTimezone":
+
+			out.Values[i] = ec._inventory_Localisation_DefaultTimezone(ctx, field, obj)
+
+		case "DefaultEmissionUnit":
+
+			out.Values[i] = ec._inventory_Localisation_DefaultEmissionUnit(ctx, field, obj)
+
+		case "NumberFormat":
+
+			out.Values[i] = ec._inventory_Localisation_NumberFormat(ctx, field, obj)
+
+		case "DateFormat":
+
+			out.Values[i] = ec._inventory_Localisation_DateFormat(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14005,6 +22625,99 @@ func (ec *executionContext) _inventory_Meter(ctx context.Context, sel ast.Select
 		case "Manufacturer":
 
 			out.Values[i] = ec._inventory_Meter_Manufacturer(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inventory_ProcessImplementors = []string{"inventory_Process"}
+
+func (ec *executionContext) _inventory_Process(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryProcess) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_ProcessImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_Process")
+		case "Id":
+
+			out.Values[i] = ec._inventory_Process_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_Process_ParentLabels(ctx, field, obj)
+
+		case "RecordID":
+
+			out.Values[i] = ec._inventory_Process_RecordID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_Process_TenantID(ctx, field, obj)
+
+		case "FacilityID":
+
+			out.Values[i] = ec._inventory_Process_FacilityID(ctx, field, obj)
+
+		case "FacilityName":
+
+			out.Values[i] = ec._inventory_Process_FacilityName(ctx, field, obj)
+
+		case "Name":
+
+			out.Values[i] = ec._inventory_Process_Name(ctx, field, obj)
+
+		case "ProductionLine":
+
+			out.Values[i] = ec._inventory_Process_ProductionLine(ctx, field, obj)
+
+		case "EnergySource":
+
+			out.Values[i] = ec._inventory_Process_EnergySource(ctx, field, obj)
+
+		case "Inputs":
+
+			out.Values[i] = ec._inventory_Process_Inputs(ctx, field, obj)
+
+		case "Outputs":
+
+			out.Values[i] = ec._inventory_Process_Outputs(ctx, field, obj)
+
+		case "Meters":
+
+			out.Values[i] = ec._inventory_Process_Meters(ctx, field, obj)
+
+		case "Scopes":
+
+			out.Values[i] = ec._inventory_Process_Scopes(ctx, field, obj)
+
+		case "Status":
+
+			out.Values[i] = ec._inventory_Process_Status(ctx, field, obj)
+
+		case "Description":
+
+			out.Values[i] = ec._inventory_Process_Description(ctx, field, obj)
+
+		case "PCFTrace":
+
+			out.Values[i] = ec._inventory_Process_PCFTrace(ctx, field, obj)
+
+		case "CreatedAt":
+
+			out.Values[i] = ec._inventory_Process_CreatedAt(ctx, field, obj)
+
+		case "UpdatedAt":
+
+			out.Values[i] = ec._inventory_Process_UpdatedAt(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -14127,6 +22840,152 @@ func (ec *executionContext) _inventory_Product(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var inventory_ReportingPeriodImplementors = []string{"inventory_ReportingPeriod"}
+
+func (ec *executionContext) _inventory_ReportingPeriod(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryReportingPeriod) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_ReportingPeriodImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_ReportingPeriod")
+		case "Id":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_ParentLabels(ctx, field, obj)
+
+		case "RecordID":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_RecordID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_TenantID(ctx, field, obj)
+
+		case "Name":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_Name(ctx, field, obj)
+
+		case "Year":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_Year(ctx, field, obj)
+
+		case "Quarter":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_Quarter(ctx, field, obj)
+
+		case "StartDate":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_StartDate(ctx, field, obj)
+
+		case "EndDate":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_EndDate(ctx, field, obj)
+
+		case "Status":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_Status(ctx, field, obj)
+
+		case "EmissionsTotal":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_EmissionsTotal(ctx, field, obj)
+
+		case "DataCompleteness":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_DataCompleteness(ctx, field, obj)
+
+		case "VerificationStatus":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_VerificationStatus(ctx, field, obj)
+
+		case "CreatedAt":
+
+			out.Values[i] = ec._inventory_ReportingPeriod_CreatedAt(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inventory_ReviewVerdictImplementors = []string{"inventory_ReviewVerdict"}
+
+func (ec *executionContext) _inventory_ReviewVerdict(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryReviewVerdict) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_ReviewVerdictImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_ReviewVerdict")
+		case "Id":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_ParentLabels(ctx, field, obj)
+
+		case "SignoffID":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_SignoffID(ctx, field, obj)
+
+		case "EngagementID":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_EngagementID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_TenantID(ctx, field, obj)
+
+		case "PassportID":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_PassportID(ctx, field, obj)
+
+		case "LeadAuditor":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_LeadAuditor(ctx, field, obj)
+
+		case "PeerReviewer":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_PeerReviewer(ctx, field, obj)
+
+		case "Opinion":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_Opinion(ctx, field, obj)
+
+		case "StatementRef":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_StatementRef(ctx, field, obj)
+
+		case "Frozen":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_Frozen(ctx, field, obj)
+
+		case "SignedAt":
+
+			out.Values[i] = ec._inventory_ReviewVerdict_SignedAt(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var inventory_SupplierImplementors = []string{"inventory_Supplier"}
 
 func (ec *executionContext) _inventory_Supplier(ctx context.Context, sel ast.SelectionSet, obj *model.InventorySupplier) graphql.Marshaler {
@@ -14224,6 +23083,193 @@ func (ec *executionContext) _inventory_Tenant(ctx context.Context, sel ast.Selec
 				return innerFunc(ctx)
 
 			})
+		case "Processes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_Processes(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "ReportingPeriods":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_ReportingPeriods(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "Localisation":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_Localisation(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "Approvals":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_Approvals(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "VerificationAgencies":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_VerificationAgencies(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "VerificationEngagements":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_VerificationEngagements(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "EngagementTeamMembers":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_EngagementTeamMembers(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "COIDeclarations":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_COIDeclarations(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "Findings":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_Findings(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "ReviewSignoffs":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_ReviewSignoffs(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "InputCorrections":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._inventory_Tenant_InputCorrections(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "Products":
 			field := field
 
@@ -14234,23 +23280,6 @@ func (ec *executionContext) _inventory_Tenant(ctx context.Context, sel ast.Selec
 					}
 				}()
 				res = ec._inventory_Tenant_Products(ctx, field, obj)
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
-		case "Users":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._inventory_Tenant_Users(ctx, field, obj)
 				return res
 			}
 
@@ -14274,6 +23303,10 @@ func (ec *executionContext) _inventory_Tenant(ctx context.Context, sel ast.Selec
 
 			out.Values[i] = ec._inventory_Tenant_Industry(ctx, field, obj)
 
+		case "ProfileRaw":
+
+			out.Values[i] = ec._inventory_Tenant_ProfileRaw(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14285,55 +23318,172 @@ func (ec *executionContext) _inventory_Tenant(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var inventory_UserImplementors = []string{"inventory_User"}
+var inventory_VerificationAgencyImplementors = []string{"inventory_VerificationAgency"}
 
-func (ec *executionContext) _inventory_User(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryUser) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_UserImplementors)
+func (ec *executionContext) _inventory_VerificationAgency(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryVerificationAgency) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_VerificationAgencyImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("inventory_User")
+			out.Values[i] = graphql.MarshalString("inventory_VerificationAgency")
 		case "Id":
 
-			out.Values[i] = ec._inventory_User_Id(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_Id(ctx, field, obj)
 
 		case "ParentLabels":
 
-			out.Values[i] = ec._inventory_User_ParentLabels(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_ParentLabels(ctx, field, obj)
 
-		case "UserID":
+		case "AgencyID":
 
-			out.Values[i] = ec._inventory_User_UserID(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_AgencyID(ctx, field, obj)
 
 		case "TenantID":
 
-			out.Values[i] = ec._inventory_User_TenantID(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_TenantID(ctx, field, obj)
 
 		case "Name":
 
-			out.Values[i] = ec._inventory_User_Name(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_Name(ctx, field, obj)
 
-		case "Email":
+		case "AccreditationNumber":
 
-			out.Values[i] = ec._inventory_User_Email(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_AccreditationNumber(ctx, field, obj)
 
-		case "Role":
+		case "AccreditationBody":
 
-			out.Values[i] = ec._inventory_User_Role(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_AccreditationBody(ctx, field, obj)
 
-		case "FacilityScope":
+		case "AccreditationStatus":
 
-			out.Values[i] = ec._inventory_User_FacilityScope(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_AccreditationStatus(ctx, field, obj)
 
-		case "LastLogin":
+		case "AccreditationExpiry":
 
-			out.Values[i] = ec._inventory_User_LastLogin(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationAgency_AccreditationExpiry(ctx, field, obj)
+
+		case "Scopes":
+
+			out.Values[i] = ec._inventory_VerificationAgency_Scopes(ctx, field, obj)
+
+		case "ValidFrom":
+
+			out.Values[i] = ec._inventory_VerificationAgency_ValidFrom(ctx, field, obj)
+
+		case "ValidTo":
+
+			out.Values[i] = ec._inventory_VerificationAgency_ValidTo(ctx, field, obj)
+
+		case "ContactEmail":
+
+			out.Values[i] = ec._inventory_VerificationAgency_ContactEmail(ctx, field, obj)
+
+		case "ContactPhone":
+
+			out.Values[i] = ec._inventory_VerificationAgency_ContactPhone(ctx, field, obj)
+
+		case "LeadAuditor":
+
+			out.Values[i] = ec._inventory_VerificationAgency_LeadAuditor(ctx, field, obj)
+
+		case "CreatedAt":
+
+			out.Values[i] = ec._inventory_VerificationAgency_CreatedAt(ctx, field, obj)
+
+		case "UpdatedAt":
+
+			out.Values[i] = ec._inventory_VerificationAgency_UpdatedAt(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inventory_VerificationEngagementImplementors = []string{"inventory_VerificationEngagement"}
+
+func (ec *executionContext) _inventory_VerificationEngagement(ctx context.Context, sel ast.SelectionSet, obj *model.InventoryVerificationEngagement) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inventory_VerificationEngagementImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("inventory_VerificationEngagement")
+		case "Id":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_Id(ctx, field, obj)
+
+		case "ParentLabels":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_ParentLabels(ctx, field, obj)
+
+		case "EngagementID":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_EngagementID(ctx, field, obj)
+
+		case "TenantID":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_TenantID(ctx, field, obj)
+
+		case "AgencyID":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_AgencyID(ctx, field, obj)
+
+		case "PassportID":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_PassportID(ctx, field, obj)
+
+		case "BatchID":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_BatchID(ctx, field, obj)
+
+		case "Period":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_Period(ctx, field, obj)
+
+		case "Methodology":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_Methodology(ctx, field, obj)
+
+		case "SnapshotHash":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_SnapshotHash(ctx, field, obj)
 
 		case "Status":
 
-			out.Values[i] = ec._inventory_User_Status(ctx, field, obj)
+			out.Values[i] = ec._inventory_VerificationEngagement_Status(ctx, field, obj)
+
+		case "AssignedVerifier":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_AssignedVerifier(ctx, field, obj)
+
+		case "ScopeMatch":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_ScopeMatch(ctx, field, obj)
+
+		case "FindingsCount":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_FindingsCount(ctx, field, obj)
+
+		case "Timeline":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_Timeline(ctx, field, obj)
+
+		case "CreatedAt":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_CreatedAt(ctx, field, obj)
+
+		case "UpdatedAt":
+
+			out.Values[i] = ec._inventory_VerificationEngagement_UpdatedAt(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -14894,11 +24044,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalN__Directive2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
+func (ec *executionContext) marshalN__Directive2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Directive) graphql.Marshaler {
+func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Directive) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -14922,7 +24072,7 @@ func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋvmwareᚑtanzu
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalN__Directive2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx, sel, v[i])
+			ret[i] = ec.marshalN__Directive2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -15018,19 +24168,19 @@ func (ec *executionContext) marshalN__DirectiveLocation2ᚕstringᚄ(ctx context
 	return ret
 }
 
-func (ec *executionContext) marshalN__EnumValue2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx context.Context, sel ast.SelectionSet, v introspection.EnumValue) graphql.Marshaler {
+func (ec *executionContext) marshalN__EnumValue2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx context.Context, sel ast.SelectionSet, v introspection.EnumValue) graphql.Marshaler {
 	return ec.___EnumValue(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalN__Field2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx context.Context, sel ast.SelectionSet, v introspection.Field) graphql.Marshaler {
+func (ec *executionContext) marshalN__Field2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx context.Context, sel ast.SelectionSet, v introspection.Field) graphql.Marshaler {
 	return ec.___Field(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalN__InputValue2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx context.Context, sel ast.SelectionSet, v introspection.InputValue) graphql.Marshaler {
+func (ec *executionContext) marshalN__InputValue2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx context.Context, sel ast.SelectionSet, v introspection.InputValue) graphql.Marshaler {
 	return ec.___InputValue(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.InputValue) graphql.Marshaler {
+func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.InputValue) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -15054,7 +24204,7 @@ func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanz
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
+			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -15074,11 +24224,11 @@ func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanz
 	return ret
 }
 
-func (ec *executionContext) marshalN__Type2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v introspection.Type) graphql.Marshaler {
+func (ec *executionContext) marshalN__Type2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v introspection.Type) graphql.Marshaler {
 	return ec.___Type(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {
+func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -15102,7 +24252,7 @@ func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalN__Type2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
+			ret[i] = ec.marshalN__Type2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -15122,7 +24272,7 @@ func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgr
 	return ret
 }
 
-func (ec *executionContext) marshalN__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v *introspection.Type) graphql.Marshaler {
+func (ec *executionContext) marshalN__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v *introspection.Type) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -15205,6 +24355,26 @@ func (ec *executionContext) marshalNinventory_ACVAgency2ᚖsaurientᚑplatform�
 	return ec._inventory_ACVAgency(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNinventory_Approval2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryApproval(ctx context.Context, sel ast.SelectionSet, v *model.InventoryApproval) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_Approval(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNinventory_COIDeclaration2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryCOIDeclaration(ctx context.Context, sel ast.SelectionSet, v *model.InventoryCOIDeclaration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_COIDeclaration(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNinventory_Declaration2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryDeclaration(ctx context.Context, sel ast.SelectionSet, v *model.InventoryDeclaration) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -15215,6 +24385,16 @@ func (ec *executionContext) marshalNinventory_Declaration2ᚖsaurientᚑplatform
 	return ec._inventory_Declaration(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNinventory_EngagementTeamMember2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryEngagementTeamMember(ctx context.Context, sel ast.SelectionSet, v *model.InventoryEngagementTeamMember) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_EngagementTeamMember(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNinventory_Facility2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryFacility(ctx context.Context, sel ast.SelectionSet, v *model.InventoryFacility) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -15223,6 +24403,26 @@ func (ec *executionContext) marshalNinventory_Facility2ᚖsaurientᚑplatformᚋ
 		return graphql.Null
 	}
 	return ec._inventory_Facility(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNinventory_Finding2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryFinding(ctx context.Context, sel ast.SelectionSet, v *model.InventoryFinding) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_Finding(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNinventory_InputCorrection2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryInputCorrection(ctx context.Context, sel ast.SelectionSet, v *model.InventoryInputCorrection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_InputCorrection(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNinventory_Inventory2saurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryInventory(ctx context.Context, sel ast.SelectionSet, v model.InventoryInventory) graphql.Marshaler {
@@ -15237,6 +24437,16 @@ func (ec *executionContext) marshalNinventory_Inventory2ᚖsaurientᚑplatform�
 		return graphql.Null
 	}
 	return ec._inventory_Inventory(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNinventory_Localisation2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryLocalisation(ctx context.Context, sel ast.SelectionSet, v *model.InventoryLocalisation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_Localisation(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNinventory_LogisticsLeg2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryLogisticsLeg(ctx context.Context, sel ast.SelectionSet, v *model.InventoryLogisticsLeg) graphql.Marshaler {
@@ -15263,6 +24473,16 @@ func (ec *executionContext) marshalNinventory_Meter2ᚖsaurientᚑplatformᚋbui
 	return ec._inventory_Meter(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNinventory_Process2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryProcess(ctx context.Context, sel ast.SelectionSet, v *model.InventoryProcess) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_Process(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNinventory_Product2saurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryProduct(ctx context.Context, sel ast.SelectionSet, v model.InventoryProduct) graphql.Marshaler {
 	return ec._inventory_Product(ctx, sel, &v)
 }
@@ -15275,6 +24495,26 @@ func (ec *executionContext) marshalNinventory_Product2ᚖsaurientᚑplatformᚋb
 		return graphql.Null
 	}
 	return ec._inventory_Product(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNinventory_ReportingPeriod2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryReportingPeriod(ctx context.Context, sel ast.SelectionSet, v *model.InventoryReportingPeriod) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_ReportingPeriod(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNinventory_ReviewVerdict2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryReviewVerdict(ctx context.Context, sel ast.SelectionSet, v *model.InventoryReviewVerdict) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_ReviewVerdict(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNinventory_Supplier2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventorySupplier(ctx context.Context, sel ast.SelectionSet, v *model.InventorySupplier) graphql.Marshaler {
@@ -15297,14 +24537,24 @@ func (ec *executionContext) marshalNinventory_Tenant2ᚖsaurientᚑplatformᚋbu
 	return ec._inventory_Tenant(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNinventory_User2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryUser(ctx context.Context, sel ast.SelectionSet, v *model.InventoryUser) graphql.Marshaler {
+func (ec *executionContext) marshalNinventory_VerificationAgency2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryVerificationAgency(ctx context.Context, sel ast.SelectionSet, v *model.InventoryVerificationAgency) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._inventory_User(ctx, sel, v)
+	return ec._inventory_VerificationAgency(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNinventory_VerificationEngagement2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryVerificationEngagement(ctx context.Context, sel ast.SelectionSet, v *model.InventoryVerificationEngagement) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._inventory_VerificationEngagement(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNruntime_ACVEngagement2saurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐRuntimeACVEngagement(ctx context.Context, sel ast.SelectionSet, v model.RuntimeACVEngagement) graphql.Marshaler {
@@ -15471,7 +24721,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {
+func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -15498,7 +24748,7 @@ func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋvmwareᚑtanzu
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalN__EnumValue2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx, sel, v[i])
+			ret[i] = ec.marshalN__EnumValue2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -15518,7 +24768,7 @@ func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋvmwareᚑtanzu
 	return ret
 }
 
-func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐFieldᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Field) graphql.Marshaler {
+func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐFieldᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Field) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -15545,7 +24795,7 @@ func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalN__Field2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx, sel, v[i])
+			ret[i] = ec.marshalN__Field2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -15565,7 +24815,7 @@ func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋg
 	return ret
 }
 
-func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.InputValue) graphql.Marshaler {
+func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.InputValue) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -15592,7 +24842,7 @@ func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanz
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
+			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -15612,14 +24862,14 @@ func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋvmwareᚑtanz
 	return ret
 }
 
-func (ec *executionContext) marshalO__Schema2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx context.Context, sel ast.SelectionSet, v *introspection.Schema) graphql.Marshaler {
+func (ec *executionContext) marshalO__Schema2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx context.Context, sel ast.SelectionSet, v *introspection.Schema) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec.___Schema(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {
+func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -15646,7 +24896,7 @@ func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalN__Type2githubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
+			ret[i] = ec.marshalN__Type2githubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -15666,7 +24916,7 @@ func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋvmwareᚑtanzuᚋgr
 	return ret
 }
 
-func (ec *executionContext) marshalO__Type2ᚖgithubᚗcomᚋvmwareᚑtanzuᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v *introspection.Type) graphql.Marshaler {
+func (ec *executionContext) marshalO__Type2ᚖgithubᚗcomᚋdilipmighty245ᚋgraphᚑframeworkᚑforᚑmicroservicesᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v *introspection.Type) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -15861,6 +25111,100 @@ func (ec *executionContext) marshalOinventory_ACVAgency2ᚕᚖsaurientᚑplatfor
 	return ret
 }
 
+func (ec *executionContext) marshalOinventory_Approval2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryApprovalᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryApproval) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_Approval2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryApproval(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOinventory_COIDeclaration2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryCOIDeclarationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryCOIDeclaration) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_COIDeclaration2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryCOIDeclaration(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalOinventory_Declaration2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryDeclarationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryDeclaration) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -15908,6 +25252,53 @@ func (ec *executionContext) marshalOinventory_Declaration2ᚕᚖsaurientᚑplatf
 	return ret
 }
 
+func (ec *executionContext) marshalOinventory_EngagementTeamMember2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryEngagementTeamMemberᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryEngagementTeamMember) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_EngagementTeamMember2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryEngagementTeamMember(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalOinventory_Facility2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryFacilityᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryFacility) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -15936,6 +25327,147 @@ func (ec *executionContext) marshalOinventory_Facility2ᚕᚖsaurientᚑplatform
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNinventory_Facility2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryFacility(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOinventory_Finding2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryFindingᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryFinding) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_Finding2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryFinding(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOinventory_InputCorrection2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryInputCorrectionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryInputCorrection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_InputCorrection2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryInputCorrection(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOinventory_Localisation2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryLocalisationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryLocalisation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_Localisation2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryLocalisation(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -16049,6 +25581,53 @@ func (ec *executionContext) marshalOinventory_Meter2ᚕᚖsaurientᚑplatformᚋ
 	return ret
 }
 
+func (ec *executionContext) marshalOinventory_Process2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryProcessᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryProcess) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_Process2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryProcess(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalOinventory_Product2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryProductᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryProduct) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -16077,6 +25656,100 @@ func (ec *executionContext) marshalOinventory_Product2ᚕᚖsaurientᚑplatform�
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNinventory_Product2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryProduct(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOinventory_ReportingPeriod2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryReportingPeriodᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryReportingPeriod) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_ReportingPeriod2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryReportingPeriod(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOinventory_ReviewVerdict2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryReviewVerdictᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryReviewVerdict) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_ReviewVerdict2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryReviewVerdict(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -16190,7 +25863,7 @@ func (ec *executionContext) marshalOinventory_Tenant2ᚕᚖsaurientᚑplatform�
 	return ret
 }
 
-func (ec *executionContext) marshalOinventory_User2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryUser) graphql.Marshaler {
+func (ec *executionContext) marshalOinventory_VerificationAgency2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryVerificationAgencyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryVerificationAgency) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -16217,7 +25890,54 @@ func (ec *executionContext) marshalOinventory_User2ᚕᚖsaurientᚑplatformᚋb
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNinventory_User2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryUser(ctx, sel, v[i])
+			ret[i] = ec.marshalNinventory_VerificationAgency2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryVerificationAgency(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOinventory_VerificationEngagement2ᚕᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryVerificationEngagementᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InventoryVerificationEngagement) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNinventory_VerificationEngagement2ᚖsaurientᚑplatformᚋbuildᚋnexusᚑgqlᚋgraphᚋmodelᚐInventoryVerificationEngagement(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

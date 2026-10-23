@@ -60,31 +60,18 @@ type InputCorrectionResult struct {
 	Timestamp               time.Time     `json:"timestamp"`
 }
 
-// NexusGraphEngine manages the in-memory Nexus graph node state and lineage traversals.
+// NexusGraphEngine holds rebuildable lineage projections and calculation caches.
+// Business records are owned by the persistent Nexus datamodel.
 type NexusGraphEngine struct {
-	mu     sync.RWMutex
-	nodes  map[string]LineageNode
-	edges  map[string]LineageEdge
-	dagMap map[string]*LineageDAG
+	mu    sync.RWMutex
+	nodes map[string]LineageNode
+	edges map[string]LineageEdge
 
 	eventMu            sync.RWMutex
 	productSubscribers []chan ProductEvent
 
 	cacheMu  sync.RWMutex
 	cacheMap map[string][]byte
-
-	opMu             sync.RWMutex
-	tenantProfiles   map[string]*TenantProfileModel
-	processes        map[string][]*ProcessModel
-	reportingPeriods map[string][]*ReportingPeriodModel
-	localisations    map[string]*LocalisationModel
-	approvals        map[string][]*ApprovalModel
-	agencies         map[string][]*AgencyModel
-	engagements      map[string][]*VerificationEngagementModel
-	teamMembers      map[string][]*EngagementTeamMemberModel
-	coiDeclarations  map[string][]*COIDeclarationModel
-	findings         map[string][]*FindingModel
-	signoffs         map[string][]*ReviewSignoffModel
 }
 
 var (
@@ -98,49 +85,23 @@ func GetNexusEngine() *NexusGraphEngine {
 		globalEngine = &NexusGraphEngine{
 			nodes:              make(map[string]LineageNode),
 			edges:              make(map[string]LineageEdge),
-			dagMap:             make(map[string]*LineageDAG),
 			productSubscribers: make([]chan ProductEvent, 0),
 			cacheMap:           make(map[string][]byte),
-			tenantProfiles:     make(map[string]*TenantProfileModel),
-			processes:          make(map[string][]*ProcessModel),
-			reportingPeriods:   make(map[string][]*ReportingPeriodModel),
-			localisations:      make(map[string]*LocalisationModel),
-			approvals:          make(map[string][]*ApprovalModel),
-			agencies:           make(map[string][]*AgencyModel),
-			engagements:        make(map[string][]*VerificationEngagementModel),
-			teamMembers:        make(map[string][]*EngagementTeamMemberModel),
-			coiDeclarations:    make(map[string][]*COIDeclarationModel),
-			findings:           make(map[string][]*FindingModel),
-			signoffs:           make(map[string][]*ReviewSignoffModel),
 		}
 		globalEngine.seedDefaultGraphTopology()
 	})
 	return globalEngine
 }
 
-// Reset clears all in-memory graph models, tenant profiles, processes, reporting periods, and caches.
+// Reset discards derived projections and response caches. Persistent records are reset separately.
 func (e *NexusGraphEngine) Reset() {
 	e.mu.Lock()
 	e.cacheMu.Lock()
-	e.opMu.Lock()
 
 	e.nodes = make(map[string]LineageNode)
 	e.edges = make(map[string]LineageEdge)
-	e.dagMap = make(map[string]*LineageDAG)
 	e.cacheMap = make(map[string][]byte)
-	e.tenantProfiles = make(map[string]*TenantProfileModel)
-	e.processes = make(map[string][]*ProcessModel)
-	e.reportingPeriods = make(map[string][]*ReportingPeriodModel)
-	e.localisations = make(map[string]*LocalisationModel)
-	e.approvals = make(map[string][]*ApprovalModel)
-	e.agencies = make(map[string][]*AgencyModel)
-	e.engagements = make(map[string][]*VerificationEngagementModel)
-	e.teamMembers = make(map[string][]*EngagementTeamMemberModel)
-	e.coiDeclarations = make(map[string][]*COIDeclarationModel)
-	e.findings = make(map[string][]*FindingModel)
-	e.signoffs = make(map[string][]*ReviewSignoffModel)
 
-	e.opMu.Unlock()
 	e.cacheMu.Unlock()
 	e.mu.Unlock()
 
@@ -172,7 +133,10 @@ func (e *NexusGraphEngine) PublishProductEvent(evt ProductEvent) {
 func (e *NexusGraphEngine) seedDefaultGraphTopology() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	e.seedDefaultGraphTopologyLocked()
+}
 
+func (e *NexusGraphEngine) seedDefaultGraphTopologyLocked() {
 	nodes := []LineageNode{
 		{NodeID: "NODE_ORG_9001", NodeType: "ORGANISATION", ReferenceID: "ORG-9001", Label: "Sattric Industrial Corp", Properties: map[string]interface{}{"country": "India", "sector": "Steel"}},
 		{NodeID: "NODE_FAC_042", NodeType: "FACILITY", ReferenceID: "FAC-042", Label: "Primary Manufacturing Facility", Properties: map[string]interface{}{"location": "Primary Operating Site", "capacity_tpy": 500000}},
@@ -183,28 +147,28 @@ func (e *NexusGraphEngine) seedDefaultGraphTopology() {
 		{NodeID: "NODE_EF_DEFRA_2026", NodeType: "EMISSION_FACTOR", ReferenceID: "EF-DEFRA-2026", Label: "DEFRA & CEA Emission Factor Database 2026", Properties: map[string]interface{}{"diesel_ef": "2.68 kgCO2e/L", "grid_ef": "0.710 kgCO2e/kWh", "database": "UK DEFRA / CEA India 2026 v1.2"}},
 		{NodeID: "NODE_EVD_108", NodeType: "EVIDENCE_DOCUMENT", ReferenceID: "EVD-00176", Label: "Audited Utility & Supplier Evidence Package", Properties: map[string]interface{}{"documents": []string{"Fuel_Invoice_Jan2026.pdf", "CEA_Grid_Cert_2026.pdf", "Apex_Scrap_Audit_EVD.pdf"}, "auditor": "TUV Rheinland India", "status": "Audited & Verified"}},
 		{NodeID: "NODE_CALC_V1", NodeType: "CALC_VERSION", ReferenceID: "CALC-2026-981-V1", Label: "CEL Calculation Version v1.0", Properties: map[string]interface{}{
-			"intensity_kgCO2e_per_kg": 1.850,
-			"total_footprint_kg":     18500.0,
-			"version":                 "v1.0",
-			"connected_passport":      "PASS-2026-981-v1.0",
-			"connected_batch":         "ST-2026-00981",
-			"connected_telemetry":     []string{"MTR-S1-001", "MTR-S2-001"},
+			"intensity_kgCO2e_per_kg":   1.850,
+			"total_footprint_kg":        18500.0,
+			"version":                   "v1.0",
+			"connected_passport":        "PASS-2026-981-v1.0",
+			"connected_batch":           "ST-2026-00981",
+			"connected_telemetry":       []string{"MTR-S1-001", "MTR-S2-001"},
 			"connected_supplier_inputs": []string{"SUP-DEC-409"},
-			"connected_factors":       []string{"EF-DEFRA-2026"},
-			"connected_evidence":      []string{"EVD-00176"},
+			"connected_factors":         []string{"EF-DEFRA-2026"},
+			"connected_evidence":        []string{"EVD-00176"},
 		}},
 		{NodeID: "NODE_ACV_ENG_01", NodeType: "VERIFICATION", ReferenceID: "ACV-2026-088", Label: "ACV Verification (NABCB Accredited)", Properties: map[string]interface{}{"verifier": "TUV Rheinland India", "opinion": "Unqualified", "status": "Verified"}},
 		{NodeID: "NODE_PASS_V1", NodeType: "PASSPORT", ReferenceID: "PASS-2026-981-v1.0", Label: "Issued Carbon Passport v1.0", Properties: map[string]interface{}{
-			"frozen":                 true,
-			"data_hash":              "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-			"intensity":              1.850,
-			"status":                 "Verified",
-			"explicit_calculation_id": "CALC-2026-981-V1",
-			"explicit_batch_id":       "ST-2026-00981",
-			"explicit_meters":        []string{"MTR-S1-001", "MTR-S2-001"},
+			"frozen":                   true,
+			"data_hash":                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"intensity":                1.850,
+			"status":                   "Verified",
+			"explicit_calculation_id":  "CALC-2026-981-V1",
+			"explicit_batch_id":        "ST-2026-00981",
+			"explicit_meters":          []string{"MTR-S1-001", "MTR-S2-001"},
 			"explicit_supplier_inputs": []string{"SUP-DEC-409"},
-			"explicit_factors":       []string{"EF-DEFRA-2026"},
-			"explicit_evidence":      []string{"EVD-00176"},
+			"explicit_factors":         []string{"EF-DEFRA-2026"},
+			"explicit_evidence":        []string{"EVD-00176"},
 		}},
 	}
 
@@ -239,6 +203,9 @@ func (e *NexusGraphEngine) seedDefaultGraphTopology() {
 func (e *NexusGraphEngine) GetLineageDAG(ctx context.Context, passportID string) (*LineageDAG, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if err := e.restoreLineageProjection(ctx); err != nil {
+		return nil, err
+	}
 
 	var targetPassport *CarbonPassportModel
 
@@ -440,7 +407,7 @@ func (e *NexusGraphEngine) GetLineageDAG(ctx context.Context, passportID string)
 			NodeID: calcNodeID, NodeType: "CALC_VERSION", ReferenceID: fmt.Sprintf("CALC-%s-V1", batchID), Label: "CEL Calculation Version v1.0",
 			Properties: map[string]interface{}{
 				"intensity_kgCO2e_per_kg": intensity,
-				"total_footprint_kg":     total,
+				"total_footprint_kg":      total,
 				"version":                 "v1.0",
 				"connected_passport":      targetPassport.PassportID,
 				"connected_batch":         batchID,
@@ -453,10 +420,10 @@ func (e *NexusGraphEngine) GetLineageDAG(ctx context.Context, passportID string)
 		{
 			NodeID: passNodeID, NodeType: "PASSPORT", ReferenceID: targetPassport.PassportID, Label: fmt.Sprintf("Issued Carbon Passport %s", targetPassport.PassportID),
 			Properties: map[string]interface{}{
-				"frozen":                 true,
-				"data_hash":              targetPassport.DataHash,
-				"intensity":              intensity,
-				"status":                 status,
+				"frozen":                  true,
+				"data_hash":               targetPassport.DataHash,
+				"intensity":               intensity,
+				"status":                  status,
 				"explicit_calculation_id": fmt.Sprintf("CALC-%s-V1", batchID),
 				"explicit_batch_id":       batchID,
 			},
@@ -520,6 +487,9 @@ func (e *NexusGraphEngine) GetLineageDAG(ctx context.Context, passportID string)
 func (e *NexusGraphEngine) CorrectSupplierInput(ctx context.Context, req InputCorrectionRequest) (*InputCorrectionResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if err := e.restoreLineageProjection(ctx); err != nil {
+		return nil, err
+	}
 
 	inputNodeID := req.InputNodeID
 	if inputNodeID == "" || inputNodeID == "NODE_IN_SUP_409" {
@@ -644,6 +614,14 @@ func (e *NexusGraphEngine) CorrectSupplierInput(ctx context.Context, req InputCo
 		NewDraftPassportID:      "PASS-v1.1-DRAFT",
 		AffectedNodes:           []LineageNode{newCalcNode, newPassNode},
 		Timestamp:               time.Now(),
+	}
+
+	spec, err := correctionRecord(ctx, result, req, e.nodes, e.edges)
+	if err != nil {
+		return nil, err
+	}
+	if err := saveInputCorrectionRecord(ctx, GetNexusClient(), result.CorrectionID, spec, false); err != nil {
+		return nil, err
 	}
 
 	return result, nil

@@ -16,10 +16,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/rs/cors"
 	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/handler"
 	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/playground"
+	"github.com/google/uuid"
+	"github.com/rs/cors"
 
 	configv1 "saurient-platform/build/apis/config.saurient.io/v1"
 	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
@@ -473,17 +473,14 @@ func main() {
 	}
 
 	var apiHandler http.Handler = http.DefaultServeMux
+
 	if os.Getenv("NEXUS_REQUIRE_CLUSTER") == "true" {
-		var err error
-		apiHandler, err = nexus.ClusterPersistenceHandler(nClient, getEnv("KUBE_WORKSPACE_NAMESPACE", "saurient-system"), server.nexusEngine, apiHandler)
-		if err != nil {
-			log.Fatalf("Cluster workspace initialization failed: %v", err)
+		if err := nexus.MigrateClusterWorkspace(context.Background(), nClient, getEnv("KUBE_WORKSPACE_NAMESPACE", "saurient-system")); err != nil {
+			log.Fatalf("Workspace migration failed: %v", err)
 		}
 	} else if dir := os.Getenv("LOCAL_DATA_DIR"); dir != "" {
-		var err error
-		apiHandler, err = nexus.LocalPersistenceHandler(dir, server.nexusEngine, apiHandler)
-		if err != nil {
-			log.Fatalf("Local persistence initialization failed: %v", err)
+		if err := nexus.MigrateLocalWorkspace(context.Background(), dir, nClient); err != nil {
+			log.Fatalf("Workspace migration failed: %v", err)
 		}
 	}
 
@@ -807,9 +804,9 @@ func (s *VerificationServer) serveNexusNodeData(w http.ResponseWriter, nodeType 
 			},
 		},
 		"carbon-passport": map[string]interface{}{
-			"node_type": "CarbonPassport",
-			"nexus_tag": "child",
-			"children":  []string{"EmissionSnapshotMap", "VerificationRecordMap", "ComplianceArtifactMap"},
+			"node_type":   "CarbonPassport",
+			"nexus_tag":   "child",
+			"children":    []string{"EmissionSnapshotMap", "VerificationRecordMap", "ComplianceArtifactMap"},
 			"status_node": "CarbonPassportStatusNode",
 			"nodes": []map[string]interface{}{
 				{
@@ -1258,13 +1255,13 @@ func (s *VerificationServer) handleGetProduct(w http.ResponseWriter, r *http.Req
 				passportRefName = pNode.Spec.PassportID
 			}
 			resp := map[string]interface{}{
-				"name":               pNode.DisplayName(),
-				"namespace":          "default",
-				"tenant_id":          pNode.Spec.TenantID,
-				"facility_id":        pNode.Spec.FacilityID,
-				"batch_id":           pNode.Spec.BatchID,
-				"product_name":       pNode.Spec.ProductName,
-				"commodity_type":     pNode.Spec.CommodityType,
+				"name":           pNode.DisplayName(),
+				"namespace":      "default",
+				"tenant_id":      pNode.Spec.TenantID,
+				"facility_id":    pNode.Spec.FacilityID,
+				"batch_id":       pNode.Spec.BatchID,
+				"product_name":   pNode.Spec.ProductName,
+				"commodity_type": pNode.Spec.CommodityType,
 				"rulebook_ref": map[string]string{
 					"name":      pNode.Spec.RulebookRef,
 					"namespace": "default",
@@ -1290,13 +1287,13 @@ func (s *VerificationServer) handleGetProduct(w http.ResponseWriter, r *http.Req
 		prod, err := s.nexusEngine.GetProduct(tenantCtx, name)
 		if err == nil && prod != nil {
 			resp := map[string]interface{}{
-				"name":               prod.Name,
-				"namespace":          prod.Namespace,
-				"tenant_id":          prod.TenantID,
-				"facility_id":        prod.FacilityID,
-				"batch_id":           prod.BatchID,
-				"product_name":       prod.ProductName,
-				"commodity_type":     prod.CommodityType,
+				"name":           prod.Name,
+				"namespace":      prod.Namespace,
+				"tenant_id":      prod.TenantID,
+				"facility_id":    prod.FacilityID,
+				"batch_id":       prod.BatchID,
+				"product_name":   prod.ProductName,
+				"commodity_type": prod.CommodityType,
 				"rulebook_ref": map[string]string{
 					"name":      prod.RulebookRefName,
 					"namespace": prod.Namespace,
@@ -1903,7 +1900,7 @@ func (s *VerificationServer) handleSubmitPassport(w http.ResponseWriter, r *http
 		},
 	})
 
-	// Also update in-memory engine model and clear cache
+	// Resolve producer ownership and invalidate derived response caches.
 	tenantID := nexus.ResolveProducerTenant(ctx, nClient, pNode.Spec.TenantID, pNode, nil, pNode.Spec.BatchID, pNode.DisplayName())
 	if tenantID != "" && tenantID != "all" && pNode.Spec.TenantID != tenantID {
 		pNode.Spec.TenantID = tenantID
@@ -2674,9 +2671,6 @@ type ActivityDataInput struct {
 func buildRichPassportResponse(p *nexus.CarbonPassportModel) nexus.RichDigitalCarbonPassportResponse {
 	return nexus.BuildRichPassportResponse(p)
 }
-
-
-
 
 func (s *VerificationServer) handleCreatePassport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

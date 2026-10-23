@@ -22,26 +22,37 @@ const IsNameHashedLabel = "nexus/is_name_hashed"
 //nolint:lll // Generated code. Length depends on actual graph depth.
 func GetCRDParentsMap() map[string][]string {
 	return map[string][]string{
-		"acvagencies.inventory.saurient.io":     {"roots.root.saurient.io", "inventories.inventory.saurient.io"},
-		"acvengagements.runtime.saurient.io":    {"roots.root.saurient.io", "runtimes.runtime.saurient.io"},
-		"auditrecords.runtime.saurient.io":      {"roots.root.saurient.io", "runtimes.runtime.saurient.io", "carbonpassports.runtime.saurient.io"},
-		"carbonpassports.runtime.saurient.io":   {"roots.root.saurient.io", "runtimes.runtime.saurient.io"},
-		"cbambenchmarks.config.saurient.io":     {"roots.root.saurient.io", "configs.config.saurient.io"},
-		"configs.config.saurient.io":            {"roots.root.saurient.io"},
-		"declarations.inventory.saurient.io":    {"roots.root.saurient.io", "inventories.inventory.saurient.io", "suppliers.inventory.saurient.io"},
-		"facilities.inventory.saurient.io":      {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
-		"inventories.inventory.saurient.io":     {"roots.root.saurient.io"},
-		"logisticslegs.inventory.saurient.io":   {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io", "products.inventory.saurient.io"},
-		"meters.inventory.saurient.io":          {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io", "facilities.inventory.saurient.io"},
-		"products.inventory.saurient.io":        {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
-		"roots.root.saurient.io":                {},
-		"rulebooks.config.saurient.io":          {"roots.root.saurient.io", "configs.config.saurient.io"},
-		"runtimes.runtime.saurient.io":          {"roots.root.saurient.io"},
-		"storyboardscenes.config.saurient.io":   {"roots.root.saurient.io", "configs.config.saurient.io"},
-		"suppliers.inventory.saurient.io":       {"roots.root.saurient.io", "inventories.inventory.saurient.io"},
-		"telemetryreadings.runtime.saurient.io": {"roots.root.saurient.io", "runtimes.runtime.saurient.io"},
-		"tenants.inventory.saurient.io":         {"roots.root.saurient.io", "inventories.inventory.saurient.io"},
-		"users.inventory.saurient.io":           {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"acvagencies.inventory.saurient.io":             {"roots.root.saurient.io", "inventories.inventory.saurient.io"},
+		"acvengagements.runtime.saurient.io":            {"roots.root.saurient.io", "runtimes.runtime.saurient.io"},
+		"approvals.inventory.saurient.io":               {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"auditrecords.runtime.saurient.io":              {"roots.root.saurient.io", "runtimes.runtime.saurient.io", "carbonpassports.runtime.saurient.io"},
+		"carbonpassports.runtime.saurient.io":           {"roots.root.saurient.io", "runtimes.runtime.saurient.io"},
+		"cbambenchmarks.config.saurient.io":             {"roots.root.saurient.io", "configs.config.saurient.io"},
+		"coideclarations.inventory.saurient.io":         {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"configs.config.saurient.io":                    {"roots.root.saurient.io"},
+		"declarations.inventory.saurient.io":            {"roots.root.saurient.io", "inventories.inventory.saurient.io", "suppliers.inventory.saurient.io"},
+		"engagementteammembers.inventory.saurient.io":   {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"facilities.inventory.saurient.io":              {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"findings.inventory.saurient.io":                {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"inputcorrections.inventory.saurient.io":        {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"inventories.inventory.saurient.io":             {"roots.root.saurient.io"},
+		"localisations.inventory.saurient.io":           {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"logisticslegs.inventory.saurient.io":           {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io", "products.inventory.saurient.io"},
+		"meters.inventory.saurient.io":                  {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io", "facilities.inventory.saurient.io"},
+		"processes.inventory.saurient.io":               {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"products.inventory.saurient.io":                {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"reportingperiods.inventory.saurient.io":        {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"reviewverdicts.inventory.saurient.io":          {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"roots.root.saurient.io":                        {},
+		"rulebooks.config.saurient.io":                  {"roots.root.saurient.io", "configs.config.saurient.io"},
+		"runtimes.runtime.saurient.io":                  {"roots.root.saurient.io"},
+		"storyboardscenes.config.saurient.io":           {"roots.root.saurient.io", "configs.config.saurient.io"},
+		"suppliers.inventory.saurient.io":               {"roots.root.saurient.io", "inventories.inventory.saurient.io"},
+		"telemetryreadings.runtime.saurient.io":         {"roots.root.saurient.io", "runtimes.runtime.saurient.io"},
+		"tenants.inventory.saurient.io":                 {"roots.root.saurient.io", "inventories.inventory.saurient.io"},
+		"users.inventory.saurient.io":                   {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"verificationagencies.inventory.saurient.io":    {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
+		"verificationengagements.inventory.saurient.io": {"roots.root.saurient.io", "inventories.inventory.saurient.io", "tenants.inventory.saurient.io"},
 	}
 }
 
@@ -56,6 +67,13 @@ func GetObjectByCRDName(dmClient *datamodel.Clientset, crdName, name string) int
 	}
 	if crdName == "acvengagements.runtime.saurient.io" {
 		obj, err := dmClient.RuntimeSaurientV1().ACVEngagements().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
+	if crdName == "approvals.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().Approvals().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return nil
 		}
@@ -82,6 +100,13 @@ func GetObjectByCRDName(dmClient *datamodel.Clientset, crdName, name string) int
 		}
 		return obj
 	}
+	if crdName == "coideclarations.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().COIDeclarations().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
 	if crdName == "configs.config.saurient.io" {
 		obj, err := dmClient.ConfigSaurientV1().Configs().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
@@ -96,6 +121,13 @@ func GetObjectByCRDName(dmClient *datamodel.Clientset, crdName, name string) int
 		}
 		return obj
 	}
+	if crdName == "engagementteammembers.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().EngagementTeamMembers().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
 	if crdName == "facilities.inventory.saurient.io" {
 		obj, err := dmClient.InventorySaurientV1().Facilities().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
@@ -103,8 +135,29 @@ func GetObjectByCRDName(dmClient *datamodel.Clientset, crdName, name string) int
 		}
 		return obj
 	}
+	if crdName == "findings.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().Findings().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
+	if crdName == "inputcorrections.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().InputCorrections().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
 	if crdName == "inventories.inventory.saurient.io" {
 		obj, err := dmClient.InventorySaurientV1().Inventories().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
+	if crdName == "localisations.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().Localisations().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return nil
 		}
@@ -124,8 +177,29 @@ func GetObjectByCRDName(dmClient *datamodel.Clientset, crdName, name string) int
 		}
 		return obj
 	}
+	if crdName == "processes.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().Processes().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
 	if crdName == "products.inventory.saurient.io" {
 		obj, err := dmClient.InventorySaurientV1().Products().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
+	if crdName == "reportingperiods.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().ReportingPeriods().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
+	if crdName == "reviewverdicts.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().ReviewVerdicts().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return nil
 		}
@@ -182,6 +256,20 @@ func GetObjectByCRDName(dmClient *datamodel.Clientset, crdName, name string) int
 	}
 	if crdName == "users.inventory.saurient.io" {
 		obj, err := dmClient.InventorySaurientV1().Users().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
+	if crdName == "verificationagencies.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().VerificationAgencies().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return nil
+		}
+		return obj
+	}
+	if crdName == "verificationengagements.inventory.saurient.io" {
+		obj, err := dmClient.InventorySaurientV1().VerificationEngagements().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return nil
 		}

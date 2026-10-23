@@ -1,18 +1,20 @@
 package nexus
 
 import (
+	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"sync"
+	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
+	nexusclient "saurient-platform/build/nexus-client"
+	"saurient-platform/internal/tenant"
+	"time"
 )
 
-// Local workspace state complements the typed graph objects in graph.json.
-// Derived response caches and subscriptions are rebuilt on startup.
-type localWorkspaceSnapshot struct {
+// Decode-only compatibility with snapshots written before workspace CRDs existed.
+type legacyWorkspaceSnapshot struct {
 	Version          int                                       `json:"version"`
 	Nodes            map[string]LineageNode                    `json:"nodes"`
 	Edges            map[string]LineageEdge                    `json:"edges"`
@@ -29,125 +31,231 @@ type localWorkspaceSnapshot struct {
 	Signoffs         map[string][]*ReviewSignoffModel          `json:"signoffs"`
 }
 
-func (e *NexusGraphEngine) marshalWorkspace() ([]byte, error) {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-	e.opMu.RLock()
-	defer e.opMu.RUnlock()
-	return json.Marshal(localWorkspaceSnapshot{
-		Version: 1, Nodes: e.nodes, Edges: e.edges, Profiles: e.tenantProfiles,
-		Processes: e.processes, ReportingPeriods: e.reportingPeriods, Localisations: e.localisations,
-		Approvals: e.approvals, Agencies: e.agencies, Engagements: e.engagements,
-		TeamMembers: e.teamMembers, COI: e.coiDeclarations, Findings: e.findings, Signoffs: e.signoffs,
-	})
-}
-
-func (e *NexusGraphEngine) saveLocalWorkspace(file string) error {
-	data, err := e.marshalWorkspace()
-	if err != nil {
+// MigrateLocalWorkspace imports once; the original snapshot remains a backup.
+func MigrateLocalWorkspace(ctx context.Context, dir string, client *nexusclient.Clientset) error {
+	marker := filepath.Join(dir, "workspace-migrated-v1.json")
+	if _, err := os.Stat(marker); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
 		return err
 	}
-	return atomicLocalWrite(file, json.RawMessage(data))
-}
-
-func (e *NexusGraphEngine) loadLocalWorkspace(file string) error {
-	data, err := os.ReadFile(file)
+	data, err := os.ReadFile(filepath.Join(dir, "workspace.json"))
 	if os.IsNotExist(err) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
-	return e.unmarshalWorkspace(data)
-}
-
-func (e *NexusGraphEngine) unmarshalWorkspace(data []byte) error {
-	var s localWorkspaceSnapshot
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := migrateLegacyWorkspace(ctx, client, data); err != nil {
 		return err
 	}
-	if s.Version != 1 {
-		return fmt.Errorf("unsupported local workspace version %d", s.Version)
+	return atomicLocalWrite(marker, map[string]int{"version": 1})
+}
+
+func migrateLegacyWorkspace(ctx context.Context, client *nexusclient.Clientset, data []byte) error {
+	var snapshot legacyWorkspaceSnapshot
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		return fmt.Errorf("decode legacy workspace: %w", err)
 	}
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	e.opMu.Lock()
-	defer e.opMu.Unlock()
-	if s.Nodes != nil {
-		e.nodes = s.Nodes
+	if snapshot.Version != 1 {
+		return fmt.Errorf("unsupported legacy workspace version %d", snapshot.Version)
 	}
-	if s.Edges != nil {
-		e.edges = s.Edges
+	for tenantID, profile := range snapshot.Profiles {
+		if profile == nil {
+			continue
+		}
+		tctx := tenant.WithTenant(ctx, tenantID)
+		node, err := EnsureTenantNode(tctx, client, tenantID)
+		if err != nil {
+			return err
+		}
+		if node.Spec.ProfileRaw == "" {
+			if err := (&NexusGraphEngine{}).SaveTenantProfileWithClient(tctx, client, profile); err != nil {
+				return err
+			}
+		}
 	}
-	if s.Profiles != nil {
-		e.tenantProfiles = s.Profiles
+
+	for tenantID, records := range snapshot.Processes {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.ID == "" {
+				record.ID = legacyRecordID(record)
+			}
+			if err := saveProcessRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.Processes != nil {
-		e.processes = s.Processes
+
+	for tenantID, records := range snapshot.ReportingPeriods {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.ID == "" {
+				record.ID = legacyRecordID(record)
+			}
+			if err := saveReportingPeriodRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.ReportingPeriods != nil {
-		e.reportingPeriods = s.ReportingPeriods
+
+	for tenantID, records := range snapshot.Approvals {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.ID == "" {
+				record.ID = legacyRecordID(record)
+			}
+			if err := saveApprovalRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.Localisations != nil {
-		e.localisations = s.Localisations
+
+	for tenantID, records := range snapshot.Agencies {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.AgencyID == "" {
+				record.AgencyID = legacyRecordID(record)
+			}
+			if err := saveVerificationAgencyRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.Approvals != nil {
-		e.approvals = s.Approvals
+
+	for tenantID, records := range snapshot.Engagements {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.EngagementID == "" {
+				record.EngagementID = legacyRecordID(record)
+			}
+			if err := saveVerificationEngagementRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.Agencies != nil {
-		e.agencies = s.Agencies
+
+	for tenantID, records := range snapshot.TeamMembers {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.MemberID == "" {
+				record.MemberID = legacyRecordID(record)
+			}
+			if err := saveEngagementTeamMemberRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.Engagements != nil {
-		e.engagements = s.Engagements
+
+	for tenantID, records := range snapshot.COI {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.DeclarationID == "" {
+				record.DeclarationID = legacyRecordID(record)
+			}
+			if err := saveCOIDeclarationRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.TeamMembers != nil {
-		e.teamMembers = s.TeamMembers
+
+	for tenantID, records := range snapshot.Findings {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.FindingID == "" {
+				record.FindingID = legacyRecordID(record)
+			}
+			if err := saveFindingRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.COI != nil {
-		e.coiDeclarations = s.COI
+
+	for tenantID, records := range snapshot.Signoffs {
+		tctx := tenant.WithTenant(ctx, tenantID)
+		// Older append-based updates could leave duplicate IDs; keep the last entry.
+		for i := len(records) - 1; i >= 0; i-- {
+			record := records[i]
+			if record == nil {
+				continue
+			}
+			if record.SignoffID == "" {
+				record.SignoffID = legacyRecordID(record)
+			}
+			if err := saveReviewVerdictRecord(tctx, client, record, true); err != nil {
+				return err
+			}
+		}
 	}
-	if s.Findings != nil {
-		e.findings = s.Findings
+
+	for tenantID, record := range snapshot.Localisations {
+		if record == nil {
+			continue
+		}
+		if err := saveLocalisationRecord(tenant.WithTenant(ctx, tenantID), client, record, true); err != nil {
+			return err
+		}
 	}
-	if s.Signoffs != nil {
-		e.signoffs = s.Signoffs
+	// Preserve old correction topology before treating engine maps as disposable.
+	if len(snapshot.Nodes) > 0 || len(snapshot.Edges) > 0 {
+		nodes, err := json.Marshal(snapshot.Nodes)
+		if err != nil {
+			return err
+		}
+		edges, err := json.Marshal(snapshot.Edges)
+		if err != nil {
+			return err
+		}
+		spec := inventoryv1.InputCorrectionSpec{CorrectionID: "legacy-topology", TenantID: "tenant-default", NodesRaw: string(nodes), EdgesRaw: string(edges), CreatedAt: time.Unix(0, 0).UTC().Format(time.RFC3339)}
+		if err := saveInputCorrectionRecord(tenant.WithTenant(ctx, "tenant-default"), client, "legacy-topology", spec, true); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-// LocalPersistenceHandler is opt-in for the laptop workflow. A successful mutation
-// is returned only after workspace state is on disk. Typed graph mutations are
-// persisted by the store reactor, including those from background reconciliation.
-func LocalPersistenceHandler(dir string, engine *NexusGraphEngine, next http.Handler) (http.Handler, error) {
-	file := filepath.Join(dir, "workspace.json")
-	if err := engine.loadLocalWorkspace(file); err != nil {
-		return nil, fmt.Errorf("load local workspace: %w", err)
-	}
-	if err := engine.saveLocalWorkspace(file); err != nil {
-		return nil, err
-	}
-	return workspacePersistenceHandler(next, func() error { return engine.saveLocalWorkspace(file) }), nil
-}
-
-func workspacePersistenceHandler(next http.Handler, save func() error) http.Handler {
-	var mu sync.Mutex
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
-			next.ServeHTTP(w, r)
-			return
-		}
-		mu.Lock()
-		defer mu.Unlock()
-		response := httptest.NewRecorder()
-		next.ServeHTTP(response, r)
-		if err := save(); err != nil {
-			http.Error(w, "Unable to persist local workspace", http.StatusInternalServerError)
-			return
-		}
-		for name, values := range response.Header() {
-			w.Header()[name] = values
-		}
-		w.WriteHeader(response.Code)
-		_, _ = w.Write(response.Body.Bytes())
-	})
+func legacyRecordID(record interface{}) string {
+	raw, _ := json.Marshal(record)
+	return fmt.Sprintf("legacy-%x", sha256.Sum256(raw))[:39]
 }

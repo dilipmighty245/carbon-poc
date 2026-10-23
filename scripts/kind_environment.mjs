@@ -45,6 +45,6 @@ try {
     kubectl(['apply', '-f', 'deploy/nexus-app.yaml']);
     kubectl(['rollout', 'restart', 'deployment/saurient-api', '-n', 'saurient-system']);
     kubectl(['rollout', 'status', 'deployment/saurient-api', '-n', 'saurient-system', '--timeout=120s']);
-    console.log('Nexus API: http://127.0.0.1:18080 | storage: Kubernetes CRDs + workspace ConfigMap, backed by kind etcd.');
+    console.log('Nexus API: http://127.0.0.1:18080 | storage: Nexus Kubernetes CRDs, backed by kind etcd.');
   }
 } catch (error) { console.error(error.message); process.exitCode = 1; }

@@ -58,9 +58,29 @@ models:
     fields:
       Facilities:
         resolver: true
-      Products:
+      Processes:
         resolver: true
-      Users:
+      ReportingPeriods:
+        resolver: true
+      Localisation:
+        resolver: true
+      Approvals:
+        resolver: true
+      VerificationAgencies:
+        resolver: true
+      VerificationEngagements:
+        resolver: true
+      EngagementTeamMembers:
+        resolver: true
+      COIDeclarations:
+        resolver: true
+      Findings:
+        resolver: true
+      ReviewSignoffs:
+        resolver: true
+      InputCorrections:
+        resolver: true
+      Products:
         resolver: true
   inventory_Facility:
     fields:

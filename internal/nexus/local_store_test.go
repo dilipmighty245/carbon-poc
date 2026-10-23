@@ -2,8 +2,6 @@ package nexus
 
 import (
 	"context"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
 	runtimev1 "saurient-platform/build/apis/runtime.saurient.io/v1"
+	"saurient-platform/internal/tenant"
 )
 
 func TestLocalGraphSurvivesRestartAndReset(t *testing.T) {
@@ -98,41 +97,41 @@ func TestInvalidLocalSnapshotIsNotOverwritten(t *testing.T) {
 	}
 }
 
-func TestLocalWorkspaceMutationSurvivesRestartAndReset(t *testing.T) {
+func TestLocalWorkspaceMigratesOnceAndSurvivesRestart(t *testing.T) {
 	dir := t.TempDir()
-	engine := &NexusGraphEngine{}
-	engine.Reset()
-	handler, err := LocalPersistenceHandler(dir, engine, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		engine.opMu.Lock()
-		engine.processes["org-test"] = []*ProcessModel{{ID: "process-1", Name: "Steelmaking"}}
-		engine.opMu.Unlock()
-		w.WriteHeader(http.StatusCreated)
-	}))
+	data := []byte(`{"version":1,"processes":{"org-test":[{"id":"process-1","name":"Steelmaking"}]}}`)
+	if err := os.WriteFile(filepath.Join(dir, "workspace.json"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	client, store, err := newLocalGraphClient(filepath.Join(dir, "graph.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/processes", nil))
-	if response.Code != http.StatusCreated {
-		t.Fatal(response.Body.String())
-	}
-	restored := &NexusGraphEngine{}
-	restored.Reset()
-	if err := restored.loadLocalWorkspace(filepath.Join(dir, "workspace.json")); err != nil {
+	ctx := tenant.WithTenant(context.Background(), "org-test")
+	if err := MigrateLocalWorkspace(ctx, dir, client); err != nil {
 		t.Fatal(err)
 	}
-	if len(restored.processes["org-test"]) != 1 {
-		t.Fatal("process not restored")
-	}
-	restored.Reset()
-	if err := restored.saveLocalWorkspace(filepath.Join(dir, "workspace.json")); err != nil {
+	reopened, _, err := newLocalGraphClient(filepath.Join(dir, "graph.json"))
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := engine.loadLocalWorkspace(filepath.Join(dir, "workspace.json")); err != nil {
+	records, err := listProcessRecords(ctx, reopened)
+	if err != nil || len(records) != 1 || records[0].Name != "Steelmaking" {
+		t.Fatalf("records not restored: %+v %v", records, err)
+	}
+	if err := store.reset(); err != nil {
 		t.Fatal(err)
 	}
-	if len(engine.processes["org-test"]) != 0 {
-		t.Fatal("reset workspace data reappeared")
+	if err := MigrateLocalWorkspace(ctx, dir, client); err != nil {
+		t.Fatal(err)
+	}
+	records, err = listProcessRecords(ctx, client)
+	if err != nil || len(records) != 0 {
+		t.Fatalf("legacy records reappeared after reset: %+v %v", records, err)
+	}
+	original, err := os.ReadFile(filepath.Join(dir, "workspace.json"))
+	if err != nil || string(original) != string(data) {
+		t.Fatal("legacy backup changed")
 	}
 }
 

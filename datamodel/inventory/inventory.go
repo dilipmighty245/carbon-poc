@@ -26,14 +26,25 @@ type ACVAgency struct {
 type Tenant struct {
 	nexus.Node
 
-	TenantID   string   `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty"`
-	LegalName  string   `json:"legalName,omitempty" mapstructure:"legalName,omitempty"`
-	Country    string   `json:"country,omitempty" mapstructure:"country,omitempty"`
-	Industry   string   `json:"industry,omitempty" mapstructure:"industry,omitempty"`
-	ProfileRaw string   `json:"profileRaw,omitempty" mapstructure:"profileRaw,omitempty"`
-	Facilities Facility `nexus:"children"`
-	Products   Product  `nexus:"children"`
-	Users      User     `nexus:"children"`
+	TenantID                string                 `json:"tenantID,omitempty" mapstructure:"tenantID,omitempty"`
+	LegalName               string                 `json:"legalName,omitempty" mapstructure:"legalName,omitempty"`
+	Country                 string                 `json:"country,omitempty" mapstructure:"country,omitempty"`
+	Industry                string                 `json:"industry,omitempty" mapstructure:"industry,omitempty"`
+	ProfileRaw              string                 `json:"profileRaw,omitempty" mapstructure:"profileRaw,omitempty"`
+	Facilities              Facility               `nexus:"children"`
+	Processes               Process                `nexus:"children"`
+	ReportingPeriods        ReportingPeriod        `nexus:"children"`
+	Localisation            Localisation           `nexus:"children"`
+	Approvals               Approval               `nexus:"children"`
+	VerificationAgencies    VerificationAgency     `nexus:"children"`
+	VerificationEngagements VerificationEngagement `nexus:"children"`
+	EngagementTeamMembers   EngagementTeamMember   `nexus:"children"`
+	COIDeclarations         COIDeclaration         `nexus:"children"`
+	Findings                Finding                `nexus:"children"`
+	ReviewSignoffs          ReviewVerdict          `nexus:"children"`
+	InputCorrections        InputCorrection        `nexus:"children"`
+	Products                Product                `nexus:"children"`
+	Users                   User                   `nexus:"children"`
 }
 
 var UserSecretSpec = nexus.SecretSpec{}

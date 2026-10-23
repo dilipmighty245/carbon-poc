@@ -8,17 +8,41 @@ package v1
 // ACVAgencyLister.
 type ACVAgencyListerExpansion interface{}
 
+// ApprovalListerExpansion allows custom methods to be added to
+// ApprovalLister.
+type ApprovalListerExpansion interface{}
+
+// COIDeclarationListerExpansion allows custom methods to be added to
+// COIDeclarationLister.
+type COIDeclarationListerExpansion interface{}
+
 // DeclarationListerExpansion allows custom methods to be added to
 // DeclarationLister.
 type DeclarationListerExpansion interface{}
+
+// EngagementTeamMemberListerExpansion allows custom methods to be added to
+// EngagementTeamMemberLister.
+type EngagementTeamMemberListerExpansion interface{}
 
 // FacilityListerExpansion allows custom methods to be added to
 // FacilityLister.
 type FacilityListerExpansion interface{}
 
+// FindingListerExpansion allows custom methods to be added to
+// FindingLister.
+type FindingListerExpansion interface{}
+
+// InputCorrectionListerExpansion allows custom methods to be added to
+// InputCorrectionLister.
+type InputCorrectionListerExpansion interface{}
+
 // InventoryListerExpansion allows custom methods to be added to
 // InventoryLister.
 type InventoryListerExpansion interface{}
+
+// LocalisationListerExpansion allows custom methods to be added to
+// LocalisationLister.
+type LocalisationListerExpansion interface{}
 
 // LogisticsLegListerExpansion allows custom methods to be added to
 // LogisticsLegLister.
@@ -28,9 +52,21 @@ type LogisticsLegListerExpansion interface{}
 // MeterLister.
 type MeterListerExpansion interface{}
 
+// ProcessListerExpansion allows custom methods to be added to
+// ProcessLister.
+type ProcessListerExpansion interface{}
+
 // ProductListerExpansion allows custom methods to be added to
 // ProductLister.
 type ProductListerExpansion interface{}
+
+// ReportingPeriodListerExpansion allows custom methods to be added to
+// ReportingPeriodLister.
+type ReportingPeriodListerExpansion interface{}
+
+// ReviewVerdictListerExpansion allows custom methods to be added to
+// ReviewVerdictLister.
+type ReviewVerdictListerExpansion interface{}
 
 // SupplierListerExpansion allows custom methods to be added to
 // SupplierLister.
@@ -43,3 +79,11 @@ type TenantListerExpansion interface{}
 // UserListerExpansion allows custom methods to be added to
 // UserLister.
 type UserListerExpansion interface{}
+
+// VerificationAgencyListerExpansion allows custom methods to be added to
+// VerificationAgencyLister.
+type VerificationAgencyListerExpansion interface{}
+
+// VerificationEngagementListerExpansion allows custom methods to be added to
+// VerificationEngagementLister.
+type VerificationEngagementListerExpansion interface{}

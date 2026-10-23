@@ -15,15 +15,26 @@ import (
 type InventorySaurientV1Interface interface {
 	RESTClient() rest.Interface
 	ACVAgenciesGetter
+	ApprovalsGetter
+	COIDeclarationsGetter
 	DeclarationsGetter
+	EngagementTeamMembersGetter
 	FacilitiesGetter
+	FindingsGetter
+	InputCorrectionsGetter
 	InventoriesGetter
+	LocalisationsGetter
 	LogisticsLegsGetter
 	MetersGetter
+	ProcessesGetter
 	ProductsGetter
+	ReportingPeriodsGetter
+	ReviewVerdictsGetter
 	SuppliersGetter
 	TenantsGetter
 	UsersGetter
+	VerificationAgenciesGetter
+	VerificationEngagementsGetter
 }
 
 // InventorySaurientV1Client is used to interact with features provided by the inventory.saurient.io group.
@@ -35,16 +46,40 @@ func (c *InventorySaurientV1Client) ACVAgencies() ACVAgencyInterface {
 	return newACVAgencies(c)
 }
 
+func (c *InventorySaurientV1Client) Approvals() ApprovalInterface {
+	return newApprovals(c)
+}
+
+func (c *InventorySaurientV1Client) COIDeclarations() COIDeclarationInterface {
+	return newCOIDeclarations(c)
+}
+
 func (c *InventorySaurientV1Client) Declarations() DeclarationInterface {
 	return newDeclarations(c)
+}
+
+func (c *InventorySaurientV1Client) EngagementTeamMembers() EngagementTeamMemberInterface {
+	return newEngagementTeamMembers(c)
 }
 
 func (c *InventorySaurientV1Client) Facilities() FacilityInterface {
 	return newFacilities(c)
 }
 
+func (c *InventorySaurientV1Client) Findings() FindingInterface {
+	return newFindings(c)
+}
+
+func (c *InventorySaurientV1Client) InputCorrections() InputCorrectionInterface {
+	return newInputCorrections(c)
+}
+
 func (c *InventorySaurientV1Client) Inventories() InventoryInterface {
 	return newInventories(c)
+}
+
+func (c *InventorySaurientV1Client) Localisations() LocalisationInterface {
+	return newLocalisations(c)
 }
 
 func (c *InventorySaurientV1Client) LogisticsLegs() LogisticsLegInterface {
@@ -55,8 +90,20 @@ func (c *InventorySaurientV1Client) Meters() MeterInterface {
 	return newMeters(c)
 }
 
+func (c *InventorySaurientV1Client) Processes() ProcessInterface {
+	return newProcesses(c)
+}
+
 func (c *InventorySaurientV1Client) Products() ProductInterface {
 	return newProducts(c)
+}
+
+func (c *InventorySaurientV1Client) ReportingPeriods() ReportingPeriodInterface {
+	return newReportingPeriods(c)
+}
+
+func (c *InventorySaurientV1Client) ReviewVerdicts() ReviewVerdictInterface {
+	return newReviewVerdicts(c)
 }
 
 func (c *InventorySaurientV1Client) Suppliers() SupplierInterface {
@@ -69,6 +116,14 @@ func (c *InventorySaurientV1Client) Tenants() TenantInterface {
 
 func (c *InventorySaurientV1Client) Users() UserInterface {
 	return newUsers(c)
+}
+
+func (c *InventorySaurientV1Client) VerificationAgencies() VerificationAgencyInterface {
+	return newVerificationAgencies(c)
+}
+
+func (c *InventorySaurientV1Client) VerificationEngagements() VerificationEngagementInterface {
+	return newVerificationEngagements(c)
 }
 
 // NewForConfig creates a new InventorySaurientV1Client for the given config.

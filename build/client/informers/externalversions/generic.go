@@ -54,24 +54,46 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		// Group=inventory.saurient.io, Version=v1
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("acvagencies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().ACVAgencies().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("approvals"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Approvals().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("coideclarations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().COIDeclarations().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("declarations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Declarations().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("engagementteammembers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().EngagementTeamMembers().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("facilities"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Facilities().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("findings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Findings().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("inputcorrections"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().InputCorrections().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("inventories"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Inventories().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("localisations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Localisations().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("logisticslegs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().LogisticsLegs().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("meters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Meters().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("processes"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Processes().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("products"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Products().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("reportingperiods"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().ReportingPeriods().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("reviewverdicts"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().ReviewVerdicts().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("suppliers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Suppliers().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("tenants"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Tenants().Informer()}, nil
 	case inventorysaurientiov1.SchemeGroupVersion.WithResource("users"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().Users().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("verificationagencies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().VerificationAgencies().Informer()}, nil
+	case inventorysaurientiov1.SchemeGroupVersion.WithResource("verificationengagements"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.InventorySaurient().V1().VerificationEngagements().Informer()}, nil
 
 		// Group=root.saurient.io, Version=v1
 	case rootsaurientiov1.SchemeGroupVersion.WithResource("roots"):

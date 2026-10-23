@@ -7,7 +7,7 @@ metadata:
   name: tenants.inventory.saurient.io
   annotations:
     nexus: |
-      {"name":"inventory.Tenant","hierarchy":["roots.root.saurient.io","inventories.inventory.saurient.io"],"children":{"facilities.inventory.saurient.io":{"fieldName":"Facilities","fieldNameGvk":"facilitiesGvk","goFieldNameGvk":"FacilitiesGvk","isNamed":true},"products.inventory.saurient.io":{"fieldName":"Products","fieldNameGvk":"productsGvk","goFieldNameGvk":"ProductsGvk","isNamed":true},"users.inventory.saurient.io":{"fieldName":"Users","fieldNameGvk":"usersGvk","goFieldNameGvk":"UsersGvk","isNamed":true}},"is_singleton":false,"nexus-rest-api-gen":{"uris":null}}
+      {"name":"inventory.Tenant","hierarchy":["roots.root.saurient.io","inventories.inventory.saurient.io"],"children":{"approvals.inventory.saurient.io":{"fieldName":"Approvals","fieldNameGvk":"approvalsGvk","goFieldNameGvk":"ApprovalsGvk","isNamed":true},"coideclarations.inventory.saurient.io":{"fieldName":"COIDeclarations","fieldNameGvk":"cOIDeclarationsGvk","goFieldNameGvk":"COIDeclarationsGvk","isNamed":true},"engagementteammembers.inventory.saurient.io":{"fieldName":"EngagementTeamMembers","fieldNameGvk":"engagementTeamMembersGvk","goFieldNameGvk":"EngagementTeamMembersGvk","isNamed":true},"facilities.inventory.saurient.io":{"fieldName":"Facilities","fieldNameGvk":"facilitiesGvk","goFieldNameGvk":"FacilitiesGvk","isNamed":true},"findings.inventory.saurient.io":{"fieldName":"Findings","fieldNameGvk":"findingsGvk","goFieldNameGvk":"FindingsGvk","isNamed":true},"inputcorrections.inventory.saurient.io":{"fieldName":"InputCorrections","fieldNameGvk":"inputCorrectionsGvk","goFieldNameGvk":"InputCorrectionsGvk","isNamed":true},"localisations.inventory.saurient.io":{"fieldName":"Localisation","fieldNameGvk":"localisationGvk","goFieldNameGvk":"LocalisationGvk","isNamed":true},"processes.inventory.saurient.io":{"fieldName":"Processes","fieldNameGvk":"processesGvk","goFieldNameGvk":"ProcessesGvk","isNamed":true},"products.inventory.saurient.io":{"fieldName":"Products","fieldNameGvk":"productsGvk","goFieldNameGvk":"ProductsGvk","isNamed":true},"reportingperiods.inventory.saurient.io":{"fieldName":"ReportingPeriods","fieldNameGvk":"reportingPeriodsGvk","goFieldNameGvk":"ReportingPeriodsGvk","isNamed":true},"reviewverdicts.inventory.saurient.io":{"fieldName":"ReviewSignoffs","fieldNameGvk":"reviewSignoffsGvk","goFieldNameGvk":"ReviewSignoffsGvk","isNamed":true},"users.inventory.saurient.io":{"fieldName":"Users","fieldNameGvk":"usersGvk","goFieldNameGvk":"UsersGvk","isNamed":true},"verificationagencies.inventory.saurient.io":{"fieldName":"VerificationAgencies","fieldNameGvk":"verificationAgenciesGvk","goFieldNameGvk":"VerificationAgenciesGvk","isNamed":true},"verificationengagements.inventory.saurient.io":{"fieldName":"VerificationEngagements","fieldNameGvk":"verificationEngagementsGvk","goFieldNameGvk":"VerificationEngagementsGvk","isNamed":true}},"is_singleton":false,"nexus-rest-api-gen":{"uris":null}}
 spec:
   conversion:
     strategy: None
@@ -24,19 +24,6 @@ spec:
     - name: v1
       served: true
       storage: true
-      schema:
-        openAPIV3Schema:
-          type: object
-          properties:
-            spec:
-              type: object
-              x-kubernetes-preserve-unknown-fields: true
-              properties:
-                profileRaw:
-                  type: string
-            status:
-              type: object
-              x-kubernetes-preserve-unknown-fields: true
       subresources:
         status: {}
 status:

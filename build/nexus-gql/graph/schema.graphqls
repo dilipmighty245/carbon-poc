@@ -91,26 +91,23 @@ type inventory_Tenant {
 	ParentLabels: Map
 
     Facilities(Id: ID): [inventory_Facility!]
+    Processes(Id: ID): [inventory_Process!]
+    ReportingPeriods(Id: ID): [inventory_ReportingPeriod!]
+    Localisation(Id: ID): [inventory_Localisation!]
+    Approvals(Id: ID): [inventory_Approval!]
+    VerificationAgencies(Id: ID): [inventory_VerificationAgency!]
+    VerificationEngagements(Id: ID): [inventory_VerificationEngagement!]
+    EngagementTeamMembers(Id: ID): [inventory_EngagementTeamMember!]
+    COIDeclarations(Id: ID): [inventory_COIDeclaration!]
+    Findings(Id: ID): [inventory_Finding!]
+    ReviewSignoffs(Id: ID): [inventory_ReviewVerdict!]
+    InputCorrections(Id: ID): [inventory_InputCorrection!]
     Products(Id: ID): [inventory_Product!]
-    Users(Id: ID): [inventory_User!]
     TenantID: String
     LegalName: String
     Country: String
     Industry: String
-}
-
-type inventory_User {
-    Id: ID
-	ParentLabels: Map
-
-    UserID: String
-    TenantID: String
-    Name: String
-    Email: String
-    Role: String
-    FacilityScope: String
-    LastLogin: String
-    Status: String
+    ProfileRaw: String
 }
 
 type inventory_Facility {
@@ -189,6 +186,199 @@ type inventory_Declaration {
     ClaimedPcfIntensity: Float
     Unit: String
     DataClassification: String
+}
+
+type inventory_Process {
+    Id: ID
+	ParentLabels: Map
+
+    RecordID: String
+    TenantID: String
+    FacilityID: String
+    FacilityName: String
+    Name: String
+    ProductionLine: String
+    EnergySource: String
+    Inputs: String
+    Outputs: String
+    Meters: String
+    Scopes: String
+    Status: String
+    Description: String
+    PCFTrace: String
+    CreatedAt: String
+    UpdatedAt: String
+}
+
+type inventory_ReportingPeriod {
+    Id: ID
+	ParentLabels: Map
+
+    RecordID: String
+    TenantID: String
+    Name: String
+    Year: Int
+    Quarter: String
+    StartDate: String
+    EndDate: String
+    Status: String
+    EmissionsTotal: Float
+    DataCompleteness: Float
+    VerificationStatus: String
+    CreatedAt: String
+}
+
+type inventory_Localisation {
+    Id: ID
+	ParentLabels: Map
+
+    TenantID: String
+    Country: String
+    Currency: String
+    Timezone: String
+    Language: String
+    Units: String
+    Regulatory: String
+    DefaultLanguage: String
+    DefaultCurrency: String
+    DefaultTimezone: String
+    DefaultEmissionUnit: String
+    NumberFormat: String
+    DateFormat: String
+}
+
+type inventory_Approval {
+    Id: ID
+	ParentLabels: Map
+
+    RecordID: String
+    TenantID: String
+    PassportID: String
+    BatchNumber: String
+    RequestedBy: String
+    Role: String
+    Status: String
+    ApproverComment: String
+    SubmittedAt: String
+    ResolvedAt: String
+}
+
+type inventory_VerificationAgency {
+    Id: ID
+	ParentLabels: Map
+
+    AgencyID: String
+    TenantID: String
+    Name: String
+    AccreditationNumber: String
+    AccreditationBody: String
+    AccreditationStatus: String
+    AccreditationExpiry: String
+    Scopes: String
+    ValidFrom: String
+    ValidTo: String
+    ContactEmail: String
+    ContactPhone: String
+    LeadAuditor: String
+    CreatedAt: String
+    UpdatedAt: String
+}
+
+type inventory_VerificationEngagement {
+    Id: ID
+	ParentLabels: Map
+
+    EngagementID: String
+    TenantID: String
+    AgencyID: String
+    PassportID: String
+    BatchID: String
+    Period: String
+    Methodology: String
+    SnapshotHash: String
+    Status: String
+    AssignedVerifier: String
+    ScopeMatch: Boolean
+    FindingsCount: Int
+    Timeline: String
+    CreatedAt: String
+    UpdatedAt: String
+}
+
+type inventory_EngagementTeamMember {
+    Id: ID
+	ParentLabels: Map
+
+    MemberID: String
+    EngagementID: String
+    TenantID: String
+    Name: String
+    Role: String
+    Email: String
+    AssignedAt: String
+}
+
+type inventory_COIDeclaration {
+    Id: ID
+	ParentLabels: Map
+
+    DeclarationID: String
+    EngagementID: String
+    TenantID: String
+    AuditorName: String
+    AuditorEmail: String
+    HasConflict: Boolean
+    Explanation: String
+    DeclaredAt: String
+}
+
+type inventory_Finding {
+    Id: ID
+	ParentLabels: Map
+
+    FindingID: String
+    EngagementID: String
+    TenantID: String
+    Category: String
+    Severity: String
+    Status: String
+    Description: String
+    Discrepancy: Float
+    RaisedBy: String
+    ResolvedBy: String
+    CreatedAt: String
+    UpdatedAt: String
+}
+
+type inventory_ReviewVerdict {
+    Id: ID
+	ParentLabels: Map
+
+    SignoffID: String
+    EngagementID: String
+    TenantID: String
+    PassportID: String
+    LeadAuditor: String
+    PeerReviewer: String
+    Opinion: String
+    StatementRef: String
+    Frozen: Boolean
+    SignedAt: String
+}
+
+type inventory_InputCorrection {
+    Id: ID
+	ParentLabels: Map
+
+    CorrectionID: String
+    TenantID: String
+    InputNodeID: String
+    NewValue: Float
+    Reason: String
+    ResultRaw: String
+    NodesRaw: String
+    EdgesRaw: String
+    CreatedAt: String
 }
 
 type runtime_Runtime {

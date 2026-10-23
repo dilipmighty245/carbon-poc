@@ -19,16 +19,40 @@ func (c *FakeInventorySaurientV1) ACVAgencies() v1.ACVAgencyInterface {
 	return &FakeACVAgencies{c}
 }
 
+func (c *FakeInventorySaurientV1) Approvals() v1.ApprovalInterface {
+	return &FakeApprovals{c}
+}
+
+func (c *FakeInventorySaurientV1) COIDeclarations() v1.COIDeclarationInterface {
+	return &FakeCOIDeclarations{c}
+}
+
 func (c *FakeInventorySaurientV1) Declarations() v1.DeclarationInterface {
 	return &FakeDeclarations{c}
+}
+
+func (c *FakeInventorySaurientV1) EngagementTeamMembers() v1.EngagementTeamMemberInterface {
+	return &FakeEngagementTeamMembers{c}
 }
 
 func (c *FakeInventorySaurientV1) Facilities() v1.FacilityInterface {
 	return &FakeFacilities{c}
 }
 
+func (c *FakeInventorySaurientV1) Findings() v1.FindingInterface {
+	return &FakeFindings{c}
+}
+
+func (c *FakeInventorySaurientV1) InputCorrections() v1.InputCorrectionInterface {
+	return &FakeInputCorrections{c}
+}
+
 func (c *FakeInventorySaurientV1) Inventories() v1.InventoryInterface {
 	return &FakeInventories{c}
+}
+
+func (c *FakeInventorySaurientV1) Localisations() v1.LocalisationInterface {
+	return &FakeLocalisations{c}
 }
 
 func (c *FakeInventorySaurientV1) LogisticsLegs() v1.LogisticsLegInterface {
@@ -39,8 +63,20 @@ func (c *FakeInventorySaurientV1) Meters() v1.MeterInterface {
 	return &FakeMeters{c}
 }
 
+func (c *FakeInventorySaurientV1) Processes() v1.ProcessInterface {
+	return &FakeProcesses{c}
+}
+
 func (c *FakeInventorySaurientV1) Products() v1.ProductInterface {
 	return &FakeProducts{c}
+}
+
+func (c *FakeInventorySaurientV1) ReportingPeriods() v1.ReportingPeriodInterface {
+	return &FakeReportingPeriods{c}
+}
+
+func (c *FakeInventorySaurientV1) ReviewVerdicts() v1.ReviewVerdictInterface {
+	return &FakeReviewVerdicts{c}
 }
 
 func (c *FakeInventorySaurientV1) Suppliers() v1.SupplierInterface {
@@ -53,6 +89,14 @@ func (c *FakeInventorySaurientV1) Tenants() v1.TenantInterface {
 
 func (c *FakeInventorySaurientV1) Users() v1.UserInterface {
 	return &FakeUsers{c}
+}
+
+func (c *FakeInventorySaurientV1) VerificationAgencies() v1.VerificationAgencyInterface {
+	return &FakeVerificationAgencies{c}
+}
+
+func (c *FakeInventorySaurientV1) VerificationEngagements() v1.VerificationEngagementInterface {
+	return &FakeVerificationEngagements{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
