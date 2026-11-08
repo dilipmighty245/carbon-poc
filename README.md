@@ -44,7 +44,7 @@ make check-prereqs
 We provide Makefile targets for starting the full local environment (etcd, Go API Gateway, Controller Manager, and React Vite UI):
 
 ### Option A: Development Setup Without Mock Data (Clean State)
-Starts local etcd container, builds Go binaries, launches API Gateway and Controller Manager background processes, and starts the Vite UI server — **without seeding mock data**:
+Creates or reuses the kind cluster with the Nexus API and TimescaleDB, then starts the local Vite UI **without seeding mock data**:
 
 ```bash
 make dev-setup-nomock
@@ -54,7 +54,7 @@ Open **http://carbon-passport-dev**. This workflow requires Docker, kind,
 kubectl, Go, Node.js, and installed UI dependencies (`npm install` in
 `digital-passport-app`). It creates or reuses the `saurient-dev` kind cluster,
 installs the generated Nexus CRDs, builds and deploys the API pod, and runs the
-UI and telemetry service on the laptop. The UI proxies requests to the kind
+UI on the laptop and MQTT ingestion with TimescaleDB in the cluster. The UI proxies requests to the kind
 NodePort at **http://127.0.0.1:18080**. Vite listens on port **5173** and the
 Docker nginx proxy uses `127.0.0.1:80`.
 
@@ -197,3 +197,10 @@ cd digital-passport-app
 npm install
 npm run dev
 ```
+
+## Facility MQTT telemetry
+
+The WG-05 MQTT integration replaces the simulated EM6400 telemetry server.
+See [setup and API usage](docs/telemetry_setup.md) and the
+[architecture and field dictionary](docs/telemetry_architecture.md).
+Raw values are preserved while vendor units and register definitions remain unconfirmed.

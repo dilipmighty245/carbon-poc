@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { randomBytes } from 'node:crypto';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 process.chdir(root);
@@ -36,6 +37,21 @@ try {
     kubectl(['wait', '--for=condition=Established', '--timeout=60s', '-f', '-'], { input: crds });
     // Create namespace before importing the previous local snapshot. The marker prevents re-import on restart.
     kubectl(['apply', '-f', '-'], { input: JSON.stringify({ apiVersion: 'v1', kind: 'Namespace', metadata: { name: 'saurient-system' } }) });
+    // Preserve secrets across restarts; changing the key would make saved MQTT
+    // passwords unreadable. Keep the database PVC when stopping development.
+    const secret = run('kubectl', ['--kubeconfig', kubeconfig, '--context', context,
+      'get', 'secret', 'telemetry-secrets', '-n', 'saurient-system', '--ignore-not-found', '-o', 'name'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+    if (!secret) {
+      const password = randomBytes(24).toString('hex');
+      kubectl(['apply', '-f', '-'], { input: JSON.stringify({ apiVersion: 'v1', kind: 'Secret',
+        metadata: { name: 'telemetry-secrets', namespace: 'saurient-system' }, type: 'Opaque',
+        stringData: { POSTGRES_PASSWORD: password,
+          TELEMETRY_DATABASE_URL: `postgres://telemetry:${password}@telemetry-db:5432/telemetry?sslmode=disable`,
+          TELEMETRY_ENCRYPTION_KEY: randomBytes(32).toString('base64') } }) });
+    }
+    kubectl(['apply', '-f', 'deploy/telemetry-db.yaml']);
+    kubectl(['rollout', 'status', 'deployment/telemetry-db', '-n', 'saurient-system', '--timeout=180s']);
     run(tool, ['import', kubeconfig, path.join(root, '.dev-data')]);
     const arch = run('docker', ['version', '--format', '{{.Server.Arch}}'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
     if (!['arm64', 'amd64'].includes(arch)) throw new Error(`Unsupported Docker architecture: ${arch}`);

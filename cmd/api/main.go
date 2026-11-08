@@ -11,9 +11,11 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"os/signal"
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/dilipmighty245/graph-framework-for-microservices/gqlgen/graphql/handler"
@@ -454,6 +456,8 @@ const graphqlVoyagerHTML = `<!DOCTYPE html>
 
 func main() {
 	port := getEnv("PORT", "8080")
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	// Initialize Nexus typed client and ensure root graph anchor hierarchy
 	nClient := nexus.GetNexusClient()
@@ -595,6 +599,38 @@ func main() {
 
 	// 8. Organisation & Internal Workspace REST API
 	orgHandler := api.NewOrganisationHandlerWithClient(nClient, server.nexusEngine)
+	var telemetryStore *telemetry.Store
+	var telemetryManager *telemetry.Manager
+	if dsn := os.Getenv("TELEMETRY_DATABASE_URL"); dsn != "" {
+		initCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		var err error
+		telemetryStore, err = telemetry.OpenStore(initCtx, dsn, os.Getenv("TELEMETRY_ENCRYPTION_KEY"))
+		cancel()
+		if err != nil {
+			log.Fatal("Telemetry initialization failed; check database availability, schema and encryption key")
+		}
+		defer telemetryStore.DB.Close()
+		telemetryManager = telemetry.NewManager(telemetryStore)
+		telemetryManager.Exists = func(ctx context.Context, tenantID, facilityID string) (bool, error) {
+			// This check must not recreate graph nodes after a deletion/reset.
+			root, err := nexus.GetNexusClient().GetRootRoot(ctx)
+			if err != nil {
+				return false, err
+			}
+			inventory, err := root.GetInventory(ctx)
+			if err != nil {
+				return false, err
+			}
+			organisation, err := inventory.GetTenants(ctx, tenantID)
+			if err != nil {
+				return false, err
+			}
+			facility, err := organisation.GetFacilities(ctx, facilityID)
+			return facility != nil && err == nil, err
+		}
+		go telemetryManager.Run(ctx)
+		orgHandler.Telemetry = telemetryStore
+	}
 	orgHandler.RegisterRoutes(http.DefaultServeMux)
 
 	// 9. ACV Verification & Nexus Lineage REST API
@@ -604,10 +640,17 @@ func main() {
 	lineageHandler := api.NewLineageHandler()
 	lineageHandler.RegisterRoutes(http.DefaultServeMux)
 
-	// 10. Industrial Telemetry Simulation (Schneider / Sattric EM6400)
-	telemetryGen := telemetry.NewTelemetryGenerator()
-	telemetryServer := telemetry.NewServer(telemetryGen, port)
-	telemetryServer.RegisterRoutes(http.DefaultServeMux)
+	// Telemetry queries read persisted MQTT deliveries; requests never generate data.
+	staleAfter := 2 * time.Minute
+	if value := os.Getenv("TELEMETRY_STALE_AFTER"); value != "" {
+		var err error
+		staleAfter, err = time.ParseDuration(value)
+		if err != nil || staleAfter <= 0 {
+			log.Fatal("TELEMETRY_STALE_AFTER must be a positive duration")
+		}
+	}
+	telemetryHandler := &api.TelemetryHandler{Store: telemetryStore, Manager: telemetryManager, StaleAfter: staleAfter}
+	telemetryHandler.RegisterRoutes(http.DefaultServeMux)
 
 	// Redirect root / to /swagger/
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -622,7 +665,14 @@ func main() {
 	log.Printf("Swagger UI interactive API documentation available at http://localhost:%s/swagger/", port)
 	log.Printf("GraphQL Playground available at http://localhost:%s/graphql/playground", port)
 	log.Printf("GraphQL Voyager node visualizer available at http://localhost:%s/graphql/voyager", port)
-	if err := http.ListenAndServe(":"+port, apiHandler); err != nil {
+	httpServer := &http.Server{Addr: ":" + port, Handler: apiHandler, ReadHeaderTimeout: 10 * time.Second}
+	go func() {
+		<-ctx.Done()
+		shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = httpServer.Shutdown(shutdown)
+	}()
+	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server failed: %v", err)
 	}
 }

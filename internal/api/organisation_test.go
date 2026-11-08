@@ -252,7 +252,7 @@ func TestOrganisationHandler_AddUserInOrganisation_And_AssignRole(t *testing.T) 
 	}
 }
 
-func TestOrganisationHandler_Facilities_DynamicTelemetry_And_SattricMeters(t *testing.T) {
+func TestOrganisationHandler_Facilities_DoNotFabricateMeters(t *testing.T) {
 	client := nexus_client.NewFakeClient()
 	_, _ = nexus.EnsureGraphRoots(context.Background(), client)
 	engine := nexus.GetNexusEngine()
@@ -280,7 +280,7 @@ func TestOrganisationHandler_Facilities_DynamicTelemetry_And_SattricMeters(t *te
 		t.Fatalf("expected 0 facilities for new tenant, got %d", len(zeroFacs))
 	}
 
-	// 2. Add Facility 1: Automatically connects 1 Sattric meter
+	// 2. An unconfigured facility has no invented meters.
 	fac1Req := map[string]interface{}{
 		"id":           "FAC-GH-001",
 		"name":         "Tema Processing Plant",
@@ -306,14 +306,11 @@ func TestOrganisationHandler_Facilities_DynamicTelemetry_And_SattricMeters(t *te
 		t.Fatalf("failed to get facility 1 node from nexus graph: %v", err)
 	}
 	meters1, err := f1Node.GetAllMeters(context.Background())
-	if err != nil || len(meters1) != 1 {
-		t.Fatalf("expected 1 Sattric meter connected under facility 1 in Nexus datamodel, got %d (err: %v)", len(meters1), err)
-	}
-	if meters1[0].Spec.MeterType != "Sattric IoT Telemetry" {
-		t.Errorf("expected meter type 'Sattric IoT Telemetry', got %s", meters1[0].Spec.MeterType)
+	if err != nil || len(meters1) != 0 {
+		t.Fatalf("expected no fabricated meter under an unconfigured facility, got %d (err: %v)", len(meters1), err)
 	}
 
-	// 3. Add Facility 2: Automatically connects another Sattric meter
+	// 3. Another unconfigured facility also starts without telemetry.
 	fac2Req := map[string]interface{}{
 		"id":           "FAC-GH-002",
 		"name":         "Kumasi Materials Hub",
@@ -333,7 +330,7 @@ func TestOrganisationHandler_Facilities_DynamicTelemetry_And_SattricMeters(t *te
 		t.Fatalf("expected 200 OK adding facility 2, got %d: %s", recAdd2.Code, recAdd2.Body.String())
 	}
 
-	// 4. List Facilities: Must return 2 facilities, each with 1 Sattric meter and initial zero emissions
+	// 4. List Facilities: Must return 2 facilities, each with no fabricated meters and initial zero emissions
 	reqList := httptest.NewRequest(http.MethodGet, "/api/v1/organisation/facilities", nil)
 	reqList.Header.Set("X-Tenant-ID", tenantID)
 	recList := httptest.NewRecorder()
@@ -357,8 +354,8 @@ func TestOrganisationHandler_Facilities_DynamicTelemetry_And_SattricMeters(t *te
 			t.Errorf("expected initial emissions '0 tCO₂e', got %s", f.Emissions)
 		}
 	}
-	if totalTelemetryMeters != 2 {
-		t.Fatalf("expected 2 connected Sattric meters across 2 facilities, got %d", totalTelemetryMeters)
+	if totalTelemetryMeters != 0 {
+		t.Fatalf("expected no fabricated devices across unconfigured facilities, got %d", totalTelemetryMeters)
 	}
 
 	// 5. Delete Facility 1: Telemetry meters and facilities decrement
@@ -382,8 +379,8 @@ func TestOrganisationHandler_Facilities_DynamicTelemetry_And_SattricMeters(t *te
 	if len(facListAfter) != 1 {
 		t.Fatalf("expected 1 facility remaining after deletion, got %d", len(facListAfter))
 	}
-	if facListAfter[0].DevicesCount != 1 {
-		t.Fatalf("expected 1 connected Sattric meter remaining, got %d", facListAfter[0].DevicesCount)
+	if facListAfter[0].DevicesCount != 0 {
+		t.Fatalf("expected no fabricated meter remaining, got %d", facListAfter[0].DevicesCount)
 	}
 }
 

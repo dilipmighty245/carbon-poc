@@ -12,7 +12,7 @@ const source = fs.readFileSync(new URL('./dev_environment.mjs', import.meta.url)
   .replace(/^main\(\)\.catch.*;$/m, '');
 
 for (const platform of ['darwin', 'linux', 'win32']) {
-  test(`${platform}: setup builds native binaries, copies proxy config, and launches Vite`, async () => {
+  test(`${platform}: setup prepares kind, copies proxy config, and launches Vite without a simulator`, async () => {
     const commands = [];
     const children = [];
     const files = new Map([['.api.pid', '42']]);
@@ -50,17 +50,15 @@ for (const platform of ['darwin', 'linux', 'win32']) {
     assert.equal(hostSetupCount, 1);
     const cleanupIndex = commands.findIndex(([cmd]) => cmd === 'stopDevPorts');
     assert.ok(cleanupIndex >= 0);
-    assert.ok(cleanupIndex < commands.findIndex(([cmd, args]) => cmd === 'go' && args[0] === 'build'));
-    const extension = platform === 'win32' ? '.exe' : '';
-    assert.ok(commands.some(([cmd, args]) => cmd === 'go' && args.includes(`bin/api${extension}`)));
+    assert.ok(cleanupIndex < commands.findIndex(([cmd, args]) => cmd === '/node' && args.includes('scripts/kind_environment.mjs')));
     assert.ok(commands.some(([cmd, args]) => cmd === 'docker' && args[0] === 'cp'));
     assert.ok(commands.some(([cmd, args]) => cmd === 'docker' && args.includes('127.0.0.1:80:80')));
-    assert.equal(children[0][0], `/repo/bin/api${extension}`);
-    assert.equal(children[0][2].env.PORT, '8080');
-    assert.equal(children[1][0], `/repo/bin/telemetry${extension}`);
-    assert.deepEqual(Array.from(children[2][1]).slice(-3), ['--port', '5173', '--strictPort']);
+    assert.equal(children.length, 1);
+    assert.equal(children[0][0], '/node');
+    assert.equal(children[0][2].env.VITE_API_PROXY_TARGET, 'http://127.0.0.1:18080');
+    assert.deepEqual(Array.from(children[0][1]).slice(-3), ['--port', '5173', '--strictPort']);
     assert.equal(files.has('.ui.pid'), false);
-    assert.equal(files.has('.api.pid'), true);
+    assert.equal(files.has('.api.pid'), false);
     assert.ok(commands.some(([cmd]) => cmd === (platform === 'win32' ? 'taskkill' : 'kill')));
     assert.equal(commands.some(([cmd]) => ['bash', 'sh', 'sudo', 'pkill', 'lsof'].includes(cmd)), false);
   });

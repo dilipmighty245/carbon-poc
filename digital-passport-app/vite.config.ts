@@ -47,6 +47,7 @@ export default defineConfig(({ mode, command }) => {
       host: '0.0.0.0',
       port: 5173,
       allowedHosts: ['carbon-passport-dev'],
+      watch: { ignored: ['**/playwright-results/**', '**/test-results/**'] },
       proxy,
     },
     preview: { proxy },

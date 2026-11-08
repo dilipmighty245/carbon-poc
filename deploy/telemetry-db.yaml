@@ -1,0 +1,76 @@
+# Create telemetry-secrets before applying this file. See docs/telemetry_setup.md.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: telemetry-data
+  namespace: saurient-system
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-db
+  namespace: saurient-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: telemetry-db
+  template:
+    metadata:
+      labels:
+        app: telemetry-db
+    spec:
+      containers:
+        - name: timescaledb
+          image: timescale/timescaledb:2.24.0-pg17
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: telemetry
+            - name: POSTGRES_USER
+              value: telemetry
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: telemetry-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, telemetry, -d, telemetry]
+            initialDelaySeconds: 5
+            periodSeconds: 2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: telemetry-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemetry-db
+  namespace: saurient-system
+spec:
+  selector:
+    app: telemetry-db
+  ports:
+    - port: 5432
+      targetPort: 5432

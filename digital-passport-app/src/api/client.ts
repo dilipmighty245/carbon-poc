@@ -611,10 +611,17 @@ export async function saveOrgProfile(profile: any, tenantId?: string) {
 export async function getOrgFacilities(tenantId?: string) {
   const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/facilities`, {
-    headers: { 'X-Tenant-ID': tid },
+    headers: { 'X-Tenant-ID': tid, Authorization: `Bearer ${localStorage.getItem('saurient_auth_token') || ''}` },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-  return await res.json();
+  return (await res.json()).map(normalizeFacility);
+}
+
+function normalizeFacility(f: any) {
+  return { ...f, countryCode: f.country_code, processesCount: f.processes_count,
+    devicesCount: f.telemetry ? 1 : 0, dataCompleteness: f.data_completeness,
+    productionCapacity: f.production_capacity, operatingHours: f.operating_hours,
+    energySources: f.energy_sources, emissionSources: f.emission_sources, processTree: f.process_tree };
 }
 
 export async function saveOrgFacility(facility: any, tenantId?: string) {
@@ -624,18 +631,21 @@ export async function saveOrgFacility(facility: any, tenantId?: string) {
     headers: {
       'Content-Type': 'application/json',
       'X-Tenant-ID': tid,
+      Authorization: `Bearer ${localStorage.getItem('saurient_auth_token') || ''}`,
     },
-    body: JSON.stringify(facility),
+    body: JSON.stringify({ ...facility, country_code: facility.countryCode,
+      processes_count: facility.processesCount, devices_count: facility.devicesCount,
+      data_completeness: facility.dataCompleteness, process_tree: facility.processTree }),
   });
-  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-  return await res.json();
+  if (!res.ok) { const error = await res.json().catch(() => ({})); throw new Error(error.error || `HTTP error ${res.status}`); }
+  return normalizeFacility(await res.json());
 }
 
 export async function deleteOrgFacility(id: string, tenantId?: string) {
   const tid = tenantId || getActiveTenantId();
   const res = await fetch(`${API_BASE_URL}/organisation/facilities/${id}`, {
     method: 'DELETE',
-    headers: { 'X-Tenant-ID': tid },
+    headers: { 'X-Tenant-ID': tid, Authorization: `Bearer ${localStorage.getItem('saurient_auth_token') || ''}` },
   });
   if (!res.ok) throw new Error(`HTTP error ${res.status}`);
   return await res.json();
@@ -877,117 +887,36 @@ export async function correctSupplierInput(req: InputCorrectionReq, tenantId?: s
   return await res.json();
 }
 
-export const TELEMETRY_SERVER_URL =
-  (import.meta as any).env?.VITE_TELEMETRY_URL || 'http://localhost:8085';
-
-export interface EM6400Reading {
-  meter_model: string;
-  meter_id: string;
-  facility_id: string;
-  timestamp: string;
-  V1n: number;
-  V2n: number;
-  V3n: number;
-  V12: number;
-  V23: number;
-  V31: number;
-  Vavg: number;
-  I1: number;
-  I2: number;
-  I3: number;
-  In: number;
-  Iavg: number;
-  KW: number;
-  KVA: number;
-  KVAR: number;
-  PF: number;
-  FREQ: number;
-  THDV1: number;
-  THDV2: number;
-  THDV3: number;
-  THDI1: number;
-  THDI2: number;
-  THDI3: number;
-  KWH_FWD: number;
-  KVAH_FWD: number;
-  KVARH_FWD: number;
-  KWH_REV: number;
-  KVAH_REV: number;
-  KVARH_REV: number;
-  INTR: number;
-  IUNB: number;
-  VUNB: number;
-  RSSI: number;
-  MTR: number;
-  GPRS: number;
-  STALE: number;
-  raw_frame: string;
+export interface TelemetrySource {
+  device: 'SaurEdge/WG-05'; host: string; port: number; tls: boolean;
+  username: string; password?: string; password_configured?: boolean;
+  topic: string; gateway_serial: string; qos: number;
 }
 
-export async function getLiveTelemetry(params?: {
-  meterId?: string;
-  facilityId?: string;
-  kw?: number;
-  voltage?: number;
-  pf?: number;
-}): Promise<EM6400Reading> {
-  const query = new URLSearchParams();
-  if (params?.meterId) query.set('meter_id', params.meterId);
-  if (params?.facilityId) query.set('facility_id', params.facilityId);
-  if (params?.kw !== undefined) query.set('kw', params.kw.toString());
-  if (params?.voltage !== undefined) query.set('voltage', params.voltage.toString());
-  if (params?.pf !== undefined) query.set('pf', params.pf.toString());
+export interface TelemetryMessage {
+  id: string; source_id: string; facility_id: string; received_at: string;
+  gateway_serial: string; meter_id: string; topic: string; qos: number;
+  retained: boolean; duplicate: boolean; payload_base64: string;
+  fields: Record<string, unknown> | null; parse_error?: string;
+}
 
-  const endpoints = [
-    `${TELEMETRY_SERVER_URL}/api/v1/telemetry/latest?${query.toString()}`,
-    `${API_BASE_URL}/telemetry/latest?${query.toString()}`,
-  ];
+export interface TelemetryResponse {
+  status: string; timestamp_basis: string; stale_after_seconds: number;
+  readings: TelemetryMessage[];
+  subscription?: { state: string; last_received?: string };
+}
 
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return await res.json();
-    } catch (_) {}
+export async function getFacilityTelemetry(facilityId: string, signal?: AbortSignal, options?: { meterId?: string; windowMinutes?: number }): Promise<TelemetryResponse> {
+  const from = new Date(Date.now() - (options?.windowMinutes || 60) * 60_000).toISOString();
+  const query = new URLSearchParams({ facility_id: facilityId, limit: '1000', from });
+  if (options?.meterId) query.set('meter_id', options.meterId);
+  const response = await fetch(`${API_BASE_URL}/telemetry/history?${query}`, {
+    signal,
+    headers: { 'X-Tenant-ID': getActiveTenantId(), Authorization: `Bearer ${localStorage.getItem('saurient_auth_token') || ''}` },
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `Telemetry request failed (${response.status})`);
   }
-  throw new Error('Telemetry server unavailable');
+  return response.json();
 }
-
-export async function generateTelemetry(params: {
-  meter_id?: string;
-  facility_id?: string;
-  base_kw?: number;
-  nominal_voltage?: number;
-  power_factor?: number;
-  frequency?: number;
-}): Promise<EM6400Reading> {
-  const endpoints = [
-    `${TELEMETRY_SERVER_URL}/api/v1/telemetry/generate`,
-    `${API_BASE_URL}/telemetry/generate`,
-  ];
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
-      });
-      if (res.ok) return await res.json();
-    } catch (_) {}
-  }
-  throw new Error('Telemetry generation failed');
-}
-
-export async function getTelemetrySample(): Promise<EM6400Reading> {
-  const endpoints = [
-    `${TELEMETRY_SERVER_URL}/api/v1/telemetry/sample`,
-    `${API_BASE_URL}/telemetry/sample`,
-  ];
-  for (const url of endpoints) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return await res.json();
-    } catch (_) {}
-  }
-  throw new Error('Telemetry sample unavailable');
-}
-

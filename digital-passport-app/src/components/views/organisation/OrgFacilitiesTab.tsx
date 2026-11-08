@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getOrgFacilities, saveOrgFacility, deleteOrgFacility } from '../../../api/client';
+import { getOrgFacilities, saveOrgFacility, deleteOrgFacility, type TelemetrySource } from '../../../api/client';
 import { LiveTelemetryModal } from '../../telemetry/LiveTelemetryModal';
 import {
   Factory,
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 export interface Facility {
+  telemetry?: TelemetrySource;
   id: string;
   name: string;
   type: string;
@@ -53,6 +54,12 @@ export interface Facility {
 
 export const initialFacilities: Facility[] = [];
 
+// getRandomValues also works on the HTTP development domain, where the
+// secure-context-only randomUUID API is unavailable.
+function createFacilityId() {
+  return `fac-${Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('')}`;
+}
+
 export const OrgFacilitiesTab: React.FC = () => {
   const [facilitiesList, setFacilitiesList] = useState<Facility[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -75,6 +82,17 @@ export const OrgFacilitiesTab: React.FC = () => {
   const [newFacilityType, setNewFacilityType] = useState('Production Facility');
   const [newFacilityCountry, setNewFacilityTypeCountry] = useState('Ghana');
   const [newFacilityAddress, setNewFacilityAddress] = useState('');
+  const [newFacilityId, setNewFacilityId] = useState(createFacilityId);
+  const [device, setDevice] = useState('');
+  const [host, setHost] = useState('15.207.187.242');
+  const [port, setPort] = useState(1883);
+  const [tls, setTls] = useState(false);
+  const [username, setUsername] = useState('test');
+  const [password, setPassword] = useState('');
+  const [topic, setTopic] = useState('INSTRUTEL/MBIOT_ETH/09001/EMS');
+  const [gatewaySerial, setGatewaySerial] = useState('09001');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const filteredFacilities = facilitiesList.filter(
     (f) =>
@@ -84,7 +102,6 @@ export const OrgFacilitiesTab: React.FC = () => {
   );
 
   const [activeTelemetryMeter, setActiveTelemetryMeter] = useState<{
-    meterId: string;
     facilityId: string;
     facilityName: string;
   } | null>(null);
@@ -93,72 +110,34 @@ export const OrgFacilitiesTab: React.FC = () => {
     e.preventDefault();
     if (!newFacilityName) return;
 
-    const facIndex = facilitiesList.length + 1;
-    const facId = `FAC-GH-${String(facIndex).padStart(3, '0')}`;
-    const meterId = `MTR-GH-${String(facIndex).padStart(3, '0')}`;
-
     const newFac: Facility = {
-      id: facId,
-      name: newFacilityName,
-      type: newFacilityType,
-      country: newFacilityCountry,
-      countryCode: "GH",
-      address: newFacilityAddress || "Industrial Zone, Ghana",
-      status: "Active",
-      processesCount: 1,
-      devicesCount: 1, // 1 Sattric EM6400 IoT meter connected automatically
-      dataCompleteness: 100,
-      emissions: "0 tCO₂e", // Baseline zero emissions
-      readiness: "Audit-Ready",
-      geo: { lat: "5.6000° N", lng: "0.2000° W", timezone: "GMT (UTC+0)" },
-      productionCapacity: "50,000 tonnes / year",
-      operatingHours: "24/7 · 3 shifts",
-      manager: {
-        name: "New Manager",
-        title: "Facility Lead",
-        email: "manager@saurient-carbon.com",
-      },
-      energySources: ["Grid electricity"],
-      utilities: ["Industrial water"],
-      products: ["Commodities"],
-      emissionSources: [{ name: "Electricity", scope: "Scope 2" }],
-      processTree: [
-        {
-          id: `PRC-${String(facIndex).padStart(3, '0')}`,
-          name: `${newFacilityName} Processing Line`,
-          lines: [
-            {
-              id: "LINE-01",
-              name: "Primary Infeed & Feeder",
-              meters: [
-                {
-                  name: `Sattric EM6400 Smart Meter (${meterId})`,
-                  type: "kWh Telemetry · EM6400",
-                },
-              ],
-            },
-          ],
-        },
-      ],
+      id: newFacilityId, name: newFacilityName, type: newFacilityType,
+      country: newFacilityCountry, countryCode: newFacilityCountry === 'India' ? 'IN' : 'GH',
+      address: newFacilityAddress, status: 'Active', processesCount: 0,
+      devicesCount: device ? 1 : 0, dataCompleteness: 0, emissions: '0 tCO₂e',
+      readiness: 'Awaiting Data', geo: { lat: '', lng: '', timezone: '' },
+      productionCapacity: '', operatingHours: '', manager: { name: '', title: '', email: '' },
+      energySources: [], utilities: [], products: [], emissionSources: [], processTree: [],
+      ...(device ? { telemetry: { device: 'SaurEdge/WG-05' as const, host, port, tls,
+        username, password, topic, gateway_serial: gatewaySerial, qos: 0 } } : {}),
     };
-
+    setSaving(true); setSaveError('');
     try {
-      await saveOrgFacility(newFac);
+      const saved = await saveOrgFacility(newFac);
+      setFacilitiesList(prev => [...prev.filter(f => f.id !== saved.id), saved]);
+      setIsAddOpen(false); setNewFacilityName(''); setNewFacilityAddress('');
+      setPassword(''); setNewFacilityId(createFacilityId());
     } catch (err) {
-      console.warn('Backend save facility failed, saving locally:', err);
-    }
-
-    setFacilitiesList([...facilitiesList, newFac]);
-    setIsAddOpen(false);
-    setNewFacilityName('');
-    setNewFacilityAddress('');
+      setSaveError(err instanceof Error ? err.message : 'Unable to save facility');
+    } finally { setSaving(false); }
   };
 
   const handleDeleteFacility = async (id: string) => {
     try {
       await deleteOrgFacility(id);
     } catch (err) {
-      console.warn('Backend delete facility failed, removing locally:', err);
+      setSaveError('Unable to delete facility. Please retry.');
+      return;
     }
     setFacilitiesList((prev) => prev.filter((f) => f.id !== id));
     if (selectedFacility && selectedFacility.id === id) {
@@ -169,8 +148,8 @@ export const OrgFacilitiesTab: React.FC = () => {
   // Dynamic Telemetry & Emissions Calculations (Zero baseline for clean slate)
   const activeSitesCount = facilitiesList.length;
 
-  const totalSattricMeters = facilitiesList.reduce(
-    (sum, f) => sum + (typeof f.devicesCount === 'number' && f.devicesCount > 0 ? f.devicesCount : 1),
+  const totalConfiguredGateways = facilitiesList.reduce(
+    (sum, f) => sum + (f.telemetry ? 1 : 0),
     0
   );
 
@@ -196,6 +175,7 @@ export const OrgFacilitiesTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {saveError && !isAddOpen && <p role="alert" className="text-red-700">{saveError}</p>}
       {/* Top Stats Bar */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
@@ -215,9 +195,9 @@ export const OrgFacilitiesTab: React.FC = () => {
             <Cpu className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Connected Telemetry</span>
+            <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">Configured Telemetry</span>
             <span className="text-xl font-black text-slate-900">
-              {totalSattricMeters} {totalSattricMeters === 1 ? 'Sattric Meter' : 'Sattric Meters'}
+              {totalConfiguredGateways} {totalConfiguredGateways === 1 ? 'WG-05 gateway' : 'WG-05 gateways'}
             </span>
           </div>
         </div>
@@ -304,7 +284,7 @@ export const OrgFacilitiesTab: React.FC = () => {
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
               {facilitiesList.length === 0
-                ? 'Your organisation starts with a zero baseline. When you register a facility, 1 Sattric EM6400 IoT Smart Telemetry Meter is automatically connected to stream live kWh load and Scope 1/2 emissions.'
+                ? 'Register a facility and select SaurEdge/WG-05 to receive MQTT readings from its gateway. Configure the broker and topic during setup.'
                 : 'Try adjusting your search criteria or clear active filters.'}
             </p>
           </div>
@@ -341,13 +321,12 @@ export const OrgFacilitiesTab: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveTelemetryMeter({
-                        meterId: `MTR-GH-${f.id.split('-').pop() || '001'}`,
                         facilityId: f.id,
                         facilityName: f.name,
                       });
                     }}
                     className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-lg border border-emerald-200 flex items-center gap-1 transition-colors"
-                    title="Inspect live EM6400 industrial telemetry"
+                    title="Inspect live MQTT telemetry"
                   >
                     <Activity className="w-3 h-3 text-emerald-600 animate-pulse" />
                     <span>Telemetry</span>
@@ -382,7 +361,7 @@ export const OrgFacilitiesTab: React.FC = () => {
                   <span><strong className="text-slate-900">{f.processesCount || 1}</strong> Processes</span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span><strong className="text-slate-900">{f.devicesCount || 1}</strong> Sattric {(f.devicesCount || 1) === 1 ? 'Meter' : 'Meters'}</span>
+                    <span><strong className="text-slate-900">{f.telemetry ? 1 : 0}</strong> WG-05 gateway</span>
                   </span>
                 </div>
                 <span className="font-mono font-bold text-slate-900">{f.emissions || '0 tCO₂e'}</span>
@@ -431,15 +410,13 @@ export const OrgFacilitiesTab: React.FC = () => {
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => {
-                          const mtrId = `MTR-GH-${f.id.split('-').pop() || '001'}`;
                           setActiveTelemetryMeter({
-                            meterId: mtrId,
                             facilityId: f.id,
                             facilityName: f.name,
                           });
                         }}
                         className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-lg text-[11px] transition-colors border border-emerald-200 flex items-center gap-1"
-                        title="View Live EM6400 Telemetry"
+                        title="View MQTT Telemetry"
                       >
                         <Activity className="w-3 h-3 text-emerald-600 animate-pulse" />
                         <span>Feed</span>
@@ -564,9 +541,7 @@ export const OrgFacilitiesTab: React.FC = () => {
                                   </span>
                                   <button
                                     onClick={() => {
-                                      const extractedMtr = meter.name.match(/\(([^)]+)\)/)?.[1] || `MTR-GH-${selectedFacility.id.split('-').pop() || '001'}`;
                                       setActiveTelemetryMeter({
-                                        meterId: extractedMtr,
                                         facilityId: selectedFacility.id,
                                         facilityName: selectedFacility.name,
                                       });
@@ -610,7 +585,7 @@ export const OrgFacilitiesTab: React.FC = () => {
       {/* Add Facility Modal */}
       {isAddOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="bg-white w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-2xl shadow-xl border border-slate-200">
             <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <h3 className="font-bold text-slate-900 text-sm">Add New Operating Facility</h3>
               <button onClick={() => setIsAddOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
@@ -619,6 +594,7 @@ export const OrgFacilitiesTab: React.FC = () => {
             </div>
 
             <form onSubmit={handleAddFacility} className="p-5 space-y-4 text-xs">
+              {saveError && <p role="alert" className="text-red-700">{saveError}</p>}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Facility Name</label>
                 <input
@@ -656,6 +632,31 @@ export const OrgFacilitiesTab: React.FC = () => {
                 />
               </div>
 
+              <div>
+                <label className="font-bold text-slate-700 block mb-1" htmlFor="facility-country">Country</label>
+                <select id="facility-country" value={newFacilityCountry} onChange={e => setNewFacilityTypeCountry(e.target.value)} className="w-full border rounded-xl px-3 py-2">
+                  <option>Ghana</option><option>India</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1" htmlFor="telemetry-device">Devices</label>
+                <select id="telemetry-device" value={device} onChange={e => setDevice(e.target.value)} className="w-full border rounded-xl px-3 py-2">
+                  <option value="">No telemetry device</option><option value="SaurEdge/WG-05">SaurEdge/WG-05</option>
+                </select>
+              </div>
+              {device && <fieldset className="border rounded-xl p-3 space-y-3">
+                <legend className="font-bold px-1">MQTT connection</legend>
+                <div className="grid grid-cols-2 gap-3">
+                  <label>Host/IP<input aria-label="MQTT host" required value={host} onChange={e => setHost(e.target.value)} className="w-full border rounded-lg px-2 py-2 mt-1" /></label>
+                  <label>Port<input aria-label="MQTT port" type="number" min={1} max={65535} required value={port} onChange={e => setPort(Number(e.target.value))} className="w-full border rounded-lg px-2 py-2 mt-1" /></label>
+                  <label>Username<input aria-label="MQTT username" value={username} onChange={e => setUsername(e.target.value)} autoComplete="off" className="w-full border rounded-lg px-2 py-2 mt-1" /></label>
+                  <label>Password<input aria-label="MQTT password" type="password" required value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" className="w-full border rounded-lg px-2 py-2 mt-1" /></label>
+                </div>
+                <label className="block">Topic name<input aria-label="MQTT topic" required value={topic} onChange={e => setTopic(e.target.value)} className="w-full border rounded-lg px-2 py-2 mt-1" /></label>
+                <label className="block">Gateway serial (SNO)<input aria-label="Gateway serial" required value={gatewaySerial} onChange={e => setGatewaySerial(e.target.value)} className="w-full border rounded-lg px-2 py-2 mt-1" /></label>
+                <label className="flex gap-2 items-center"><input type="checkbox" checked={tls} onChange={e => setTls(e.target.checked)} />Use TLS (requires a TLS broker listener)</label>
+                <p className="text-slate-500">All meters on this gateway are identified by DEVID. Subscription starts after saving. Raw values are stored; conversions await vendor confirmation.</p>
+              </fieldset>}
               <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -666,9 +667,10 @@ export const OrgFacilitiesTab: React.FC = () => {
                 </button>
                 <button
                   type="submit"
+                  disabled={saving}
                   className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl shadow-xs"
                 >
-                  Save Facility
+                  {saving ? 'Saving…' : 'Save Facility'}
                 </button>
               </div>
             </form>
@@ -676,10 +678,9 @@ export const OrgFacilitiesTab: React.FC = () => {
         </div>
       )}
 
-      {/* Live EM6400 Industrial Telemetry Modal */}
+      {/* Persisted MQTT telemetry */}
       {activeTelemetryMeter && (
         <LiveTelemetryModal
-          meterId={activeTelemetryMeter.meterId}
           facilityId={activeTelemetryMeter.facilityId}
           facilityName={activeTelemetryMeter.facilityName}
           onClose={() => setActiveTelemetryMeter(null)}

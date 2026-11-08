@@ -2,217 +2,305 @@ package telemetry
 
 import (
 	"bytes"
+	"context"
+	"encoding/base64"
 	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"strings"
+	"errors"
+	"net"
+	"os"
+	"strconv"
 	"testing"
+	"time"
+
+	"github.com/eclipse/paho.mqtt.golang/packets"
+	"github.com/google/uuid"
 )
 
-func TestParseRawFrame_BenchmarkSample(t *testing.T) {
-	raw := SampleRawFrame
-	reading, err := ParseRawFrame(raw)
-	if err != nil {
-		t.Fatalf("ParseRawFrame failed: %v", err)
-	}
+func testSource() Source {
+	return Source{Device: DeviceWG05, Host: "127.0.0.1", Port: 1883, Topic: "test/EMS", GatewaySerial: "09001", QoS: 1}
+}
 
-	if reading.MeterModel != "EM6400" {
-		t.Errorf("expected meter model EM6400, got %s", reading.MeterModel)
-	}
-	if reading.V1n != 239.8 {
-		t.Errorf("expected V1n=239.8, got %f", reading.V1n)
-	}
-	if reading.Vavg != 239.7 {
-		t.Errorf("expected Vavg=239.7, got %f", reading.Vavg)
-	}
-	if reading.KW != 7.82 {
-		t.Errorf("expected KW=7.82, got %f", reading.KW)
-	}
-	if reading.KVA != 8.11 {
-		t.Errorf("expected KVA=8.11, got %f", reading.KVA)
-	}
-	if reading.KVAR != 2.34 {
-		t.Errorf("expected KVAR=2.34, got %f", reading.KVAR)
-	}
-	if reading.PF != 0.964 {
-		t.Errorf("expected PF=0.964, got %f", reading.PF)
-	}
-	if reading.FREQ != 49.98 {
-		t.Errorf("expected FREQ=49.98, got %f", reading.FREQ)
-	}
-	if reading.KWH_FWD != 12345.67 {
-		t.Errorf("expected KWH_FWD=12345.67, got %f", reading.KWH_FWD)
-	}
-	if reading.INTR != 5 {
-		t.Errorf("expected INTR=5, got %d", reading.INTR)
-	}
-	if reading.In != 0.42 {
-		t.Errorf("expected In=0.42, got %f", reading.In)
-	}
-	if reading.IUNB != 3.2 {
-		t.Errorf("expected IUNB=3.2, got %f", reading.IUNB)
-	}
-	if reading.VUNB != 1.1 {
-		t.Errorf("expected VUNB=1.1, got %f", reading.VUNB)
-	}
-	if reading.RSSI != -71 {
-		t.Errorf("expected RSSI=-71, got %d", reading.RSSI)
-	}
-	if reading.MTR != 1 || reading.GPRS != 1 || reading.STALE != 0 {
-		t.Errorf("expected healthy connectivity (MTR=1, GPRS=1, STALE=0), got MTR=%d, GPRS=%d, STALE=%d",
-			reading.MTR, reading.GPRS, reading.STALE)
+func TestRawPayloadAndIdentifiers(t *testing.T) {
+	for _, tc := range []struct {
+		raw     []byte
+		invalid bool
+	}{
+		{[]byte(`{"SNO":"09001","DEVID":"0001","COMM":"1","kWh":53357.77,"future":{"v":null}}`), false},
+		{[]byte(`{"SNO":"09001","DEVID":"0003","future":"\u0000","huge":1e99999}`), false},
+		{[]byte(`{"SNO":9001,"DEVID":"0001"}`), true},
+		{[]byte(`{"SNO":"another","DEVID":"0001"}`), true},
+		{[]byte(`{"SNO":"09001","DEVID":1}`), true},
+		{[]byte(`null`), true}, {[]byte(`[]`), true}, {[]byte{0xff, 0xfe}, true}, {nil, true},
+	} {
+		m := Message{Payload: bytes.Clone(tc.raw)}
+		m.Decode("09001")
+		if (m.ParseError != "") != tc.invalid {
+			t.Fatalf("payload %q: error=%q", tc.raw, m.ParseError)
+		}
+		if !bytes.Equal(m.Payload, tc.raw) {
+			t.Fatal("raw bytes changed")
+		}
+		if !tc.invalid && (m.GatewaySerial != "09001" || (m.MeterID != "0001" && m.MeterID != "0003")) {
+			t.Fatal("identifiers changed")
+		}
 	}
 }
 
-func TestFormatRawFrame(t *testing.T) {
-	orig, err := ParseRawFrame(SampleRawFrame)
+func TestCredentialsAreEncryptedAndBoundToSource(t *testing.T) {
+	a, err := newCipher(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32)))
 	if err != nil {
-		t.Fatalf("ParseRawFrame failed: %v", err)
+		t.Fatal(err)
 	}
-
-	formatted := orig.FormatRawFrame()
-	if !strings.HasPrefix(formatted, "raw  dta frame$EM6400") {
-		t.Errorf("expected prefix raw  dta frame$EM6400, got %s", formatted)
-	}
-	if !strings.HasSuffix(formatted, ",Z") {
-		t.Errorf("expected suffix ,Z, got %s", formatted)
-	}
-
-	// Re-parse formatted frame to ensure round-trip integrity
-	reparsed, err := ParseRawFrame(formatted)
+	encoded, err := encrypt(a, "test-password", "source-a")
 	if err != nil {
-		t.Fatalf("reparse failed: %v", err)
+		t.Fatal(err)
 	}
-	if reparsed.KW != orig.KW || reparsed.KWH_FWD != orig.KWH_FWD || reparsed.RSSI != orig.RSSI {
-		t.Errorf("round trip mismatch: got KW=%f KWH=%f RSSI=%d", reparsed.KW, reparsed.KWH_FWD, reparsed.RSSI)
+	if bytes.Contains(encoded, []byte("test-password")) {
+		t.Fatal("plaintext in ciphertext")
+	}
+	password, err := decrypt(a, encoded, "source-a")
+	if err != nil || password != "test-password" {
+		t.Fatal("round trip failed", err)
+	}
+	if _, err := decrypt(a, encoded, "source-b"); err == nil {
+		t.Fatal("credential moved between sources")
+	}
+	encoded[len(encoded)-1] ^= 1
+	if _, err := decrypt(a, encoded, "source-a"); err == nil {
+		t.Fatal("tampered ciphertext accepted")
+	}
+	for _, key := range []string{"", "invalid", base64.StdEncoding.EncodeToString(make([]byte, 16))} {
+		if _, err := newCipher(key); err == nil {
+			t.Fatal("invalid key accepted")
+		}
 	}
 }
 
-func TestGenerator_RealisticRanges(t *testing.T) {
-	gen := NewTelemetryGenerator()
-	baseKW := 25.0
-	nomV := 230.0
-	pf := 0.97
-	freq := 50.0
+func TestSourceValidation(t *testing.T) {
+	s := testSource()
+	if err := s.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	for _, change := range []func(*Source){func(s *Source) { s.Device = "EM6400" }, func(s *Source) { s.Port = 0 }, func(s *Source) { s.Host = "tcp://host" }, func(s *Source) { s.Topic = "test/#" }, func(s *Source) { s.GatewaySerial = "" }, func(s *Source) { s.QoS = 2 }} {
+		s := testSource()
+		change(&s)
+		if s.Validate() == nil {
+			t.Fatalf("accepted invalid source %+v", s)
+		}
+	}
+}
 
-	reading := gen.GenerateReading(GeneratorParams{
-		MeterID:        "MTR-TEST-001",
-		FacilityID:     "FAC-TEST-001",
-		BaseKW:         &baseKW,
-		NominalVoltage: &nomV,
-		PowerFactor:    &pf,
-		Frequency:      &freq,
+// This opt-in test uses a real TimescaleDB and a local MQTT protocol fixture.
+// It never contacts the provider or changes an existing development database.
+func TestTimescaleMQTTPipeline(t *testing.T) {
+	dsn := os.Getenv("TELEMETRY_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("set TELEMETRY_TEST_DATABASE_URL to an isolated TimescaleDB")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
+	defer cancel()
+	store, err := OpenStore(ctx, dsn, base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{9}, 32)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = store.DB.Close() })
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	topicEvents := make(chan string, 10)
+	acks := make(chan struct{}, 20)
+	disconnected := make(chan struct{}, 10)
+	brokerErrors := make(chan error, 10)
+	payloads := [][]byte{[]byte(`{"SNO":"09001","DEVID":"0001","TWt":850.22,"future":"\u0000"}`), []byte(`{"SNO":"09001","DEVID":"0003","TWt":979.02}`), {0xff, 0xfe}}
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			go func() {
+				defer conn.Close()
+				defer func() { disconnected <- struct{}{} }()
+				for {
+					packet, err := packets.ReadPacket(conn)
+					if err != nil {
+						return
+					}
+					switch p := packet.(type) {
+					case *packets.ConnectPacket:
+						if p.Username != "test" || string(p.Password) != "test-password" || !p.CleanSession {
+							brokerErrors <- errors.New("incorrect credentials or session mode")
+							return
+						}
+						ack := packets.NewControlPacket(packets.Connack).(*packets.ConnackPacket)
+						if err := ack.Write(conn); err != nil {
+							return
+						}
+					case *packets.SubscribePacket:
+						ack := packets.NewControlPacket(packets.Suback).(*packets.SubackPacket)
+						ack.MessageID = p.MessageID
+						ack.ReturnCodes = []byte{1}
+						if err := ack.Write(conn); err != nil {
+							return
+						}
+						topicEvents <- p.Topics[0]
+						for i, payload := range payloads {
+							msg := packets.NewControlPacket(packets.Publish).(*packets.PublishPacket)
+							msg.TopicName = p.Topics[0]
+							msg.Payload = payload
+							msg.Qos = 1
+							msg.MessageID = uint16(i + 1)
+							msg.Retain = i == 0
+							if err := msg.Write(conn); err != nil {
+								return
+							}
+						}
+					case *packets.PubackPacket:
+						acks <- struct{}{}
+					case *packets.PingreqPacket:
+						_ = packets.NewControlPacket(packets.Pingresp).Write(conn)
+					case *packets.DisconnectPacket:
+						return
+					}
+				}
+			}()
+		}
+	}()
+	source := testSource()
+	source.Port = listener.Addr().(*net.TCPAddr).Port
+	source.Username = "test"
+	source.Password = "test-password"
+	source.TenantID = "test-" + uuid.NewString()
+	source.FacilityID = "facility-1"
+	t.Cleanup(func() {
+		cleanup, done := context.WithTimeout(context.Background(), 5*time.Second)
+		defer done()
+		_, _ = store.DB.ExecContext(cleanup, `DELETE FROM telemetry_sources WHERE tenant_id=$1`, source.TenantID)
+		_, _ = store.DB.ExecContext(cleanup, `DELETE FROM telemetry_messages WHERE tenant_id=$1`, source.TenantID)
 	})
-
-	// Check Voltage ranges (180–300 V for VLN, 300–500 V for VLL)
-	if reading.V1n < 180 || reading.V1n > 300 {
-		t.Errorf("V1n out of range: %f", reading.V1n)
+	source, err = store.SaveSource(ctx, source)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if reading.V12 < 300 || reading.V12 > 500 {
-		t.Errorf("V12 out of range: %f", reading.V12)
+	encoded, _ := json.Marshal(source)
+	if bytes.Contains(encoded, []byte("test-password")) || bytes.Contains(encoded, []byte(`"password":`)) {
+		t.Fatal("source exposes password")
 	}
-
-	// Check Power metrics
-	if reading.KW < 20 || reading.KW > 30 {
-		t.Errorf("KW out of range for base 25.0: %f", reading.KW)
+	conflict := source
+	conflict.TenantID = "other-tenant"
+	conflict.FacilityID = "other-facility"
+	if _, err := store.SaveSource(ctx, conflict); !errors.Is(err, ErrSourceConflict) {
+		t.Fatal("gateway assigned twice", err)
 	}
-	if reading.KVA <= reading.KW {
-		t.Errorf("KVA (%f) must be >= KW (%f)", reading.KVA, reading.KW)
+	manager := NewManager(store)
+	sourceTenantID, sourceFacilityID := source.TenantID, source.FacilityID
+	manager.Exists = func(_ context.Context, tenant, facility string) (bool, error) {
+		return tenant == sourceTenantID && facility == sourceFacilityID, nil
 	}
-	if reading.PF < 0.90 || reading.PF > 1.0 {
-		t.Errorf("PF out of range: %f", reading.PF)
+	workerCtx, stop := context.WithCancel(ctx)
+	done := make(chan struct{})
+	go func() { defer close(done); manager.Run(workerCtx) }()
+	defer func() { stop(); <-done }()
+	await := func(ch <-chan string, want string) {
+		t.Helper()
+		select {
+		case value := <-ch:
+			if value != want {
+				t.Fatalf("topic=%q want=%q", value, want)
+			}
+		case err := <-brokerErrors:
+			t.Fatal(err)
+		case <-ctx.Done():
+			t.Fatal("timed out waiting for subscription")
+		}
 	}
-
-	// Check Frequency
-	if reading.FREQ < 49.0 || reading.FREQ > 51.0 {
-		t.Errorf("FREQ out of normal bounds: %f", reading.FREQ)
+	await(topicEvents, source.Topic)
+	for range payloads {
+		select {
+		case <-acks:
+		case <-ctx.Done():
+			t.Fatal("missing post-storage MQTT acknowledgment")
+		}
 	}
-
-	// Check Health
-	if reading.RSSI < -110 || reading.RSSI > -50 {
-		t.Errorf("RSSI out of range: %d", reading.RSSI)
+	readings, err := store.History(ctx, source.TenantID, source.FacilityID, "", time.Time{}, time.Now().Add(time.Minute), 100)
+	if err != nil || len(readings) != 3 {
+		t.Fatalf("history=%d err=%v", len(readings), err)
 	}
-	if reading.MTR != 1 || reading.GPRS != 1 || reading.STALE != 0 {
-		t.Errorf("expected normal health flags")
+	for i, m := range readings {
+		if !bytes.Equal(m.Payload, payloads[2-i]) {
+			t.Fatal("raw delivery changed")
+		}
+		if !m.Retained && i == 2 {
+			t.Fatal("retained flag lost")
+		}
 	}
-
-	// Raw frame string was generated and contains expected markers
-	if !strings.Contains(reading.RawFrame, "EM6400") || !strings.HasSuffix(reading.RawFrame, ",Z") {
-		t.Errorf("raw frame malformed: %s", reading.RawFrame)
+	meters, err := store.History(ctx, source.TenantID, source.FacilityID, "0003", time.Time{}, time.Now().Add(time.Minute), 100)
+	if err != nil || len(meters) != 1 {
+		t.Fatal("meter routing failed", err)
 	}
-}
-
-func TestServer_Endpoints(t *testing.T) {
-	gen := NewTelemetryGenerator()
-	srv := NewServer(gen, "8085")
-	mux := http.NewServeMux()
-	srv.RegisterRoutes(mux)
-
-	// 1. Healthz
-	reqHealth := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	rrHealth := httptest.NewRecorder()
-	mux.ServeHTTP(rrHealth, reqHealth)
-	if rrHealth.Code != http.StatusOK {
-		t.Errorf("healthz failed: %d", rrHealth.Code)
+	other, err := store.History(ctx, "another-tenant", source.FacilityID, "", time.Time{}, time.Now().Add(time.Minute), 100)
+	if err != nil || len(other) != 0 {
+		t.Fatal("cross-tenant disclosure", err)
 	}
-
-	// 2. Sample
-	reqSample := httptest.NewRequest(http.MethodGet, "/api/v1/telemetry/sample", nil)
-	rrSample := httptest.NewRecorder()
-	mux.ServeHTTP(rrSample, reqSample)
-	if rrSample.Code != http.StatusOK {
-		t.Errorf("sample failed: %d", rrSample.Code)
+	// Retrying an ambiguous SQL insert is idempotent; separate deliveries remain separate.
+	if err := store.Append(ctx, readings[0]); err != nil {
+		t.Fatal(err)
 	}
-	var sampleReading EM6400Reading
-	if err := json.Unmarshal(rrSample.Body.Bytes(), &sampleReading); err != nil {
-		t.Fatalf("sample json unmarshal failed: %v", err)
+	source.Topic = "test/changed/" + strconv.Itoa(source.Port)
+	source.Password = ""
+	source, err = store.SaveSource(ctx, source)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if sampleReading.KW != 7.82 {
-		t.Errorf("expected sample KW=7.82, got %f", sampleReading.KW)
+	await(topicEvents, source.Topic)
+	select {
+	case <-disconnected:
+	case <-ctx.Done():
+		t.Fatal("previous configuration did not stop")
 	}
-
-	// 3. Latest
-	reqLatest := httptest.NewRequest(http.MethodGet, "/api/v1/telemetry/latest?meter_id=MTR-TEST&kw=15.5", nil)
-	rrLatest := httptest.NewRecorder()
-	mux.ServeHTTP(rrLatest, reqLatest)
-	if rrLatest.Code != http.StatusOK {
-		t.Errorf("latest failed: %d", rrLatest.Code)
+	for range payloads {
+		select {
+		case <-acks:
+		case <-ctx.Done():
+			t.Fatal("updated subscription did not persist deliveries")
+		}
 	}
-	var latestReading EM6400Reading
-	if err := json.Unmarshal(rrLatest.Body.Bytes(), &latestReading); err != nil {
-		t.Fatalf("latest json unmarshal failed: %v", err)
+	stop()
+	<-done
+	select {
+	case <-disconnected:
+	case <-ctx.Done():
+		t.Fatal("controller shutdown did not disconnect")
 	}
-	if latestReading.MeterID != "MTR-TEST" {
-		t.Errorf("expected MTR-TEST, got %s", latestReading.MeterID)
+	// A new controller reconstructs the saved subscription and password without
+	// any browser action or plaintext credentials supplied by the caller.
+	restarted := NewManager(store)
+	restarted.Exists = manager.Exists
+	restartCtx, stopRestart := context.WithCancel(ctx)
+	restartDone := make(chan struct{})
+	go func() { defer close(restartDone); restarted.Run(restartCtx) }()
+	defer func() { stopRestart(); <-restartDone }()
+	await(topicEvents, source.Topic)
+	for range payloads {
+		select {
+		case <-acks:
+		case <-ctx.Done():
+			t.Fatal("restarted subscription did not persist deliveries")
+		}
 	}
-
-	// 4. Raw
-	reqRaw := httptest.NewRequest(http.MethodGet, "/api/v1/telemetry/raw", nil)
-	rrRaw := httptest.NewRecorder()
-	mux.ServeHTTP(rrRaw, reqRaw)
-	if rrRaw.Code != http.StatusOK {
-		t.Errorf("raw failed: %d", rrRaw.Code)
+	// Source deletion stops the subscription and leaves historical evidence.
+	if err := store.DeleteSource(ctx, source.TenantID, source.FacilityID); err != nil {
+		t.Fatal(err)
 	}
-	rawStr := rrRaw.Body.String()
-	if !strings.Contains(rawStr, "EM6400") {
-		t.Errorf("expected raw string with EM6400, got %s", rawStr)
+	select {
+	case <-disconnected:
+	case <-ctx.Done():
+		t.Fatal("worker did not stop")
 	}
-
-	// 5. Generate via POST
-	genBody := bytes.NewBufferString(`{"meter_id":"MTR-PUMP-01","base_kw":45.0}`)
-	reqGen := httptest.NewRequest(http.MethodPost, "/api/v1/telemetry/generate", genBody)
-	rrGen := httptest.NewRecorder()
-	mux.ServeHTTP(rrGen, reqGen)
-	if rrGen.Code != http.StatusOK {
-		t.Errorf("generate POST failed: %d", rrGen.Code)
-	}
-
-	// 6. Parse via POST
-	parseBody := bytes.NewBufferString(`{"raw_frame":"` + SampleRawFrame + `"}`)
-	reqParse := httptest.NewRequest(http.MethodPost, "/api/v1/telemetry/parse", parseBody)
-	rrParse := httptest.NewRecorder()
-	mux.ServeHTTP(rrParse, reqParse)
-	if rrParse.Code != http.StatusOK {
-		t.Errorf("parse POST failed: %d", rrParse.Code)
+	archived, err := store.History(ctx, source.TenantID, source.FacilityID, "", time.Time{}, time.Now().Add(time.Minute), 100)
+	if err != nil || len(archived) != 9 {
+		t.Fatalf("expected 9 preserved deliveries across controller restart, got %d: %v", len(archived), err)
 	}
 }

@@ -2,6 +2,7 @@ package nexus
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -1016,21 +1017,6 @@ func SaveFacilityNode(ctx context.Context, client *nexus_client.Clientset, tenan
 		return nil, fmt.Errorf("failed to add Facility node %s under Tenant %s: %w", resourceName, tenantID, err)
 	}
 
-	// Connect 1 Sattric meter child node under this facility in the Nexus datamodel
-	meterName := fmt.Sprintf("sattric-meter-%s", resourceName)
-	if _, getMeterErr := facilityNode.GetMeters(ctx, meterName); getMeterErr != nil {
-		_, _ = facilityNode.AddMeters(ctx, &inventoryv1.Meter{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: meterName,
-			},
-			Spec: inventoryv1.MeterSpec{
-				MeterID:      meterName,
-				MeterType:    "Sattric IoT Telemetry",
-				Manufacturer: "Sattric Power Systems",
-			},
-		})
-	}
-
 	return facilityNode, nil
 }
 
@@ -1119,6 +1105,14 @@ func FacilityModelFromNode(fNode *nexus_client.InventoryFacility) *FacilityModel
 	if fNode == nil {
 		return nil
 	}
+	if raw := fNode.Annotations["saurient.io/facility-profile"]; raw != "" {
+		var facility FacilityModel
+		if json.Unmarshal([]byte(raw), &facility) == nil {
+			facility.ID = fNode.Spec.FacilityID
+			facility.TenantID = fNode.Labels["tenants.inventory.saurient.io"]
+			return &facility
+		}
+	}
 	spec := fNode.Spec
 	id := spec.FacilityID
 	if id == "" {
@@ -1129,7 +1123,7 @@ func FacilityModelFromNode(fNode *nexus_client.InventoryFacility) *FacilityModel
 		name = id
 	}
 
-	meterCount := 1
+	meterCount := 0
 	if meters, err := fNode.GetAllMeters(context.Background()); err == nil && len(meters) > 0 {
 		meterCount = len(meters)
 	}
@@ -1142,11 +1136,11 @@ func FacilityModelFromNode(fNode *nexus_client.InventoryFacility) *FacilityModel
 		Country:          spec.CountryCode,
 		CountryCode:      spec.CountryCode,
 		Status:           "Active",
-		ProcessesCount:   1,
+		ProcessesCount:   0,
 		DevicesCount:     meterCount,
-		DataCompleteness: 100.0,
+		DataCompleteness: 0,
 		Emissions:        "0 tCO₂e",
-		Readiness:        "Audit-Ready",
+		Readiness:        "Awaiting Data",
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
 	}

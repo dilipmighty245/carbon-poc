@@ -6,7 +6,7 @@ API_IMG ?= saurient-api:dev
 DEV_PROXY_IMAGE ?= nginx:stable-alpine
 export ETCD_CONTAINER ETCD_IMAGE DEV_PROXY_IMAGE
 
-.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed dev-host-setup kind-setup clean clean-data check-prereqs etcd-start etcd-stop datamodel-build telemetry-server
+.PHONY: all build test test-e2e e2e e2e-no-mocks dev-setup dev-setup-nomock dev-setup-seed dev-host-setup kind-setup clean clean-data check-prereqs etcd-start etcd-stop datamodel-build
 
 all: test build
 
@@ -17,11 +17,6 @@ datamodel-build:
 build:
 	@echo "==> Building Go binary..."
 	go build -v -o bin/api ./cmd/api
-	go build -v -o bin/telemetry ./cmd/telemetry
-
-telemetry-server: build
-	@echo "==> Starting EM6400 Industrial Telemetry Simulation Server on port 8085..."
-	./bin/telemetry -port 8085
 
 test:
 	@echo "==> Running unit tests..."
@@ -111,11 +106,10 @@ dev-setup-seed: check-prereqs clean etcd-start build
 	@echo "Starting Backend Services with Demo Seeding Enabled..."
 	@echo "=========================================================================="
 	@SEED_DEMO_DATA=true ./bin/api > api.log 2>&1 & echo $$! > .api.pid
-	@./bin/telemetry -port 8085 > telemetry.log 2>&1 & echo $$! > .telemetry.pid
-	@echo "==> Waiting for API Gateway (http://localhost:8080) & Telemetry (http://localhost:8085) to be ready..."
+	@echo "==> Waiting for API Gateway (http://localhost:8080) to be ready..."
 	@for i in $$(seq 1 15); do \
-		if curl -s http://localhost:8080/healthz >/dev/null 2>&1 && curl -s http://localhost:8085/healthz >/dev/null 2>&1; then \
-			echo "   [OK] API Gateway (8080) & Telemetry Server (8085) are live!"; \
+		if curl -s http://localhost:8080/healthz >/dev/null 2>&1; then \
+			echo "   [OK] API Gateway (8080) are live!"; \
 			break; \
 		fi; \
 		sleep 1; \
@@ -129,14 +123,13 @@ dev-setup-seed: check-prereqs clean etcd-start build
 
 dev-setup: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
-	@echo "Starting Backend Services (API Gateway & Telemetry Server) [CLEAN UNSEEDED]..."
+	@echo "Starting Backend Services (API Gateway + MQTT ingestion) [CLEAN UNSEEDED]..."
 	@echo "=========================================================================="
 	@./bin/api > api.log 2>&1 & echo $$! > .api.pid
-	@./bin/telemetry -port 8085 > telemetry.log 2>&1 & echo $$! > .telemetry.pid
-	@echo "==> Waiting for API Gateway (http://localhost:8080) & Telemetry (http://localhost:8085) to be ready..."
+	@echo "==> Waiting for API Gateway (http://localhost:8080) to be ready..."
 	@for i in $$(seq 1 15); do \
-		if curl -s http://localhost:8080/healthz >/dev/null 2>&1 && curl -s http://localhost:8085/healthz >/dev/null 2>&1; then \
-			echo "   [OK] API Gateway (8080) & Telemetry Server (8085) are live!"; \
+		if curl -s http://localhost:8080/healthz >/dev/null 2>&1; then \
+			echo "   [OK] API Gateway (8080) are live!"; \
 			break; \
 		fi; \
 		sleep 1; \
@@ -146,7 +139,6 @@ dev-setup: check-prereqs clean etcd-start build
 	@echo "=========================================================================="
 	@echo "etcd Endpoint:                 http://localhost:2379"
 	@echo "API Gateway Endpoint:          http://localhost:8080/api/v1"
-	@echo "Telemetry Server Endpoint:     http://localhost:8085 (EM6400 SSE / Raw Stream)"
 	@echo "=========================================================================="
 	@echo "==> Starting Digital Passport App (React / Vite)..."
 	cd digital-passport-app && npm run dev

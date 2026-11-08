@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,12 +17,14 @@ import (
 	inventoryv1 "saurient-platform/build/apis/inventory.saurient.io/v1"
 	nexus_client "saurient-platform/build/nexus-client"
 	"saurient-platform/internal/nexus"
+	"saurient-platform/internal/telemetry"
 	"saurient-platform/internal/tenant"
 )
 
 type OrganisationHandler struct {
-	client *nexus_client.Clientset
-	engine *nexus.NexusGraphEngine
+	client    *nexus_client.Clientset
+	engine    *nexus.NexusGraphEngine
+	Telemetry *telemetry.Store
 }
 
 func NewOrganisationHandler(engine *nexus.NexusGraphEngine) *OrganisationHandler {
@@ -675,9 +679,18 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 	}
 
 	tenantID := getTenantID(r)
+	if h.Telemetry != nil {
+		var ok bool
+		tenantID, ok = telemetryTenant(w, r, r.Method != http.MethodGet)
+		if !ok {
+			return
+		}
+	}
 	ctx := tenant.WithTenant(r.Context(), tenantID)
 
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/organisation/facilities")
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	pathID := strings.TrimPrefix(path, "/")
 
 	switch r.Method {
@@ -699,16 +712,64 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 		if facilities == nil {
 			facilities = []*nexus.FacilityModel{}
 		}
+		response := make([]map[string]any, 0, len(facilities))
+		for _, facility := range facilities {
+			b, _ := json.Marshal(facility)
+			var item map[string]any
+			_ = json.Unmarshal(b, &item)
+			item["devices_count"] = 0
+			if h.Telemetry != nil {
+				source, err := h.Telemetry.Source(ctx, tenantID, facility.ID)
+				if err != nil && !errors.Is(err, sql.ErrNoRows) {
+					writeJSONError(w, "telemetry configuration unavailable", http.StatusServiceUnavailable)
+					return
+				}
+				if err == nil {
+					item["telemetry"] = source
+					item["devices_count"] = 1
+				}
+			}
+			response = append(response, item)
+		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(facilities)
+		_ = json.NewEncoder(w).Encode(response)
 
 	case http.MethodPost, http.MethodPut:
-		var f nexus.FacilityModel
-		if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
+		var payload struct {
+			nexus.FacilityModel
+			Telemetry *telemetry.Source `json:"telemetry"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&payload); err != nil {
 			writeJSONError(w, "invalid JSON payload", http.StatusBadRequest)
 			return
 		}
+		f := payload.FacilityModel
+		f.Name = strings.TrimSpace(f.Name)
+		if f.Name == "" {
+			writeJSONError(w, "facility name is required", http.StatusBadRequest)
+			return
+		}
+		if payload.Telemetry != nil {
+			var ok bool
+			tenantID, ok = telemetryTenant(w, r, true)
+			if !ok {
+				return
+			}
+			ctx = tenant.WithTenant(ctx, tenantID)
+			if h.Telemetry == nil {
+				writeJSONError(w, "telemetry database is not configured", http.StatusServiceUnavailable)
+				return
+			}
+			if err := payload.Telemetry.Validate(); err != nil {
+				writeJSONError(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
 		f.TenantID = tenantID
+		if f.CreatedAt.IsZero() {
+			f.CreatedAt = time.Now().UTC()
+		}
+		f.UpdatedAt = time.Now().UTC()
 		if f.ID == "" {
 			f.ID = pathID
 		}
@@ -718,17 +779,14 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 		if f.Status == "" {
 			f.Status = "Active"
 		}
-		if f.DevicesCount == 0 {
+		if payload.Telemetry != nil {
 			f.DevicesCount = 1
 		}
 		if f.Emissions == "" {
 			f.Emissions = "0 tCO₂e"
 		}
-		if f.DataCompleteness == 0 {
-			f.DataCompleteness = 100.0
-		}
 		if f.Readiness == "" {
-			f.Readiness = "Audit-Ready"
+			f.Readiness = "Awaiting Data"
 		}
 
 		if h.client != nil {
@@ -738,16 +796,44 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 				Location:    f.Address,
 				CountryCode: f.CountryCode,
 			}
-			if _, err := nexus.SaveFacilityNode(ctx, h.client, tenantID, spec); err != nil {
+			node, err := nexus.SaveFacilityNode(ctx, h.client, tenantID, spec)
+			if err != nil {
 				writeJSONError(w, fmt.Sprintf("failed to save facility node in nexus: %v", err), http.StatusInternalServerError)
+				return
+			}
+			profile, _ := json.Marshal(f)
+			if node.Annotations == nil {
+				node.Annotations = map[string]string{}
+			}
+			node.Annotations["saurient.io/facility-profile"] = string(profile)
+			if err := node.Update(ctx); err != nil {
+				writeJSONError(w, "failed to persist facility profile", http.StatusServiceUnavailable)
 				return
 			}
 		}
 		if h.engine != nil {
 			_ = h.engine.SaveFacility(ctx, &f)
 		}
+		responseBytes, _ := json.Marshal(f)
+		var response map[string]any
+		_ = json.Unmarshal(responseBytes, &response)
+		if source := payload.Telemetry; source != nil {
+			source.TenantID, source.FacilityID = tenantID, f.ID
+			saved, err := h.Telemetry.SaveSource(ctx, *source)
+			if err != nil {
+				code := http.StatusServiceUnavailable
+				message := "facility saved, telemetry setup failed; retry with the same facility ID"
+				if errors.Is(err, telemetry.ErrSourceConflict) {
+					code = http.StatusConflict
+					message = err.Error()
+				}
+				writeJSONError(w, message, code)
+				return
+			}
+			response["telemetry"] = saved
+		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(f)
+		_ = json.NewEncoder(w).Encode(response)
 
 	case http.MethodDelete:
 		id := pathID
@@ -758,8 +844,20 @@ func (h *OrganisationHandler) HandleFacilities(w http.ResponseWriter, r *http.Re
 			writeJSONError(w, "facility ID is required", http.StatusBadRequest)
 			return
 		}
+		if h.Telemetry != nil {
+			if _, ok := telemetryTenant(w, r, true); !ok {
+				return
+			}
+			if err := h.Telemetry.DeleteSource(ctx, tenantID, id); err != nil {
+				writeJSONError(w, "unable to stop facility telemetry", http.StatusServiceUnavailable)
+				return
+			}
+		}
 		if h.client != nil {
-			_ = nexus.DeleteFacilityNode(ctx, h.client, tenantID, id)
+			if err := nexus.DeleteFacilityNode(ctx, h.client, tenantID, id); err != nil {
+				writeJSONError(w, "facility deletion failed; retry deletion", http.StatusServiceUnavailable)
+				return
+			}
 		}
 		if h.engine != nil {
 			_ = h.engine.DeleteFacility(ctx, id)
@@ -1183,6 +1281,12 @@ func (h *OrganisationHandler) HandleSystemReset(w http.ResponseWriter, r *http.R
 	if err := nexus.ResetNexusClient(ctx); err != nil {
 		writeJSONError(w, "unable to reset platform data", http.StatusInternalServerError)
 		return
+	}
+	if h.Telemetry != nil {
+		if _, err := h.Telemetry.DB.ExecContext(ctx, `DELETE FROM telemetry_sources`); err != nil {
+			writeJSONError(w, "platform reset, but telemetry source cleanup failed", http.StatusServiceUnavailable)
+			return
+		}
 	}
 	if h.engine != nil {
 		h.engine.Reset()

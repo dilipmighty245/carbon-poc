@@ -98,20 +98,16 @@ async function main() {
   if (!fs.existsSync(vite)) throw new Error('Install UI dependencies first: cd digital-passport-app && npm install');
   setupDevHost();
   await clean();
-  const extension = windows ? '.exe' : '';
   try {
     run(process.execPath, ['scripts/kind_environment.mjs']);
     fs.mkdirSync('bin', { recursive: true });
-    run('go', ['build', '-o', `bin/telemetry${extension}`, './cmd/telemetry']);
     // Copy config rather than mounting a host path: works with Windows paths and WSL.
     run('docker', ['create', '--name', proxy, '-p', '127.0.0.1:80:80',
       '--add-host', 'host.docker.internal:host-gateway', proxyImage]);
     run('docker', ['cp', path.join(root, 'deploy/nginx.dev.conf'), `${proxy}:/etc/nginx/conf.d/default.conf`]);
     run('docker', ['start', proxy]);
-    const telemetry = await start('telemetry', path.join(root, `bin/telemetry${extension}`), ['-port', '8085']);
     await Promise.all([
       waitFor('http://localhost:18080/healthz', { service: 'api' }),
-      waitFor('http://localhost:8085/healthz', { service: 'telemetry', child: telemetry }),
     ]);
     const ui = await start('ui', process.execPath, [vite, '--port', '5173', '--strictPort'], uiDirectory, true, { VITE_API_PROXY_TARGET: 'http://127.0.0.1:18080' });
     let stoppingUI = false;
@@ -130,8 +126,8 @@ async function main() {
     exited.catch(() => {});
     await Promise.race([waitFor('http://localhost:5173'), exited.then(() => { throw new Error('Vite stopped before becoming ready.'); })]);
     console.log('Digital Passport UI: http://carbon-passport-dev (http://localhost:5173)');
-    console.log('API (kind): http://localhost:18080/api/v1 | Telemetry: http://localhost:8085');
-    console.log('Data is stored by Nexus in the kind cluster (etcd). Restart and make clean preserve the cluster.');
+    console.log('API + MQTT telemetry (kind): http://localhost:18080/api/v1');
+    console.log('Graph data: Nexus (kind etcd). MQTT readings: TimescaleDB persistent volume. Restart and make clean preserve both.');
     await exited;
     fs.rmSync('.ui.pid', { force: true });
   } catch (error) {

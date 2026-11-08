@@ -86,6 +86,16 @@ spec:
               value: saurient-system
             - name: PORT
               value: '8080'
+            - name: TELEMETRY_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: telemetry-secrets
+                  key: TELEMETRY_DATABASE_URL
+            - name: TELEMETRY_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: telemetry-secrets
+                  key: TELEMETRY_ENCRYPTION_KEY
           readinessProbe:
             httpGet:
               path: /healthz

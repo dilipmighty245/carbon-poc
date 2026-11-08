@@ -1,4 +1,6 @@
+FROM alpine:3.22 AS certificates
 FROM scratch
+COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY bin/api-kind /api
 EXPOSE 8080
 ENTRYPOINT ["/api"]

@@ -6,9 +6,11 @@ require (
 	cel.dev/cel-go v0.32.0
 	github.com/dilipmighty245/graph-framework-for-microservices/gqlgen v0.0.1
 	github.com/dilipmighty245/graph-framework-for-microservices/nexus v0.0.1
+	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/elliotchance/orderedmap v1.8.0
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
+	github.com/lib/pq v1.12.3
 	github.com/rs/cors v1.11.1
 	github.com/sirupsen/logrus v1.10.2
 	github.com/vektah/gqlparser/v2 v2.5.0
@@ -16,6 +18,7 @@ require (
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v0.29.2
 	saurient-platform/datamodel v0.0.0-00010101000000-000000000000
+	sigs.k8s.io/yaml v1.6.0
 )
 
 replace saurient-platform/datamodel => ./datamodel
@@ -36,7 +39,7 @@ require (
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -76,5 +79,4 @@ require (
 	k8s.io/utils v0.0.0-20260108192941-914a6e750570 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 )
